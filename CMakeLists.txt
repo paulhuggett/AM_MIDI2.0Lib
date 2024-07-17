@@ -10,6 +10,7 @@ endfunction()
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMIDI2_HEADERS
   "${INCLUDE_DIR}/bytestreamToUMP.h"
+  "${INCLUDE_DIR}/fifo.h"
   "${INCLUDE_DIR}/mcoded7.h"
   "${INCLUDE_DIR}/midiCIMessageCreate.h"
   "${INCLUDE_DIR}/midiCIProcessor.h"

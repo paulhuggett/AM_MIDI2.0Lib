@@ -2,6 +2,7 @@ add_executable (unittests
     test_fifo.cpp
     test_bytestreamToUMP.cpp
     test_mcoded7.cpp
+    test_umpToBytestream.cpp
 )
 target_compile_definitions (unittests PRIVATE ICUBABY_FUZZTEST=$<BOOL:${ICUBABY_FUZZTEST}>)
 target_link_libraries(unittests PRIVATE libmidi2)

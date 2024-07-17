@@ -33,6 +33,7 @@
 
 #define BSTOUMP_BUFFER 4
 
+#include "fifo.h"
 #include "utils.h"
 
 class bytestreamToUMP {
