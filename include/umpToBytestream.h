@@ -30,49 +30,21 @@
 
 #include <cstdint>
 
+#include "fifo.h"
 #include "utils.h"
 
-#define UMPTOBS_BUFFER 12
-
 class umpToBytestream {
-private:
-  ump_message_type mType;
-  uint32_t ump64word1;
-
-  uint8_t UMPPos = 0;
-  uint8_t bsOut[UMPTOBS_BUFFER];
-  int readIndex = 0;
-  int writeIndex = 0;
-  int bufferLength = 0;
-
-  void increaseWrite() {
-    bufferLength++;
-    writeIndex++;
-    if (writeIndex == UMPTOBS_BUFFER) {
-      writeIndex = 0;
-    }
-  }
-
 public:
-  uint8_t group;
+  uint8_t group = 0;
 
-  umpToBytestream() {}
+  umpToBytestream() = default;
 
-  bool availableBS() { return bufferLength; }
-
-  uint8_t readBS() {
-    uint8_t mess = bsOut[readIndex];
-    bufferLength--;  //	Decrease buffer size after reading
-    readIndex++;
-    if (readIndex == UMPTOBS_BUFFER) {
-      readIndex = 0;
-    }
-    return mess;
-  }
+  constexpr bool availableBS() const { return !output_.empty(); }
+  uint8_t readBS() { return output_.pop_front(); }
 
   void UMPStreamParse(uint32_t UMP) {
     switch (UMPPos) {
-    case 0: {  // First UMP Packet
+    case 0: {
       // First part of a UMP Message
       mType = static_cast<ump_message_type>(UMP >> 28);
       group = UMP >> 24 & 0xF;
@@ -83,16 +55,13 @@ public:
       // 32 bits System Real Time and System Common Messages (except System
       // Exclusive)
       case ump_message_type::system: {
-        uint8_t sysByte = UMP >> 16 & 0xFF;
-        bsOut[writeIndex] = sysByte;
-        increaseWrite();
+        uint8_t sysByte = (UMP >> 16) & 0xFF;
+        output_.push_back(sysByte);
         if (sysByte == 0xF1 || sysByte == 0xF2 || sysByte == 0xF3) {
-          bsOut[writeIndex] = UMP >> 8 & 0x7F;
-          increaseWrite();
+          output_.push_back((UMP >> 8) & 0x7F);
         }
         if (sysByte == 0xF2) {
-          bsOut[writeIndex] = UMP & 0x7F;
-          increaseWrite();
+          output_.push_back(UMP & 0x7F);
         }
         return;
         break;
@@ -100,13 +69,10 @@ public:
         // 32 Bits MIDI 1.0 Channel Voice Message
       case ump_message_type::m1cvm: {
         uint8_t stsCh = UMP >> 16 & 0xFF;
-        bsOut[writeIndex] = stsCh;
-        increaseWrite();
-        bsOut[writeIndex] = UMP >> 8 & 0x7F;
-        increaseWrite();
+        output_.push_back(stsCh);
+        output_.push_back((UMP >> 8) & 0x7F);
         if (stsCh >> 4 != 0xC && stsCh >> 4 != 0xD) {
-          bsOut[writeIndex] = UMP & 0x7F;
-          increaseWrite();
+          output_.push_back(UMP & 0x7F);
         }
         return;
         break;
@@ -133,173 +99,121 @@ public:
       case ump_message_type::sysex7: {
         UMPPos = 0;
         uint8_t status = (ump64word1 >> 20) & 0xF;
-        uint8_t numSysexbytes = (ump64word1 >> 16) & 0xF;
+        uint8_t numSysexBytes = (ump64word1 >> 16) & 0xF;
 
         if (status <= 1) {
-          bsOut[writeIndex] = sysex_start;
-          increaseWrite();
+          output_.push_back(sysex_start);
         }
-        if (numSysexbytes > 0) {
-          bsOut[writeIndex] = ump64word1 >> 8 & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 0) {
+          output_.push_back((ump64word1 >> 8) & 0x7F);
         }
-        if (numSysexbytes > 1) {
-          bsOut[writeIndex] = ump64word1 & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 1) {
+          output_.push_back(ump64word1 & 0x7F);
         }
-        if (numSysexbytes > 2) {
-          bsOut[writeIndex] = (UMP >> 24) & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 2) {
+          output_.push_back((UMP >> 24) & 0x7F);
         }
-        if (numSysexbytes > 3) {
-          bsOut[writeIndex] = (UMP >> 16) & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 3) {
+          output_.push_back((UMP >> 16) & 0x7F);
         }
-        if (numSysexbytes > 4) {
-          bsOut[writeIndex] = (UMP >> 8) & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 4) {
+          output_.push_back((UMP >> 8) & 0x7F);
         }
-        if (numSysexbytes > 5) {
-          bsOut[writeIndex] = UMP & 0x7F;
-          increaseWrite();
+        if (numSysexBytes > 5) {
+          output_.push_back(UMP & 0x7F);
         }
         if (status == 0 || status == 3) {
-          bsOut[writeIndex] = sysex_stop;
-          increaseWrite();
+          output_.push_back(sysex_stop);
         }
         break;
       }
       case ump_message_type::m2cvm: {
         UMPPos = 0;
-        uint8_t status = ump64word1 >> 16 & 0xF0;
-        uint8_t channel = ump64word1 >> 16 & 0xF;
-        uint8_t val1 = ump64word1 >> 8 & 0xFF;
+        uint8_t status = (ump64word1 >> 16) & 0xF0;
+        uint8_t channel = (ump64word1 >> 16) & 0xF;
+        uint8_t val1 = (ump64word1 >> 8) & 0xFF;
         uint8_t val2 = ump64word1 & 0xFF;
 
         switch (status) {
-        case note_off:   // note off
-        case note_on: {  // note on
-          bsOut[writeIndex] = ump64word1 >> 16 & 0xFF;
-          increaseWrite();
-          bsOut[writeIndex] = val1;
-          increaseWrite();
+        case note_off:
+        case note_on: {
+          output_.push_back((ump64word1 >> 16) & 0xFF);
+          output_.push_back(val1);
 
-          uint8_t velocity = (uint8_t)M2Utils::scaleDown((UMP >> 16), 16, 7);
+          auto velocity =
+              static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7));
           if (velocity == 0 && status == note_on) {
             velocity = 1;
           }
-          bsOut[writeIndex] = velocity;
-          increaseWrite();
-
+          output_.push_back(velocity);
           break;
         }
-        case status::key_pressure:  // poly aftertouch
-        case status::cc: {
-          bsOut[writeIndex] = ump64word1 >> 16 & 0xFF;
-          increaseWrite();
-          bsOut[writeIndex] = val1;
-          increaseWrite();
-          uint8_t value = (uint8_t)M2Utils::scaleDown(UMP, 32, 7);
-          bsOut[writeIndex] = value;
-          increaseWrite();
+        case status::key_pressure:
+        case status::cc:
+          output_.push_back((ump64word1 >> 16) & 0xFF);
+          output_.push_back(val1);
+          output_.push_back(
+              static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7)));
           break;
-        }
-        case status::channel_pressure: {
-          bsOut[writeIndex] = ump64word1 >> 16 & 0xFF;
-          increaseWrite();
-          uint8_t value = (uint8_t)M2Utils::scaleDown(UMP, 32, 7);
-          bsOut[writeIndex] = value;
-          increaseWrite();
+        case status::channel_pressure:
+          output_.push_back((ump64word1 >> 16) & 0xFF);
+          output_.push_back(
+              static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7)));
           break;
-        }
         case status::rpn: {
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 101;
-          increaseWrite();
-          bsOut[writeIndex] = val1;
-          increaseWrite();
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 100;
-          increaseWrite();
-          bsOut[writeIndex] = val2;
-          increaseWrite();
+          output_.push_back(status::cc + channel);
+          output_.push_back(101);
+          output_.push_back(val1);
+          output_.push_back(status::cc + channel);
+          output_.push_back(100);
+          output_.push_back(val2);
 
-          uint16_t val14bit = (uint16_t)M2Utils::scaleDown(UMP, 32, 14);
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 6;
-          increaseWrite();
-          bsOut[writeIndex] = (val14bit >> 7) & 0x7F;
-          increaseWrite();
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 38;
-          increaseWrite();
-          bsOut[writeIndex] = val14bit & 0x7F;
-          increaseWrite();
-
+          auto const val14bit =
+              static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+          output_.push_back(status::cc + channel);
+          output_.push_back(6);
+          output_.push_back((val14bit >> 7) & 0x7F);
+          output_.push_back(status::cc + channel);
+          output_.push_back(38);
+          output_.push_back(val14bit & 0x7F);
           break;
         }
         case status::nrpn: {  // nrpn
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 99;
-          increaseWrite();
-          bsOut[writeIndex] = val1;
-          increaseWrite();
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 98;
-          increaseWrite();
-          bsOut[writeIndex] = val2;
-          increaseWrite();
+          output_.push_back(status::cc + channel);
+          output_.push_back(99);
+          output_.push_back(val1);
+          output_.push_back(status::cc + channel);
+          output_.push_back(98);
+          output_.push_back(val2);
 
-          uint16_t val14bit = (uint16_t)M2Utils::scaleDown(UMP, 32, 14);
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 6;
-          increaseWrite();
-          bsOut[writeIndex] = (val14bit >> 7) & 0x7F;
-          increaseWrite();
-          bsOut[writeIndex] = status::cc + channel;
-          increaseWrite();
-          bsOut[writeIndex] = 38;
-          increaseWrite();
-          bsOut[writeIndex] = val14bit & 0x7F;
-          increaseWrite();
+          auto const val14bit =
+              static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+          output_.push_back(status::cc + channel);
+          output_.push_back(6);
+          output_.push_back((val14bit >> 7) & 0x7F);
+          output_.push_back(status::cc + channel);
+          output_.push_back(38);
+          output_.push_back(val14bit & 0x7F);
           break;
         }
         case status::program_change: {  // Program change
           if (ump64word1 & 0x1) {
-            bsOut[writeIndex] = status::cc + channel;
-            increaseWrite();
-            bsOut[writeIndex] = 0;
-            increaseWrite();
-            bsOut[writeIndex] = (UMP >> 8) & 0x7F;
-            increaseWrite();
+            output_.push_back(status::cc + channel);
+            output_.push_back(0);
+            output_.push_back((UMP >> 8) & 0x7F);
 
-            bsOut[writeIndex] = status::cc + channel;
-            increaseWrite();
-            bsOut[writeIndex] = 32;
-            increaseWrite();
-            bsOut[writeIndex] = UMP & 0x7F;
-            increaseWrite();
+            output_.push_back(status::cc + channel);
+            output_.push_back(32);
+            output_.push_back(UMP & 0x7F);
           }
-          bsOut[writeIndex] = status::program_change + channel;
-          increaseWrite();
-          bsOut[writeIndex] = (UMP >> 24) & 0x7F;
-          increaseWrite();
+          output_.push_back(status::program_change + channel);
+          output_.push_back((UMP >> 24) & 0x7F);
           break;
         }
-        case status::pitch_bend:  // Pitch bend
-          bsOut[writeIndex] = (ump64word1 >> 16) & 0xFF;
-          increaseWrite();
-          bsOut[writeIndex] = (UMP >> 18) & 0x7F;
-          increaseWrite();
-          bsOut[writeIndex] = (UMP >> 25) & 0x7F;
-          increaseWrite();
+        case status::pitch_bend:
+          output_.push_back((ump64word1 >> 16) & 0xFF);
+          output_.push_back((UMP >> 18) & 0x7F);
+          output_.push_back((UMP >> 25) & 0x7F);
           break;
         }
 
@@ -325,6 +239,13 @@ public:
     }
     }
   }
+
+private:
+  ump_message_type mType = ump_message_type::utility;
+  std::uint32_t ump64word1 = 0;
+
+  std::uint8_t UMPPos = 0;
+  M2Utils::fifo<std::uint8_t, 12> output_;
 };
 
 #endif

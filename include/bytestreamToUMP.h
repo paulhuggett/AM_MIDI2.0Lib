@@ -45,7 +45,7 @@ public:
     assert(defaultGroup <= 0b1111);
   }
 
-  constexpr bool availableUMP() const { return output_.size() > 0; }
+  constexpr bool availableUMP() const { return !output_.empty(); }
   std::uint32_t readUMP() {
     assert(!output_.empty());
     return output_.pop_front();
