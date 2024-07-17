@@ -215,22 +215,21 @@ private:
 
 public:
   // EB: update callbacks step2 - update setCallback functions:
-  // inline void setCallback(std::function<void(params)> fptr){ pointerName =
+  // void setCallback(std::function<void(params)> fptr){ pointerName =
   // fptr; }
   //
   // Calling these functions from within a member class looks like:
   // MIDICIHandler->setCheckMUID(std::bind(&YourClass::checkMUID, this,
   // std::placeholders::_1, std::placeholders::_2));
 
-  inline void setCheckMUID(
-      std::function<bool(uint8_t group, uint32_t muid)> fptr) {
+  void setCheckMUID(std::function<bool(uint8_t group, uint32_t muid)> fptr) {
     checkMUID = fptr;
   }
   void endSysex7();
   void startSysex7(uint8_t group, uint8_t deviceId);
   void processMIDICI(uint8_t s7Byte);
 
-  inline void setRecvDiscovery(
+  void setRecvDiscovery(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
                          std::array<uint8_t, 2> familyId,
                          std::array<uint8_t, 2> modelId,
@@ -239,7 +238,7 @@ public:
           fptr) {
     recvDiscoveryRequest = fptr;
   }
-  inline void setRecvDiscoveryReply(
+  void setRecvDiscoveryReply(
       std::function<
           void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
                std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
@@ -248,36 +247,34 @@ public:
           fptr) {
     recvDiscoveryReply = fptr;
   }
-  inline void setRecvNAK(
-      std::function<void(MIDICI ciDetails, uint8_t origSubID,
-                         uint8_t statusCode, uint8_t statusData,
-                         uint8_t* ackNakDetails, uint16_t messageLength,
-                         uint8_t* ackNakMessage)>
-          fptr) {
+  void setRecvNAK(std::function<
+                  void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
+                       uint8_t statusData, uint8_t* ackNakDetails,
+                       uint16_t messageLength, uint8_t* ackNakMessage)>
+                      fptr) {
     recvNAK = fptr;
   }
-  inline void setRecvACK(
-      std::function<void(MIDICI ciDetails, uint8_t origSubID,
-                         uint8_t statusCode, uint8_t statusData,
-                         uint8_t* ackNakDetails, uint16_t messageLength,
-                         uint8_t* ackNakMessage)>
-          fptr) {
+  void setRecvACK(std::function<
+                  void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
+                       uint8_t statusData, uint8_t* ackNakDetails,
+                       uint16_t messageLength, uint8_t* ackNakMessage)>
+                      fptr) {
     recvACK = fptr;
   }
-  inline void setRecvInvalidateMUID(
+  void setRecvInvalidateMUID(
       std::function<void(MIDICI ciDetails, uint32_t terminateMuid)> fptr) {
     recvInvalidateMUID = fptr;
   }
-  inline void setRecvUnknownMIDICI(
+  void setRecvUnknownMIDICI(
       std::function<void(MIDICI ciDetails, uint8_t s7Bye)> fptr) {
     recvUnknownMIDICI = fptr;
   }
 
-  inline void setRecvEndpointInfo(
+  void setRecvEndpointInfo(
       std::function<void(MIDICI ciDetails, uint8_t status)> fptr) {
     recvEndPointInfo = fptr;
   }
-  inline void setRecvEndpointInfoReply(
+  void setRecvEndpointInfoReply(
       std::function<void(MIDICI ciDetails, uint8_t status, uint16_t infoLength,
                          uint8_t* infoData)>
           fptr) {
@@ -285,23 +282,23 @@ public:
   }
 
   // Protocol Negotiation
-  inline void setRecvProtocolAvailable(
+  void setRecvProtocolAvailable(
       std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
                          uint8_t* protocol)>
           fptr) {
     recvProtocolAvailable = fptr;
   }
-  inline void setRecvSetProtocol(
+  void setRecvSetProtocol(
       std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
                          uint8_t* protocol)>
           fptr) {
     recvSetProtocol = fptr;
   }
-  inline void setRecvSetProtocolConfirm(
+  void setRecvSetProtocolConfirm(
       std::function<void(MIDICI ciDetails, uint8_t authorityLevel)> fptr) {
     recvSetProtocolConfirm = fptr;
   }
-  inline void setRecvSetProtocolTest(
+  void setRecvSetProtocolTest(
       std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
                          bool testDataAccurate)>
           fptr) {
@@ -309,51 +306,50 @@ public:
   }
 
   // Profiles
-  inline void setRecvProfileInquiry(
-      std::function<void(MIDICI ciDetails)> fptr) {
+  void setRecvProfileInquiry(std::function<void(MIDICI ciDetails)> fptr) {
     recvProfileInquiry = fptr;
   }
-  inline void setRecvProfileEnabled(
+  void setRecvProfileEnabled(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>,
                          uint8_t numberOfChannels)>
           fptr) {
     recvSetProfileEnabled = fptr;
   }
-  inline void setRecvSetProfileRemoved(
+  void setRecvSetProfileRemoved(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>)> fptr) {
     recvSetProfileRemoved = fptr;
   }
-  inline void setRecvProfileDisabled(
+  void setRecvProfileDisabled(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>,
                          uint8_t numberOfChannels)>
           fptr) {
     recvSetProfileDisabled = fptr;
   }
-  inline void setRecvProfileOn(
+  void setRecvProfileOn(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
                          uint8_t numberOfChannels)>
           fptr) {
     recvSetProfileOn = fptr;
   }
-  inline void setRecvProfileOff(
+  void setRecvProfileOff(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile)>
           fptr) {
     recvSetProfileOff = fptr;
   }
-  inline void setRecvProfileSpecificData(
+  void setRecvProfileSpecificData(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
                          uint16_t datalen, uint8_t* data, uint16_t part,
                          bool lastByteOfSet)>
           fptr) {
     recvProfileSpecificData = fptr;
   }
-  inline void setRecvProfileDetailsInquiry(
+  void setRecvProfileDetailsInquiry(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
                          uint8_t InquiryTarget)>
           fptr) {
     recvSetProfileDetailsInquiry = fptr;
   }
-  inline void setRecvProfileDetailsReply(
+  void setRecvProfileDetailsReply(
       std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
                          uint8_t InquiryTarget, uint16_t datalen,
                          uint8_t* data)>
@@ -362,49 +358,49 @@ public:
   }
 
   // Property Exchange
-  inline void setPECapabilities(
+  void setPECapabilities(
       std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
                          uint8_t majVer, uint8_t minVer)>
           fptr) {
     recvPECapabilities = fptr;
   }
-  inline void setPECapabilitiesReply(
+  void setPECapabilitiesReply(
       std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
                          uint8_t majVer, uint8_t minVer)>
           fptr) {
     recvPECapabilitiesReplies = fptr;
   }
-  inline void setRecvPEGetInquiry(
+  void setRecvPEGetInquiry(
       std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
     recvPEGetInquiry = fptr;
   }
-  inline void setRecvPESetReply(
+  void setRecvPESetReply(
       std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
     recvPESetReply = fptr;
   }
-  inline void setRecvPESubReply(
+  void setRecvPESubReply(
       std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
     recvPESubReply = fptr;
   }
-  inline void setRecvPENotify(
+  void setRecvPENotify(
       std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
     recvPENotify = fptr;
   }
-  inline void setRecvPEGetReply(
+  void setRecvPEGetReply(
       std::function<void(MIDICI ciDetails, std::string requestDetails,
                          uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
                          bool lastByteOfSet)>
           fptr) {
     recvPEGetReply = fptr;
   }
-  inline void setRecvPESetInquiry(
+  void setRecvPESetInquiry(
       std::function<void(MIDICI ciDetails, std::string requestDetails,
                          uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
                          bool lastByteOfSet)>
           fptr) {
     recvPESetInquiry = fptr;
   }
-  inline void setRecvPESubInquiry(
+  void setRecvPESubInquiry(
       std::function<void(MIDICI ciDetails, std::string requestDetails,
                          uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
                          bool lastByteOfSet)>
@@ -414,27 +410,26 @@ public:
 
   // Process Inquiry
 
-  inline void setRecvPICapabilities(
-      std::function<void(MIDICI ciDetails)> fptr) {
+  void setRecvPICapabilities(std::function<void(MIDICI ciDetails)> fptr) {
     recvPICapabilities = fptr;
   }
-  inline void setRecvPICapabilitiesReply(
+  void setRecvPICapabilitiesReply(
       std::function<void(MIDICI ciDetails, uint8_t supportedFeatures)> fptr) {
     recvPICapabilitiesReply = fptr;
   }
-  inline void setRecvPIMMReport(
+  void setRecvPIMMReport(
       std::function<void(MIDICI ciDetails, uint8_t MDC, uint8_t systemBitmap,
                          uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
           fptr) {
     recvPIMMReport = fptr;
   }
-  inline void setRecvPIMMReportReply(
+  void setRecvPIMMReportReply(
       std::function<void(MIDICI ciDetails, uint8_t systemBitmap,
                          uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
           fptr) {
     recvPIMMReportReply = fptr;
   }
-  inline void setRecvPIMMEnd(std::function<void(MIDICI ciDetails)> fptr) {
+  void setRecvPIMMEnd(std::function<void(MIDICI ciDetails)> fptr) {
     recvPIMMReportEnd = fptr;
   }
 };
