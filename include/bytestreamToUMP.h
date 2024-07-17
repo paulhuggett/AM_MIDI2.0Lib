@@ -1,283 +1,110 @@
 /**********************************************************
- * MIDI 2.0 Library 
+ * MIDI 2.0 Library
  * Author: Andrew Mee
- * 
+ *
  * MIT License
  * Copyright 2021 Andrew Mee
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
  * ********************************************************/
 
 #ifndef BSUMP_H
 #define BSUMP_H
+
+#include <array>
+#include <cassert>
 #include <cstdint>
 
 #define BSTOUMP_BUFFER 4
 
 #include "utils.h"
 
-class bytestreamToUMP{
+class bytestreamToUMP {
+public:
+  bytestreamToUMP() = default;
+  explicit bytestreamToUMP(bool const outputMIDI2,
+                           std::uint8_t const defaultGroup = 0)
+      : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
+    assert(defaultGroup <= 0b1111);
+  }
 
-	private:
-		uint8_t d0;
-		uint8_t d1;
-		
-		uint8_t sysex7State = 0;
-		uint8_t sysex7Pos = 0;
-		
-		uint8_t sysex[6] = {0,0,0,0,0,0};
-	    uint32_t umpMess[BSTOUMP_BUFFER] = {0,0,0,0};
-	    
-	    //Channel Based Data
-		uint8_t bankMSB[16];
-		uint8_t bankLSB[16];
-		bool rpnMode[16];
-		uint8_t rpnMsbValue[16];
-		uint8_t rpnMsb[16];
-		uint8_t rpnLsb[16];
-		int readIndex = 0;
-		int writeIndex = 0;
-		int bufferLength = 0;
-	    	
-		void bsToUMP(uint8_t b0, uint8_t b1, uint8_t b2){
-		  uint8_t status = b0 & 0xF0;
+  constexpr bool availableUMP() const { return output_.size() > 0; }
+  std::uint32_t readUMP() {
+    assert(!output_.empty());
+    return output_.pop_front();
+  }
 
-		   if(b0 >= TIMING_CODE){
-			  umpMess[writeIndex] = ((UMP_SYSTEM << 4) + defaultGroup + 0L) << 24;
-			  umpMess[writeIndex] +=  (b0 + 0L) << 16;
-			  umpMess[writeIndex] +=  b1  << 8;
-			  umpMess[writeIndex] +=  b2;
-   			increaseWrite();
-		   }else if(status>=NOTE_OFF && status<=PITCH_BEND){
-			  if(outputMIDI2){
-				  uint8_t channel = b0 & 0xF;
+  void bytestreamParse(std::uint8_t midi1Byte);
 
-				  if(status==NOTE_ON && b2==0){
-					 status=NOTE_OFF;
-		             b2 = 0x40;
-				  }
+private:
+  static constexpr auto unknown = std::uint8_t{0xFF};
+  bool outputMIDI2_ = false;
+  std::uint8_t defaultGroup_ = 0;
 
-				  umpMess[writeIndex] = ((UMP_M2CVM << 4) + defaultGroup + 0L) << 24;
-				  umpMess[writeIndex] += (status + channel + 0L)<<16;
+  std::uint8_t d0_ = 0;
+  std::uint8_t d1_ = unknown;
 
-				  if(status==NOTE_ON || status==NOTE_OFF){
-					umpMess[writeIndex] += (b1 + 0L) <<8;
-		  			increaseWrite();
-		  			umpMess[writeIndex] = (M2Utils::scaleUp(b2,7,16) << 16);
-		  			increaseWrite();
-				  } else if (status == KEY_PRESSURE){
-					umpMess[writeIndex] += (b1 + 0L) <<8;
-		  			increaseWrite();
-		  			umpMess[writeIndex] = (M2Utils::scaleUp(b2,7,16) << 16);
-		  			increaseWrite();
-				  } else if (status == PITCH_BEND){
-		  			increaseWrite();
-		  			umpMess[writeIndex] = M2Utils::scaleUp((b1<<7) + b2,14,32);
-		  			increaseWrite();
-				  } else if (status == PROGRAM_CHANGE){
-					if(bankMSB[channel]!=255 && bankLSB[channel]!=255){
-						umpMess[writeIndex] += 1;
-						increaseWrite();
-						umpMess[writeIndex] = (bankMSB[channel] <<8) + bankLSB[channel];
-					}else{
-						increaseWrite();
-						umpMess[writeIndex] = 0;
-					}
-					umpMess[writeIndex] += (b1 + 0L) << 24;
-		  			increaseWrite();
-				  } else if (status == CHANNEL_PRESSURE){
-		  			increaseWrite();
-		              umpMess[writeIndex] = M2Utils::scaleUp(b1,7,32);
-		  			increaseWrite();
-				  }  else if (status == CC){
-					switch(b1){
-					 case 0:
-						bankMSB[channel] = b2;
-						return;
-					 case 32:
-						bankLSB[channel] = b2;
-						return;
+  struct sysex7 {
+    std::uint8_t state = 0;
+    std::uint8_t pos = 0;
+    std::array<std::uint8_t, 6> bytes{};
+  };
+  sysex7 sysex7_;
+  M2Utils::fifo<std::uint32_t, 4> output_;
 
-					 case 6: //RPN MSB Value
-						if(rpnMsb[channel]==255 || rpnLsb[channel]==255){
-							return;
-						}
+  void reset_sysex() {
+    std::fill(std::begin(sysex7_.bytes), std::end(sysex7_.bytes),
+              std::uint8_t{0});
+  }
 
-						if(rpnMode[channel] && rpnMsb[channel] == 0 && (rpnLsb[channel] == 0 || rpnLsb[channel] == 6)){
-							status = rpnMode[channel]? RPN: NRPN;
+  // Channel Based Data
+  struct channel {
+    std::uint8_t bankMSB = 0xFF;
+    std::uint8_t bankLSB = 0xFF;
+    bool rpnMode = true;
+    std::uint8_t rpnMsbValue = 0xFF;
+    std::uint8_t rpnMsb = 0xFF;
+    std::uint8_t rpnLsb = 0xFF;
+  };
+  std::array<channel, 16> channel_;
 
-							umpMess[writeIndex] = ((UMP_M2CVM << 4) + defaultGroup + 0L) << 24;
-							umpMess[writeIndex] += (status + channel + 0L)<<16;
-							umpMess[writeIndex] += ((int)rpnMsb[channel]<<8) + rpnLsb[channel] + 0L;
-							increaseWrite();
-							umpMess[writeIndex] = M2Utils::scaleUp(((int)b2<<7),14,32);
-							increaseWrite();
+  static constexpr std::uint32_t pack(std::uint8_t const b0,
+                                      std::uint8_t const b1,
+                                      std::uint8_t const b2,
+                                      std::uint8_t const b3) {
+    return (static_cast<std::uint32_t>(b0) << 24) |
+           (static_cast<std::uint32_t>(b1) << 16) |
+           (static_cast<std::uint32_t>(b2) << 8) |
+           static_cast<std::uint32_t>(b3);
+  }
 
-						}else{
-							rpnMsbValue[channel] = b2;
-							return;
-						}
-						break;
-					case 38: //RPN LSB Value
-						if(rpnMsb[channel]==255 || rpnLsb[channel]==255){
-							return;
-						}
-						status = rpnMode[channel]? RPN: NRPN;
+  constexpr std::uint32_t pack(ump_message_type const message_type,
+                               std::uint8_t const b1, std::uint8_t const b2,
+                               std::uint8_t const b3) {
+    return pack(
+        static_cast<std::uint32_t>(
+            (static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_),
+        b1, b2, b3);
+  }
 
-						umpMess[writeIndex] = ((UMP_M2CVM << 4) + defaultGroup + 0L) << 24;
-						umpMess[writeIndex] += (status  + channel + 0L)<<16;
-						umpMess[writeIndex] += (rpnMsb[channel]<<8) + rpnLsb[channel] + 0L;
-						increaseWrite();
-						umpMess[writeIndex] = M2Utils::scaleUp(((int)rpnMsbValue[channel]<<7) + b2,14,32);
-						increaseWrite();
-						break;
-					case 99:
-						rpnMode[channel] = false;
-						rpnMsb[channel] = b2;
-						return;
-					case 98:
-						rpnMode[channel] = false;
-						rpnLsb[channel] = b2;
-						return;
-					case 101:
-						rpnMode[channel] = true;
-						rpnMsb[channel] = b2;
-						return;
-
-					case 100:
-						rpnMode[channel] = true;
-						rpnLsb[channel] = b2;
-						return;
-
-					default:
-						umpMess[writeIndex] += (b1 + 0L) <<8;
-						increaseWrite();
-						umpMess[writeIndex] = M2Utils::scaleUp(b2,7,32);
-						increaseWrite();
-						break;
-					}
-				  }
-
-
-			  }
-   			else {
-				  umpMess[writeIndex] = ((UMP_M1CVM << 4) + defaultGroup + 0L) << 24;
-				  umpMess[writeIndex] +=  (b0 + 0L) << 16;
-				  umpMess[writeIndex] +=  b1  << 8;
-				  umpMess[writeIndex] +=  b2;
-   				increaseWrite();
-		   }
-		  }
-		}
-
-		void increaseWrite(){
-			bufferLength++;
-			writeIndex++;
-			if (writeIndex == BSTOUMP_BUFFER) {
-				writeIndex = 0;
-			}
-		}
-
-	public:
-		uint8_t defaultGroup = 0;
-		bool outputMIDI2 = false;
-		
-		bytestreamToUMP(){
-			using M2Utils::clear;
-			clear(bankMSB, 255, sizeof(bankMSB));
-			clear(bankLSB, 255, sizeof(bankLSB));
-			clear(rpnMsbValue, 255, sizeof(rpnMsbValue));
-			clear(rpnMsb, 255, sizeof(rpnMsb));
-			clear(rpnLsb, 255, sizeof(rpnLsb));
-		}
-		
-		bool availableUMP(){
-			return bufferLength;
-		}
-		
-		uint32_t readUMP(){
-			uint32_t mess = umpMess[readIndex];
-			bufferLength--;	 //	Decrease buffer size after reading
-			readIndex++;
-			if (readIndex == BSTOUMP_BUFFER) {
-				readIndex = 0;
-			}
-
-			return mess;
-		}
-		
-		void bytestreamParse(uint8_t midi1Byte){
-
-			if (midi1Byte == TUNEREQUEST || midi1Byte >=  TIMINGCLOCK) {
-				d0 = midi1Byte;
-				bsToUMP(midi1Byte,0,0);
-				return;
-			}
-
-			if (midi1Byte & NOTE_OFF) { // Status byte received
-				d0 = midi1Byte;
-				d1 = 255;
-
-				if (midi1Byte == SYSEX_START){
-					sysex7State = 1;
-					sysex7Pos = 0;
-				}else
-					if (midi1Byte == SYSEX_STOP){
-
-						umpMess[writeIndex] = ((UMP_SYSEX7 << 4) + defaultGroup + 0L) << 24;
-						umpMess[writeIndex] +=  ((sysex7State == 1?0:3) + 0L) << 20;
-						umpMess[writeIndex] +=  ((sysex7Pos + 0L) << 16) ;
-						umpMess[writeIndex] += (sysex[0] << 8) + sysex[1];
-						increaseWrite();
-						umpMess[writeIndex] = ((sysex[2] + 0L) << 24) + ((sysex[3] + 0L)<< 16) + (sysex[4] << 8) + sysex[5];
-						increaseWrite();
-
-						sysex7State = 0;
-						M2Utils::clear(sysex, 0, sizeof(sysex));
-					}
-			} else if(sysex7State >= 1){
-				//Check IF new UMP Message Type 3
-				if(sysex7Pos%6 == 0 && sysex7Pos !=0){
-					umpMess[writeIndex] = ((UMP_SYSEX7 << 4) + defaultGroup + 0L) << 24;
-					umpMess[writeIndex] +=  (sysex7State + 0L) << 20;
-					umpMess[writeIndex] +=  6L << 16;
-					umpMess[writeIndex] += (sysex[0] << 8) + sysex[1];
-					increaseWrite();
-					umpMess[writeIndex] = ((sysex[2] + 0L) << 24) + ((sysex[3] + 0L)<< 16) + (sysex[4] << 8) + sysex[5] + 0L;
-					increaseWrite();
-					M2Utils::clear(sysex, 0, sizeof(sysex));
-					sysex7State=2;
-					sysex7Pos=0;
-				}
-
-				sysex[sysex7Pos] = midi1Byte;
-				sysex7Pos++;
-			} else if (d1 != 255) { // Second byte
-				bsToUMP(d0, d1, midi1Byte);
-				d1 = 255;
-			} else if (d0){ // status byte set
-				if (
-				  (d0 & 0xF0) == PROGRAM_CHANGE
-				  || (d0 & 0xF0) == CHANNEL_PRESSURE
-				  || d0 == TIMING_CODE
-				  || d0 == SONG_SELECT
-				) {
-					bsToUMP(d0, midi1Byte, 0);
-				} else if (d0 < SYSEX_START || d0 == SPP) { // First data byte
-					d1=midi1Byte;
-				}
-			}
-		}
+  void controllerToUMP(std::uint8_t b0, std::uint8_t b1, std::uint8_t b2);
+  void bsToUMP(std::uint8_t b0, std::uint8_t b1, std::uint8_t b2);
 };
 
 #endif
