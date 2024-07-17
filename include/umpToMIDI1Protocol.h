@@ -30,27 +30,20 @@
 
 #include <cstdint>
 
+#include "fifo.h"
 #include "utils.h"
 
-#define UMPTOPROTO1_BUFFER 4
-
 class umpToMIDI1Protocol {
+public:
+  constexpr bool availableUMP() const { return !output_.empty(); }
+  std::uint32_t readUMP() { return output_.pop_front(); }
+  void UMPStreamParse(uint32_t UMP);
+
 private:
   ump_message_type mType;
-  uint32_t ump64word1;
-  uint8_t UMPPos = 0;
-  uint32_t umpMess[UMPTOPROTO1_BUFFER] = {0, 0, 0, 0};
-
-  void increaseWrite();
-
-  int readIndex = 0;
-  int writeIndex = 0;
-  int bufferLength = 0;
-
-public:
-  bool availableUMP();
-  uint32_t readUMP();
-  void UMPStreamParse(uint32_t UMP);
+  std::uint32_t ump64word1;
+  std::uint8_t UMPPos = 0;
+  M2Utils::fifo<std::uint32_t, 4> output_;
 };
 
 #endif
