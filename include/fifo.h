@@ -1,6 +1,10 @@
 #ifndef FIFO_H
 #define FIFO_H
 
+#include <array>
+#include <cassert>
+#include <utility>
+
 namespace M2Utils {
 
 /// \tparam ElementType The type of the elements held by this container.
