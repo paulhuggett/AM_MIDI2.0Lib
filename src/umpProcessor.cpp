@@ -1,34 +1,41 @@
 /**********************************************************
- * MIDI 2.0 Library 
+ * MIDI 2.0 Library
  * Author: Andrew Mee
- * 
+ *
  * MIT License
  * Copyright 2021 Andrew Mee
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * ********************************************************/
 
 #include "umpProcessor.h"
 
-void umpProcessor::clearUMP(){
-    messPos = 0;
-    umpMess[0]=0;
-    umpMess[1]=0;
-    umpMess[2]=0;
-    umpMess[3]=0;
+void umpProcessor::clearUMP() {
+  messPos = 0;
+  umpMess[0] = 0;
+  umpMess[1] = 0;
+  umpMess[2] = 0;
+  umpMess[3] = 0;
 }
 
-void umpProcessor::processUMP(uint32_t UMP){
+void umpProcessor::processUMP(uint32_t UMP) {
   umpMess[messPos] = UMP;
 
   auto mt = static_cast<ump_message_type>((umpMess[0] >> 28) & 0xF);
@@ -98,7 +105,7 @@ void umpProcessor::processUMP(uint32_t UMP){
         mess.value = val1;
         channelVoiceMessage(mess);
         break;
-      case status::pitch_bench:  // PitchBend
+      case status::pitch_bend:  // PitchBend
         mess.value = M2Utils::scaleUp((val2 << 7) + val1, 14, 32);
         channelVoiceMessage(mess);
         break;
@@ -162,7 +169,7 @@ void umpProcessor::processUMP(uint32_t UMP){
         mess.index = umpMess[1] & 65535;
         channelVoiceMessage(mess);
         break;
-      case status::pitch_bench_pernote:
+      case status::pitch_bend_pernote:
       case status::key_pressure:  // Poly Pressure
         mess.note = val1;
         mess.value = umpMess[1];
@@ -199,7 +206,7 @@ void umpProcessor::processUMP(uint32_t UMP){
           channelVoiceMessage(mess);
         break;
 
-      case status::pitch_bench:  // PitchBend
+      case status::pitch_bend:  // PitchBend
         mess.value = umpMess[1];
         if (channelVoiceMessage != nullptr)
           channelVoiceMessage(mess);
@@ -585,9 +592,3 @@ void umpProcessor::processUMP(uint32_t UMP){
     messPos++;
   }
 }
-
-
-
-
-
-

@@ -81,14 +81,11 @@ raw_and_encoded const seven{
 raw_and_encoded const eight{
     std::vector<std::uint8_t>{0b00010010, 0b00110100, 0b01010110, 0b01111000,
                               0b10011010, 0b10111100, 0b11011110, 0b11110000},
-    std::vector<std::uint8_t>{
-        // block #1
-        0b00000111,  // MSBs for block #1
-        0b00010010, 0b00110100, 0b01010110, 0b01111000, 0b00011010, 0b00111100,
-        0b01011110,
-
-        // block #2
-        0b0100'0000,  // MSBs for block #2 0b0111'0000, }};
+    std::vector<std::uint8_t>{// block #1
+                              0b00000111, 0b00010010, 0b00110100, 0b01010110,
+                              0b01111000, 0b00011010, 0b00111100, 0b01011110,
+                              // block #2
+                              0b0100 '0000, 0b0111' 0000}};
 
 }  // end anonymous namespace
 

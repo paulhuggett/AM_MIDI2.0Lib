@@ -172,44 +172,4 @@ OutputIterator decoder::parse_byte(std::uint8_t const value,
 
 }  // end namespace mcoded7
 
-class mcoded7Decode {
-public:
-  std::array<std::uint8_t, 7> dump;
-
-  constexpr uint16_t currentPos() const { return pos_; }
-  void reset() {
-    std::fill(std::begin(dump), std::end(dump), std::uint8_t{0});
-    decoder_.reset();
-    pos_ = 0;
-  }
-  void parseS7Byte(uint8_t s7Byte) {
-    pos_ = decoder_.parse_byte(s7Byte, &dump[pos_]) - dump.data();
-  }
-
-private:
-  mcoded7::decoder decoder_;
-  std::uint8_t pos_ = 0;
-};
-
-class mcoded7Encode {
-public:
-  std::array<std::uint8_t, 8> dump;
-
-  constexpr std::uint16_t currentPos() const { return pos_; }
-
-  void reset() {
-    std::fill(std::begin(dump), std::end(dump), std::uint8_t{0});
-    pos_ = 1;
-    encoder_.reset();
-  }
-
-  void parseByte(std::uint8_t const s8Byte) {
-    pos_ = encoder_.parse_byte(s8Byte, &dump[pos_]) - dump.data();
-  }
-
-private:
-  mcoded7::encoder encoder_;
-  std::uint16_t pos_ = 0;
-};
-
 #endif  // MC7_H

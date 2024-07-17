@@ -89,7 +89,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
 
   if (b0 >= status::timing_code) {
     output_.push_back(pack(ump_message_type::system, b0, b1, b2));
-  } else if (status >= status::note_off && status <= status::pitch_bench) {
+  } else if (status >= status::note_off && status <= status::pitch_bend) {
     if (!outputMIDI2_) {
       output_.push_back(pack(ump_message_type::m1cvm, b0, b1, b2));
     } else {
@@ -107,7 +107,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
         output_.push_back(message | (b1 << 8));
         output_.push_back(scaleUp(b2, 7, 16) << 16);
         break;
-      case status::pitch_bench:
+      case status::pitch_bend:
         output_.push_back(message);
         output_.push_back(scaleUp((b1 << 7) + b2, 14, 32));
         break;

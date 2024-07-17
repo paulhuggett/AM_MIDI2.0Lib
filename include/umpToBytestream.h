@@ -293,7 +293,7 @@ public:
           increaseWrite();
           break;
         }
-        case status::pitch_bench:  // Pitch bend
+        case status::pitch_bend:  // Pitch bend
           bsOut[writeIndex] = (ump64word1 >> 16) & 0xFF;
           increaseWrite();
           bsOut[writeIndex] = (UMP >> 18) & 0x7F;

@@ -30,6 +30,8 @@
 
 #include <cstdint>
 
+#include "utils.h"
+
 #define UMPTOPROTO1_BUFFER 4
 
 class umpToMIDI1Protocol {
