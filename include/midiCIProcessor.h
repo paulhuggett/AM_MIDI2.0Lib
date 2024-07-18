@@ -28,45 +28,229 @@
 #ifndef MIDI2CPP_MIDICIPROCESSOR_H
 #define MIDI2CPP_MIDICIPROCESSOR_H
 
-#include <array>  // this was missing and causing build errors
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <string>
+#include <tuple>
 
 #include "utils.h"
 
-typedef std::tuple<uint32_t, uint8_t> reqId;  // muid-requestId
+using reqId = std::tuple<uint32_t, uint8_t>;  // muid-requestId
 
 struct MIDICI {
-  MIDICI()
-      : umpGroup(255),
-        deviceId(FUNCTION_BLOCK),
-        ciType(255),
-        ciVer(1),
-        remoteMUID(0),
-        localMUID(0),
-        _reqTupleSet(false),
-        totalChunks(0),
-        numChunk(0),
-        partialChunkCount(0),
-        requestId(255) {}
-  uint8_t umpGroup;
-  uint8_t deviceId;
-  uint8_t ciType;
-  uint8_t ciVer;
-  uint32_t remoteMUID;
-  uint32_t localMUID;
-  bool _reqTupleSet;
+  std::uint8_t umpGroup = 255;
+  std::uint8_t deviceId = FUNCTION_BLOCK;
+  std::uint8_t ciType = 255;
+  std::uint8_t ciVer = 1;
+  std::uint32_t remoteMUID = 0;
+  std::uint32_t localMUID = 0;
+  bool _reqTupleSet = false;
   reqId _peReqIdx;
 
-  uint8_t totalChunks;
-  uint8_t numChunk;
-  uint8_t partialChunkCount;
-  uint8_t requestId;
+  std::uint8_t totalChunks = 0;
+  std::uint8_t numChunk = 0;
+  std::uint8_t partialChunkCount = 0;
+  std::uint8_t requestId = 255;
 };
 
 class midiCIProcessor {
+public:
+  using checkMUIDFn = std::function<bool(uint8_t group, uint32_t muid)>;
+  using recvDiscoveryRequestFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 3> manuId,
+      std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
+      std::array<uint8_t, 4> version, uint8_t ciSupport, uint16_t maxSysex,
+      uint8_t outputPathId)>;
+  using recvDiscoveryReplyFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 3> manuId,
+      std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
+      std::array<uint8_t, 4> version, uint8_t ciSupport, uint16_t maxSysex,
+      uint8_t outputPathId, uint8_t fbIdx)>;
+  using recvEndPointInfoFn =
+      std::function<void(MIDICI ciDetails, uint8_t status)>;
+  using recvEndPointInfoReplyFn =
+      std::function<void(MIDICI ciDetails, uint8_t status, uint16_t infoLength,
+                         uint8_t* infoData)>;
+  using recvNAKFn = std::function<void(
+      MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
+      uint8_t statusData, uint8_t* ackNakDetails, uint16_t messageLength,
+      uint8_t* ackNakMessage)>;
+  using recvACKFn = std::function<void(
+      MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
+      uint8_t statusData, uint8_t* ackNakDetails, uint16_t messageLength,
+      uint8_t* ackNakMessage)>;
+  using recvInvalidateMUIDFn =
+      std::function<void(MIDICI ciDetails, uint32_t terminateMuid)>;
+  using recvUnknownMIDICIFn =
+      std::function<void(MIDICI ciDetails, uint8_t s7Byte)>;
+
+  using recvProtocolAvailableFn = std::function<void(
+      MIDICI ciDetails, uint8_t authorityLevel, uint8_t* protocol)>;
+  using recvSetProtocolFn = std::function<void(
+      MIDICI ciDetails, uint8_t authorityLevel, uint8_t* protocol)>;
+  using recvSetProtocolConfirmFn =
+      std::function<void(MIDICI ciDetails, uint8_t authorityLevel)>;
+  using recvProtocolTestFn = std::function<void(
+      MIDICI ciDetails, uint8_t authorityLevel, bool testDataAccurate)>;
+
+  using recvProfileInquiryFn = std::function<void(MIDICI ciDetails)>;
+  using recvSetProfileEnabledFn =
+      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
+                         uint8_t numberOfChannels)>;
+  using recvSetProfileRemovedFn =
+      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>)>;
+  using recvSetProfileDisabledFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 5>, uint8_t numberOfChannels)>;
+  using recvSetProfileOnFn =
+      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
+                         uint8_t numberOfChannels)>;
+  using recvSetProfileOffFn =
+      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile)>;
+  using recvProfileSpecificDataFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 5> profile, uint16_t datalen,
+      uint8_t* data, uint16_t part, bool lastByteOfSet)>;
+  using recvSetProfileDetailsInquiryFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 5> profile, uint8_t InquiryTarget)>;
+  using recvSetProfileDetailsReplyFn = std::function<void(
+      MIDICI ciDetails, std::array<uint8_t, 5> profile, uint8_t InquiryTarget,
+      uint16_t datalen, uint8_t* data)>;
+
+  // Property Exchange
+  using recvPECapabilitiesFn =
+      std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
+                         uint8_t majVer, uint8_t minVer)>;
+  using recvPECapabilitiesRepliesFn =
+      std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
+                         uint8_t majVer, uint8_t minVer)>;
+  using recvPEGetInquiryFn =
+      std::function<void(MIDICI ciDetails, std::string requestDetails)>;
+  using recvPESetReplyFn =
+      std::function<void(MIDICI ciDetails, std::string requestDetails)>;
+  using recvPESubReplyFn =
+      std::function<void(MIDICI ciDetails, std::string requestDetails)>;
+  using recvPENotifyFn =
+      std::function<void(MIDICI ciDetails, std::string requestDetails)>;
+  using recvPEGetReplyFn = std::function<void(
+      MIDICI ciDetails, std::string requestDetails, uint16_t bodyLen,
+      uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet)>;
+  using recvPESetInquiryFn = std::function<void(
+      MIDICI ciDetails, std::string requestDetails, uint16_t bodyLen,
+      uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet)>;
+  using recvPESubInquiryFn = std::function<void(
+      MIDICI ciDetails, std::string requestDetails, uint16_t bodyLen,
+      uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet)>;
+
+  // Process Inquiry
+  using recvPICapabilitiesFn = std::function<void(MIDICI ciDetails)>;
+  using recvPICapabilitiesReplyFn =
+      std::function<void(MIDICI ciDetails, uint8_t supportedFeatures)>;
+  using recvPIMMReportFn =
+      std::function<void(MIDICI ciDetails, uint8_t MDC, uint8_t systemBitmap,
+                         uint8_t chanContBitmap, uint8_t chanNoteBitmap)>;
+  using recvPIMMReportReplyFn =
+      std::function<void(MIDICI ciDetails, uint8_t systemBitmap,
+                         uint8_t chanContBitmap, uint8_t chanNoteBitmap)>;
+  using recvPIMMReportEndFn = std::function<void(MIDICI ciDetails)>;
+
+  // EB: update callbacks step2 - update setCallback functions:
+  // void setCallback(std::function<void(params)> fptr){ pointerName = fptr; }
+  //
+  // Calling these functions from within a member class looks like:
+  // MIDICIHandler->setCheckMUID(std::bind(&YourClass::checkMUID, this,
+  // std::placeholders::_1, std::placeholders::_2));
+
+  void setCheckMUID(checkMUIDFn fptr) { checkMUID = fptr; }
+  void endSysex7();
+  void startSysex7(uint8_t group, uint8_t deviceId);
+  void processMIDICI(uint8_t s7Byte);
+
+  void setRecvDiscovery(recvDiscoveryRequestFn fptr) {
+    recvDiscoveryRequest = fptr;
+  }
+  void setRecvDiscoveryReply(recvDiscoveryReplyFn fptr) {
+    recvDiscoveryReply = fptr;
+  }
+  void setRecvNAK(recvNAKFn fptr) { recvNAK = fptr; }
+  void setRecvACK(recvACKFn fptr) { recvACK = fptr; }
+  void setRecvInvalidateMUID(recvInvalidateMUIDFn fptr) {
+    recvInvalidateMUID = fptr;
+  }
+  void setRecvUnknownMIDICI(recvUnknownMIDICIFn fptr) {
+    recvUnknownMIDICI = fptr;
+  }
+
+  void setRecvEndpointInfo(recvEndPointInfoFn fptr) { recvEndPointInfo = fptr; }
+  void setRecvEndpointInfoReply(recvEndPointInfoReplyFn fptr) {
+    recvEndPointInfoReply = fptr;
+  }
+
+  // Protocol Negotiation
+  void setRecvProtocolAvailable(recvProtocolAvailableFn fptr) {
+    recvProtocolAvailable = fptr;
+  }
+  void setRecvSetProtocol(recvSetProtocolFn fptr) { recvSetProtocol = fptr; }
+  void setRecvSetProtocolConfirm(recvSetProtocolConfirmFn fptr) {
+    recvSetProtocolConfirm = fptr;
+  }
+  void setRecvSetProtocolTest(recvProtocolTestFn fptr) {
+    recvProtocolTest = fptr;
+  }
+
+  // Profiles
+  void setRecvProfileInquiry(recvProfileInquiryFn fptr) {
+    recvProfileInquiry = fptr;
+  }
+  void setRecvProfileEnabled(recvSetProfileEnabledFn fptr) {
+    recvSetProfileEnabled = fptr;
+  }
+  void setRecvSetProfileRemoved(recvSetProfileRemovedFn fptr) {
+    recvSetProfileRemoved = fptr;
+  }
+  void setRecvProfileDisabled(recvSetProfileDisabledFn fptr) {
+    recvSetProfileDisabled = fptr;
+  }
+  void setRecvProfileOn(recvSetProfileOnFn fptr) { recvSetProfileOn = fptr; }
+  void setRecvProfileOff(recvSetProfileOffFn fptr) { recvSetProfileOff = fptr; }
+  void setRecvProfileSpecificData(recvProfileSpecificDataFn fptr) {
+    recvProfileSpecificData = fptr;
+  }
+  void setRecvProfileDetailsInquiry(recvSetProfileDetailsInquiryFn fptr) {
+    recvSetProfileDetailsInquiry = fptr;
+  }
+  void setRecvProfileDetailsReply(recvSetProfileDetailsReplyFn fptr) {
+    recvSetProfileDetailsReply = fptr;
+  }
+
+  // Property Exchange
+  void setPECapabilities(recvPECapabilitiesFn fptr) {
+    recvPECapabilities = fptr;
+  }
+  void setPECapabilitiesReply(recvPECapabilitiesRepliesFn fptr) {
+    recvPECapabilitiesReplies = fptr;
+  }
+  void setRecvPEGetInquiry(recvPEGetInquiryFn fptr) { recvPEGetInquiry = fptr; }
+  void setRecvPESetReply(recvPESetReplyFn fptr) { recvPESetReply = fptr; }
+  void setRecvPESubReply(recvPESubReplyFn fptr) { recvPESubReply = fptr; }
+  void setRecvPENotify(recvPENotifyFn fptr) { recvPENotify = fptr; }
+  void setRecvPEGetReply(recvPEGetReplyFn fptr) { recvPEGetReply = fptr; }
+  void setRecvPESetInquiry(recvPESetInquiryFn fptr) { recvPESetInquiry = fptr; }
+  void setRecvPESubInquiry(recvPESubInquiryFn fptr) { recvPESubInquiry = fptr; }
+
+  // Process Inquiry
+  void setRecvPICapabilities(recvPICapabilitiesFn fptr) {
+    recvPICapabilities = fptr;
+  }
+  void setRecvPICapabilitiesReply(recvPICapabilitiesReplyFn fptr) {
+    recvPICapabilitiesReply = fptr;
+  }
+  void setRecvPIMMReport(recvPIMMReportFn fptr) { recvPIMMReport = fptr; }
+  void setRecvPIMMReportReply(recvPIMMReportReplyFn fptr) {
+    recvPIMMReportReply = fptr;
+  }
+  void setRecvPIMMEnd(recvPIMMReportEndFn fptr) { recvPIMMReportEnd = fptr; }
+
 private:
   MIDICI midici;
   uint8_t buffer[256];
@@ -90,348 +274,62 @@ private:
   // EB: update callbacks step1 - update pointer definitions to:
   // std::function<void(..params..)> name = nullptr;
 
-  std::function<bool(uint8_t group, uint32_t muid)> checkMUID = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
-                     std::array<uint8_t, 2> familyId,
-                     std::array<uint8_t, 2> modelId,
-                     std::array<uint8_t, 4> version, uint8_t ciSupport,
-                     uint16_t maxSysex, uint8_t outputPathId)>
-      recvDiscoveryRequest = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
-                     std::array<uint8_t, 2> familyId,
-                     std::array<uint8_t, 2> modelId,
-                     std::array<uint8_t, 4> version, uint8_t ciSupport,
-                     uint16_t maxSysex, uint8_t outputPathId, uint8_t fbIdx)>
-      recvDiscoveryReply = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t status)> recvEndPointInfo =
-      nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t status, uint16_t infoLength,
-                     uint8_t* infoData)>
-      recvEndPointInfoReply = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
-                     uint8_t statusData, uint8_t* ackNakDetails,
-                     uint16_t messageLength, uint8_t* ackNakMessage)>
-      recvNAK = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
-                     uint8_t statusData, uint8_t* ackNakDetails,
-                     uint16_t messageLength, uint8_t* ackNakMessage)>
-      recvACK = nullptr;
-  std::function<void(MIDICI ciDetails, uint32_t terminateMuid)>
-      recvInvalidateMUID = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t s7Byte)> recvUnknownMIDICI =
-      nullptr;
+  checkMUIDFn checkMUID = nullptr;
+  recvDiscoveryRequestFn recvDiscoveryRequest = nullptr;
+  recvDiscoveryReplyFn recvDiscoveryReply = nullptr;
+  recvEndPointInfoFn recvEndPointInfo = nullptr;
+  recvEndPointInfoReplyFn recvEndPointInfoReply = nullptr;
+  recvNAKFn recvNAK = nullptr;
+  recvACKFn recvACK = nullptr;
+  recvInvalidateMUIDFn recvInvalidateMUID = nullptr;
+  recvUnknownMIDICIFn recvUnknownMIDICI = nullptr;
 
   // Protocol Negotiation
-  std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                     uint8_t* protocol)>
-      recvProtocolAvailable = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                     uint8_t* protocol)>
-      recvSetProtocol = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t authorityLevel)>
-      recvSetProtocolConfirm = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                     bool testDataAccurate)>
-      recvProtocolTest = nullptr;
+  recvProtocolAvailableFn recvProtocolAvailable = nullptr;
+  recvSetProtocolFn recvSetProtocol = nullptr;
+  recvSetProtocolConfirmFn recvSetProtocolConfirm = nullptr;
+  recvProtocolTestFn recvProtocolTest = nullptr;
 
   void processProtocolSysex(uint8_t s7Byte);
 
   // Profiles
-  std::function<void(MIDICI ciDetails)> recvProfileInquiry = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                     uint8_t numberOfChannels)>
-      recvSetProfileEnabled = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>)>
-      recvSetProfileRemoved = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>,
-                     uint8_t numberOfChannels)>
-      recvSetProfileDisabled = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                     uint8_t numberOfChannels)>
-      recvSetProfileOn = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile)>
-      recvSetProfileOff = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                     uint16_t datalen, uint8_t* data, uint16_t part,
-                     bool lastByteOfSet)>
-      recvProfileSpecificData = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                     uint8_t InquiryTarget)>
-      recvSetProfileDetailsInquiry = nullptr;
-  std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                     uint8_t InquiryTarget, uint16_t datalen, uint8_t* data)>
-      recvSetProfileDetailsReply = nullptr;
+  recvProfileInquiryFn recvProfileInquiry = nullptr;
+  recvSetProfileEnabledFn recvSetProfileEnabled = nullptr;
+  recvSetProfileRemovedFn recvSetProfileRemoved = nullptr;
+  recvSetProfileDisabledFn recvSetProfileDisabled = nullptr;
+  recvSetProfileOnFn recvSetProfileOn = nullptr;
+  recvSetProfileOffFn recvSetProfileOff = nullptr;
+  recvProfileSpecificDataFn recvProfileSpecificData = nullptr;
+  recvSetProfileDetailsInquiryFn recvSetProfileDetailsInquiry = nullptr;
+  recvSetProfileDetailsReplyFn recvSetProfileDetailsReply = nullptr;
 
   void processProfileSysex(uint8_t s7Byte);
 
   // Property Exchange
   std::map<reqId, std::string> peHeaderStr;
 
-  std::function<void(MIDICI ciDetails, uint8_t numSimulRequests, uint8_t majVer,
-                     uint8_t minVer)>
-      recvPECapabilities = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t numSimulRequests, uint8_t majVer,
-                     uint8_t minVer)>
-      recvPECapabilitiesReplies = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails)>
-      recvPEGetInquiry = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails)>
-      recvPESetReply = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails)>
-      recvPESubReply = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails)>
-      recvPENotify = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails,
-                     uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                     bool lastByteOfSet)>
-      recvPEGetReply = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails,
-                     uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                     bool lastByteOfSet)>
-      recvPESetInquiry = nullptr;
-  std::function<void(MIDICI ciDetails, std::string requestDetails,
-                     uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                     bool lastByteOfSet)>
-      recvPESubInquiry = nullptr;
+  recvPECapabilitiesFn recvPECapabilities = nullptr;
+  recvPECapabilitiesRepliesFn recvPECapabilitiesReplies = nullptr;
+  recvPEGetInquiryFn recvPEGetInquiry = nullptr;
+  recvPESetReplyFn recvPESetReply = nullptr;
+  recvPESubReplyFn recvPESubReply = nullptr;
+  recvPENotifyFn recvPENotify = nullptr;
+  recvPEGetReplyFn recvPEGetReply = nullptr;
+  recvPESetInquiryFn recvPESetInquiry = nullptr;
+  recvPESubInquiryFn recvPESubInquiry = nullptr;
 
   void cleanupRequest(reqId peReqIdx);
 
   void processPESysex(uint8_t s7Byte);
 
   // Process Inquiry
-  std::function<void(MIDICI ciDetails)> recvPICapabilities = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t supportedFeatures)>
-      recvPICapabilitiesReply = nullptr;
-
-  std::function<void(MIDICI ciDetails, uint8_t MDC, uint8_t systemBitmap,
-                     uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
-      recvPIMMReport = nullptr;
-  std::function<void(MIDICI ciDetails, uint8_t systemBitmap,
-                     uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
-      recvPIMMReportReply = nullptr;
-  std::function<void(MIDICI ciDetails)> recvPIMMReportEnd = nullptr;
+  recvPICapabilitiesFn recvPICapabilities = nullptr;
+  recvPICapabilitiesReplyFn recvPICapabilitiesReply = nullptr;
+  recvPIMMReportFn recvPIMMReport = nullptr;
+  recvPIMMReportReplyFn recvPIMMReportReply = nullptr;
+  recvPIMMReportEndFn recvPIMMReportEnd = nullptr;
 
   void processPISysex(uint8_t s7Byte);
-
-public:
-  // EB: update callbacks step2 - update setCallback functions:
-  // void setCallback(std::function<void(params)> fptr){ pointerName =
-  // fptr; }
-  //
-  // Calling these functions from within a member class looks like:
-  // MIDICIHandler->setCheckMUID(std::bind(&YourClass::checkMUID, this,
-  // std::placeholders::_1, std::placeholders::_2));
-
-  void setCheckMUID(std::function<bool(uint8_t group, uint32_t muid)> fptr) {
-    checkMUID = fptr;
-  }
-  void endSysex7();
-  void startSysex7(uint8_t group, uint8_t deviceId);
-  void processMIDICI(uint8_t s7Byte);
-
-  void setRecvDiscovery(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
-                         std::array<uint8_t, 2> familyId,
-                         std::array<uint8_t, 2> modelId,
-                         std::array<uint8_t, 4> version, uint8_t ciSupport,
-                         uint16_t maxSysex, uint8_t outputPathId)>
-          fptr) {
-    recvDiscoveryRequest = fptr;
-  }
-  void setRecvDiscoveryReply(
-      std::function<
-          void(MIDICI ciDetails, std::array<uint8_t, 3> manuId,
-               std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
-               std::array<uint8_t, 4> version, uint8_t ciSupport,
-               uint16_t maxSysex, uint8_t outputPathId, uint8_t fbIdx)>
-          fptr) {
-    recvDiscoveryReply = fptr;
-  }
-  void setRecvNAK(std::function<
-                  void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
-                       uint8_t statusData, uint8_t* ackNakDetails,
-                       uint16_t messageLength, uint8_t* ackNakMessage)>
-                      fptr) {
-    recvNAK = fptr;
-  }
-  void setRecvACK(std::function<
-                  void(MIDICI ciDetails, uint8_t origSubID, uint8_t statusCode,
-                       uint8_t statusData, uint8_t* ackNakDetails,
-                       uint16_t messageLength, uint8_t* ackNakMessage)>
-                      fptr) {
-    recvACK = fptr;
-  }
-  void setRecvInvalidateMUID(
-      std::function<void(MIDICI ciDetails, uint32_t terminateMuid)> fptr) {
-    recvInvalidateMUID = fptr;
-  }
-  void setRecvUnknownMIDICI(
-      std::function<void(MIDICI ciDetails, uint8_t s7Bye)> fptr) {
-    recvUnknownMIDICI = fptr;
-  }
-
-  void setRecvEndpointInfo(
-      std::function<void(MIDICI ciDetails, uint8_t status)> fptr) {
-    recvEndPointInfo = fptr;
-  }
-  void setRecvEndpointInfoReply(
-      std::function<void(MIDICI ciDetails, uint8_t status, uint16_t infoLength,
-                         uint8_t* infoData)>
-          fptr) {
-    recvEndPointInfoReply = fptr;
-  }
-
-  // Protocol Negotiation
-  void setRecvProtocolAvailable(
-      std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                         uint8_t* protocol)>
-          fptr) {
-    recvProtocolAvailable = fptr;
-  }
-  void setRecvSetProtocol(
-      std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                         uint8_t* protocol)>
-          fptr) {
-    recvSetProtocol = fptr;
-  }
-  void setRecvSetProtocolConfirm(
-      std::function<void(MIDICI ciDetails, uint8_t authorityLevel)> fptr) {
-    recvSetProtocolConfirm = fptr;
-  }
-  void setRecvSetProtocolTest(
-      std::function<void(MIDICI ciDetails, uint8_t authorityLevel,
-                         bool testDataAccurate)>
-          fptr) {
-    recvProtocolTest = fptr;
-  }
-
-  // Profiles
-  void setRecvProfileInquiry(std::function<void(MIDICI ciDetails)> fptr) {
-    recvProfileInquiry = fptr;
-  }
-  void setRecvProfileEnabled(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>,
-                         uint8_t numberOfChannels)>
-          fptr) {
-    recvSetProfileEnabled = fptr;
-  }
-  void setRecvSetProfileRemoved(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>)> fptr) {
-    recvSetProfileRemoved = fptr;
-  }
-  void setRecvProfileDisabled(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5>,
-                         uint8_t numberOfChannels)>
-          fptr) {
-    recvSetProfileDisabled = fptr;
-  }
-  void setRecvProfileOn(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                         uint8_t numberOfChannels)>
-          fptr) {
-    recvSetProfileOn = fptr;
-  }
-  void setRecvProfileOff(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile)>
-          fptr) {
-    recvSetProfileOff = fptr;
-  }
-  void setRecvProfileSpecificData(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                         uint16_t datalen, uint8_t* data, uint16_t part,
-                         bool lastByteOfSet)>
-          fptr) {
-    recvProfileSpecificData = fptr;
-  }
-  void setRecvProfileDetailsInquiry(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                         uint8_t InquiryTarget)>
-          fptr) {
-    recvSetProfileDetailsInquiry = fptr;
-  }
-  void setRecvProfileDetailsReply(
-      std::function<void(MIDICI ciDetails, std::array<uint8_t, 5> profile,
-                         uint8_t InquiryTarget, uint16_t datalen,
-                         uint8_t* data)>
-          fptr) {
-    recvSetProfileDetailsReply = fptr;
-  }
-
-  // Property Exchange
-  void setPECapabilities(
-      std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
-                         uint8_t majVer, uint8_t minVer)>
-          fptr) {
-    recvPECapabilities = fptr;
-  }
-  void setPECapabilitiesReply(
-      std::function<void(MIDICI ciDetails, uint8_t numSimulRequests,
-                         uint8_t majVer, uint8_t minVer)>
-          fptr) {
-    recvPECapabilitiesReplies = fptr;
-  }
-  void setRecvPEGetInquiry(
-      std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
-    recvPEGetInquiry = fptr;
-  }
-  void setRecvPESetReply(
-      std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
-    recvPESetReply = fptr;
-  }
-  void setRecvPESubReply(
-      std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
-    recvPESubReply = fptr;
-  }
-  void setRecvPENotify(
-      std::function<void(MIDICI ciDetails, std::string requestDetails)> fptr) {
-    recvPENotify = fptr;
-  }
-  void setRecvPEGetReply(
-      std::function<void(MIDICI ciDetails, std::string requestDetails,
-                         uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                         bool lastByteOfSet)>
-          fptr) {
-    recvPEGetReply = fptr;
-  }
-  void setRecvPESetInquiry(
-      std::function<void(MIDICI ciDetails, std::string requestDetails,
-                         uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                         bool lastByteOfSet)>
-          fptr) {
-    recvPESetInquiry = fptr;
-  }
-  void setRecvPESubInquiry(
-      std::function<void(MIDICI ciDetails, std::string requestDetails,
-                         uint16_t bodyLen, uint8_t* body, bool lastByteOfChunk,
-                         bool lastByteOfSet)>
-          fptr) {
-    recvPESubInquiry = fptr;
-  }
-
-  // Process Inquiry
-
-  void setRecvPICapabilities(std::function<void(MIDICI ciDetails)> fptr) {
-    recvPICapabilities = fptr;
-  }
-  void setRecvPICapabilitiesReply(
-      std::function<void(MIDICI ciDetails, uint8_t supportedFeatures)> fptr) {
-    recvPICapabilitiesReply = fptr;
-  }
-  void setRecvPIMMReport(
-      std::function<void(MIDICI ciDetails, uint8_t MDC, uint8_t systemBitmap,
-                         uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
-          fptr) {
-    recvPIMMReport = fptr;
-  }
-  void setRecvPIMMReportReply(
-      std::function<void(MIDICI ciDetails, uint8_t systemBitmap,
-                         uint8_t chanContBitmap, uint8_t chanNoteBitmap)>
-          fptr) {
-    recvPIMMReportReply = fptr;
-  }
-  void setRecvPIMMEnd(std::function<void(MIDICI ciDetails)> fptr) {
-    recvPIMMReportEnd = fptr;
-  }
 };
 
 #endif  // MIDI2CPP_MIDICIPROCESSOR_H
