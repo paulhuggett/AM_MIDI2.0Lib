@@ -31,8 +31,6 @@
 #include <cassert>
 #include <cstdint>
 
-#define BSTOUMP_BUFFER 4
-
 #include "fifo.h"
 #include "utils.h"
 
