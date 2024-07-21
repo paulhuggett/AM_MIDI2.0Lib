@@ -32,34 +32,37 @@
 #include <tuple>
 
 enum status : std::uint8_t {
+  // Channel voice messages
   note_off = 0x80,
   note_on = 0x90,
-  key_pressure = 0xA0,
-  cc = 0xB0,   // Continuous Controller
-  rpn = 0x20,  // Registered Parameter Number
-  nrpn = 0x30,
-  rpn_relative = 0x40,
-  nrpn_relative = 0x50,
+  key_pressure = 0xA0,  // Polyphonic Key Pressure (Aftertouch).
+  cc = 0xB0,            // Continuous Controller
   program_change = 0xC0,
-  channel_pressure = 0xD0,
+  channel_pressure = 0xD0,  // Channel Pressure (Aftertouch).
   pitch_bend = 0xE0,
-  pitch_bend_pernote = 0x60,
-  nrpn_pernote = 0x10,
-  rpn_pernote = 0x00,
-  pernote_manage = 0xF0,
 
+  // System Common Messages
   sysex_start = 0xF0,
   timing_code = 0xF1,
   spp = 0xF2,
   song_select = 0xF3,
   tunerequest = 0xF6,
-  sysex_stop = 0xF7,
+  sysex_stop = 0xF7,  // End of system exclusive
   timingclock = 0xF8,
-  seqstart = 0xFA,
-  seqcont = 0xFB,
-  seqstop = 0xFC,
-  activesense = 0xFE,
-  systemreset = 0xFF,
+  reserved2 = 0b11111001,
+  seqstart = 0b11111010,  // Start the current sequence playing
+  seqcont = 0xFB,         // Continue at the point the sequence was stopped
+  seqstop = 0xFC,         // Stop the current sequence
+  reserved1 = 0b11111101, activesense = 0xFE, systemreset = 0xFF,
+
+  pernote_manage = 0xF0,
+  rpn_pernote = 0x00,
+  nrpn_pernote = 0x10,
+  rpn = 0x20,  // Registered Parameter Number
+  nrpn = 0x30,
+  rpn_relative = 0x40,
+  nrpn_relative = 0x50,
+  pitch_bend_pernote = 0x60,
 };
 
 enum : std::uint8_t {
