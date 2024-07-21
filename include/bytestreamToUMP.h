@@ -60,8 +60,21 @@ private:
   std::uint8_t d1_ = unknown;
 
   struct sysex7 {
-    std::uint8_t state = 0;
+    enum class status : std::uint8_t {
+      /// A complete system exclusive message in one UMP
+      single_ump = 0x0,
+      /// System exclusive Start UMP
+      start = 0x1,
+      /// System exclusive continue UMP. There might be multiple 'cont' UMPs in
+      /// a single message.
+      cont = 0x02,
+      /// System exclusive end UMP
+      end = 0x03,
+    };
+    status state = status::single_ump;
+    /// The number of system exclusive bytes in the current UMP [0,6]
     std::uint8_t pos = 0;
+    /// System exclusive message bytes gathered for the current UMP
     std::array<std::uint8_t, 6> bytes{};
   };
   sysex7 sysex7_;

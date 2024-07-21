@@ -33,8 +33,8 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   std::uint8_t const channel = b0 & 0x0F;
   auto& c = channel_[channel];
   switch (b1) {
-  case 0: c.bankMSB = b2; return;
-  case 32: c.bankLSB = b2; return;
+  case 0: c.bankMSB = b2; break;
+  case 32: c.bankLSB = b2; break;
 
   case 6:  // RPN MSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
@@ -129,6 +129,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
         break;
       case status::cc: this->controllerToUMP(b0, b1, b2); break;
       default:
+        fprintf(stderr, "Unknown message: 0x%X\n", (unsigned)status);
         // Unknown message!
         break;
       }
@@ -147,28 +148,33 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
     d1_ = unknown;
 
     if (midi1Byte == status::sysex_start) {
-      sysex7_.state = 1;
+      sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
-      output_.push_back(pack(ump_message_type::sysex7,
-                             ((sysex7_.state == 1 ? 0 : 3) << 4) | sysex7_.pos,
-                             sysex7_.bytes[0], sysex7_.bytes[1]));
+      output_.push_back(pack(
+          ump_message_type::sysex7,
+          ((sysex7_.state == sysex7::status::start ? 0 : 3) << 4) | sysex7_.pos,
+          sysex7_.bytes[0], sysex7_.bytes[1]));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
-      sysex7_.state = 0;
+      sysex7_.state = sysex7::status::single_ump;
       reset_sysex();
     }
-  } else if (sysex7_.state >= 1) {
+  } else if (sysex7_.state == sysex7::status::start ||
+             sysex7_.state == sysex7::status::cont ||
+             sysex7_.state == sysex7::status::end) {
     // Check for new UMP Message Type 3
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      output_.push_back(pack(ump_message_type::sysex7,
-                             (sysex7_.state << 4U) | 6U, sysex7_.bytes[0],
-                             sysex7_.bytes[1]));
+      static constexpr auto num_sysex_bytes = std::uint8_t{6};
+      output_.push_back(pack(
+          ump_message_type::sysex7,
+          (static_cast<std::uint8_t>(sysex7_.state) << 4U) | num_sysex_bytes,
+          sysex7_.bytes[0], sysex7_.bytes[1]));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
       reset_sysex();
-      sysex7_.state = 2;
+      sysex7_.state = sysex7::status::cont;
       sysex7_.pos = 0;
     }
 
