@@ -129,7 +129,6 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
         break;
       case status::cc: this->controllerToUMP(b0, b1, b2); break;
       default:
-        fprintf(stderr, "Unknown message: 0x%X\n", (unsigned)status);
         // Unknown message!
         break;
       }
