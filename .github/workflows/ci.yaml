@@ -1,0 +1,189 @@
+name: CI Build & Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # macOS builds
+          # ~~~~~~~~~~~~
+          - name: macOS-12/Xcode/Debug
+            build_type: Debug
+            generator: Xcode
+            os: macos-12
+            package: TGZ
+
+          - name: macOS-12/Xcode/Release
+            build_type: Release
+            generator: Xcode
+            os: macos-12
+            package: TGZ
+
+          - name: macOS-14/Xcode/Debug
+            build_type: Debug
+            generator: Xcode
+            os: macos-14
+            package: TGZ
+
+          - name: macOS-14/Xcode/Release
+            build_type: Release
+            generator: Xcode
+            os: macos-14
+            package: TGZ
+
+          # Ubuntu builds
+          # ~~~~~~~~~~~~~
+          - name: Ubuntu-22.04/gcc-11/Release
+            apt_install: ninja-build
+            build_type: Release
+            cxx_compiler: -D CMAKE_CXX_COMPILER=g++-11 -D CMAKE_C_COMPILER=gcc-11
+            options:
+            generator: Ninja
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/gcc-13/Debug
+            apt_install: ninja-build
+            build_type: Debug
+            cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
+            gcc_install: 13
+            options:
+            generator: Unix Makefiles
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/gcc-13/RelWithDebug/Sanitizers
+            apt_install: ninja-build
+            build_type: RelWithDebug
+            cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
+            gcc_install: 13
+            options:
+            generator: Unix Makefiles
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/gcc-13/Release
+            apt_install: ninja-build
+            build_type: Release
+            cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
+            gcc_install: 13
+            generator: Unix Makefiles
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/clang-16/Debug
+            apt_install: cmake ninja-build
+            llvm_install: 16
+            build_type: Debug
+            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
+            generator: Ninja
+            options:
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/clang-16/Release
+            apt_install: cmake ninja-build
+            llvm_install: 16
+            build_type: Release
+            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
+            generator: Ninja
+            options:
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/clang-18/Debug
+            apt_install: cmake ninja-build
+            llvm_install: 18
+            build_type: Debug
+            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
+            generator: Ninja
+            options:
+            os: ubuntu-22.04
+            package: TGZ
+
+          - name: Ubuntu-22.04/clang-18/Release
+            apt_install: cmake ninja-build
+            llvm_install: 18
+            build_type: Release
+            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
+            generator: Ninja
+            options:
+            os: ubuntu-22.04
+            package: TGZ
+
+          # Windows builds
+          # ~~~~~~~~~~~~~~
+          - name: Windows-latest/VS2022/Debug
+            build_type: Debug
+            generator: Visual Studio 17 2022
+            os: windows-latest
+            package: ZIP
+
+          - name: Windows-latest/VS2022/Release
+            build_type: Release
+            generator: Visual Studio 17 2022
+            os: windows-latest
+            package: ZIP
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@f086349bfa2bd1361f7909c78558e816508cdc10 # v2.8.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          submodules: True
+
+      - name: Install Dependencies (Linux)
+        if: startsWith (matrix.os, 'ubuntu-') && matrix.apt_install != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.apt_install }}
+
+      - name: Install Dependencies (GCC)
+        if: matrix.gcc_install != ''
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt install -y "g++-${{ matrix.gcc_install }}" \
+                              "libstdc++-${{ matrix.gcc_install }}-dev"
+
+      - name: Install Dependencies (LLVM)
+        if: matrix.llvm_install != ''
+        uses: paulhuggett/install-llvm@ad897b4b1cf03f54c1218ec6d97a23ff4b10b870 # v1.0
+        with:
+          version: ${{matrix.llvm_install}}
+
+      - name: Create Build Environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: CMake Configure
+        shell: bash
+        run: |
+          cmake -S "${{ github.workspace }}"                 \
+                -B "${{ github.workspace }}/build"           \
+                -G "${{ matrix.generator }}"                 \
+                -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -D MIDI2_WERROR=Yes                          \
+                ${{ matrix.cxx_compiler }}                   \
+                ${{ matrix.options }}
+
+      - name: Build
+        shell: bash
+        run: cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} --verbose

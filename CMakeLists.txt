@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 3.12)
 
 project(libmidi2)
 
+option (MIDI2_WERROR "Enable warnings-as-errors" No)
 option (MIDI2_FUZZTEST "Enable Fuzz Testing" No)
 
 function(setupTarget target)
     target_compile_options("${target}" PRIVATE -Wall)
+    if (MIDI2_WERROR)
+        target_compile_options("${target}" PRIVATE -Werror)
+    endif (MIDI2_WERROR)
     target_compile_features("${target}" PUBLIC cxx_std_20)
 endfunction()
 
