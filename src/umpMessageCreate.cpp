@@ -155,13 +155,10 @@ std::array<uint32_t, 2> UMPMessage::mt3Sysex7(uint8_t group, uint8_t status,
 
 uint32_t mt4CreateFirstWord(uint8_t group, uint8_t status, uint8_t channel,
                             uint8_t val1, uint8_t val2) {
-  uint32_t message =
-      ((static_cast<std::uint8_t>(ump_message_type::m2cvm) << 4) + group + 0L)
-      << 24;
-  message += (status + channel + 0L) << 16;
-  message += (int)val1 << 8;
-  message += val2;
-  return message;
+  return (((static_cast<std::uint32_t>(ump_message_type::m2cvm) << 4) | group)
+          << 24) |
+         ((static_cast<std::uint32_t>(status) | channel) << 16) |
+         (static_cast<std::uint32_t>(val1) << 8) | val2;
 }
 
 std::array<uint32_t, 2> UMPMessage::mt4NoteOn(uint8_t group, uint8_t channel,
