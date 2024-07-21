@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(libmidi2)
 
+option (MIDI2_FUZZTEST "Enable Fuzz Testing" No)
+
 function(setupTarget target)
     target_compile_options("${target}" PRIVATE -Wall)
     target_compile_features("${target}" PUBLIC cxx_std_20)
@@ -54,7 +56,7 @@ target_link_libraries(tests PRIVATE libmidi2)
 setupTarget(tests)
 
 
-if (ICUBABY_FUZZTEST)
+if (MIDI2_FUZZTEST)
   set (FUZZTEST_FUZZING_MODE On)
   include (FetchContent)
   set (FUZZTEST_REPO_BRANCH "1635d42" CACHE STRING "FuzzTest repository branch.")
@@ -77,7 +79,7 @@ else ()
     set (INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
     add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/googletest")
   endif()
-endif (ICUBABY_FUZZTEST)
+endif (MIDI2_FUZZTEST)
 
 enable_testing ()
 add_subdirectory(unittests)

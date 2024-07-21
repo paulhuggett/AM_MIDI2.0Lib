@@ -1,3 +1,4 @@
+// DUT
 #include "mcoded7.h"
 
 // standard library
@@ -9,7 +10,7 @@
 // google mock/test/fuzz
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#if defined(MCODED7_FUZZTEST) && MCODED7_FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 #include <fuzztest/fuzztest.h>
 #endif
 
@@ -103,7 +104,7 @@ void Mcoded7RoundTrip(std::vector<std::uint8_t> const& input) {
 
 }  // end anonymous namespace
 
-#if defined(MCODED7_FUZZTEST) && MCODED7_FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
 FUZZ_TEST(Mcoded7, Mcoded7RoundTrip);
 #endif
