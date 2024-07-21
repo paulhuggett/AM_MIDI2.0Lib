@@ -38,13 +38,13 @@ void umpToBytestream::word1(uint32_t UMP) {
   // 32 bits System Real Time and System Common Messages (except System
   // Exclusive)
   case ump_message_type::system: {
-    uint8_t sysByte = (UMP >> 16) & 0xFF;
+    uint8_t const sysByte = (UMP >> 16) & 0xFF;
     output_.push_back(sysByte);
     if (sysByte == 0xF1 || sysByte == 0xF2 || sysByte == 0xF3) {
       output_.push_back((UMP >> 8) & 0x7F);
-    }
-    if (sysByte == 0xF2) {
-      output_.push_back(UMP & 0x7F);
+      if (sysByte == 0xF2) {
+        output_.push_back(UMP & 0x7F);
+      }
     }
     break;
   }
