@@ -237,17 +237,17 @@ inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
 inline uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   // Handle value of 0 - skip processing
   if (srcVal == 0) {
-    return 0L;
+    return std::uint32_t{0};
   }
 
   // handle 1-bit (bool) scaling
   if (srcBits == 1) {
-    return (1 << dstBits) - 1L;
+    return static_cast<std::uint32_t>((std::uint32_t{1} << dstBits) - 1U);
   }
 
   // simple bit shift
   uint8_t scaleBits = (dstBits - srcBits);
-  uint32_t bitShiftedValue = (srcVal + 0L) << scaleBits;
+  auto bitShiftedValue = static_cast<std::uint32_t>(srcVal << scaleBits);
   uint32_t srcCenter = 1 << (srcBits - 1);
   if (srcVal <= srcCenter) {
     return bitShiftedValue;
