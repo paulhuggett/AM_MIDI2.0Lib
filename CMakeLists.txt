@@ -4,9 +4,10 @@ project(libmidi2)
 
 option (MIDI2_WERROR "Enable warnings-as-errors" No)
 option (MIDI2_FUZZTEST "Enable Fuzz Testing" No)
+enable_testing ()
 
 function(setupTarget target)
-    target_compile_options("${target}" PRIVATE -Wall)
+    target_compile_options("${target}" PRIVATE -Wall -pedantic -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-global-constructors)
     if (MIDI2_WERROR)
         target_compile_options("${target}" PRIVATE -Werror)
     endif (MIDI2_WERROR)
@@ -58,7 +59,7 @@ install(FILES ${LIBMIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 add_executable(tests tests.cpp)
 target_link_libraries(tests PRIVATE libmidi2)
 setupTarget(tests)
-
+add_test(NAME tests COMMAND tests)
 
 if (MIDI2_FUZZTEST)
   set (FUZZTEST_FUZZING_MODE On)
@@ -85,5 +86,4 @@ else ()
   endif()
 endif (MIDI2_FUZZTEST)
 
-enable_testing ()
 add_subdirectory(unittests)
