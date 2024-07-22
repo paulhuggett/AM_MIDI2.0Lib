@@ -8,32 +8,30 @@
 #include "include/umpMessageCreate.h"
 #include <cstdio>
 
+namespace {
+
 bytestreamToUMP BS2UMP;
 umpToBytestream UMP2BS;
 umpToMIDI1Protocol UMP2M1;
 
-int testPassed = 0;
-int testFailed = 0;
+auto testPassed = 0U;
+auto testFailed = 0U;
 
-void passFail (uint32_t v1, uint32_t v2)
-{
-    if(v1 == v2)
-    {
-        printf(".");
-        testPassed++;
-    }else
-    {
-        printf(" fail %#08x != %#08x ", v1, v2);
-        testFailed++;
-    }
+void passFail(unsigned v1, unsigned v2) {
+  if (v1 == v2) {
+    printf(".");
+    testPassed++;
+  } else {
+    printf(" fail %#08x != %#08x ", v1, v2);
+    testFailed++;
+  }
 }
 
 void testRun_bsToUmp(const char* heading, uint8_t const* bytes, int btyelength,
                      uint32_t const* testCheck, int outlength) {
-  va_list args;
-  vprintf(heading, args);
+  std::fputs(heading, stdout);
 
-  int testCounter = 0;
+  auto testCounter = 0U;
 
   for (int i = 0; i < btyelength; i++) {
     BS2UMP.bytestreamParse(bytes[i]);
@@ -51,8 +49,7 @@ void testRun_bsToUmp(const char* heading, uint8_t const* bytes, int btyelength,
 
 void testRun_umpToBs(const char* heading, uint8_t const* testBytes,
                      uint32_t const* umps, int umplength) {
-  va_list args;
-  vprintf(heading, args);
+  std::fputs(heading, stdout);
 
   int testCounter = 0;
 
@@ -70,8 +67,7 @@ void testRun_umpToBs(const char* heading, uint8_t const* testBytes,
 
 void testRun_umpToM1(const char* heading, uint32_t const* in, int inlength,
                      uint32_t const* out, int outlength) {
-  va_list args;
-  vprintf(heading, args);
+  std::fputs(heading, stdout);
 
   int testCounter = 0;
 
@@ -91,13 +87,14 @@ void testRun_umpToM1(const char* heading, uint32_t const* in, int inlength,
 
 void testRun_umpToump(const char* heading, uint32_t * in, int inlength, uint32_t * out)
 {
-    va_list args;
-    vprintf (heading, args);
-    for(int i=0; i<inlength; i++){
-        passFail (in[i], out[i]);
-    }
+  std::fputs(heading, stdout);
+  for (int i = 0; i < inlength; i++) {
+    passFail(in[i], out[i]);
+  }
     printf("\n");
 }
+
+}  // end anonymous namespace
 
 int main(){
     printf("Starting Tests...\n");
