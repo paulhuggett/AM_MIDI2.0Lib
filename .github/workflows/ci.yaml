@@ -187,4 +187,4 @@ jobs:
         run: cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} --verbose
 
       - name: Test
-        run: ctest --test-dir "${{ github.workspace }}/build" --verbose
+        run: ctest --test-dir "${{ github.workspace }}/build" -C ${{ matrix.build_type }} --verbose
