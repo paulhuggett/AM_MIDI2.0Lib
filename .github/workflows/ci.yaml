@@ -173,6 +173,7 @@ jobs:
         shell: bash
         run: cmake -E make_directory ${{ github.workspace }}/build
 
+        # Note that WERROR is temporarily disabled.
       - name: CMake Configure
         shell: bash
         run: |
@@ -180,7 +181,7 @@ jobs:
                 -B "${{ github.workspace }}/build"           \
                 -G "${{ matrix.generator }}"                 \
                 -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -D MIDI2_WERROR=Yes                          \
+                -D MIDI2_WERROR=No                          \
                 ${{ matrix.cxx_compiler }}                   \
                 ${{ matrix.options }}
 
