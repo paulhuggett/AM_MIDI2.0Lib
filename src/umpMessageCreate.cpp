@@ -296,8 +296,11 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointInfoNotify(
   umpMess[0] = (std::uint32_t{0xF} << 28) |
                (MIDIENDPOINT_INFO_NOTIFICATION << 16) | (UMP_VER_MAJOR << 8) |
                UMP_VER_MINOR;
-  umpMess[1] =
-      (numOfFuncBlock << 24) + (m2 << 9) + (m1 << 8) + (rxjr << 1) + txjr;
+  umpMess[1] = (static_cast<std::uint32_t>(numOfFuncBlock) << 24) |
+               (static_cast<std::uint32_t>(m2) << 9) |
+               (static_cast<std::uint32_t>(m1) << 8) |
+               (static_cast<std::uint32_t>(rxjr) << 1) |
+               static_cast<std::uint32_t>(txjr);
   return umpMess;
 }
 
@@ -309,18 +312,24 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointDeviceInfoNotify(
       (std::uint32_t{0xF} << 28) |
       (MIDIENDPOINT_DEVICEINFO_NOTIFICATION << 16) /*+  numOfFuncBlock*/;
 
-  umpMess[1] = (manuId[0] << 16) + (manuId[1] << 8) + manuId[2];
-  umpMess[2] = (familyId[0] << 24) + (familyId[1] << 16) + (modelId[0] << 8) +
-               modelId[1];
-  umpMess[3] =
-      (version[0] << 24) + (version[1] << 16) + (version[2] << 8) + version[3];
+  umpMess[1] = (static_cast<std::uint32_t>(manuId[0]) << 16) |
+               static_cast<std::uint32_t>((manuId[1]) << 8) |
+               static_cast<std::uint32_t>(manuId[2]);
+  umpMess[2] = (static_cast<std::uint32_t>(familyId[0]) << 24) |
+               (static_cast<std::uint32_t>(familyId[1]) << 16) |
+               (static_cast<std::uint32_t>(modelId[0]) << 8) |
+               static_cast<std::uint32_t>(modelId[1]);
+  umpMess[3] = (static_cast<std::uint32_t>(version[0]) << 24) |
+               (static_cast<std::uint32_t>(version[1]) << 16) |
+               (static_cast<std::uint32_t>(version[2]) << 8) |
+               static_cast<std::uint32_t>(version[3]);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(
     uint16_t replyType, uint8_t offset, uint8_t* text, uint8_t textLen) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  uint8_t form = 0;
+  auto form = std::uint32_t{0};
   if (offset == 0) {
     if (textLen > 14)
       form = 1;
@@ -331,22 +340,23 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(
       form = 3;
     }
   }
-  umpMess[0] = (0xF << 28) + (form << 26) + (replyType << 16);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (form << 26) |
+               (static_cast<std::uint32_t>(replyType) << 16);
   if (offset < textLen) {
-    umpMess[0] += (text[offset++] << 8);
+    umpMess[0] += (static_cast<std::uint32_t>(text[offset++]) << 8);
   }
   if (offset < textLen) {
-    umpMess[0] += text[offset++];
+    umpMess[0] += static_cast<std::uint32_t>(text[offset++]);
   }
   for (uint8_t i = 1; i < 4; i++) {
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 24);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 24);
     }
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 16);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 16);
     }
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 8);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 8);
     }
     if (offset < textLen) {
       umpMess[i] += text[offset++];
@@ -359,7 +369,7 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlock(uint8_t fbIdx,
                                                      uint8_t filter) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
   umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (FUNCTIONBLOCK << 16) |
-               (fbIdx << 8) | filter;
+               (static_cast<std::uint32_t>(fbIdx) << 8) | filter;
   return umpMess;
 }
 
@@ -368,11 +378,16 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockInfoNotify(
     uint8_t firstGroup, uint8_t groupLength, uint8_t midiCISupport,
     uint8_t isMIDI1, uint8_t maxS8Streams) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (0xF << 28) + (FUNCTIONBLOCK_INFO_NOTFICATION << 16) +
-               ((active ? 1 : 0) << 15) + (fbIdx << 8) + (recv << 5) +
-               (sender << 4) + (isMIDI1 << 2) + direction;
-  umpMess[1] = (firstGroup << 24) + (groupLength << 16) + (midiCISupport << 8) +
-               maxS8Streams;
+  umpMess[0] =
+      (std::uint32_t{0xF} << 28) | (FUNCTIONBLOCK_INFO_NOTFICATION << 16) |
+      ((active ? 1U : 0U) << 15) | (static_cast<std::uint32_t>(fbIdx) << 8) |
+      (static_cast<std::uint32_t>(recv) << 5) |
+      (static_cast<std::uint32_t>(sender) << 4) |
+      (static_cast<std::uint32_t>(isMIDI1) << 2) |
+      static_cast<std::uint32_t>(direction);
+  umpMess[1] = (static_cast<std::uint32_t>(firstGroup) << 24) |
+               (static_cast<std::uint32_t>(groupLength) << 16) |
+               (static_cast<std::uint32_t>(midiCISupport) << 8) | maxS8Streams;
   return umpMess;
 }
 
@@ -391,20 +406,22 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(
       form = 3;
     }
   }
-  umpMess[0] = (0xF << 28) + (form << 26) +
-               (FUNCTIONBLOCK_NAME_NOTIFICATION << 16) + (fbIdx << 8);
+  umpMess[0] = (std::uint32_t{0xF} << 28) |
+               (static_cast<std::uint32_t>(form) << 26) |
+               (FUNCTIONBLOCK_NAME_NOTIFICATION << 16) |
+               (static_cast<std::uint32_t>(fbIdx) << 8);
   if (offset < textLen) {
-    umpMess[0] += text[offset++];
+    umpMess[0] += static_cast<std::uint32_t>(text[offset++]);
   }
   for (uint8_t i = 1; i < 4; i++) {
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 24);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 24);
     }
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 16);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 16);
     }
     if (offset < textLen) {
-      umpMess[i] += (text[offset++] << 8);
+      umpMess[i] += (static_cast<std::uint32_t>(text[offset++]) << 8);
     }
     if (offset < textLen) {
       umpMess[i] += text[offset++];

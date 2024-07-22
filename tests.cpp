@@ -27,13 +27,14 @@ void passFail(unsigned v1, unsigned v2) {
   }
 }
 
-void testRun_bsToUmp(const char* heading, uint8_t const* bytes, int btyelength,
-                     uint32_t const* testCheck, int outlength) {
+void testRun_bsToUmp(const char* heading, uint8_t const* bytes,
+                     unsigned btyelength, uint32_t const* testCheck,
+                     unsigned outlength) {
   std::fputs(heading, stdout);
 
   auto testCounter = 0U;
 
-  for (int i = 0; i < btyelength; i++) {
+  for (auto i = 0U; i < btyelength; i++) {
     BS2UMP.bytestreamParse(bytes[i]);
     while (BS2UMP.availableUMP()) {
       uint32_t ump = BS2UMP.readUMP();
@@ -65,13 +66,13 @@ void testRun_umpToBs(const char* heading, uint8_t const* testBytes,
   printf("\n");
 }
 
-void testRun_umpToM1(const char* heading, uint32_t const* in, int inlength,
-                     uint32_t const* out, int outlength) {
+void testRun_umpToM1(const char* heading, uint32_t const* in, unsigned inlength,
+                     uint32_t const* out, unsigned outlength) {
   std::fputs(heading, stdout);
 
-  int testCounter = 0;
+  auto testCounter = 0U;
 
-  for (int i = 0; i < inlength; i++) {
+  for (auto i = 0U; i < inlength; i++) {
     UMP2M1.UMPStreamParse(in[i]);
     while (UMP2M1.availableUMP()) {
       uint32_t newUmp = UMP2M1.readUMP();

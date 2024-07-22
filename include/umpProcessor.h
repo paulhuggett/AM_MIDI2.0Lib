@@ -50,11 +50,8 @@ struct umpCVM {
 };
 
 struct umpGeneric {
-  umpGeneric() : umpGroup(255), status(0), value(0) {}
-  uint8_t umpGroup;
-  ump_message_type messageType;
-  uint8_t status;
-  uint16_t value;
+  umpCommon common;
+  std::uint16_t value = 0;
 };
 
 struct umpData {

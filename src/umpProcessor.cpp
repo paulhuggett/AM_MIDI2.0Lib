@@ -48,31 +48,30 @@ void umpProcessor::processUMP(uint32_t UMP) {
     if (mt == ump_message_type::utility &&
         utilityMessage != nullptr) {  // 32 bits Utility Messages
       umpGeneric mess;
-      mess.messageType = mt;
-      mess.status = (umpMess[0] >> 20) & 0xF;
-      mess.value = (umpMess[0] >> 16) & 0xFFFF;
+      mess.common.messageType = mt;
+      mess.common.status = static_cast<std::uint8_t>((umpMess[0] >> 20) & 0x0F);
+      mess.value = static_cast<std::uint16_t>((umpMess[0] >> 16) & 0xFFFF);
       utilityMessage(mess);
-    } else if (mt == ump_message_type::system &&
-               systemMessage != nullptr) {  // 32 bits System Real Time
-                                            // and System Common Messages
-                                            // (except System Exclusive)
+    } else if (mt == ump_message_type::system && systemMessage) {
+      // 32 bits System Real Time and System Common Messages (except System
+      // Exclusive)
       umpGeneric mess;
-      mess.messageType = mt;
-      mess.umpGroup = group;
-      mess.status = umpMess[0] >> 16 & 0xFF;
-      switch (mess.status) {
+      mess.common.messageType = mt;
+      mess.common.group = group;
+      mess.common.status = static_cast<std::uint8_t>((umpMess[0] >> 16) & 0xFF);
+      switch (mess.common.status) {
       case status::timing_code:
       case status::song_select:
         mess.value = (umpMess[0] >> 8) & 0x7F;
         systemMessage(mess);
         break;
       case status::spp:
-        mess.value = ((umpMess[0] >> 8) & 0x7F) + ((umpMess[0] & 0x7F) << 7);
+        mess.value = static_cast<std::uint16_t>(((umpMess[0] >> 8) & 0x7F) |
+                                                ((umpMess[0] & 0x7F) << 7));
         systemMessage(mess);
         break;
       default: systemMessage(mess); break;
       }
-
     } else if (mt == ump_message_type::m1cvm &&
                channelVoiceMessage !=
                    nullptr) {  // 32 Bits MIDI 1.0 Channel Voice Messages
@@ -106,7 +105,8 @@ void umpProcessor::processUMP(uint32_t UMP) {
         channelVoiceMessage(mess);
         break;
       case status::pitch_bend:  // PitchBend
-        mess.value = M2Utils::scaleUp((val2 << 7) + val1, 14, 32);
+        mess.value = M2Utils::scaleUp(
+            (static_cast<std::uint32_t>(val2) << 7) + val1, 14, 32);
         channelVoiceMessage(mess);
         break;
       default:

@@ -65,12 +65,32 @@ void umpToBytestream::word1(uint32_t UMP) {
     ump64word1 = UMP;
     UMPPos++;
     break;
+  case ump_message_type::data:
+  case ump_message_type::reserved64_08:
+  case ump_message_type::reserved64_09:
+  case ump_message_type::reserved64_0A:
+  case ump_message_type::reserved96_0B:
+  case ump_message_type::reserved96_0C:
+  case ump_message_type::reserved128_0E:
+  case ump_message_type::flex_data:
+  case ump_message_type::midi_endpoint:
   default: UMPPos++; break;
   }
 }
 
 void umpToBytestream::word2(std::uint32_t UMP) {
   switch (mType) {
+  case ump_message_type::utility:
+  case ump_message_type::m1cvm:
+  case ump_message_type::data:
+  case ump_message_type::reserved32_06:
+  case ump_message_type::reserved32_07:
+  case ump_message_type::reserved96_0B:
+  case ump_message_type::reserved96_0C:
+  case ump_message_type::flex_data:
+  case ump_message_type::reserved128_0E:
+  case ump_message_type::midi_endpoint:
+  case ump_message_type::system: assert(false); break;
   case ump_message_type::reserved64_08:  // 64 Reserved
   case ump_message_type::reserved64_09:  // 64 Reserved
   case ump_message_type::reserved64_0A:  // 64 Reserved
@@ -204,6 +224,20 @@ void umpToBytestream::word2(std::uint32_t UMP) {
 
 void umpToBytestream::word3(std::uint32_t /*UMP*/) {
   switch (mType) {
+  case ump_message_type::reserved64_09:
+  case ump_message_type::reserved64_0A:
+  case ump_message_type::utility:
+  case ump_message_type::sysex7:
+  case ump_message_type::m2cvm:
+  case ump_message_type::reserved64_08:
+  case ump_message_type::m1cvm:
+  case ump_message_type::data:
+  case ump_message_type::reserved32_06:
+  case ump_message_type::reserved32_07:
+  case ump_message_type::flex_data:
+  case ump_message_type::reserved128_0E:
+  case ump_message_type::midi_endpoint:
+  case ump_message_type::system: assert(false); break;
   case ump_message_type::reserved96_0B:  // 96 Reserved
   case ump_message_type::reserved96_0C:  // 96 Reserved
     UMPPos = 0;

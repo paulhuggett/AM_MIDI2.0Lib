@@ -50,18 +50,17 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
   if (sysexPos == 3) {
     midici.ciType = s7Byte;
   }
-
   if (sysexPos == 4) {
     midici.ciVer = s7Byte;
   }
   if (sysexPos >= 5 && sysexPos <= 8) {
-    midici.remoteMUID += s7Byte << (7 * (sysexPos - 5));
+    midici.remoteMUID += static_cast<std::uint32_t>(s7Byte)
+                         << (7 * (sysexPos - 5));
   }
-
   if (sysexPos >= 9 && sysexPos <= 12) {
-    midici.localMUID += s7Byte << (7 * (sysexPos - 9));
+    midici.localMUID += static_cast<std::uint32_t>(s7Byte)
+                        << (7 * (sysexPos - 9));
   }
-
   if (sysexPos >= 12 && midici.localMUID != M2_CI_BROADCAST && checkMUID &&
       !checkMUID(midici.umpGroup, midici.localMUID)) {
     return;  // Not for this device

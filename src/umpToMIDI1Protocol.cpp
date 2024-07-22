@@ -55,6 +55,15 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       ump64word1 = UMP;
       UMPPos++;
       break;
+    case ump_message_type::data:
+    case ump_message_type::flex_data:
+    case ump_message_type::midi_endpoint:
+    case ump_message_type::reserved128_0E:
+    case ump_message_type::reserved64_08:
+    case ump_message_type::reserved64_09:
+    case ump_message_type::reserved64_0A:
+    case ump_message_type::reserved96_0B:
+    case ump_message_type::reserved96_0C:
     default: UMPPos++; break;
     }
     break;
@@ -150,6 +159,17 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       }
       break;
     }
+    case ump_message_type::data:
+    case ump_message_type::flex_data:
+    case ump_message_type::m1cvm:
+    case ump_message_type::midi_endpoint:
+    case ump_message_type::reserved128_0E:
+    case ump_message_type::reserved32_06:
+    case ump_message_type::reserved32_07:
+    case ump_message_type::reserved96_0B:
+    case ump_message_type::reserved96_0C:
+    case ump_message_type::system:
+    case ump_message_type::utility:
     default: UMPPos++; break;
     }
     break;
@@ -160,6 +180,20 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     case ump_message_type::reserved96_0C:  // 96 Reserved
       UMPPos = 0;
       break;
+    case ump_message_type::data:
+    case ump_message_type::flex_data:
+    case ump_message_type::m1cvm:
+    case ump_message_type::m2cvm:
+    case ump_message_type::midi_endpoint:
+    case ump_message_type::reserved128_0E:
+    case ump_message_type::reserved32_06:
+    case ump_message_type::reserved32_07:
+    case ump_message_type::reserved64_08:
+    case ump_message_type::reserved64_09:
+    case ump_message_type::reserved64_0A:
+    case ump_message_type::sysex7:
+    case ump_message_type::system:
+    case ump_message_type::utility:
     default: UMPPos++; break;
     }
     break;
