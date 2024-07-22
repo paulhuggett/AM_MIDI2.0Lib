@@ -84,7 +84,7 @@ enum : std::uint8_t {
   FLEXDATA_LYRIC = 0x02,
 };
 
-enum : std::uint8_t {
+enum : std::uint32_t {
   MIDIENDPOINT = 0x000,
   MIDIENDPOINT_INFO_NOTIFICATION = 0x001,
   MIDIENDPOINT_DEVICEINFO_NOTIFICATION = 0x002,
@@ -198,7 +198,7 @@ enum : std::uint8_t {
 #define FUNCTION_BLOCK 0x7F
 #define M2_CI_BROADCAST 0xFFFFFFF
 
-enum {
+enum : std::uint32_t {
   UMP_VER_MAJOR = 1,
   UMP_VER_MINOR = 1,
 };
@@ -207,7 +207,7 @@ enum {
 #define EXP_MIDICI_PE_EXPERIMENTAL_PATH 1
 #endif
 
-enum class ump_message_type : std::uint8_t {
+enum class ump_message_type : std::uint32_t {
   utility = 0x00,
   system = 0x01,
   m1cvm = 0x02,
@@ -255,7 +255,7 @@ inline uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
 
   // expanded bit repeat scheme
   uint8_t repeatBits = srcBits - 1;
-  auto repeatMask = (1 << repeatBits) - 1;
+  auto repeatMask = (std::uint32_t{1} << repeatBits) - std::uint32_t{1};
   uint32_t repeatValue = srcVal & repeatMask;
   if (scaleBits > repeatBits) {
     repeatValue <<= scaleBits - repeatBits;

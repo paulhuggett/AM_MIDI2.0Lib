@@ -88,7 +88,8 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
             static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7))));
         break;
       case note_on: {
-        uint8_t velocity = (uint8_t)M2Utils::scaleDown((UMP >> 16), 16, 7);
+        auto velocity =
+            static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7));
         if (velocity == 0) {
           velocity = 1;
         }

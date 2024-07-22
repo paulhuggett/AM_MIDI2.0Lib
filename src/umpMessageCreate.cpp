@@ -28,6 +28,34 @@
 
 #include "utils.h"
 
+namespace {
+
+uint32_t m1Create(uint8_t group, uint8_t status, uint8_t val1, uint8_t val2) {
+  return (((static_cast<std::uint32_t>(ump_message_type::system) << 4) | group)
+          << 24) |
+         (static_cast<std::uint32_t>(status) << 16) |
+         (static_cast<std::uint32_t>(val1) << 8) |
+         static_cast<std::uint32_t>(val2);
+}
+
+uint32_t mt2Create(uint8_t group, uint8_t status, uint8_t channel, uint8_t val1,
+                   uint8_t val2) {
+  return (((static_cast<std::uint32_t>(ump_message_type::m1cvm) << 4) | group)
+          << 24) |
+         (static_cast<std::uint32_t>(status | channel) << 16) |
+         (static_cast<std::uint32_t>(val1) << 8) | val2;
+}
+
+uint32_t mt4CreateFirstWord(uint8_t group, uint8_t status, uint8_t channel,
+                            uint8_t val1, uint8_t val2) {
+  return (((static_cast<std::uint32_t>(ump_message_type::m2cvm) << 4) | group)
+          << 24) |
+         ((static_cast<std::uint32_t>(status) | channel) << 16) |
+         (static_cast<std::uint32_t>(val1) << 8) | val2;
+}
+
+}  // end anonymous namespace
+
 uint32_t UMPMessage::mt0NOOP() {
   return 0;
 }
@@ -46,14 +74,6 @@ uint32_t UMPMessage::mt0DeltaClockTick(uint16_t ticksPerQtrNote) {
 
 uint32_t UMPMessage::mt0DeltaTicksSinceLast(uint16_t noTicksSince) {
   return ((UTILITY_DELTACLOCKSINCE + 0L) << 20) + noTicksSince;
-}
-
-uint32_t m1Create(uint8_t group, uint8_t status, uint8_t val1, uint8_t val2) {
-  return (((static_cast<std::uint32_t>(ump_message_type::system) << 4) | group)
-          << 24) |
-         (static_cast<std::uint32_t>(status) << 16) |
-         (static_cast<std::uint32_t>(val1) << 8) |
-         static_cast<std::uint32_t>(val2);
 }
 
 uint32_t UMPMessage::mt1MTC(uint8_t group, uint8_t timeCode) {
@@ -85,14 +105,6 @@ uint32_t UMPMessage::mt1ActiveSense(uint8_t group) {
 }
 uint32_t UMPMessage::mt1SystemReset(uint8_t group) {
   return m1Create(group, systemreset, 0, 0);
-}
-
-uint32_t mt2Create(uint8_t group, uint8_t status, uint8_t channel, uint8_t val1,
-                   uint8_t val2) {
-  return (((static_cast<std::uint32_t>(ump_message_type::m1cvm) << 4) | group)
-          << 24) |
-         (static_cast<std::uint32_t>(status | channel) << 16) |
-         (static_cast<std::uint32_t>(val1) << 8) | val2;
 }
 
 uint32_t UMPMessage::mt2NoteOn(uint8_t group, uint8_t channel,
@@ -153,14 +165,6 @@ std::array<uint32_t, 2> UMPMessage::mt3Sysex7(uint8_t group, uint8_t status,
   return umpMess;
 }
 
-uint32_t mt4CreateFirstWord(uint8_t group, uint8_t status, uint8_t channel,
-                            uint8_t val1, uint8_t val2) {
-  return (((static_cast<std::uint32_t>(ump_message_type::m2cvm) << 4) | group)
-          << 24) |
-         ((static_cast<std::uint32_t>(status) | channel) << 16) |
-         (static_cast<std::uint32_t>(val1) << 8) | val2;
-}
-
 std::array<uint32_t, 2> UMPMessage::mt4NoteOn(uint8_t group, uint8_t channel,
                                               uint8_t noteNumber,
                                               uint16_t velocity,
@@ -182,7 +186,7 @@ std::array<uint32_t, 2> UMPMessage::mt4NoteOff(uint8_t group, uint8_t channel,
   std::array<uint32_t, 2> umpMess = {0, 0};
   umpMess[0] = mt4CreateFirstWord(group, status::note_off, channel, noteNumber,
                                   attributeType);
-  umpMess[1] = velocity << 16;
+  umpMess[1] = static_cast<std::uint32_t>(velocity << 16);
   umpMess[1] += attributeData;
   return umpMess;
 }
@@ -239,7 +243,7 @@ std::array<uint32_t, 2> UMPMessage::mt4RelativeRPN(uint8_t group,
   std::array<uint32_t, 2> umpMess = {0, 0};
   umpMess[0] =
       mt4CreateFirstWord(group, status::rpn_relative, channel, bank, index);
-  umpMess[1] = (uint32_t)value;
+  umpMess[1] = static_cast<std::uint32_t>(value);
   return umpMess;
 }
 
@@ -250,7 +254,7 @@ std::array<uint32_t, 2> UMPMessage::mt4RelativeNRPN(uint8_t group,
   std::array<uint32_t, 2> umpMess = {0, 0};
   umpMess[0] =
       mt4CreateFirstWord(group, status::nrpn_relative, channel, bank, index);
-  umpMess[1] = (uint32_t)value;
+  umpMess[1] = static_cast<std::uint32_t>(value);
   return umpMess;
 }
 
@@ -270,15 +274,16 @@ std::array<uint32_t, 2> UMPMessage::mt4ProgramChange(
   std::array<uint32_t, 2> umpMess = {0, 0};
   umpMess[0] = mt4CreateFirstWord(group, status::program_change, channel,
                                   program, bankValid ? 1 : 0);
-  umpMess[1] = bankValid ? ((uint32_t)bank << 8) + index : 0;
+  umpMess[1] = bankValid ? (static_cast<std::uint32_t>(bank) << 8) | index : 0;
   return umpMess;
 }
 
-// TODO mtD*
+// TODO: mtD*
 
 std::array<uint32_t, 4> UMPMessage::mtFMidiEndpoint(uint8_t filter) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (uint32_t)((0xF << 28) + (UMP_VER_MAJOR << 8) + UMP_VER_MINOR);
+  umpMess[0] =
+      (std::uint32_t{0xF} << 28) | (UMP_VER_MAJOR << 8) | UMP_VER_MINOR;
   umpMess[1] = filter;
   return umpMess;
 }
@@ -286,8 +291,9 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpoint(uint8_t filter) {
 std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointInfoNotify(
     uint8_t numOfFuncBlock, bool m2, bool m1, bool rxjr, bool txjr) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (uint32_t)((0xF << 28) + (MIDIENDPOINT_INFO_NOTIFICATION << 16) +
-                          (UMP_VER_MAJOR << 8) + UMP_VER_MINOR);
+  umpMess[0] = (std::uint32_t{0xF} << 28) |
+               (MIDIENDPOINT_INFO_NOTIFICATION << 16) | (UMP_VER_MAJOR << 8) |
+               UMP_VER_MINOR;
   umpMess[1] =
       (numOfFuncBlock << 24) + (m2 << 9) + (m1 << 8) + (rxjr << 1) + txjr;
   return umpMess;
@@ -297,8 +303,9 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointDeviceInfoNotify(
     std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
     std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (uint32_t)((0xF << 28) + (MIDIENDPOINT_DEVICEINFO_NOTIFICATION
-                                         << 16)) /*+  numOfFuncBlock*/;
+  umpMess[0] =
+      (std::uint32_t{0xF} << 28) |
+      (MIDIENDPOINT_DEVICEINFO_NOTIFICATION << 16) /*+  numOfFuncBlock*/;
 
   umpMess[1] = (manuId[0] << 16) + (manuId[1] << 8) + manuId[2];
   umpMess[2] = (familyId[0] << 24) + (familyId[1] << 16) + (modelId[0] << 8) +
@@ -401,28 +408,34 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(
 
 std::array<uint32_t, 4> UMPMessage::mtFStartOfSeq() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (uint32_t)((0xF << 28) + (STARTOFSEQ << 16));
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (std::uint32_t{STARTOFSEQ} << 16);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFEndOfFile() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (uint32_t)((0xF << 28) + (ENDOFFILE << 16));
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (std::uint32_t{ENDOFFILE} << 16);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFRequestProtocol(uint8_t protocol,
                                                        bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (0xF << 28) + (MIDIENDPOINT_PROTOCOL_REQUEST << 16) +
-               (protocol << 8) + (jrrx << 1) + jrtx;
+  umpMess[0] = (std::uint32_t{0xF} << 28) |
+               (MIDIENDPOINT_PROTOCOL_REQUEST << 16) |
+               (static_cast<std::uint32_t>(protocol) << 8) |
+               (static_cast<std::uint32_t>(jrrx) << 1) |
+               static_cast<std::uint32_t>(jrtx);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFNotifyProtocol(uint8_t protocol,
                                                       bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (0xF << 28) + (MIDIENDPOINT_PROTOCOL_NOTIFICATION << 16) +
-               (protocol << 8) + (jrrx << 1) + jrtx;
+  umpMess[0] = (std::uint32_t{0xF} << 28) |
+               (MIDIENDPOINT_PROTOCOL_NOTIFICATION << 16) |
+               (static_cast<std::uint32_t>(protocol) << 8) |
+               (static_cast<std::uint32_t>(jrrx) << 1) |
+               static_cast<std::uint32_t>(jrtx);
   return umpMess;
 }

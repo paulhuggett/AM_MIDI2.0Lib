@@ -223,8 +223,8 @@ void umpProcessor::processUMP(uint32_t UMP) {
         break;
       case status::pernote_manage:  // Per-Note Management Message
         mess.note = val1;
-        mess.flag1 = (bool)(val2 & 2);
-        mess.flag2 = (bool)(val2 & 1);
+        mess.flag1 = (val2 & 2) != 0;
+        mess.flag2 = (val2 & 1) != 0;
         if (channelVoiceMessage != nullptr) {
           channelVoiceMessage(mess);
         }
@@ -279,24 +279,25 @@ void umpProcessor::processUMP(uint32_t UMP) {
 
       case MIDIENDPOINT_DEVICEINFO_NOTIFICATION:
         if (midiEndpointDeviceInfo != nullptr) {
-          midiEndpointDeviceInfo({(uint8_t)((umpMess[1] >> 16) & 0x7F),
-                                  (uint8_t)((umpMess[1] >> 8) & 0x7F),
-                                  (uint8_t)(umpMess[1] & 0x7F)},
-                                 {(uint8_t)((umpMess[2] >> 24) & 0x7F),
-                                  (uint8_t)((umpMess[2] >> 16) & 0x7F)},
-                                 {(uint8_t)((umpMess[2] >> 8) & 0x7F),
-                                  (uint8_t)(umpMess[2] & 0x7F)},
-                                 {(uint8_t)((umpMess[3] >> 24) & 0x7F),
-                                  (uint8_t)((umpMess[3] >> 16) & 0x7F),
-                                  (uint8_t)((umpMess[3] >> 8) & 0x7F),
-                                  (uint8_t)(umpMess[3] & 0x7F)});
+          midiEndpointDeviceInfo(
+              {static_cast<std::uint8_t>((umpMess[1] >> 16) & 0x7F),
+               static_cast<std::uint8_t>((umpMess[1] >> 8) & 0x7F),
+               static_cast<std::uint8_t>(umpMess[1] & 0x7F)},
+              {static_cast<std::uint8_t>((umpMess[2] >> 24) & 0x7F),
+               static_cast<std::uint8_t>((umpMess[2] >> 16) & 0x7F)},
+              {static_cast<std::uint8_t>((umpMess[2] >> 8) & 0x7F),
+               static_cast<std::uint8_t>(umpMess[2] & 0x7F)},
+              {static_cast<std::uint8_t>((umpMess[3] >> 24) & 0x7F),
+               static_cast<std::uint8_t>((umpMess[3] >> 16) & 0x7F),
+               static_cast<std::uint8_t>((umpMess[3] >> 8) & 0x7F),
+               static_cast<std::uint8_t>(umpMess[3] & 0x7F)});
         }
         break;
       case MIDIENDPOINT_NAME_NOTIFICATION:
       case MIDIENDPOINT_PRODID_NOTIFICATION: {
         umpData mess = umpData();
         mess.common.messageType = mt;
-        mess.common.status = (uint8_t)status;
+        mess.common.status = static_cast<std::uint8_t>(status);
         mess.form = umpMess[0] >> 24 & 0x3;
         mess.dataLength = 0;
         uint8_t text[14];
@@ -328,13 +329,14 @@ void umpProcessor::processUMP(uint32_t UMP) {
 
       case MIDIENDPOINT_PROTOCOL_REQUEST:  // JR Protocol Req
         if (midiEndpointJRProtocolReq != nullptr)
-          midiEndpointJRProtocolReq((uint8_t)(umpMess[0] >> 8),
+          midiEndpointJRProtocolReq(static_cast<std::uint8_t>(umpMess[0] >> 8),
                                     (umpMess[0] >> 1) & 1, umpMess[0] & 1);
         break;
       case MIDIENDPOINT_PROTOCOL_NOTIFICATION:  // JR Protocol Req
         if (midiEndpointJRProtocolNotify != nullptr)
-          midiEndpointJRProtocolNotify((uint8_t)(umpMess[0] >> 8),
-                                       (umpMess[0] >> 1) & 1, umpMess[0] & 1);
+          midiEndpointJRProtocolNotify(
+              static_cast<std::uint8_t>(umpMess[0] >> 8), (umpMess[0] >> 1) & 1,
+              umpMess[0] & 1);
         break;
 
       case FUNCTIONBLOCK: {
@@ -366,7 +368,7 @@ void umpProcessor::processUMP(uint32_t UMP) {
         uint8_t fbIdx = (umpMess[0] >> 8) & 0x7F;
         umpData mess = umpData();
         mess.common.messageType = mt;
-        mess.common.status = (uint8_t)status;
+        mess.common.status = static_cast<std::uint8_t>(status);
         mess.form = umpMess[0] >> 24 & 0x3;
         mess.dataLength = 0;
         uint8_t text[13];

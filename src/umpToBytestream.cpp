@@ -202,7 +202,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
   }
 }
 
-void umpToBytestream::word3(std::uint32_t UMP) {
+void umpToBytestream::word3(std::uint32_t /*UMP*/) {
   switch (mType) {
   case ump_message_type::reserved96_0B:  // 96 Reserved
   case ump_message_type::reserved96_0C:  // 96 Reserved

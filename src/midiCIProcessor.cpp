@@ -105,20 +105,18 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
             recvDiscoveryRequest(midici, {buffer[0], buffer[1], buffer[2]},
                                  {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
                                  {buffer[7], buffer[8], buffer[9], buffer[10]},
-                                 (uint8_t)intTemp[0], intTemp[1],
-                                 (uint8_t)intTemp[2]
-                                 // intTemp[3],
-                                 // &(buffer[11])
-            );
+                                 static_cast<std::uint8_t>(intTemp[0]),
+                                 intTemp[1],
+                                 static_cast<std::uint8_t>(intTemp[2]));
         } else {
           if (recvDiscoveryReply != nullptr)
             recvDiscoveryReply(midici, {buffer[0], buffer[1], buffer[2]},
                                {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
                                {buffer[7], buffer[8], buffer[9], buffer[10]},
-                               (uint8_t)intTemp[0], intTemp[1],
-                               (uint8_t)intTemp[2], (uint8_t)intTemp[3]
-                               //&(buffer[11])
-            );
+                               static_cast<std::uint8_t>(intTemp[0]),
+                               intTemp[1],
+                               static_cast<std::uint8_t>(intTemp[2]),
+                               static_cast<std::uint8_t>(intTemp[3]));
         }
       }
       break;
@@ -130,11 +128,11 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
       }
 
       // terminate MUID
-      if (sysexPos == 16 && recvInvalidateMUID != nullptr) {
-        uint32_t terminateMUID = buffer[0] + ((uint32_t)buffer[1] << 7) +
-                                 ((uint32_t)buffer[2] << 14) +
-                                 ((uint32_t)buffer[3] << 21);
-        recvInvalidateMUID(midici, terminateMUID);
+      if (sysexPos == 16 && recvInvalidateMUID) {
+        recvInvalidateMUID(
+            midici, buffer[0] | (static_cast<std::uint32_t>(buffer[1]) << 7) |
+                        (static_cast<std::uint32_t>(buffer[2]) << 14) |
+                        (static_cast<std::uint32_t>(buffer[3]) << 21));
       }
       break;
     case MIDICI_ENDPOINTINFO: {
@@ -162,7 +160,8 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
       }
 
       if (complete) {
-        recvEndPointInfoReply(midici, (uint8_t)intTemp[0], intTemp[1], buffer);
+        recvEndPointInfoReply(midici, static_cast<std::uint8_t>(intTemp[0]),
+                              intTemp[1], buffer);
       }
       break;
     }
@@ -205,13 +204,17 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
                                     buffer[4]};
 
         if (midici.ciType == MIDICI_NAK && recvNAK != nullptr)
-          recvNAK(midici, (uint8_t)intTemp[0], (uint8_t)intTemp[1],
-                  (uint8_t)intTemp[2], ackNakDetails, intTemp[3], buffer);
+          recvNAK(midici, static_cast<std::uint8_t>(intTemp[0]),
+                  static_cast<std::uint8_t>(intTemp[1]),
+                  static_cast<std::uint8_t>(intTemp[2]), ackNakDetails,
+                  intTemp[3], buffer);
 
         if (midici.ciType == MIDICI_ACK && midici.ciVer > 1 &&
             recvACK != nullptr)
-          recvACK(midici, (uint8_t)intTemp[0], (uint8_t)intTemp[1],
-                  (uint8_t)intTemp[2], ackNakDetails, intTemp[3], buffer);
+          recvACK(midici, static_cast<std::uint8_t>(intTemp[0]),
+                  static_cast<std::uint8_t>(intTemp[1]),
+                  static_cast<std::uint8_t>(intTemp[2]), ackNakDetails,
+                  intTemp[3], buffer);
       }
       break;
     }
@@ -289,7 +292,8 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
       if (pos == 4 && recvProtocolAvailable != nullptr) {
         uint8_t protocol[5] = {buffer[0], buffer[1], buffer[2], buffer[3],
                                buffer[4]};
-        recvProtocolAvailable(midici, (uint8_t)intTemp[0], protocol);
+        recvProtocolAvailable(midici, static_cast<std::uint8_t>(intTemp[0]),
+                              protocol);
       }
     }
     if (midici.ciVer > 1) {
@@ -297,11 +301,8 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
         buffer[sysexPos - protocolOffset] = s7Byte;
       }
       if (sysexPos == protocolOffset + 5) {
-        //                    uint8_t protocol[5] = {buffer[0], buffer[1],
-        //                                           buffer[2], buffer[3],
-        //                                           buffer[4]};
         if (recvSetProtocolConfirm != nullptr) {
-          recvSetProtocolConfirm(midici, (uint8_t)intTemp[0]);
+          recvSetProtocolConfirm(midici, static_cast<std::uint8_t>(intTemp[0]));
         }
       }
     }
@@ -319,7 +320,7 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
     if (sysexPos == 18 && recvSetProtocol != nullptr) {
       uint8_t protocol[5] = {buffer[0], buffer[1], buffer[2], buffer[3],
                              buffer[4]};
-      recvSetProtocol(midici, (uint8_t)intTemp[0], protocol);
+      recvSetProtocol(midici, static_cast<std::uint8_t>(intTemp[0]), protocol);
     }
     break;
 
@@ -336,7 +337,8 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
       }
     }
     if (sysexPos == 61 && recvProtocolTest != nullptr) {
-      recvProtocolTest(midici, (uint8_t)intTemp[0], !!(intTemp[1]));
+      recvProtocolTest(midici, static_cast<std::uint8_t>(intTemp[0]),
+                       !!(intTemp[1]));
     }
 
     break;
@@ -346,7 +348,7 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
     if (sysexPos == 13) {
       intTemp[0] = s7Byte;
       if (recvSetProtocolConfirm != nullptr) {
-        recvSetProtocolConfirm(midici, (uint8_t)intTemp[0]);
+        recvSetProtocolConfirm(midici, static_cast<std::uint8_t>(intTemp[0]));
       }
     }
     break;
@@ -430,7 +432,7 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
       if (midici.ciType == MIDICI_PROFILE_SETON && recvSetProfileOn != nullptr)
         recvSetProfileOn(
             midici, {buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]},
-            (uint8_t)intTemp[0]);
+            static_cast<std::uint8_t>(intTemp[0]));
 
       if (midici.ciType == MIDICI_PROFILE_SETOFF &&
           recvSetProfileOff != nullptr)
@@ -441,13 +443,13 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
           recvSetProfileEnabled != nullptr)
         recvSetProfileEnabled(
             midici, {buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]},
-            (uint8_t)intTemp[0]);
+            static_cast<std::uint8_t>(intTemp[0]));
 
       if (midici.ciType == MIDICI_PROFILE_DISABLED &&
           recvSetProfileDisabled != nullptr)
         recvSetProfileDisabled(
             midici, {buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]},
-            (uint8_t)intTemp[0]);
+            static_cast<std::uint8_t>(intTemp[0]));
     }
     break;
   }

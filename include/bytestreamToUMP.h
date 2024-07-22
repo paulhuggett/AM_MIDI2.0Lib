@@ -110,7 +110,7 @@ private:
                                std::uint8_t const b1, std::uint8_t const b2,
                                std::uint8_t const b3) {
     return pack(
-        static_cast<std::uint32_t>(
+        static_cast<std::uint8_t>(
             (static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_),
         b1, b2, b3);
   }
