@@ -96,7 +96,7 @@ enum : std::uint32_t {
   ENDOFFILE = 0x021,
 };
 
-enum : std::uint8_t {
+enum : std::uint32_t {
   FUNCTIONBLOCK = 0x010,
   FUNCTIONBLOCK_INFO_NOTFICATION = 0x011,
   FUNCTIONBLOCK_NAME_NOTIFICATION = 0x012,

@@ -125,6 +125,35 @@ uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
   return length;
 }
 
+uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
+                            uint32_t destMUID, uint8_t destination,
+                            std::array<uint8_t, 5> profile,
+                            uint8_t numberOfChannels, uint8_t ciType) {
+  createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
+  uint16_t length = 13;
+  concatSysexArray(sysex, &length, profile.data(), 5);
+  if (midiCIVer == 1 || ciType == MIDICI_PROFILE_ADD ||
+      ciType == MIDICI_PROFILE_REMOVE) {
+    return length;
+  }
+  setBytesFromNumbers(sysex, numberOfChannels, &length, 2);
+  return length;
+}
+
+uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
+                          uint32_t destMUID, uint8_t requestId,
+                          uint16_t headerLen, uint8_t *header, uint8_t ciType) {
+  createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
+  sysex[13] = requestId;
+  uint16_t length = 14;
+  setBytesFromNumbers(sysex, headerLen, &length, 2);
+  concatSysexArray(sysex, &length, header, headerLen);
+  setBytesFromNumbers(sysex, 1, &length, 2);
+  setBytesFromNumbers(sysex, 1, &length, 2);
+  setBytesFromNumbers(sysex, 0, &length, 2);
+  return length;
+}
+
 }  // end anonymous namespace
 
 uint16_t CIMessage::sendDiscoveryRequest(
@@ -297,21 +326,6 @@ uint16_t CIMessage::sendProfileListResponse(
   return length;
 }
 
-uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                            uint32_t destMUID, uint8_t destination,
-                            std::array<uint8_t, 5> profile,
-                            uint8_t numberOfChannels, uint8_t ciType) {
-  createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, profile.data(), 5);
-  if (midiCIVer == 1 || ciType == MIDICI_PROFILE_ADD ||
-      ciType == MIDICI_PROFILE_REMOVE) {
-    return length;
-  }
-  setBytesFromNumbers(sysex, numberOfChannels, &length, 2);
-  return length;
-}
-
 uint16_t CIMessage::sendProfileAdd(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t destination,
@@ -474,20 +488,6 @@ uint16_t CIMessage::sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer,
   return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId,
                         headerLen, header, numberOfChunks, numberOfThisChunk,
                         bodyLength, body, MIDICI_PE_GETREPLY);
-}
-
-uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                          uint32_t destMUID, uint8_t requestId,
-                          uint16_t headerLen, uint8_t *header, uint8_t ciType) {
-  createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
-  sysex[13] = requestId;
-  uint16_t length = 14;
-  setBytesFromNumbers(sysex, headerLen, &length, 2);
-  concatSysexArray(sysex, &length, header, headerLen);
-  setBytesFromNumbers(sysex, 1, &length, 2);
-  setBytesFromNumbers(sysex, 1, &length, 2);
-  setBytesFromNumbers(sysex, 0, &length, 2);
-  return length;
 }
 
 uint16_t CIMessage::sendPEGet(uint8_t *sysex, uint8_t midiCIVer,

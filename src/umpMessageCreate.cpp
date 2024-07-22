@@ -142,26 +142,28 @@ std::array<uint32_t, 2> UMPMessage::mt3Sysex7(uint8_t group, uint8_t status,
                                               uint8_t numBytes,
                                               std::array<uint8_t, 6> sx) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] = (0x3 << 28) + (group << 24) + (status << 20) + (numBytes << 16);
+  umpMess[0] = (static_cast<std::uint32_t>(0x3) << 28) |
+               (static_cast<std::uint32_t>(group) << 24) |
+               (static_cast<std::uint32_t>(status) << 20) |
+               (static_cast<std::uint32_t>(numBytes) << 16);
   if (numBytes > 0) {
-    umpMess[0] += (sx[0] << 8);
+    umpMess[0] |= (static_cast<std::uint32_t>(sx[0]) << 8);
   }
   if (numBytes > 1) {
-    umpMess[0] += sx[1];
+    umpMess[0] |= sx[1];
   }
   if (numBytes > 2) {
-    umpMess[1] += (sx[2] << 24);
+    umpMess[1] |= (static_cast<std::uint32_t>(sx[2]) << 24);
   }
   if (numBytes > 3) {
-    umpMess[1] += (sx[3] << 16);
+    umpMess[1] |= (static_cast<std::uint32_t>(sx[3]) << 16);
   }
   if (numBytes > 4) {
-    umpMess[1] += (sx[4] << 8);
+    umpMess[1] |= (static_cast<std::uint32_t>(sx[4]) << 8);
   }
   if (numBytes > 5) {
-    umpMess[1] += sx[5];
+    umpMess[1] |= sx[5];
   }
-
   return umpMess;
 }
 
@@ -173,7 +175,7 @@ std::array<uint32_t, 2> UMPMessage::mt4NoteOn(uint8_t group, uint8_t channel,
   std::array<uint32_t, 2> umpMess = {0, 0};
   umpMess[0] = mt4CreateFirstWord(group, status::note_on, channel, noteNumber,
                                   attributeType);
-  umpMess[1] = velocity << 16;
+  umpMess[1] = static_cast<std::uint32_t>(velocity) << 16;
   umpMess[1] += attributeData;
   return umpMess;
 }
@@ -330,10 +332,12 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(
     }
   }
   umpMess[0] = (0xF << 28) + (form << 26) + (replyType << 16);
-  if (offset < textLen)
+  if (offset < textLen) {
     umpMess[0] += (text[offset++] << 8);
-  if (offset < textLen)
+  }
+  if (offset < textLen) {
     umpMess[0] += text[offset++];
+  }
   for (uint8_t i = 1; i < 4; i++) {
     if (offset < textLen) {
       umpMess[i] += (text[offset++] << 24);
@@ -354,7 +358,8 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(
 std::array<uint32_t, 4> UMPMessage::mtFFunctionBlock(uint8_t fbIdx,
                                                      uint8_t filter) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (0xF << 28) + (FUNCTIONBLOCK << 16) + (fbIdx << 8) + filter;
+  umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (FUNCTIONBLOCK << 16) |
+               (fbIdx << 8) | filter;
   return umpMess;
 }
 
@@ -376,8 +381,9 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
   uint8_t form = 0;
   if (offset == 0) {
-    if (textLen > 13)
+    if (textLen > 13) {
       form = 1;
+    }
   } else {
     if (offset + 12 < textLen) {
       form = 2;
@@ -387,8 +393,9 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(
   }
   umpMess[0] = (0xF << 28) + (form << 26) +
                (FUNCTIONBLOCK_NAME_NOTIFICATION << 16) + (fbIdx << 8);
-  if (offset < textLen)
+  if (offset < textLen) {
     umpMess[0] += text[offset++];
+  }
   for (uint8_t i = 1; i < 4; i++) {
     if (offset < textLen) {
       umpMess[i] += (text[offset++] << 24);

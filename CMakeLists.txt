@@ -3,17 +3,15 @@ cmake_minimum_required(VERSION 3.12)
 project(libmidi2)
 
 option (MIDI2_WERROR "Enable warnings-as-errors" No)
+option (MIDI2_COVERAGE "Enable code coverage" No)
+option (MIDI2_SANITIZE "Enable sanitizers" No)
 option (MIDI2_FUZZTEST "Enable Fuzz Testing" No)
+
 enable_testing ()
 
-function(setupTarget target)
-    target_compile_options("${target}" PRIVATE -Wall)
-    #-pedantic -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-global-constructors)
-    if (MIDI2_WERROR)
-        target_compile_options("${target}" PRIVATE -Werror)
-    endif (MIDI2_WERROR)
-    target_compile_features("${target}" PUBLIC cxx_std_20)
-endfunction()
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(setup_target)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMIDI2_HEADERS
@@ -39,7 +37,7 @@ add_library(libmidi2 ${LIBMIDI2_HEADERS}
   src/midiCIProcessor.cpp
   src/umpProcessor.cpp
 )
-setupTarget(libmidi2)
+setup_target(libmidi2)
 
 target_include_directories(libmidi2 PUBLIC
     $<BUILD_INTERFACE:${INCLUDE_DIR}>
@@ -59,7 +57,7 @@ install(FILES ${LIBMIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 
 add_executable(tests tests.cpp)
 target_link_libraries(tests PRIVATE libmidi2)
-setupTarget(tests)
+setup_target(tests)
 add_test(NAME tests COMMAND tests)
 
 if (MIDI2_FUZZTEST)
