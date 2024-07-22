@@ -170,12 +170,10 @@ jobs:
           version: ${{matrix.llvm_install}}
 
       - name: Create Build Environment
-        shell: bash
         run: cmake -E make_directory ${{ github.workspace }}/build
 
         # Note that WERROR is temporarily disabled.
       - name: CMake Configure
-        shell: bash
         run: |
           cmake -S "${{ github.workspace }}"                 \
                 -B "${{ github.workspace }}/build"           \
@@ -186,5 +184,7 @@ jobs:
                 ${{ matrix.options }}
 
       - name: Build
-        shell: bash
         run: cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} --verbose
+
+      - name: Test
+        run: ctest --test-dir "${{ github.workspace }}/build" --verbose
