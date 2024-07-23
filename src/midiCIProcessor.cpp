@@ -497,7 +497,7 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
     break;
   }
 
-  case MIDICI_PROFILE_SPECIFIC_DATA:
+  case MIDICI_PROFILE_SPECIFIC_DATA: {
     // Profile
     if (sysexPos >= 13 && sysexPos <= 17) {
       buffer[sysexPos - 13] = s7Byte;
@@ -532,7 +532,9 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
 
     //***********
 
-    break;
+  } break;
+
+  default: break;
   }
 }
 
@@ -622,6 +624,7 @@ void midiCIProcessor::processPESysex(uint8_t s7Byte) {
             cleanupRequest(midici._peReqIdx);
           }
           break;
+        default: break;
         }
       }
     }
