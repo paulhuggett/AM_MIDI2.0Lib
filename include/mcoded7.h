@@ -162,8 +162,8 @@ OutputIterator decoder::parse_byte(std::uint8_t const value,
 
     // Assemble the output byte from ths input value and its most-significant
     // sign bit stored in msbs_.
-    *(out++) =
-        value | ((static_cast<std::uint8_t>(msbs_ >> pos_) & 0x01U) << 7U);
+    *(out++) = static_cast<std::uint8_t>(
+        value | ((static_cast<std::uint8_t>(msbs_ >> pos_) & 0x01U) << 7U));
   }
   // Decrement pos. If pos is 0 on entry, it will wrap back to msbs_byte_pos_.
   --pos_;

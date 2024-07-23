@@ -255,5 +255,8 @@ void NeverCrashes(std::vector<std::uint8_t> const& bytes) {
 // NOLINTNEXTLINE
 FUZZ_TEST(BytestreamToUMPFuzz, NeverCrashes);
 #endif
+TEST(BytestreamToUMPFuzz, Empty) {
+  NeverCrashes({});
+}
 
 }  // end anonymous namespace
