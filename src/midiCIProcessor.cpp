@@ -27,6 +27,8 @@
 
 #include "midiCIProcessor.h"
 
+#include <cassert>
+
 void midiCIProcessor::endSysex7() {
   if (midici._reqTupleSet) {
     cleanupRequest(midici._peReqIdx);
@@ -351,6 +353,8 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
       }
     }
     break;
+
+  default: assert(false && "unknown protocol sysex type"); break;
   }
 }
 
