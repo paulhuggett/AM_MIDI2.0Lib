@@ -594,7 +594,7 @@ void midiCIProcessor::processPESysex(uint8_t s7Byte) {
     if (sysexPos >= 16 && sysexPos <= 15 + headerLength) {
       uint16_t charOffset = (sysexPos - 16);
       buffer[charOffset] = s7Byte;
-      peHeaderStr[midici._peReqIdx].push_back(s7Byte);
+      peHeaderStr[midici._peReqIdx].push_back(static_cast<char> (s7Byte));
 
       if (sysexPos == 15 + headerLength) {
         switch (midici.ciType) {

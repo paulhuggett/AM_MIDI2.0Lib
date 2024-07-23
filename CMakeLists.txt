@@ -58,6 +58,16 @@ install(FILES ${LIBMIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 add_executable(tests tests.cpp)
 target_link_libraries(tests PRIVATE libmidi2)
 setup_target(tests)
+set (clang_options -Wno-global-constructors -Wno-used-but-marked-unused)
+set (gcc_options)
+set (msvc_options -wd4702) # unreachable code.
+target_compile_options (
+  tests
+  PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:${clang_options}>
+    $<$<CXX_COMPILER_ID:GNU>:${gcc_options}>
+    $<$<CXX_COMPILER_ID:MSVC>:${msvc_options}>
+)
 add_test(NAME tests COMMAND tests)
 
 if (MIDI2_FUZZTEST)
