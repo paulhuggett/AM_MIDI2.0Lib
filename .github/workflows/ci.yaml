@@ -72,7 +72,7 @@ jobs:
             build_type: RelWithDebug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
-            options:
+            options: -D MIDI2_SANITIZE=Yes
             generator: Unix Makefiles
             os: ubuntu-22.04
             package: TGZ
@@ -176,19 +176,22 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory ${{ github.workspace }}/build
 
-        # Note that WERROR is temporarily disabled.
       - name: CMake Configure
         run: |
           cmake -S "${{ github.workspace }}"                 \
                 -B "${{ github.workspace }}/build"           \
                 -G "${{ matrix.generator }}"                 \
                 -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -D MIDI2_WERROR=No                          \
+                -D MIDI2_WERROR=Yes                          \
                 ${{ matrix.cxx_compiler }}                   \
                 ${{ matrix.options }}
 
       - name: Build
-        run: cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} --verbose
+        run: cmake --build "${{ github.workspace }}/build" \
+                   --config ${{ matrix.build_type }}       \
+                   --verbose
 
       - name: Test
-        run: ctest --test-dir "${{ github.workspace }}/build" -C ${{ matrix.build_type }} --verbose
+        run: ctest --build-config ${{ matrix.build_type }}    \
+                   --test-dir "${{ github.workspace }}/build" \
+                   --verbose
