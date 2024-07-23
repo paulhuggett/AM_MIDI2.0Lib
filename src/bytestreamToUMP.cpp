@@ -138,13 +138,28 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
   }
 }
 
-void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
-  if (midi1Byte == status::tunerequest || midi1Byte >= status::timingclock) {
-    d0_ = midi1Byte;
-    this->bsToUMP(midi1Byte, 0, 0);
-  }
+namespace {
 
+constexpr bool isSystemRealTimeMessage(std::uint8_t const midi1Byte) {
+  switch (midi1Byte) {
+  case status::timingclock:
+  case status::seqstart:
+  case status::seqcont:
+  case status::seqstop:
+  case status::activesense:
+  case status::systemreset: return true;
+  default: return false;
+  }
+}
+
+}  // end anonymous namespace
+
+void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
   if ((midi1Byte & 0x80) != 0x00) {  // Status byte received
+    if (midi1Byte == status::tunerequest ||
+        isSystemRealTimeMessage(midi1Byte)) {
+      return this->bsToUMP(midi1Byte, 0, 0);
+    }
     d0_ = midi1Byte;
     d1_ = unknown;
 

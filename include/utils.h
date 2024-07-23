@@ -46,14 +46,18 @@ enum status : std::uint8_t {
   timing_code = 0xF1,
   spp = 0xF2,
   song_select = 0xF3,
+  reserved1 = 0xF4,
+  reserved2 = 0xF5,
   tunerequest = 0xF6,
   sysex_stop = 0xF7,  // End of system exclusive
   timingclock = 0xF8,
-  reserved2 = 0b11111001,
-  seqstart = 0b11111010,  // Start the current sequence playing
-  seqcont = 0xFB,         // Continue at the point the sequence was stopped
-  seqstop = 0xFC,         // Stop the current sequence
-  reserved1 = 0b11111101, activesense = 0xFE, systemreset = 0xFF,
+  reserved3 = 0xF9,
+  seqstart = 0xFA,  // Start the current sequence playing
+  seqcont = 0xFB,   // Continue at the point the sequence was stopped
+  seqstop = 0xFC,   // Stop the current sequence
+  reserved4 = 0xFD,
+  activesense = 0xFE,
+  systemreset = 0xFF,
 
   pernote_manage = 0xF0,
   rpn_pernote = 0x00,
