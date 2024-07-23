@@ -187,11 +187,13 @@ jobs:
                 ${{ matrix.options }}
 
       - name: Build
-        run: cmake --build "${{ github.workspace }}/build" \
-                   --config ${{ matrix.build_type }}       \
-                   --verbose
+        run: |
+          cmake --build "${{ github.workspace }}/build" \
+                --config ${{ matrix.build_type }}       \
+                 --verbose
 
       - name: Test
-        run: ctest --build-config ${{ matrix.build_type }}    \
-                   --test-dir "${{ github.workspace }}/build" \
-                   --verbose
+        run: |
+          ctest --build-config ${{ matrix.build_type }}    \
+                --test-dir "${{ github.workspace }}/build" \
+                --verbose
