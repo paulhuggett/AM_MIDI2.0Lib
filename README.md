@@ -5,6 +5,8 @@ This is a general purposes Library for building MIDI 2.0 Devices and Application
 everything from embedded devices through to large scale applications. It provides the building blocks, processing and 
 translations needed for most MIDI 2.0 Devices and Applications
 
+[![codecov](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib/graph/badge.svg?token=8q2aEvPTyv)](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib)
+
 ## IMPORTANT! Please read first
 I hope that this library is useful to everyone making MIDI 2.0 Devices.
 If you do use this library please let me know! I am keen to see all the MIDI 2.0 Projects. This code is also available 
