@@ -1,0 +1,64 @@
+name: CodeCov
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  codecov:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DIR: build_codecov
+      GCC_VERSION: 12
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@f086349bfa2bd1361f7909c78558e816508cdc10 # v2.8.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          submodules: 'True'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++-12 lcov ninja-build
+
+      - name: Configure Build
+        run: |
+          mkdir "$BUILD_DIR"
+          cmake                                      \
+            -G Ninja                                 \
+            -S .                                     \
+            -B "$BUILD_DIR"                          \
+            -D MIDI2_COVERAGE=Yes                    \
+            -D CMAKE_C_COMPILER="gcc-$GCC_VERSION"   \
+            -D CMAKE_CXX_COMPILER="g++-$GCC_VERSION"
+
+      - name: Build
+        run: cmake --build "$BUILD_DIR"
+
+      - name: Run the Test Binaries
+        run: ctest --test-dir "$BUILD_DIR" --verbose
+
+      - name: Collect the Coverage
+        run: |
+          set -x
+          lcov                              \
+            --capture                       \
+            --output-file coverage.info     \
+            --directory "$BUILD_DIR"        \
+            --gcov-tool "gcov-$GCC_VERSION" \
+            --include "$(pwd)/*.?pp"
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@125fc84a9a348dbcf27191600683ec096ec9021c # v4.4.1
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
