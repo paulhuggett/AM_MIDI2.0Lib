@@ -90,51 +90,53 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
 
   if (b0 >= status::timing_code) {
     output_.push_back(pack(ump_message_type::system, b0, b1, b2));
-  } else if (status >= status::note_off && status <= status::pitch_bend) {
-    if (!outputMIDI2_) {
-      output_.push_back(pack(ump_message_type::m1cvm, b0, b1, b2));
-    } else {
-      if (status == status::note_on && b2 == 0) {
-        status = status::note_off;
-        b0 = status | channel;
-        b2 = 0x40;
-      }
-
-      auto message = pack(ump_message_type::m2cvm, status | channel, 0, 0);
-      switch (status) {
-      case status::note_on:
-      case status::note_off:
-      case status::key_pressure:
-        output_.push_back(message | static_cast<std::uint32_t>((b1 << 8)));
-        output_.push_back(scaleUp(b2, 7, 16) << 16);
-        break;
-      case status::pitch_bend:
-        output_.push_back(message);
-        output_.push_back(
-            scaleUp(static_cast<std::uint32_t>((b1 << 7) | b2), 14, 32));
-        break;
-      case status::program_change: {
-        auto bank_msb = std::uint8_t{0};
-        auto bank_lsb = std::uint8_t{0};
-        if (channel_[channel].bankMSB != 0xFF &&
-            channel_[channel].bankLSB != 0xFF) {
-          message |= 0x01U;
-          bank_msb = channel_[channel].bankMSB;
-          bank_lsb = channel_[channel].bankLSB;
-        }
-        output_.push_back(message);
-        output_.push_back(pack(b1, 0, bank_msb, bank_lsb));
-      } break;
-      case status::channel_pressure:
-        output_.push_back(message);
-        output_.push_back(scaleUp(b1, 7, 32));
-        break;
-      case status::cc: this->controllerToUMP(b0, b1, b2); break;
-      default:
-        // Unknown message
-        break;
-      }
+    return;
+  }
+  if (status < status::note_off || status > status::pitch_bend) {
+    return;
+  }
+  if (!outputMIDI2_) {
+    output_.push_back(pack(ump_message_type::m1cvm, b0, b1, b2));
+    return;
+  }
+  if (status == status::note_on && b2 == 0) {
+    // Map note-on velocity 0 to note-off,
+    status = status::note_off;
+    b0 = status | channel;
+    b2 = 0x40;
+  }
+  auto message = pack(ump_message_type::m2cvm, status | channel, 0, 0);
+  switch (status) {
+  case status::note_on:
+  case status::note_off:
+  case status::key_pressure:
+    output_.push_back(message | (std::uint32_t{b1} << 8));
+    output_.push_back(scaleUp(b2, 7, 16) << 16);
+    break;
+  case status::pitch_bend:
+    output_.push_back(message);
+    output_.push_back(scaleUp((std::uint32_t{b1} << 7) | b2, 14, 32));
+    break;
+  case status::program_change: {
+    auto bank_msb = std::uint8_t{0};
+    auto bank_lsb = std::uint8_t{0};
+    if (channel_[channel].bankMSB != 0xFF &&
+        channel_[channel].bankLSB != 0xFF) {
+      message |= 0x01U;
+      bank_msb = channel_[channel].bankMSB;
+      bank_lsb = channel_[channel].bankLSB;
     }
+    output_.push_back(message);
+    output_.push_back(pack(b1, 0, bank_msb, bank_lsb));
+  } break;
+  case status::channel_pressure:
+    output_.push_back(message);
+    output_.push_back(scaleUp(b1, 7, 32));
+    break;
+  case status::cc: this->controllerToUMP(b0, b1, b2); break;
+  default:
+    // Unknown message
+    break;
   }
 }
 
