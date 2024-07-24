@@ -73,7 +73,6 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
   constexpr auto velocity = std::uint8_t{127};
 
   constexpr auto ump_note_on = std::uint32_t{0b1001};
-  constexpr auto ump_note_off = std::uint32_t{0b1000};
   constexpr auto group = std::uint32_t{0};
 
   // A note on message followed by a note-on with velocity 0. The second of
