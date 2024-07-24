@@ -142,7 +142,7 @@ TEST(BytestreamToUMP, PitchBend) {
       std::uint32_t{(message_type << 28) | (group << 24) |
                     (ump_pitch_bend << 20) | (channel << 16) |
                     (std::uint32_t{bend_lsb} << 8) | std::uint32_t{bend_msb}}};
-  ;
+
   auto const actual = convert(bytestreamToUMP{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input)
