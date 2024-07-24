@@ -67,6 +67,68 @@ TEST(BytestreamToUMP, NoteOnWithRunningStatus) {
 }
 
 // NOLINTNEXTLINE
+TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto note_number = std::uint8_t{60};
+  constexpr auto velocity = std::uint8_t{127};
+
+  constexpr auto ump_note_on = std::uint32_t{0b1001};
+  constexpr auto ump_note_off = std::uint32_t{0b1000};
+  constexpr auto group = std::uint32_t{0};
+
+  // A note on message followed by a note-on with velocity 0. The second of
+  // these should be treated as a note-off. Running status is used for the two
+  // input messages.
+  std::array const input{std::uint8_t{status::note_on | channel}, note_number,
+                         velocity, note_number, std::uint8_t{0}};
+
+  auto const m0 = std::uint32_t{
+      (2U << 28) | (group << 24) | (ump_note_on << 20) | (channel << 16) |
+      (std::uint32_t{note_number} << 8) | std::uint32_t{velocity}};
+  auto const m1 = std::uint32_t{
+      (2U << 28) | (group << 24) | (ump_note_on << 20) | (channel << 16) |
+      (std::uint32_t{note_number} << 8) | std::uint32_t{0x00}};
+  std::array const expected{m0, m1};
+  auto const actual = convert(bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << "Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto note_number = std::uint8_t{60};
+  constexpr auto velocity = std::uint8_t{127};
+
+  constexpr auto ump_note_on = std::uint32_t{0b1001};
+  constexpr auto ump_note_off = std::uint32_t{0b1000};
+  constexpr auto group = std::uint32_t{0};
+
+  // A note on message followed by a note-on with velocity 0. The second of
+  // these should become a note-off. Running status is used for the two input
+  // messages.
+  std::array const input{std::uint8_t{status::note_on | channel}, note_number,
+                         velocity, note_number, std::uint8_t{0}};
+
+  auto const m0 =
+      std::uint32_t{(4U << 28) | (group << 24) | (channel << 16) |
+                    (ump_note_on << 20) | (std::uint32_t{note_number} << 8)};
+  auto const m1 = std::uint32_t{(M2Utils::scaleUp(velocity, 7, 16) << 16)};
+  auto const m2 =
+      std::uint32_t{(4U << 28) | (group << 24) | (channel << 16) |
+                    (ump_note_off << 20) | (std::uint32_t{note_number} << 8)};
+  auto const m3 = std::uint32_t{(M2Utils::scaleUp(0x40, 7, 16) << 16)};
+  std::array const expected{m0, m1, m2, m3};
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << "Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
 TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   constexpr auto channel = std::uint8_t{1};
   constexpr auto note_number = std::uint8_t{60};
@@ -75,6 +137,8 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   constexpr auto ump_note_on = std::uint32_t{0b1001};
   constexpr auto group = std::uint32_t{0};
 
+  // A real-time message can appear anywhere, even in the middle of another
+  // multi-byte message.
   std::array const input{static_cast<std::uint8_t>(status::note_on | channel),
                          std::uint8_t{status::seqstart}, note_number, velocity};
   std::array const expected{
