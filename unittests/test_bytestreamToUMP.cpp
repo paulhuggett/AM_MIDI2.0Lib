@@ -127,6 +127,29 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
       << "\n Expected: " << HexContainer(expected);
 }
 
+TEST(BytestreamToUMP, PitchBend) {
+  constexpr auto bend_lsb = std::uint8_t{0x00};
+  constexpr auto bend_msb = std::uint8_t{0x40};
+  constexpr auto channel = std::uint8_t{3};
+  std::array const input{std::uint8_t{status::pitch_bend | channel}, bend_lsb,
+                         bend_msb};
+
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m1cvm);
+  constexpr auto group = std::uint32_t{0};
+  constexpr auto ump_pitch_bend = std::uint32_t{0b1110};
+  std::array const expected{
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    (ump_pitch_bend << 20) | (channel << 16) |
+                    (std::uint32_t{bend_lsb} << 8) | std::uint32_t{bend_msb}}};
+  ;
+  auto const actual = convert(bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   constexpr auto channel = std::uint8_t{1};
