@@ -84,6 +84,8 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
 
 void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
                               std::uint8_t b2) {
+  assert((b1 & 0x80) == 0 && (b2 & 0x80) == 0 &&
+         "The top bit of b1 and b2 must be zero");
   using M2Utils::scaleUp;
   std::uint8_t const channel = b0 & 0x0F;
   std::uint8_t status = b0 & 0xF0;
