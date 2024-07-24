@@ -76,14 +76,13 @@ private:
     std::uint8_t pos = 0;
     /// System exclusive message bytes gathered for the current UMP
     std::array<std::uint8_t, 6> bytes{};
+
+    void reset() {
+      std::fill(std::begin(bytes), std::end(bytes), std::uint8_t{0});
+    }
   };
   sysex7 sysex7_;
   M2Utils::fifo<std::uint32_t, 4> output_;
-
-  void reset_sysex() {
-    std::fill(std::begin(sysex7_.bytes), std::end(sysex7_.bytes),
-              std::uint8_t{0});
-  }
 
   // Channel Based Data
   struct channel {
@@ -100,10 +99,8 @@ private:
                                       std::uint8_t const b1,
                                       std::uint8_t const b2,
                                       std::uint8_t const b3) {
-    return (static_cast<std::uint32_t>(b0) << 24) |
-           (static_cast<std::uint32_t>(b1) << 16) |
-           (static_cast<std::uint32_t>(b2) << 8) |
-           static_cast<std::uint32_t>(b3);
+    return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
+           (std::uint32_t{b2} << 8) | std::uint32_t{b3};
   }
 
   constexpr std::uint32_t pack(ump_message_type const message_type,

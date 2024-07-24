@@ -251,24 +251,26 @@ TEST(BytestreamToUMP, PCTwoBytes) {
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SysEx) {
+  using u8 = std::uint8_t;
+  constexpr auto start = u8{status::sysex_start};
+  constexpr auto stop = u8{status::sysex_stop};
   std::array const input{
-      std::uint8_t{0xF0}, std::uint8_t{0x7E}, std::uint8_t{0x7F},
-      std::uint8_t{0x0D}, std::uint8_t{0x70}, std::uint8_t{0x02},
-      std::uint8_t{0x4B}, std::uint8_t{0x60}, std::uint8_t{0x7A},
-      std::uint8_t{0x73}, std::uint8_t{0x7F}, std::uint8_t{0x7F},
-      std::uint8_t{0x7F}, std::uint8_t{0x7F}, std::uint8_t{0x7D},
-      std::uint8_t{0x00}, std::uint8_t{0x00}, std::uint8_t{0x00},
-      std::uint8_t{0x00}, std::uint8_t{0x01}, std::uint8_t{0x00},
-      std::uint8_t{0x00}, std::uint8_t{0x00}, std::uint8_t{0x03},
-      std::uint8_t{0x00}, std::uint8_t{0x00}, std::uint8_t{0x00},
-      std::uint8_t{0x10}, std::uint8_t{0x00}, std::uint8_t{0x00},
-      std::uint8_t{0x00}, std::uint8_t{0xF7}};
-  EXPECT_THAT(convert(bytestreamToUMP{}, input),
-              ElementsAre(UINT32_C(0x30167E7F), UINT32_C(0x0D70024B),
-                          UINT32_C(0x3026607A), UINT32_C(0x737F7F7Ff),
-                          UINT32_C(0x30267F7D), UINT32_C(0x00000000),
-                          UINT32_C(0x30260100), UINT32_C(0x00000300),
-                          UINT32_C(0x30360000), UINT32_C(0x10000000)));
+      start,    u8{0x7E}, u8{0x7F}, u8{0x0D}, u8{0x70}, u8{0x02}, u8{0x4B},
+      u8{0x60}, u8{0x7A}, u8{0x73}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7F},
+      u8{0x7D}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x01}, u8{0x00},
+      u8{0x00}, u8{0x00}, u8{0x03}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x10},
+      u8{0x00}, u8{0x00}, u8{0x00}, stop};
+  std::array const expected{
+      std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B},
+      std::uint32_t{0x3026607A}, std::uint32_t{0x737F7F7F},
+      std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
+      std::uint32_t{0x30260100}, std::uint32_t{0x00000300},
+      std::uint32_t{0x30360000}, std::uint32_t{0x10000000}};
+  auto const actual = convert(bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE

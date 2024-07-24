@@ -42,8 +42,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
         output_.push_back(pack(ump_message_type::m2cvm,
                                (c.rpnMode ? rpn : nrpn) | channel, c.rpnMsb,
                                c.rpnLsb));
-        output_.push_back(
-            M2Utils::scaleUp(static_cast<std::uint32_t>(b2) << 7, 14, 32));
+        output_.push_back(M2Utils::scaleUp(std::uint32_t{b2} << 7, 14, 32));
       } else {
         c.rpnMsbValue = b2;
       }
@@ -55,8 +54,8 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
       output_.push_back(pack(ump_message_type::m2cvm,
                              (c.rpnMode ? rpn : nrpn) | channel, c.rpnMsb,
                              c.rpnLsb));
-      output_.push_back(M2Utils::scaleUp(
-          (static_cast<std::uint32_t>(c.rpnMsbValue) << 7) | b2, 14, 32));
+      output_.push_back(
+          M2Utils::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
     }
     break;
   case 99:
@@ -124,7 +123,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
     auto bank_lsb = std::uint8_t{0};
     if (channel_[channel].bankMSB != 0xFF &&
         channel_[channel].bankLSB != 0xFF) {
-      message |= 0x01U;
+      message |= 0x01U;  // Set the "bank valid" bit.
       bank_msb = channel_[channel].bankMSB;
       bank_lsb = channel_[channel].bankLSB;
     }
@@ -171,16 +170,18 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
+      auto const status = static_cast<std::uint8_t>(
+          sysex7_.state == sysex7::status::start ? sysex7::status::single_ump
+                                                 : sysex7::status::end);
       output_.push_back(
           pack(ump_message_type::sysex7,
-               static_cast<std::uint8_t>(
-                   (sysex7_.state == sysex7::status::start ? 0 : 3) << 4) |
-                   sysex7_.pos,
+               static_cast<std::uint8_t>((status << 4) | sysex7_.pos),
                sysex7_.bytes[0], sysex7_.bytes[1]));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
+
+      sysex7_.reset();
       sysex7_.state = sysex7::status::single_ump;
-      reset_sysex();
     }
   } else if (sysex7_.state == sysex7::status::start ||
              sysex7_.state == sysex7::status::cont ||
@@ -188,22 +189,21 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
     // Check for new UMP Message Type 3
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
       static constexpr auto num_sysex_bytes = std::uint8_t{6};
+      auto const status = static_cast<std::uint8_t>(sysex7_.state);
       output_.push_back(
           pack(ump_message_type::sysex7,
-               static_cast<std::uint8_t>(
-                   (static_cast<std::uint8_t>(sysex7_.state) << 4U) |
-                   num_sysex_bytes),
+               static_cast<std::uint8_t>((status << 4) | num_sysex_bytes),
                sysex7_.bytes[0], sysex7_.bytes[1]));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
-      reset_sysex();
+      sysex7_.reset();
       sysex7_.state = sysex7::status::cont;
       sysex7_.pos = 0;
     }
 
     sysex7_.bytes[sysex7_.pos] = midi1Byte;
-    sysex7_.pos++;
+    ++sysex7_.pos;
   } else if (d1_ != unknown) {  // Second byte
     this->bsToUMP(d0_, d1_, midi1Byte);
     d1_ = unknown;
