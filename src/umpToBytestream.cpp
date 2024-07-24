@@ -215,6 +215,9 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back((UMP >> 18) & 0x7F);
       output_.push_back((UMP >> 25) & 0x7F);
       break;
+    default:
+      // An unknown message.
+      break;
     }
     break;
   }
