@@ -148,7 +148,7 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
 
   auto const actual = convert(bytestreamToUMP{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << "Input: " << HexContainer(input)
+      << " Input: " << HexContainer(input)
       << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
@@ -158,6 +158,39 @@ TEST(BytestreamToUMP, SystemMessageOneByte) {
   std::array const input{std::uint8_t{0xF8}};
   EXPECT_THAT(convert(bytestreamToUMP{}, input),
               ElementsAre(UINT32_C(0x10f80000)));
+}
+
+TEST(BytestreamToUMP, BankAndProgramChange) {
+  constexpr auto channel = std::uint8_t{0x0F};  // 4 bits
+  constexpr auto program = std::uint8_t{0x42};
+  constexpr auto bank_msb = std::uint8_t{0x51};
+  constexpr auto bank_lsb = std::uint8_t{0x01};
+  std::array const input{
+      // MSB (Coarse) Bank select
+      std::uint8_t{status::cc | channel}, std::uint8_t{0x00}, bank_msb,
+      // LSB (Fine) Bank select
+      std::uint8_t{status::cc | channel}, std::uint8_t{0x20},
+      std::uint8_t{0x01},
+      // Program Change
+      std::uint8_t{status::program_change | channel}, program};
+
+  constexpr auto ump_midi2_program_change = std::uint32_t{0b1100};
+  constexpr auto message_type = std::uint32_t{0x04};
+  constexpr auto group = std::uint32_t{0x00};
+  constexpr auto option_flags = std::uint32_t{0x00};  // 7 bits
+  constexpr auto bank_valid = std::uint32_t{0x01};    // 1 bit
+
+  std::array const expected{
+      std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) |
+                    (ump_midi2_program_change << 20) | (option_flags << 1) |
+                    bank_valid},
+      std::uint32_t{(std::uint32_t{program} << 24) |
+                    (std::uint32_t{bank_msb} << 8) | std::uint32_t{bank_lsb}}};
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
