@@ -138,7 +138,7 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
 
   // A real-time message can appear anywhere, even in the middle of another
   // multi-byte message.
-  std::array const input{static_cast<std::uint8_t>(status::note_on | channel),
+  std::array const input{std::uint8_t{status::note_on | channel},
                          std::uint8_t{status::seqstart}, note_number, velocity};
   std::array const expected{
       std::uint32_t{(1U << 28) | (group << 24) | (status::seqstart << 16)},
@@ -160,23 +160,71 @@ TEST(BytestreamToUMP, SystemMessageOneByte) {
               ElementsAre(UINT32_C(0x10f80000)));
 }
 
+// NOLINTNEXTLINE
 TEST(BytestreamToUMP, BankAndProgramChange) {
   constexpr auto channel = std::uint8_t{0x0F};  // 4 bits
-  constexpr auto program = std::uint8_t{0x42};
-  constexpr auto bank_msb = std::uint8_t{0x51};
-  constexpr auto bank_lsb = std::uint8_t{0x01};
+  constexpr auto program = std::uint8_t{0x42};  // 8 bits
+  constexpr auto bank_msb = std::uint8_t{0x51};  // 8 bits
+  constexpr auto bank_lsb = std::uint8_t{0x01};  // 8 bits
+
+  constexpr auto controller_set_msb = std::uint8_t{0x00};
+  constexpr auto controller_set_lsb = std::uint8_t{0x20};
+
   std::array const input{
-      // MSB (Coarse) Bank select
+      // MSB (Coarse) Bank Select
+      std::uint8_t{status::cc | channel}, controller_set_msb, bank_msb,
+      // LSB (Fine) Bank Select
+      std::uint8_t{status::cc | channel}, controller_set_lsb, bank_lsb,
+      // Program Change
+      std::uint8_t{status::program_change | channel}, program};
+
+  constexpr auto ump_midi1_control_change = std::uint32_t{0b1011};
+  constexpr auto ump_midi1_program_change = std::uint32_t{0b1100};
+  constexpr auto message_type = std::uint32_t{0x02};  // 4 bits
+  constexpr auto group = std::uint32_t{0x00};         // 4 bits
+
+  std::array const expected{
+      // MSB (Coarse) Bank Select
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    (ump_midi1_control_change << 20) |
+                    (std::uint32_t{channel} << 16) |
+                    (std::uint32_t{controller_set_msb} << 8) | bank_msb},
+      // LSB (Fine) Bank Select
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    (ump_midi1_control_change << 20) |
+                    (std::uint32_t{channel} << 16) |
+                    (std::uint32_t{controller_set_lsb} << 8) | bank_lsb},
+      // Program Change
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    (ump_midi1_program_change << 20) |
+                    (std::uint32_t{channel} << 16) |
+                    (std::uint32_t{program} << 8)}};
+
+  auto const actual = convert(bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi2BankAndProgramChange) {
+  constexpr auto channel = std::uint8_t{0x0F};   // 4 bits
+  constexpr auto program = std::uint8_t{0x42};   // 8 bits
+  constexpr auto bank_msb = std::uint8_t{0x51};  // 8 bits
+  constexpr auto bank_lsb = std::uint8_t{0x01};  // 8 bits
+
+  std::array const input{
+      // MSB (Coarse) Bank Select
       std::uint8_t{status::cc | channel}, std::uint8_t{0x00}, bank_msb,
-      // LSB (Fine) Bank select
-      std::uint8_t{status::cc | channel}, std::uint8_t{0x20},
-      std::uint8_t{0x01},
+      // LSB (Fine) Bank Select
+      std::uint8_t{status::cc | channel}, std::uint8_t{0x20}, bank_lsb,
       // Program Change
       std::uint8_t{status::program_change | channel}, program};
 
   constexpr auto ump_midi2_program_change = std::uint32_t{0b1100};
-  constexpr auto message_type = std::uint32_t{0x04};
-  constexpr auto group = std::uint32_t{0x00};
+  constexpr auto message_type = std::uint32_t{0x04};  // 4 bits
+  constexpr auto group = std::uint32_t{0x00};         // 4 bits
   constexpr auto option_flags = std::uint32_t{0x00};  // 7 bits
   constexpr auto bank_valid = std::uint32_t{0x01};    // 1 bit
 
@@ -186,6 +234,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
                     bank_valid},
       std::uint32_t{(std::uint32_t{program} << 24) |
                     (std::uint32_t{bank_msb} << 8) | std::uint32_t{bank_lsb}}};
+
   auto const actual = convert(bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input)
@@ -197,7 +246,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
 TEST(BytestreamToUMP, PCTwoBytes) {
   std::array<uint8_t, 2> const input{0xC6, 0x40};
   EXPECT_THAT(convert(bytestreamToUMP{}, input),
-              ElementsAre(UINT32_C(0x20c64000)));
+              ElementsAre(UINT32_C(0x20C64000)));
 }
 
 // NOLINTNEXTLINE
@@ -215,9 +264,9 @@ TEST(BytestreamToUMP, SysEx) {
       std::uint8_t{0x10}, std::uint8_t{0x00}, std::uint8_t{0x00},
       std::uint8_t{0x00}, std::uint8_t{0xF7}};
   EXPECT_THAT(convert(bytestreamToUMP{}, input),
-              ElementsAre(UINT32_C(0x30167e7f), UINT32_C(0x0d70024b),
-                          UINT32_C(0x3026607a), UINT32_C(0x737f7f7f),
-                          UINT32_C(0x30267f7d), UINT32_C(0x00000000),
+              ElementsAre(UINT32_C(0x30167E7F), UINT32_C(0x0D70024B),
+                          UINT32_C(0x3026607A), UINT32_C(0x737F7F7Ff),
+                          UINT32_C(0x30267F7D), UINT32_C(0x00000000),
                           UINT32_C(0x30260100), UINT32_C(0x00000300),
                           UINT32_C(0x30360000), UINT32_C(0x10000000)));
 }
@@ -236,7 +285,7 @@ TEST(BytestreamToUMP, MT4NoteOnWithRunningStatus) {
 TEST(BytestreamToUMP, MT4PCTwoBytes) {
   std::array const input{std::uint8_t{0xC6}, std::uint8_t{0x40}};
   EXPECT_THAT(convert(bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40c60000), UINT32_C(0x40000000)));
+              ElementsAre(UINT32_C(0x40C60000), UINT32_C(0x40000000)));
 }
 
 // NOLINTNEXTLINE
@@ -246,7 +295,7 @@ TEST(BytestreamToUMP, MT4PC2BytesWithBankMsbLsb) {
                          std::uint8_t{0x0A}, std::uint8_t{0xC6},
                          std::uint8_t{0x41}};
   EXPECT_THAT(convert(bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40c60001), UINT32_C(0x4100010A)));
+              ElementsAre(UINT32_C(0x40C60001), UINT32_C(0x4100010A)));
 }
 
 // NOLINTNEXTLINE
