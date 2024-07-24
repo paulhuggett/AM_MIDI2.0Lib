@@ -27,6 +27,8 @@
 
 #include "umpToMIDI1Protocol.h"
 
+#include <cassert>
+
 #include "umpMessageCreate.h"
 #include "utils.h"
 
@@ -202,5 +204,6 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     UMPPos = 0;
     break;
   }
+  default: assert(false); break;
   }
 }
