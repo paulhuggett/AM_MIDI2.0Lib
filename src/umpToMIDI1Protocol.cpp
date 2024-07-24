@@ -158,6 +158,9 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       case pitch_bend:
         output_.push_back(UMPMessage::mt2PitchBend(group, channel, UMP >> 18));
         break;
+      default:
+        // An unknown CVM message
+        break;
       }
       break;
     }
