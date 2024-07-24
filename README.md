@@ -5,6 +5,7 @@ This is a general purposes Library for building MIDI 2.0 Devices and Application
 everything from embedded devices through to large scale applications. It provides the building blocks, processing and 
 translations needed for most MIDI 2.0 Devices and Applications
 
+[![CI Build & Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib/graph/badge.svg?token=8q2aEvPTyv)](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib)
 
 ## IMPORTANT! Please read first
