@@ -1,3 +1,0 @@
-add_executable (unittests
-    test_fifo.cpp
-)
