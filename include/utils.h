@@ -244,6 +244,7 @@ inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
 }
 
 constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
+  assert(dstBits >= srcBits);
   // Handle value of 0 - skip processing
   if (srcVal == 0) {
     return std::uint32_t{0};
