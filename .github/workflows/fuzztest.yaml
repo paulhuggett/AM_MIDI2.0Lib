@@ -1,0 +1,60 @@
+name: Fuzz Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzztest:
+    name: Fuzz Test
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DIR: build_fuzztest
+      BUILD_TYPE: RelWithDebug
+      CLANG_VERSION: 16
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # v2.9.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install Dependencies (LLVM)
+        uses: paulhuggett/install-llvm@ad897b4b1cf03f54c1218ec6d97a23ff4b10b870 # v1.0
+        with:
+          version: ${{ env.CLANG_VERSION }}
+
+      - name: Configure
+        run: |
+          mkdir "$BUILD_DIR"
+          cmake                                            \
+            -S .                                           \
+            -B "$BUILD_DIR"                                \
+            -G Ninja                                       \
+            -D CMAKE_BUILD_TYPE="$BUILD_TYPE"              \
+            -D CMAKE_CXX_COMPILER="clang++-$CLANG_VERSION" \
+            -D CMAKE_C_COMPILER="clang-$CLANG_VERSION"     \
+            -D MIDI2_FUZZTEST=Yes
+
+      - name: Build
+        run: |
+          cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" --verbose
+
+      - name: Fuzz
+        run: |
+          "$BUILD_DIR/unittests/m2unittests" --fuzz_for 30s
