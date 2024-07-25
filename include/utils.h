@@ -28,6 +28,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <cassert>
 #include <cstdint>
 #include <tuple>
 
@@ -44,7 +45,7 @@ enum status : std::uint8_t {
   // System Common Messages
   sysex_start = 0xF0,
   timing_code = 0xF1,
-  spp = 0xF2,
+  spp = 0xF2,  // Song Position Pointer
   song_select = 0xF3,
   reserved1 = 0xF4,
   reserved2 = 0xF5,
@@ -242,7 +243,7 @@ inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
   }
 }
 
-inline uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
+constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   // Handle value of 0 - skip processing
   if (srcVal == 0) {
     return std::uint32_t{0};
@@ -278,9 +279,10 @@ inline uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   return bitShiftedValue;
 }
 
-inline uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
-  // simple bit shift
-  uint8_t scaleBits = (srcBits - dstBits);
+constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits,
+                             uint8_t dstBits) {
+  assert(srcBits >= dstBits);
+  uint8_t const scaleBits = (srcBits - dstBits);
   return srcVal >> scaleBits;
 }
 
