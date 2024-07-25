@@ -52,6 +52,20 @@ auto convert(bytestreamToUMP&& bs2ump,
   return output;
 }
 
+constexpr std::uint32_t ump_cvm(status s) {
+  static_assert(std::is_same_v<std::underlying_type_t<status>, std::uint8_t>,
+                "status type must be a std::uint8_t");
+  assert((s & 0x0F) == 0 &&
+         "Bottom 4 bits of a channel voice message status enum  must be 0");
+  return std::uint32_t{s} >> 4;
+}
+
+constexpr auto ump_note_on = ump_cvm(status::note_on);
+constexpr auto ump_note_off = ump_cvm(status::note_off);
+constexpr auto ump_pitch_bend = ump_cvm(status::pitch_bend);
+constexpr auto ump_control_change = ump_cvm(status::cc);
+constexpr auto ump_program_change = ump_cvm(status::program_change);
+
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, NoteOnWithRunningStatus) {
   std::array const input{std::uint8_t{0x81}, std::uint8_t{0x60},
@@ -72,7 +86,6 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
   constexpr auto note_number = std::uint8_t{60};
   constexpr auto velocity = std::uint8_t{127};
 
-  constexpr auto ump_note_on = std::uint32_t{0b1001};
   constexpr auto group = std::uint32_t{0};
 
   // A note on message followed by a note-on with velocity 0. The second of
@@ -103,8 +116,6 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
 
   constexpr auto message_type =
       static_cast<std::uint32_t>(ump_message_type::m2cvm);
-  constexpr auto ump_note_on = std::uint32_t{0b1001};
-  constexpr auto ump_note_off = std::uint32_t{0b1000};
   constexpr auto group = std::uint32_t{0};
 
   // A note on message followed by a note-on with velocity 0. The second of
@@ -140,7 +151,7 @@ TEST(BytestreamToUMP, PitchBend) {
   constexpr auto message_type =
       static_cast<std::uint32_t>(ump_message_type::m1cvm);
   constexpr auto group = std::uint32_t{0};
-  constexpr auto ump_pitch_bend = std::uint32_t{0b1110};
+
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
                     (ump_pitch_bend << 20) | (channel << 16) |
@@ -164,7 +175,6 @@ TEST(BytestreamToUMP, Midi2PitchBend) {
   constexpr auto message_type =
       static_cast<std::uint32_t>(ump_message_type::m2cvm);
   constexpr auto group = std::uint32_t{0};
-  constexpr auto ump_pitch_bend = std::uint32_t{0b1110};
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
                     (ump_pitch_bend << 20) | (channel << 16)},
@@ -183,13 +193,12 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   constexpr auto note_number = std::uint8_t{60};
   constexpr auto velocity = std::uint8_t{127};
 
-  constexpr auto ump_note_on = std::uint32_t{0b1001};
-  constexpr auto group = std::uint32_t{0};
-
   // A real-time message can appear anywhere, even in the middle of another
   // multi-byte message.
   std::array const input{std::uint8_t{status::note_on | channel},
                          std::uint8_t{status::seqstart}, note_number, velocity};
+
+  constexpr auto group = std::uint32_t{0};
   std::array const expected{
       std::uint32_t{(1U << 28) | (group << 24) | (status::seqstart << 16)},
       std::uint32_t{(2U << 28) | (group << 24) | (channel << 16) |
@@ -228,27 +237,25 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
       // Program Change
       std::uint8_t{status::program_change | channel}, program};
 
-  constexpr auto ump_midi1_control_change = std::uint32_t{0b1011};
-  constexpr auto ump_midi1_program_change = std::uint32_t{0b1100};
-  constexpr auto message_type = std::uint32_t{0x02};  // 4 bits
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m1cvm);  // 4 bits
   constexpr auto group = std::uint32_t{0x00};         // 4 bits
 
   std::array const expected{
       // MSB (Coarse) Bank Select
       std::uint32_t{(message_type << 28) | (group << 24) |
-                    (ump_midi1_control_change << 20) |
+                    (ump_control_change << 20) |
                     (std::uint32_t{channel} << 16) |
                     (std::uint32_t{controller_set_msb} << 8) | bank_msb},
       // LSB (Fine) Bank Select
       std::uint32_t{(message_type << 28) | (group << 24) |
-                    (ump_midi1_control_change << 20) |
+                    (ump_control_change << 20) |
                     (std::uint32_t{channel} << 16) |
                     (std::uint32_t{controller_set_lsb} << 8) | bank_lsb},
       // Program Change
-      std::uint32_t{(message_type << 28) | (group << 24) |
-                    (ump_midi1_program_change << 20) |
-                    (std::uint32_t{channel} << 16) |
-                    (std::uint32_t{program} << 8)}};
+      std::uint32_t{
+          (message_type << 28) | (group << 24) | (ump_program_change << 20) |
+          (std::uint32_t{channel} << 16) | (std::uint32_t{program} << 8)}};
 
   auto const actual = convert(bytestreamToUMP{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
@@ -272,15 +279,15 @@ TEST(BytestreamToUMP, Midi2BankAndProgramChange) {
       // Program Change
       std::uint8_t{status::program_change | channel}, program};
 
-  constexpr auto ump_midi2_program_change = std::uint32_t{0b1100};
-  constexpr auto message_type = std::uint32_t{0x04};  // 4 bits
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m2cvm);  // 4 bits
   constexpr auto group = std::uint32_t{0x00};         // 4 bits
   constexpr auto option_flags = std::uint32_t{0x00};  // 7 bits
   constexpr auto bank_valid = std::uint32_t{0x01};    // 1 bit
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) |
-                    (ump_midi2_program_change << 20) | (option_flags << 1) |
+                    (ump_program_change << 20) | (option_flags << 1) |
                     bank_valid},
       std::uint32_t{(std::uint32_t{program} << 24) |
                     (std::uint32_t{bank_msb} << 8) | std::uint32_t{bank_lsb}}};
@@ -395,7 +402,6 @@ protected:
 };
 
 TEST_P(BytestreamToUMPReserved, Midi1StatusCodeThenNoteOn) {
-  constexpr auto ump_note_on = std::uint32_t{0b1001};
   constexpr auto group = std::uint32_t{0};
   constexpr auto message_type = std::uint32_t{2};
 
@@ -415,7 +421,6 @@ TEST_P(BytestreamToUMPReserved, Midi1StatusCodeThenNoteOn) {
 TEST_P(BytestreamToUMPReserved, Midi2StatusCodeThenNoteOn) {
   constexpr auto message_type = std::uint32_t{4};
   constexpr auto group = std::uint32_t{0};
-  constexpr auto ump_note_on = std::uint32_t{0b1001};
   constexpr auto attribute_type = std::uint32_t{0};  // 0 = no attribute data
   constexpr auto attribute = std::uint32_t{0};
 
