@@ -116,7 +116,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
     break;
   case status::pitch_bend:
     output_.push_back(message);
-    output_.push_back(scaleUp((std::uint32_t{b1} << 7) | b2, 14, 32));
+    output_.push_back(scaleUp((std::uint32_t{b2} << 7) | b1, 14, 32));
     break;
   case status::program_change: {
     auto bank_msb = std::uint8_t{0};
