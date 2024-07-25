@@ -161,8 +161,12 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
   if ((midi1Byte & 0x80) != 0x00) {  // Status byte received
     if (midi1Byte == status::tunerequest ||
         isSystemRealTimeMessage(midi1Byte)) {
+      if (midi1Byte == status::tunerequest) {
+        d0_ = midi1Byte;
+      }
       return this->bsToUMP(midi1Byte, 0, 0);
     }
+
     d0_ = midi1Byte;
     d1_ = unknown;
 
