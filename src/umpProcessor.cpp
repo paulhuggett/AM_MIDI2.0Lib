@@ -169,7 +169,7 @@ void umpProcessor::processUMP(uint32_t UMP) {
         mess.index = umpMess[1] & 65535;
         channelVoiceMessage(mess);
         break;
-      case status::pitch_bend_pernote:
+      case midi2status::pitch_bend_pernote:
       case status::key_pressure:  // Poly Pressure
         mess.note = val1;
         mess.value = umpMess[1];
@@ -186,10 +186,10 @@ void umpProcessor::processUMP(uint32_t UMP) {
           channelVoiceMessage(mess);
         break;
 
-      case status::rpn:            // RPN
-      case status::nrpn:           // NRPN
-      case status::rpn_relative:   // Relative RPN
-      case status::nrpn_relative:  // Relative NRPN
+      case midi2status::rpn:            // RPN
+      case midi2status::nrpn:           // NRPN
+      case midi2status::rpn_relative:   // Relative RPN
+      case midi2status::nrpn_relative:  // Relative NRPN
         mess.bank = val1;
         mess.index = val2;
         mess.value = umpMess[1];
@@ -212,8 +212,8 @@ void umpProcessor::processUMP(uint32_t UMP) {
           channelVoiceMessage(mess);
         break;
 
-      case status::nrpn_pernote:  // Assignable Per-Note Controller 1
-      case status::rpn_pernote:   // Registered Per-Note Controller 0
+      case midi2status::nrpn_pernote:  // Assignable Per-Note Controller 1
+      case midi2status::rpn_pernote:   // Registered Per-Note Controller 0
         mess.note = val1;
         mess.index = val2;
         mess.value = umpMess[1];
@@ -221,7 +221,7 @@ void umpProcessor::processUMP(uint32_t UMP) {
           channelVoiceMessage(mess);
         }
         break;
-      case status::pernote_manage:  // Per-Note Management Message
+      case midi2status::pernote_manage:  // Per-Note Management Message
         mess.note = val1;
         mess.flag1 = (val2 & 2) != 0;
         mess.flag2 = (val2 & 1) != 0;

@@ -59,7 +59,9 @@ enum status : std::uint8_t {
   reserved4 = 0xFD,
   activesense = 0xFE,
   systemreset = 0xFF,
-
+};
+// Status codes added in MIDI 2.
+enum midi2status : std::uint8_t {
   pernote_manage = 0xF0,
   rpn_pernote = 0x00,
   nrpn_pernote = 0x10,
@@ -68,6 +70,19 @@ enum status : std::uint8_t {
   rpn_relative = 0x40,
   nrpn_relative = 0x50,
   pitch_bend_pernote = 0x60,
+};
+
+// The MIDI 1.0 Specification defines Control Change indexes 98, 99, 100, and
+// 101 (0x62, 0x63, 0x64, and 0x65) to be used as compound sequences for
+// Non-Registered Parameter Number and Registered Parameter Number control
+// messages. These set destinations for Control Change index 6/38 (0x06/0x26),
+// Data Entry.
+enum control : std::uint8_t {
+  data_entry_msb = 0x06,
+  rpn_lsb = 0x64,
+  rpn_msb = 0x65,
+  nrpn_lsb = 0x62,
+  nrpn_msb = 0x63,
 };
 
 enum : std::uint8_t {

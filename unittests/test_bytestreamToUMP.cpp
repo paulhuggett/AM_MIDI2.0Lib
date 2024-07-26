@@ -341,7 +341,7 @@ TEST(BytestreamToUMP, MT4NoteOnWithRunningStatus) {
 }
 
 // NOLINTNEXTLINE
-TEST(BytestreamToUMP, MT4PCTwoBytes) {
+TEST(BytestreamToUMP, MT4ProgramChangeTwoBytes) {
   std::array const input{std::uint8_t{0xC6}, std::uint8_t{0x40}};
   EXPECT_THAT(convert(bytestreamToUMP{true}, input),
               ElementsAre(UINT32_C(0x40C60000), UINT32_C(0x40000000)));
@@ -358,23 +358,85 @@ TEST(BytestreamToUMP, MT4PC2BytesWithBankMsbLsb) {
 }
 
 // NOLINTNEXTLINE
-TEST(BytestreamToUMP, MT4RPN) {
-  std::array const input{std::uint8_t{0xB6}, std::uint8_t{0x65},
-                         std::uint8_t{0x00}, std::uint8_t{0x64},
-                         std::uint8_t{0x06}, std::uint8_t{0x06},
-                         std::uint8_t{0x08}};
-  EXPECT_THAT(convert(bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40260006), UINT32_C(0x10000000)));
+TEST(BytestreamToUMP, Midi2RPN) {
+  constexpr auto channel = std::uint8_t{0x0F};  // 4 bits
+  constexpr auto msb = std::uint8_t{0x00};      // 7 bits
+  constexpr auto lsb = std::uint8_t{0x06};      // 7 bits
+  constexpr auto de = std::uint8_t{0x7F};       // Data entry: 7 bits
+
+  // "The basic procedure for altering a parameter value is to first send the
+  // Registered or Non-Registered Parameter Number corresponding to the
+  // parameter to be modified, followed by the Data Entry, Data Increment, or
+  // Data Decrement value to be applied to the parameter."
+  //
+  // B6 65 (msb)  set RPN MSB
+  // B6 64 (lsb)  set RPN LSB
+  // B6 06 (de)   data entry.
+
+  std::array const input{
+      // Set RPN MSB
+      std::uint8_t{status::cc | channel}, std::uint8_t{control::rpn_msb}, msb,
+      // (running status) Set RPN LSB
+      std::uint8_t{control::rpn_lsb}, lsb,
+      // (running status) Set data
+      std::uint8_t{control::data_entry_msb}, de};
+
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m2cvm);  // 4 bits
+  constexpr auto group = std::uint32_t{0};                  // 4 bits
+  constexpr auto bank = std::uint32_t{msb};                 // 7 bits
+  constexpr auto index = std::uint32_t{lsb};                // 7 bits
+  constexpr auto data = std::uint32_t{(M2Utils::scaleUp(de << 7, 14, 32))};
+
+  std::array const expected{
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    ((midi2status::rpn | channel) << 16) | (bank << 8) | index},
+      data,
+  };
+
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
-TEST(BytestreamToUMP, Midi1TwoNoteOffs) {
+TEST(BytestreamToUMP, Midi2RPNWithLSB) {
+  std::array const input{
+    std::uint8_t{0xB0}, std::uint8_t{0x64}, std::uint8_t{0x00}, // RPN (LSB)
+    std::uint8_t{0xB0}, std::uint8_t{0x65}, std::uint8_t{0x00}, // RPN (MSB)
+
+    std::uint8_t{0xB0}, std::uint8_t{0x06}, std::uint8_t{0x02}, // Data entry (MSB)
+    std::uint8_t{0xB0}, std::uint8_t{0x26}, std::uint8_t{0x03}, // Data entry (LSB)
+
+    // End of the controller sequence
+    std::uint8_t{0xB0}, std::uint8_t{0x64}, std::uint8_t{0x7F},
+    std::uint8_t{0xB0}, std::uint8_t{0x65}, std::uint8_t{0x7F},
+  };
+
+  std::array const expected{
+      std::uint32_t{0x40200000},
+      std::uint32_t{0x04000000},
+      std::uint32_t{0x40200000},
+      std::uint32_t{0xFE0FF07F},
+  };
+
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi1BadDataTwoNoteOffs) {
   std::array const input{std::uint8_t{0x80}, std::uint8_t{0x80}};
   EXPECT_THAT(convert(bytestreamToUMP{}, input), IsEmpty());
 }
 
 // NOLINTNEXTLINE
-TEST(BytestreamToUMP, Midi2TwoNoteOffs) {
+TEST(BytestreamToUMP, Midi2BadDataTwoNoteOffs) {
   std::array const input{std::uint8_t{0x80}, std::uint8_t{0x80}};
   EXPECT_THAT(convert(bytestreamToUMP{true}, input), IsEmpty());
 }
@@ -391,24 +453,34 @@ protected:
   static constexpr auto velocity_ = std::uint8_t{127};
   static constexpr auto channel_ = std::uint8_t{1};
 
-  std::array<std::uint8_t, 7> input() const {
-    return {this->GetParam(),    // one of the reserved status codes
-            std::uint8_t{0x01},  // two bytes to be ignored
-            std::uint8_t{0x02}, std::uint8_t{0x03},
+  auto input() const {
+    return std::array{
             // a normal note-on message
             static_cast<std::uint8_t>(status::note_on | channel_), note_number_,
-            velocity_};
+            velocity_,
+            //
+            this->GetParam(),    // one of the reserved status codes
+            std::uint8_t{0x01},  // two bytes to be ignored
+            std::uint8_t{0x02}, std::uint8_t{0x03},
+            // a normal note-off message
+            static_cast<std::uint8_t>(status::note_off | channel_), note_number_,
+            velocity_
+            };
   }
 };
 
-TEST_P(BytestreamToUMPReserved, Midi1StatusCodeThenNoteOn) {
+TEST_P(BytestreamToUMPReserved, Midi1ReservedStatusCodeThenNoteOn) {
   constexpr auto group = std::uint32_t{0};
   constexpr auto message_type = std::uint32_t{2};
 
-  std::array const expected{static_cast<std::uint32_t>(
-      (message_type << 28) | (group << 24) | (channel_ << 16) |
-      (ump_note_on << 20) | (static_cast<std::uint32_t>(note_number_) << 8) |
-      (static_cast<std::uint32_t>(velocity_)))};
+  std::array const expected{
+      std::uint32_t{(message_type << 28) | (group << 24) | (channel_ << 16) |
+                    (ump_note_on << 20) | (std::uint32_t{note_number_} << 8) |
+                    (static_cast<std::uint32_t>(velocity_))},
+
+      std::uint32_t{(message_type << 28) | (group << 24) | (channel_ << 16) |
+                    (ump_note_off << 20) | (std::uint32_t{note_number_} << 8) |
+                    (static_cast<std::uint32_t>(velocity_))}};
 
   auto const input = this->input();
   auto const actual = convert(bytestreamToUMP{}, input);
@@ -418,7 +490,7 @@ TEST_P(BytestreamToUMPReserved, Midi1StatusCodeThenNoteOn) {
       << "\n Expected: " << HexContainer(expected);
 }
 
-TEST_P(BytestreamToUMPReserved, Midi2StatusCodeThenNoteOn) {
+TEST_P(BytestreamToUMPReserved, Midi2ReservedStatusCodeThenNoteOn) {
   constexpr auto message_type = std::uint32_t{4};
   constexpr auto group = std::uint32_t{0};
   constexpr auto attribute_type = std::uint32_t{0};  // 0 = no attribute data
@@ -426,8 +498,12 @@ TEST_P(BytestreamToUMPReserved, Midi2StatusCodeThenNoteOn) {
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) | (channel_ << 16) |
-                    (ump_note_on << 20) |
-                    (static_cast<std::uint32_t>(note_number_) << 8) |
+                    (ump_note_on << 20) | (std::uint32_t{note_number_} << 8) |
+                    attribute_type},
+      std::uint32_t{(M2Utils::scaleUp(velocity_, 7, 16) << 16) | attribute},
+
+      std::uint32_t{(message_type << 28) | (group << 24) | (channel_ << 16) |
+                    (ump_note_off << 20) | (std::uint32_t{note_number_} << 8) |
                     attribute_type},
       std::uint32_t{(M2Utils::scaleUp(velocity_, 7, 16) << 16) | attribute}};
   auto const input = this->input();

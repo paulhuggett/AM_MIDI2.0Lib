@@ -36,12 +36,12 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   case 0: c.bankMSB = b2; break;
   case 32: c.bankLSB = b2; break;
 
-  case 6:  // RPN MSB Value
+  case data_entry_msb:  // RPN MSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
       if (c.rpnMode && c.rpnMsb == 0 && (c.rpnLsb == 0 || c.rpnLsb == 6)) {
-        output_.push_back(pack(ump_message_type::m2cvm,
-                               (c.rpnMode ? rpn : nrpn) | channel, c.rpnMsb,
-                               c.rpnLsb));
+        auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
+        output_.push_back(pack(ump_message_type::m2cvm, status | channel,
+                               c.rpnMsb, c.rpnLsb));
         output_.push_back(M2Utils::scaleUp(std::uint32_t{b2} << 7, 14, 32));
       } else {
         c.rpnMsbValue = b2;
@@ -51,29 +51,17 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   case 38:
     // RPN LSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
-      output_.push_back(pack(ump_message_type::m2cvm,
-                             (c.rpnMode ? rpn : nrpn) | channel, c.rpnMsb,
-                             c.rpnLsb));
+      auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
+      output_.push_back(
+          pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
       output_.push_back(
           M2Utils::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
     }
     break;
-  case 99:
-    c.rpnMode = false;
-    c.rpnMsb = b2;
-    break;
-  case 98:
-    c.rpnMode = false;
-    c.rpnLsb = b2;
-    break;
-  case 101:
-    c.rpnMode = true;
-    c.rpnMsb = b2;
-    break;
-  case 100:
-    c.rpnMode = true;
-    c.rpnLsb = b2;
-    break;
+  case control::nrpn_msb: c.rpnMode = false; c.rpnMsb = b2; break;
+  case control::nrpn_lsb: c.rpnMode = false; c.rpnLsb = b2; break;
+  case control::rpn_msb: c.rpnMode = true; c.rpnMsb = b2; break;
+  case control::rpn_lsb: c.rpnMode = true; c.rpnLsb = b2; break;
   default:
     output_.push_back(pack(ump_message_type::m2cvm, b0, b1, 0));
     output_.push_back(M2Utils::scaleUp(b2, 7, 32));
@@ -155,10 +143,21 @@ constexpr bool isSystemRealTimeMessage(std::uint8_t const midi1Byte) {
   }
 }
 
+constexpr bool isStatusByte(std::uint8_t const midi1Byte) {
+  return (midi1Byte & 0x80) != 0x00;
+}
+
+/// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
+constexpr bool isOneByteMessage(std::uint8_t const midi1Byte) {
+  return (midi1Byte & 0xF0) == status::program_change ||
+         (midi1Byte & 0xF0) == status::channel_pressure ||
+         midi1Byte == status::timing_code || midi1Byte == status::song_select;
+}
+
 }  // end anonymous namespace
 
 void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
-  if ((midi1Byte & 0x80) != 0x00) {  // Status byte received
+  if (isStatusByte(midi1Byte)) {
     if (midi1Byte == status::tunerequest ||
         isSystemRealTimeMessage(midi1Byte)) {
       if (midi1Byte == status::tunerequest) {
@@ -174,9 +173,9 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
-      auto const status = static_cast<std::uint8_t>(
-          sysex7_.state == sysex7::status::start ? sysex7::status::single_ump
-                                                 : sysex7::status::end);
+      using enum sysex7::status;
+      auto const status =
+          static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
       output_.push_back(
           pack(ump_message_type::sysex7,
                static_cast<std::uint8_t>((status << 4) | sysex7_.pos),
@@ -185,7 +184,7 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
       sysex7_.reset();
-      sysex7_.state = sysex7::status::single_ump;
+      sysex7_.state = single_ump;
     }
   } else if (sysex7_.state == sysex7::status::start ||
              sysex7_.state == sysex7::status::cont ||
@@ -194,10 +193,10 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
       static constexpr auto num_sysex_bytes = std::uint8_t{6};
       auto const status = static_cast<std::uint8_t>(sysex7_.state);
-      output_.push_back(
-          pack(ump_message_type::sysex7,
-               static_cast<std::uint8_t>((status << 4) | num_sysex_bytes),
-               sysex7_.bytes[0], sysex7_.bytes[1]));
+      output_.push_back(pack(ump_message_type::sysex7,
+                             std::uint8_t{static_cast<std::uint8_t>(
+                                 (status << 4) | num_sysex_bytes)},
+                             sysex7_.bytes[0], sysex7_.bytes[1]));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
@@ -212,12 +211,10 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
     this->bsToUMP(d0_, d1_, midi1Byte);
     d1_ = unknown;
   } else if (d0_ != 0) {  // status byte set
-    if ((d0_ & 0xF0) == status::program_change ||
-        (d0_ & 0xF0) == status::channel_pressure ||
-        d0_ == status::timing_code || d0_ == status::song_select) {
+    if (isOneByteMessage(d0_)) {
       this->bsToUMP(d0_, midi1Byte, 0);
-    } else if (d0_ < status::sysex_start ||
-               d0_ == status::spp) {  // First data byte
+    } else if (d0_ < status::sysex_start || d0_ == status::spp) {
+      // This is the first of a two data byte message.
       d1_ = midi1Byte;
     }
   }

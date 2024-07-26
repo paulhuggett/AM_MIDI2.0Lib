@@ -224,7 +224,8 @@ std::array<uint32_t, 2> UMPMessage::mt4RPN(uint8_t group, uint8_t channel,
                                            uint8_t bank, uint8_t index,
                                            uint32_t value) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] = mt4CreateFirstWord(group, status::rpn, channel, bank, index);
+  umpMess[0] =
+      mt4CreateFirstWord(group, midi2status::rpn, channel, bank, index);
   umpMess[1] = value;
   return umpMess;
 }
@@ -233,7 +234,8 @@ std::array<uint32_t, 2> UMPMessage::mt4NRPN(uint8_t group, uint8_t channel,
                                             uint8_t bank, uint8_t index,
                                             uint32_t value) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] = mt4CreateFirstWord(group, status::nrpn, channel, bank, index);
+  umpMess[0] =
+      mt4CreateFirstWord(group, midi2status::nrpn, channel, bank, index);
   umpMess[1] = value;
   return umpMess;
 }
@@ -243,8 +245,8 @@ std::array<uint32_t, 2> UMPMessage::mt4RelativeRPN(uint8_t group,
                                                    uint8_t bank, uint8_t index,
                                                    int32_t value) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] =
-      mt4CreateFirstWord(group, status::rpn_relative, channel, bank, index);
+  umpMess[0] = mt4CreateFirstWord(group, midi2status::rpn_relative, channel,
+                                  bank, index);
   umpMess[1] = static_cast<std::uint32_t>(value);
   return umpMess;
 }
@@ -254,8 +256,8 @@ std::array<uint32_t, 2> UMPMessage::mt4RelativeNRPN(uint8_t group,
                                                     uint8_t bank, uint8_t index,
                                                     int32_t value) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] =
-      mt4CreateFirstWord(group, status::nrpn_relative, channel, bank, index);
+  umpMess[0] = mt4CreateFirstWord(group, midi2status::nrpn_relative, channel,
+                                  bank, index);
   umpMess[1] = static_cast<std::uint32_t>(value);
   return umpMess;
 }

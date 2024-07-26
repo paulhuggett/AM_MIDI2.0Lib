@@ -160,7 +160,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(
           static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7)));
       break;
-    case status::rpn: {
+    case midi2status::rpn: {
       output_.push_back(status::cc + channel);
       output_.push_back(101);
       output_.push_back(val1);
@@ -178,7 +178,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(val14bit & 0x7F);
       break;
     }
-    case status::nrpn: {  // nrpn
+    case midi2status::nrpn: {  // nrpn
       output_.push_back(status::cc + channel);
       output_.push_back(99);
       output_.push_back(val1);
