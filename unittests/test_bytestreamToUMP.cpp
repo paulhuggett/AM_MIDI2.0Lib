@@ -65,6 +65,7 @@ constexpr auto ump_note_off = ump_cvm(status::note_off);
 constexpr auto ump_pitch_bend = ump_cvm(status::pitch_bend);
 constexpr auto ump_control_change = ump_cvm(status::cc);
 constexpr auto ump_program_change = ump_cvm(status::program_change);
+constexpr auto ump_channel_pressure = ump_cvm(status::channel_pressure);
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, NoteOnWithRunningStatus) {
@@ -135,7 +136,48 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
   std::array const expected{m0, m1, m2, m3};
   auto const actual = convert(bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << "Input: " << HexContainer(input)
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi1ChannelPressure) {
+  constexpr auto channel = std::uint8_t{5};    // 4 bits
+  constexpr auto pressure = std::uint8_t{57};  // 7 bits
+  std::array const input{std::uint8_t{channel_pressure | channel}, pressure};
+
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m1cvm);
+  constexpr auto group = std::uint32_t{0};
+  std::array const expected{std::uint32_t{
+      (message_type << 28) | (group << 24) | (ump_channel_pressure << 20) |
+      (std::uint32_t{channel} << 16) | (std::uint32_t{pressure} << 8)}};
+
+  auto const actual = convert(bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi2ChannelPressure) {
+  constexpr auto channel = std::uint8_t{5};    // 4 bits
+  constexpr auto pressure = std::uint8_t{57};  // 7 bits
+  std::array const input{std::uint8_t{channel_pressure | channel}, pressure};
+
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m2cvm);
+  constexpr auto group = std::uint32_t{0};
+  std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) |
+                                          (ump_channel_pressure << 20) |
+                                          (std::uint32_t{channel} << 16)},
+                            M2Utils::scaleUp(pressure, 7, 32)};
+
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
       << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
