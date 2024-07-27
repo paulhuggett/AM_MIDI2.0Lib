@@ -33,10 +33,10 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   std::uint8_t const channel = b0 & 0x0F;
   auto& c = channel_[channel];
   switch (b1) {
-  case 0: c.bankMSB = b2; break;
-  case 32: c.bankLSB = b2; break;
+  case control::bank_select: c.bankMSB = b2; break;
+  case control::bank_select_lsb: c.bankLSB = b2; break;
 
-  case data_entry_msb:  // RPN MSB Value
+  case control::data_entry_msb:  // RPN MSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
       if (c.rpnMode && c.rpnMsb == 0 && (c.rpnLsb == 0 || c.rpnLsb == 6)) {
         auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
@@ -48,7 +48,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
       }
     }
     break;
-  case 38:
+  case control::data_entry_lsb:
     // RPN LSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
       auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;

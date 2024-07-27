@@ -430,6 +430,46 @@ TEST(BytestreamToUMP, Midi2RPNWithLSB) {
 }
 
 // NOLINTNEXTLINE
+TEST(BytestreamToUMP, Midi2NonRegisteredParameterSetMSBAndLSB) {
+  constexpr auto channel = std::uint8_t{0x0F};   // 4 bits
+  constexpr auto msb = std::uint8_t{0x00};       // 7 bits
+  constexpr auto lsb = std::uint8_t{0x06};       // 7 bits
+  constexpr auto data_msb = std::uint8_t{0x12};  // Data entry: 7 bits
+  constexpr auto data_lsb = std::uint8_t{0x34};  // Data entry: 7 bits
+
+  std::array const input{
+      // Set NRPN MSB
+      std::uint8_t{status::cc | channel},
+      std::uint8_t{control::nrpn_msb}, msb,
+      // (running status) Set NRPN LSB
+      std::uint8_t{control::nrpn_lsb}, lsb,
+      // Set data MSB
+      std::uint8_t{control::data_entry_msb}, data_msb,
+      // Set data LSB
+      std::uint8_t{control::data_entry_lsb}, data_lsb,
+  };
+
+  constexpr auto message_type =
+      static_cast<std::uint32_t>(ump_message_type::m2cvm);  // 4 bits
+  constexpr auto group = std::uint32_t{0};                  // 4 bits
+  constexpr auto bank = std::uint32_t{msb};                 // 7 bits
+  constexpr auto index = std::uint32_t{lsb};                // 7 bits
+
+  std::array const expected{
+      std::uint32_t{(message_type << 28) | (group << 24) |
+                    ((midi2status::nrpn | channel) << 16) | (bank << 8) |
+                    index},
+      M2Utils::scaleUp((std::uint32_t{data_msb} << 7) | data_lsb, 14, 32),
+  };
+
+  auto const actual = convert(bytestreamToUMP{true}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+// NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi1BadDataTwoNoteOffs) {
   std::array const input{std::uint8_t{0x80}, std::uint8_t{0x80}};
   EXPECT_THAT(convert(bytestreamToUMP{}, input), IsEmpty());

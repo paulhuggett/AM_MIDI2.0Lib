@@ -78,7 +78,10 @@ enum midi2status : std::uint8_t {
 // messages. These set destinations for Control Change index 6/38 (0x06/0x26),
 // Data Entry.
 enum control : std::uint8_t {
+  bank_select = 0x00,
+  bank_select_lsb = 0x20,
   data_entry_msb = 0x06,
+  data_entry_lsb = 0x26,
   rpn_lsb = 0x64,
   rpn_msb = 0x65,
   nrpn_lsb = 0x62,
