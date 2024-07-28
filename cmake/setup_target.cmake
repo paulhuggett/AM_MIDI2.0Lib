@@ -48,6 +48,7 @@ function (setup_target target)
     -Wno-ctad-maybe-unsupported
     -Wno-documentation-unknown-command
     -Wno-padded
+    -Wno-weak-vtables
   )
   # Some clang warning switches are not available in all versions of the compiler.
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang$")
