@@ -27,6 +27,7 @@
 #ifndef UMP_PROCESSOR_H
 #define UMP_PROCESSOR_H
 
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>
@@ -337,9 +338,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::m1cvm_message(
 template <typename Callbacks>
 requires backend<Callbacks> void umpProcessor<Callbacks>::sysex7_message(
     ump_message_type const mt, std::uint8_t const group) {
-  // 64 bits Data Messages (including System Exclusive)
+  // 64 bit Data Messages (including System Exclusive)
   std::array<std::uint8_t, 6> sysex{};
-  auto const data_length = (message_[0] >> 16) & 0xF;
+  auto const data_length = std::min((message_[0] >> 16) & 0xF, 6U);
   if (data_length > 0) {
     sysex[0] = (message_[0] >> 8) & 0x7F;
   }
