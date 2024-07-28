@@ -166,6 +166,34 @@ constexpr std::uint32_t ump_cvm(status s) {
 
 constexpr auto ump_note_on = ump_cvm(status::note_on);
 
+TEST(UMPProcessor, Midi1NoteOn) {
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto note_number = std::uint8_t{60};
+  constexpr auto velocity = std::uint16_t{0x43}; // 7 bits
+  constexpr auto group = std::uint8_t{0};
+
+  umpCVM message;
+  message.common.group = group;
+  message.common.messageType = ump_message_type::m1cvm;
+  message.common.status = status::note_on;
+  message.channel = channel;
+  message.note = note_number;
+  message.value = M2Utils::scaleUp(velocity, 7, 16);
+  message.index = 0;
+  message.bank = 0;
+  message.flag1 = false;
+  message.flag2 = false;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
+
+  umpProcessor p{callbacks_proxy{callbacks}};
+  p.processUMP (std::uint32_t{
+      (static_cast<std::uint32_t>(ump_message_type::m1cvm) << 28) |
+      (std::uint32_t{group} << 24) | (ump_note_on << 20) |
+      (std::uint32_t{channel} << 16) | (std::uint32_t{note_number} << 8) | velocity});
+}
+
 TEST(UMPProcessor, Midi2NoteOn) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
