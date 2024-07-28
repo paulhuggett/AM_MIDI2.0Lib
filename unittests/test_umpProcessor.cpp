@@ -10,12 +10,14 @@
 #include <fuzztest/fuzztest.h>
 #endif
 
+std::ostream& operator<<(std::ostream& os, umpCommon const& common);
 std::ostream& operator<<(std::ostream& os, umpCommon const& common) {
   return os << "{ group=" << static_cast<unsigned>(common.group)
             << ", messageType=" << static_cast<unsigned>(common.messageType)
             << ", status=" << static_cast<unsigned>(common.status) << " }";
 };
 
+std::ostream& operator<<(std::ostream& os, umpCVM const& cvm);
 std::ostream& operator<<(std::ostream& os, umpCVM const& cvm) {
   return os << "{ common:" << cvm.common
             << ", channel=" << static_cast<unsigned>(cvm.channel)
