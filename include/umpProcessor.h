@@ -28,6 +28,7 @@
 #define UMP_PROCESSOR_H
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <functional>
 
@@ -85,6 +86,7 @@ struct chord {
   uint8_t baAlt2Deg;
 };
 
+using uint32_ptr = std::uint32_t*;
 template <typename T, typename IntegerType = std::int64_t>
 concept backend = requires(T && v) {
   { v.utility_message(umpGeneric{}) } -> std::same_as<void>;
@@ -148,66 +150,71 @@ concept backend = requires(T && v) {
   { v.startOfSeq() } -> std::same_as<void>;
   { v.endOfFile() } -> std::same_as<void>;
 
-  {
-    v.unknownUMPMessage((std::uint32_t*){}, std::uint8_t{})
-  } -> std::same_as<void>;
+  { v.unknownUMPMessage(uint32_ptr{}, std::uint8_t{}) } -> std::same_as<void>;
 };
 
-class null_callbacks {
+class callbacks_base {
 public:
+  virtual ~callbacks_base() = default;
+
   //-----------------------Handlers ---------------------------
-  void utility_message(umpGeneric const& /*mess*/) {}
-  void channel_voice_message(umpCVM const& /*mess*/) {}
-  void system_message(umpGeneric const& /*mess*/) {}
-  void send_out_sysex(umpData const& /*mess*/) {}
+  virtual void utility_message(umpGeneric const& /*mess*/) {}
+  virtual void channel_voice_message(umpCVM const& /*mess*/) {}
+  virtual void system_message(umpGeneric const& /*mess*/) {}
+  virtual void send_out_sysex(umpData const& /*mess*/) {}
 
   //---------- Flex Data
-  void flex_tempo(uint8_t /*group*/, uint32_t /*num10nsPQN*/) {}
-  void flex_time_sig(uint8_t /*group*/, uint8_t /*numerator*/,
-                     uint8_t /*denominator*/, uint8_t /*num32Notes*/) {}
-  void flex_metronome(uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
-                      uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
-                      uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/,
-                      uint8_t /*numSubDivCli2*/) {}
-  void flex_key_sig(uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/,
-                    uint8_t /*sharpFlats*/, uint8_t /*tonic*/) {}
-  void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/,
-                  chord const& /*chord*/) {}
-  void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/,
-                        uint8_t /*channel*/) {}
-  void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/,
-                  uint8_t /*channel*/) {}
+  virtual void flex_tempo(uint8_t /*group*/, uint32_t /*num10nsPQN*/) {}
+  virtual void flex_time_sig(uint8_t /*group*/, uint8_t /*numerator*/,
+                             uint8_t /*denominator*/, uint8_t /*num32Notes*/) {}
+  virtual void flex_metronome(uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
+                              uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
+                              uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/,
+                              uint8_t /*numSubDivCli2*/) {}
+  virtual void flex_key_sig(uint8_t /*group*/, uint8_t /*addrs*/,
+                            uint8_t /*channel*/, uint8_t /*sharpFlats*/,
+                            uint8_t /*tonic*/) {}
+  virtual void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/,
+                          uint8_t /*channel*/, chord const& /*chord*/) {}
+  virtual void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/,
+                                uint8_t /*channel*/) {}
+  virtual void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/,
+                          uint8_t /*channel*/) {}
 
   //---------- UMP Stream
-  void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/,
-                    uint8_t /*filter*/) {}
-  void midiEndpointName(umpData const& /*mess*/) {}
-  void midiEndpointProcId(umpData const& /*mess*/) {}
-  void midiEndpointJRProtocolReq(uint8_t protocol, bool jrrx, bool jrtx) {}
-  void midiEndpointInfo(uint8_t majVer, uint8_t minVer, uint8_t numOfFuncBlocks,
-                        bool m2, bool m1, bool rxjr, bool txjr) {}
-  void midiEndpointDeviceInfo(std::array<uint8_t, 3> const& /*manuId*/,
-                              std::array<uint8_t, 2> const& /*familyId*/,
-                              std::array<uint8_t, 2> const& /*modelId*/,
-                              std::array<uint8_t, 4> const& /*version*/) {}
-  void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/,
-                                    bool /*jrtx*/) {}
+  virtual void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/,
+                            uint8_t /*filter*/) {}
+  virtual void midiEndpointName(umpData const& /*mess*/) {}
+  virtual void midiEndpointProcId(umpData const& /*mess*/) {}
+  virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/,
+                                         bool /*jrtx*/) {}
+  virtual void midiEndpointInfo(uint8_t /*majVer*/, uint8_t /*minVer*/,
+                                uint8_t /*numOfFuncBlocks*/, bool /*m2*/,
+                                bool /*m1*/, bool /*rxjr*/, bool /*txjr*/) {}
+  virtual void midiEndpointDeviceInfo(
+      std::array<uint8_t, 3> const& /*manuId*/,
+      std::array<uint8_t, 2> const& /*familyId*/,
+      std::array<uint8_t, 2> const& /*modelId*/,
+      std::array<uint8_t, 4> const& /*version*/) {}
+  virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/,
+                                            bool /*jrtx*/) {}
 
-  void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) {}
-  void functionBlockInfo(uint8_t /*fbIdx*/, bool /*active*/,
-                         uint8_t /*direction*/, bool /*sender*/, bool /*recv*/,
-                         uint8_t /*firstGroup*/, uint8_t /*groupLength*/,
-                         uint8_t /*midiCIVersion*/, uint8_t /*isMIDI1*/,
-                         uint8_t /*maxS8Streams*/) {}
-  void functionBlockName(umpData /*mess*/, uint8_t /*fbIdx*/) {}
+  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) {}
+  virtual void functionBlockInfo(uint8_t /*fbIdx*/, bool /*active*/,
+                                 uint8_t /*direction*/, bool /*sender*/,
+                                 bool /*recv*/, uint8_t /*firstGroup*/,
+                                 uint8_t /*groupLength*/,
+                                 uint8_t /*midiCIVersion*/, uint8_t /*isMIDI1*/,
+                                 uint8_t /*maxS8Streams*/) {}
+  virtual void functionBlockName(umpData /*mess*/, uint8_t /*fbIdx*/) {}
 
-  void startOfSeq() {}
-  void endOfFile() {}
+  virtual void startOfSeq() {}
+  virtual void endOfFile() {}
 
-  void unknownUMPMessage(uint32_t* ump, uint8_t length) {}
+  virtual void unknownUMPMessage(uint32_t* /*ump*/, uint8_t /*length*/) {}
 };
 
-template <typename Callbacks = null_callbacks>
+template <typename Callbacks = callbacks_base>
 requires backend<Callbacks> class umpProcessor {
 public:
   umpProcessor(Callbacks cb = Callbacks{}) : callbacks_{std::move(cb)} {}
