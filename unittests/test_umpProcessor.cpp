@@ -351,4 +351,38 @@ TEST(UMPProcessor, FourByteDataMessageAllZero) {
   FourByteDataMessage({});
 }
 
+TEST(UMPProcessor, PartialMessageThenClear) {
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto note_number = std::uint8_t{60};
+  constexpr auto velocity = std::uint16_t{0x43};  // 7 bits
+  constexpr auto group = std::uint8_t{0};
+
+  umpCVM message;
+  message.common.group = group;
+  message.common.messageType = ump_message_type::m1cvm;
+  message.common.status = status::note_on;
+  message.channel = channel;
+  message.note = note_number;
+  message.value = M2Utils::scaleUp(velocity, 7, 16);
+  message.index = 0;
+  message.bank = 0;
+  message.flag1 = false;
+  message.flag2 = false;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
+
+  umpProcessor p{callbacks_proxy{callbacks}};
+  // The first half of a 64-bit MIDI 2 note-on message.
+  p.processUMP(
+      pack((static_cast<std::uint8_t>(ump_message_type::m2cvm) << 4) | group,
+           (ump_note_on << 4) | channel, note_number, 0));
+  p.clearUMP();
+
+  // An entire 32-bit MIDI 1 note-on message.
+  p.processUMP(
+      pack((static_cast<std::uint8_t>(ump_message_type::m1cvm) << 4) | group,
+           (ump_note_on << 4) | channel, note_number, velocity));
+}
+
 }  // end anonymous namespace
