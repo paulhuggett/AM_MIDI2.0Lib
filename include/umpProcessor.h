@@ -225,8 +225,7 @@ public:
   virtual void unknownUMPMessage(std::span<std::uint32_t>) {}
 };
 
-template <typename Callbacks = callbacks_base>
-requires backend<Callbacks> class umpProcessor {
+template <backend Callbacks = callbacks_base> class umpProcessor {
 public:
   umpProcessor(Callbacks cb = Callbacks{}) : callbacks_{std::move(cb)} {}
 
@@ -266,15 +265,13 @@ private:
 umpProcessor() -> umpProcessor<callbacks_base>;
 template <typename T> umpProcessor(T) -> umpProcessor<T>;
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::clearUMP() {
+template <backend Callbacks> void umpProcessor<Callbacks>::clearUMP() {
   pos_ = 0;
   std::fill(std::begin(message_), std::end(message_), std::uint8_t{0});
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::utility_message(
-    ump_message_type const mt) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
   // 32 bit utility messages
   umpGeneric mess;
   mess.common.messageType = mt;
@@ -283,9 +280,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::utility_message(
   callbacks_.utility_message(mess);
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::system_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::system_message(ump_message_type const mt,
+                                             std::uint8_t const group) {
   // 32 bit System Real Time and System Common Messages (except System
   // Exclusive)
   umpGeneric mess;
@@ -307,9 +304,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::system_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::m1cvm_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::m1cvm_message(ump_message_type const mt,
+                                            std::uint8_t const group) {
   // 32 Bit MIDI 1.0 Channel Voice Messages
   umpCVM mess;
   mess.common.group = group;
@@ -349,9 +346,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::m1cvm_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::sysex7_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt,
+                                             std::uint8_t const group) {
   // 64 bit Data Messages (including System Exclusive)
   std::array<std::uint8_t, 7> sysex{};
   auto const data_length = (message_[0] >> 16) & 0x7;
@@ -382,9 +379,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::sysex7_message(
   callbacks_.send_out_sysex(mess);
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::m2cvm_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt,
+                                            std::uint8_t const group) {
   // 64 bits MIDI 2.0 Channel Voice Messages
   umpCVM mess;
   mess.common.group = group;
@@ -459,9 +456,8 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::m2cvm_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message(
-    ump_message_type const mt) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
   // 128 bits UMP Stream Messages
   uint16_t status = (message_[0] >> 16) & 0x3FF;
   switch (status) {
@@ -590,9 +586,8 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> template <
-    std::output_iterator<std::uint8_t> OutputIterator>
+template <backend Callbacks>
+template <std::output_iterator<std::uint8_t> OutputIterator>
 constexpr OutputIterator umpProcessor<Callbacks>::sysex8_payload(
     std::array<std::uint32_t, 4> const& message, std::size_t index,
     std::size_t limit, OutputIterator out) {
@@ -608,9 +603,9 @@ constexpr OutputIterator umpProcessor<Callbacks>::sysex8_payload(
   return sysex8_payload(message, index + 1U, limit, out);
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::data_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::data_message(ump_message_type const mt,
+                                           std::uint8_t const group) {
   // 128 bit Data Messages (including System Exclusive 8)
   uint8_t const status = (message_[0] >> 20) & 0xF;
   switch (status) {
@@ -656,9 +651,9 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::data_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::flexdata_message(
-    ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
+                                               std::uint8_t const group) {
   // 128 bit Data Messages (including System Exclusive 8)
   uint8_t statusBank = (message_[0] >> 8) & 0xFF;
   uint8_t status = message_[0] & 0xFF;
@@ -750,9 +745,8 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::flexdata_message(
   }
 }
 
-template <typename Callbacks>
-requires backend<Callbacks> void umpProcessor<Callbacks>::processUMP(
-    uint32_t UMP) {
+template <backend Callbacks>
+void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
   message_[pos_] = UMP;
 
   auto mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
