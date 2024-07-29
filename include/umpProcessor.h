@@ -243,6 +243,20 @@ private:
   void data_message(ump_message_type mt, std::uint8_t group);
   void flexdata_message(ump_message_type mt, std::uint8_t group);
 
+  enum data_message_status : std::uint8_t {
+    sysex8_in_1_ump = 0b0000,
+    sysex8_start = 0b0001,
+    sysex8_continue = 0b0010,
+    sysex8_end = 0b0011,
+    mixed_data_set_header = 0b1000,
+    mixed_data_set_payload = 0b1001,
+  };
+
+  template <std::output_iterator<std::uint8_t> OutputIterator>
+  static constexpr OutputIterator sysex8_payload(
+      std::array<std::uint32_t, 4> const& message, std::size_t index,
+      std::size_t limit, OutputIterator out);
+
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 
@@ -339,8 +353,8 @@ template <typename Callbacks>
 requires backend<Callbacks> void umpProcessor<Callbacks>::sysex7_message(
     ump_message_type const mt, std::uint8_t const group) {
   // 64 bit Data Messages (including System Exclusive)
-  std::array<std::uint8_t, 6> sysex{};
-  auto const data_length = std::min((message_[0] >> 16) & 0xF, 6U);
+  std::array<std::uint8_t, 7> sysex{};
+  auto const data_length = (message_[0] >> 16) & 0x7;
   if (data_length > 0) {
     sysex[0] = (message_[0] >> 8) & 0x7F;
   }
@@ -577,60 +591,51 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message(
 }
 
 template <typename Callbacks>
+requires backend<Callbacks> template <
+    std::output_iterator<std::uint8_t> OutputIterator>
+constexpr OutputIterator umpProcessor<Callbacks>::sysex8_payload(
+    std::array<std::uint32_t, 4> const& message, std::size_t index,
+    std::size_t limit, OutputIterator out) {
+  assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
+  if (index >= limit) {
+    return out;
+  }
+  // There are 4 bytes per packet and we start at packet #1.
+  auto const packet_num = (index >> 2) + 1U;
+  auto const rem4 = index & 0b11U;  // rem4 = index % 4
+  auto const shift = 24U - 8U * rem4;
+  *(out++) = (message[packet_num] >> shift) & 0xFF;
+  return sysex8_payload(message, index + 1U, limit, out);
+}
+
+template <typename Callbacks>
 requires backend<Callbacks> void umpProcessor<Callbacks>::data_message(
     ump_message_type const mt, std::uint8_t const group) {
-  // 128 bits Data Messages (including System Exclusive 8)
-  uint8_t status = (message_[0] >> 20) & 0xF;
-  if (status <= 3) {
-    std::array<std::uint8_t, 13> sysex;
-    auto const data_length = (message_[0] >> 16) & 0xF;
-    if (data_length > 1) {
-      sysex[0] = message_[0] & 0x7F;
-    }
-    if (data_length > 2) {
-      sysex[1] = (message_[1] >> 24) & 0x7F;
-    }
-    if (data_length > 3) {
-      sysex[2] = (message_[1] >> 16) & 0x7F;
-    }
-    if (data_length > 4) {
-      sysex[3] = (message_[1] >> 8) & 0x7F;
-    }
-    if (data_length > 5) {
-      sysex[4] = message_[1] & 0x7F;
-    }
-    if (data_length > 6) {
-      sysex[5] = (message_[2] >> 24) & 0x7F;
-    }
-    if (data_length > 7) {
-      sysex[6] = (message_[2] >> 16) & 0x7F;
-    }
-    if (data_length > 8) {
-      sysex[7] = (message_[2] >> 8) & 0x7F;
-    }
-    if (data_length > 9) {
-      sysex[8] = message_[2] & 0x7F;
-    }
-    if (data_length > 10) {
-      sysex[9] = (message_[3] >> 24) & 0x7F;
-    }
-    if (data_length > 11) {
-      sysex[10] = (message_[3] >> 16) & 0x7F;
-    }
-    if (data_length > 12) {
-      sysex[11] = (message_[3] >> 8) & 0x7F;
-    }
-    if (data_length > 13) {
-      sysex[12] = message_[3] & 0x7F;
+  // 128 bit Data Messages (including System Exclusive 8)
+  uint8_t const status = (message_[0] >> 20) & 0xF;
+  switch (status) {
+  case data_message_status::sysex8_in_1_ump:
+  case data_message_status::sysex8_start:
+  case data_message_status::sysex8_continue:
+  case data_message_status::sysex8_end: {
+    std::array<std::uint8_t, 13> sysex{};
+    auto const data_length =
+        std::min(std::size_t{(message_[0] >> 16) & 0x0F}, sysex.size());
+    if (data_length >= 1) {
+      sysex[0] = message_[0] & 0xFF;
+      sysex8_payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
     }
     umpData mess;
     mess.common.group = group;
     mess.common.messageType = mt;
     mess.streamId = (message_[0] >> 8) & 0xFF;
     mess.form = status;
+    assert(data_length <= sysex.size());
     mess.data = std::span{sysex.data(), data_length};
     callbacks_.send_out_sysex(mess);
-  } else if (status == 8 || status == 9) {
+  } break;
+  case data_message_status::mixed_data_set_header:
+  case data_message_status::mixed_data_set_payload: {
     // Beginning of Mixed Data Set
     // uint8_t mdsId  = (umpMess[0] >> 16) & 0xF;
 
@@ -646,6 +651,8 @@ requires backend<Callbacks> void umpProcessor<Callbacks>::data_message(
       // MDS bytes?
     }
     callbacks_.unknownUMPMessage(std::span{message_.data(), 4});
+  } break;
+  default: callbacks_.unknownUMPMessage(std::span{message_.data(), 4}); break;
   }
 }
 

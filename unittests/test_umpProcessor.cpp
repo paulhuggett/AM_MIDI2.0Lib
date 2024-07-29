@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "umpProcessor.h"
 
@@ -26,6 +27,17 @@ std::ostream& operator<<(std::ostream& os, umpCVM const& cvm) {
             << ", bank=" << static_cast<unsigned>(cvm.bank)
             << ", flag1=" << cvm.flag1 << ", flag2=" << cvm.flag2 << " }";
 };
+
+std::ostream& operator<<(std::ostream& os, umpData const& data);
+std::ostream& operator<<(std::ostream& os, umpData const& data) {
+  os << "{ common:" << data.common
+     << ", streamId=" << static_cast<unsigned>(data.streamId)
+     << ", form=" << static_cast<unsigned>(data.form) << ", data=[";
+  std::copy(std::begin(data.data), std::end(data.data),
+            std::ostream_iterator<unsigned>(os, ","));
+  os << ']';
+  return os;
+}
 
 namespace {
 
@@ -153,8 +165,17 @@ template <typename T> callbacks_proxy(T&) -> callbacks_proxy<T>;
 
 class MockCallbacks : public callbacks_base {
 public:
+  MOCK_METHOD(void, utility_message, (umpGeneric const&), (override));
   MOCK_METHOD(void, channel_voice_message, (umpCVM const&), (override));
+  MOCK_METHOD(void, system_message, (umpGeneric const&), (override));
+  MOCK_METHOD(void, send_out_sysex, (umpData const&), (override));
 };
+
+}  // end anonymous namespace
+
+template class umpProcessor<callbacks_proxy<MockCallbacks>>;
+
+namespace {
 
 constexpr std::uint32_t ump_cvm(status s) {
   static_assert(std::is_same_v<std::underlying_type_t<status>, std::uint8_t>,
@@ -165,6 +186,12 @@ constexpr std::uint32_t ump_cvm(status s) {
 }
 
 constexpr auto ump_note_on = ump_cvm(status::note_on);
+
+constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
+                             std::uint8_t const b2, std::uint8_t const b3) {
+  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
+         (std::uint32_t{b2} << 8) | std::uint32_t{b3};
+}
 
 TEST(UMPProcessor, Midi1NoteOn) {
   constexpr auto channel = std::uint8_t{3};
@@ -188,10 +215,9 @@ TEST(UMPProcessor, Midi1NoteOn) {
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
   umpProcessor p{callbacks_proxy{callbacks}};
-  p.processUMP (std::uint32_t{
-      (static_cast<std::uint32_t>(ump_message_type::m1cvm) << 28) |
-      (std::uint32_t{group} << 24) | (ump_note_on << 20) |
-      (std::uint32_t{channel} << 16) | (std::uint32_t{note_number} << 8) | velocity});
+  p.processUMP(
+      pack((static_cast<std::uint8_t>(ump_message_type::m1cvm) << 4) | group,
+           (ump_note_on << 4) | channel, note_number, velocity));
 }
 
 TEST(UMPProcessor, Midi2NoteOn) {
@@ -223,6 +249,75 @@ TEST(UMPProcessor, Midi2NoteOn) {
   p.processUMP(std::uint32_t{velocity << 16});
 }
 
+using testing::AllOf;
+using testing::ElementsAreArray;
+using testing::Eq;
+using testing::Field;
+using testing::InSequence;
+
+// The umpData type contains a std::span{} so we can't just lean on the default
+// operator==() for comparing instances.
+template <typename Iterator>
+auto UMPDataMatches(std::uint8_t group, std::uint8_t stream_id,
+                    std::uint8_t form, Iterator first, Iterator last) {
+  return AllOf(Field("common", &umpData::common,
+                     Eq(umpCommon{group, ump_message_type::data, 0})),
+               Field("streamId", &umpData::streamId, Eq(stream_id)),
+               Field("form", &umpData::form, Eq(form)),
+               Field("data", &umpData::data, ElementsAreArray(first, last)));
+};
+
+TEST(UMPProcessor, Sysex8_16ByteMessage) {
+  constexpr auto group = std::uint8_t{0};
+  constexpr auto stream_id = std::uint8_t{0};
+  constexpr auto start_form = std::uint8_t{0b0001};
+  constexpr auto end_form = std::uint8_t{0b0011};
+
+  std::array<std::uint8_t, 16> payload;
+  std::iota(std::begin(payload), std::end(payload), 1);
+
+  // The start_form packet can hold 13 data bytes.
+  auto split_point = std::begin(payload);
+  std::advance(split_point, 13);
+
+  MockCallbacks callbacks;
+  {
+    InSequence _;
+    EXPECT_CALL(callbacks, send_out_sysex(UMPDataMatches(
+                               group, stream_id, start_form,
+                               std::begin(payload), split_point)));
+    EXPECT_CALL(callbacks,
+                send_out_sysex(UMPDataMatches(group, stream_id, end_form,
+                                              split_point, std::end(payload))));
+  }
+  umpProcessor p{callbacks_proxy{callbacks}};
+  // Send 13 bytes
+  p.processUMP(
+      pack((static_cast<std::uint8_t>(ump_message_type::data) << 4) | group,
+           (start_form << 4) | 13U, stream_id, payload[0]));
+  p.processUMP(pack(payload[1], payload[2], payload[3], payload[4]));
+  p.processUMP(pack(payload[5], payload[6], payload[7], payload[8]));
+  p.processUMP(pack(payload[9], payload[10], payload[11], payload[12]));
+  // Send the final 3 bytes.
+  p.processUMP(
+      pack((static_cast<std::uint8_t>(ump_message_type::data) << 4) | group,
+           (end_form << 4) | 3U, stream_id, payload[13]));
+  p.processUMP(pack(payload[14], payload[15], 0, 0));
+  p.processUMP(0);
+  p.processUMP(0);
+
+#if 0
+  // Send 3 bytes.
+  p.processUMP(std::uint32_t{
+      (static_cast<std::uint32_t>(ump_message_type::data) << 28) |
+      (std::uint32_t{group} << 24) | (std::uint32_t{0b0011} << 20) |
+      (std::uint32_t{3} << 16) | (std::uint32_t{stream_id} << 8)} | payload[13]);
+  p.processUMP((payload[14] << 24) | (payload[15] << 16));
+  p.processUMP(0);
+  p.processUMP(0);
+#endif
+}
+
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
   using namespace std::placeholders;
   umpProcessor p;
@@ -236,6 +331,24 @@ FUZZ_TEST(UMPProcessor, UMPProcessorNeverCrashes);
 #endif
 TEST(UMPProcessor, Empty) {
   UMPProcessorNeverCrashes({});
+}
+
+void FourByteDataMessage(std::array<std::uint32_t, 4> message) {
+  // Set the message type to "data".
+  message[0] = (message[0] & 0x00FFFFFF) |
+               (static_cast<std::uint32_t>(ump_message_type::data) << 28);
+  using namespace std::placeholders;
+  umpProcessor p;
+  std::for_each(std::begin(message), std::end(message),
+                std::bind(&decltype(p)::processUMP, &p, _1));
+}
+
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, FourByteDataMessage);
+#endif
+TEST(UMPProcessor, FourByteDataMessageAllZero) {
+  FourByteDataMessage({});
 }
 
 }  // end anonymous namespace
