@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUILD_DIR: build_codecov
-      GCC_VERSION: 13
+      GCC_VERSION: 12
 
     steps:
       - name: Harden Runner
