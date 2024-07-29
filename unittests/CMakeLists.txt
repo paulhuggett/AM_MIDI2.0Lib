@@ -9,7 +9,7 @@ add_executable (m2unittests
 )
 target_compile_definitions (m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)
 target_link_libraries(m2unittests PRIVATE libmidi2)
-setup_target(m2unittests)
+setup_target(m2unittests PEDANTIC $<NOT:$<BOOL:${MIDI2_FUZZTEST}>>)
 set (clang_options -Wno-exit-time-destructors -Wno-global-constructors -Wno-used-but-marked-unused)
 set (gcc_options)
 set (msvc_options -wd4702) # unreachable code.
