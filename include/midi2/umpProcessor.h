@@ -265,6 +265,8 @@ private:
       std::array<std::uint32_t, 4> const& message, std::size_t index,
       std::size_t limit, OutputIterator out);
 
+  void midiendpoint_name_or_prodid(ump_message_type mt);
+
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 
@@ -462,6 +464,41 @@ void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt,
     callbacks_.channel_voice_message(mess);
     break;
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 2}); break;
+  }
+}
+
+template <backend Callbacks>
+void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(
+    ump_message_type const mt) {
+  std::uint16_t status = (message_[0] >> 16) & 0x3FF;
+  assert(status == MIDIENDPOINT_NAME_NOTIFICATION ||
+         status == MIDIENDPOINT_PRODID_NOTIFICATION);
+
+  std::array<std::uint8_t, 14> text;
+  auto text_length = 0U;
+  if ((message_[0] >> 8) & 0xFF) {
+    text[text_length++] = (message_[0] >> 8) & 0xFF;
+  }
+  if (message_[0] & 0xFF) {
+    text[text_length++] = message_[0] & 0xFF;
+  }
+  for (auto i = 1U; i <= 3U; ++i) {
+    for (auto j = 24; j >= 0; j -= 8) {
+      if (std::uint8_t c = (message_[i] >> j) & 0xFF) {
+        text[text_length++] = c;
+      }
+    }
+  }
+  assert(text_length <= text.size());
+  umpData mess;
+  mess.common.messageType = mt;
+  mess.common.status = static_cast<std::uint8_t>(status);
+  mess.form = message_[0] >> 24 & 0x3;
+  mess.data = std::span{text.data(), text_length};
+  if (status == MIDIENDPOINT_NAME_NOTIFICATION) {
+    callbacks_.midiEndpointName(mess);
+  } else {
+    callbacks_.midiEndpointProdId(mess);
   }
 }
 
