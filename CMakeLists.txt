@@ -12,18 +12,18 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(setup_target)
 
-set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/midi2")
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMIDI2_HEADERS
-  "${INCLUDE_DIR}/bytestreamToUMP.h"
-  "${INCLUDE_DIR}/fifo.h"
-  "${INCLUDE_DIR}/mcoded7.h"
-  "${INCLUDE_DIR}/midiCIMessageCreate.h"
-  "${INCLUDE_DIR}/midiCIProcessor.h"
-  "${INCLUDE_DIR}/umpMessageCreate.h"
-  "${INCLUDE_DIR}/umpProcessor.h"
-  "${INCLUDE_DIR}/umpToBytestream.h"
-  "${INCLUDE_DIR}/umpToMIDI1Protocol.h"
-  "${INCLUDE_DIR}/utils.h"
+  "${INCLUDE_DIR}/midi2/bytestreamToUMP.h"
+  "${INCLUDE_DIR}/midi2/fifo.h"
+  "${INCLUDE_DIR}/midi2/mcoded7.h"
+  "${INCLUDE_DIR}/midi2/midiCIMessageCreate.h"
+  "${INCLUDE_DIR}/midi2/midiCIProcessor.h"
+  "${INCLUDE_DIR}/midi2/umpMessageCreate.h"
+  "${INCLUDE_DIR}/midi2/umpProcessor.h"
+  "${INCLUDE_DIR}/midi2/umpToBytestream.h"
+  "${INCLUDE_DIR}/midi2/umpToMIDI1Protocol.h"
+  "${INCLUDE_DIR}/midi2/utils.h"
 )
 
 add_library(libmidi2 ${LIBMIDI2_HEADERS}
