@@ -266,6 +266,7 @@ private:
       std::size_t limit, OutputIterator out);
 
   void midiendpoint_name_or_prodid(ump_message_type mt);
+  void functionblock_name(ump_message_type mt);
 
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
@@ -503,9 +504,35 @@ void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(
 }
 
 template <backend Callbacks>
+void umpProcessor<Callbacks>::functionblock_name(ump_message_type const mt) {
+  std::uint8_t fbIdx = (message_[0] >> 8) & 0x7F;
+  std::array<std::uint8_t, 13> text;
+  auto text_length = 0U;
+
+  if (message_[0] & 0xFF) {
+    text[text_length++] = message_[0] & 0xFF;
+  }
+  for (uint8_t i = 1; i <= 3; i++) {
+    for (int j = 24; j >= 0; j -= 8) {
+      if (uint8_t c = (message_[i] >> j) & 0xFF) {
+        text[text_length++] = c;
+      }
+    }
+  }
+  assert(text_length <= text.size());
+  std::uint16_t status = (message_[0] >> 16) & 0x3FF;
+  umpData mess;
+  mess.common.messageType = mt;
+  mess.common.status = static_cast<std::uint8_t>(status);
+  mess.form = message_[0] >> 24 & 0x3;
+  mess.data = std::span{text.data(), text_length};
+  callbacks_.functionBlockName(mess, fbIdx);
+}
+
+template <backend Callbacks>
 void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
   // 128 bits UMP Stream Messages
-  uint16_t status = (message_[0] >> 16) & 0x3FF;
+  std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   switch (status) {
   case MIDIENDPOINT:
     callbacks_.midiEndpoint((message_[0] >> 8) & 0xFF,  // Maj Ver
@@ -574,27 +601,7 @@ void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
     );
     break;
   case FUNCTIONBLOCK_NAME_NOTIFICATION: {
-    uint8_t fbIdx = (message_[0] >> 8) & 0x7F;
-    std::array<std::uint8_t, 13> text;
-    auto text_length = 0U;
-
-    if (message_[0] & 0xFF) {
-      text[text_length++] = message_[0] & 0xFF;
-    }
-    for (uint8_t i = 1; i <= 3; i++) {
-      for (int j = 24; j >= 0; j -= 8) {
-        if (uint8_t c = (message_[i] >> j) & 0xFF) {
-          text[text_length++] = c;
-        }
-      }
-    }
-    assert(text_length <= text.size());
-    umpData mess;
-    mess.common.messageType = mt;
-    mess.common.status = static_cast<std::uint8_t>(status);
-    mess.form = message_[0] >> 24 & 0x3;
-    mess.data = std::span{text.data(), text_length};
-    callbacks_.functionBlockName(mess, fbIdx);
+    this->functionblock_name(mt);
     break;
   }
   case STARTOFSEQ: callbacks_.startOfSeq(); break;
