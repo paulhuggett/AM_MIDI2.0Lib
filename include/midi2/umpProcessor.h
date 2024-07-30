@@ -540,38 +540,9 @@ void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
          static_cast<std::uint8_t>(message_[3] & 0x7F)});
     break;
   case MIDIENDPOINT_NAME_NOTIFICATION:
-  case MIDIENDPOINT_PRODID_NOTIFICATION: {
-    std::array<std::uint8_t, 14> text;
-    auto text_length = 0U;
-
-    if ((message_[0] >> 8) & 0xFF) {
-      text[text_length++] = (message_[0] >> 8) & 0xFF;
-    }
-    if (message_[0] & 0xFF) {
-      text[text_length++] = message_[0] & 0xFF;
-    }
-    for (uint8_t i = 1; i <= 3; i++) {
-      for (int j = 24; j >= 0; j -= 8) {
-        if (uint8_t c = (message_[i] >> j) & 0xFF) {
-          text[text_length++] = c;
-        }
-      }
-    }
-    assert(text_length <= text.size());
-    umpData mess;
-    mess.common.messageType = mt;
-    mess.common.status = static_cast<std::uint8_t>(status);
-    mess.form = message_[0] >> 24 & 0x3;
-    mess.data = std::span{text.data(), text_length};
-    if (status == MIDIENDPOINT_NAME_NOTIFICATION) {
-      callbacks_.midiEndpointName(mess);
-    } else {
-      assert(status == MIDIENDPOINT_PRODID_NOTIFICATION);
-      callbacks_.midiEndpointProdId(mess);
-    }
+  case MIDIENDPOINT_PRODID_NOTIFICATION:
+    this->midiendpoint_name_or_prodid(mt);
     break;
-  }
-
   case MIDIENDPOINT_PROTOCOL_REQUEST:  // JR Protocol Req
     callbacks_.midiEndpointJRProtocolReq(
         static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
