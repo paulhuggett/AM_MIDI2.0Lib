@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <type_traits>
 #include <utility>
 
