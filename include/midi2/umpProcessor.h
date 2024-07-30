@@ -267,6 +267,7 @@ private:
 
   void midiendpoint_name_or_prodid(ump_message_type mt);
   void functionblock_name(ump_message_type mt);
+  void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
@@ -676,6 +677,40 @@ void umpProcessor<Callbacks>::data_message(ump_message_type const mt,
 }
 
 template <backend Callbacks>
+void umpProcessor<Callbacks>::flexdata_performance_or_lyric(
+    ump_message_type const mt, std::uint8_t const group) {
+  std::uint8_t const statusBank = (message_[0] >> 8) & 0xFF;
+  std::uint8_t const status = message_[0] & 0xFF;
+  std::uint8_t const channel = (message_[0] >> 16) & 0xF;
+  std::uint8_t const addrs = (message_[0] >> 18) & 3;
+  std::uint8_t const form = (message_[0] >> 20) & 3;
+
+  std::array<std::uint8_t, 12> text;
+  auto text_length = 0U;
+  for (uint8_t i = 1; i <= 3; i++) {
+    for (int j = 24; j >= 0; j -= 8) {
+      if (uint8_t const c = (message_[i] >> j) & 0xFF) {
+        text[text_length++] = c;
+      }
+    }
+  }
+  assert(text_length <= text.size());
+
+  umpData mess;
+  mess.common.group = group;
+  mess.common.messageType = mt;
+  mess.common.status = status;
+  mess.form = form;
+  mess.data = std::span{text.data(), text_length};
+  if (statusBank == FLEXDATA_LYRIC) {
+    callbacks_.flex_lyric(mess, addrs, channel);
+  } else {
+    assert(statusBank == FLEXDATA_PERFORMANCE);
+    callbacks_.flex_performance(mess, addrs, channel);
+  }
+}
+
+template <backend Callbacks>
 void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
                                                std::uint8_t const group) {
   // 128 bit Data Messages (including System Exclusive 8)
@@ -683,7 +718,6 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
   uint8_t status = message_[0] & 0xFF;
   uint8_t channel = (message_[0] >> 16) & 0xF;
   uint8_t addrs = (message_[0] >> 18) & 3;
-  uint8_t form = (message_[0] >> 20) & 3;
   // SysEx 8
   switch (statusBank) {
   case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project,
@@ -738,33 +772,9 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
     }
     break;
   }
-  case FLEXDATA_PERFORMANCE:  // Performance Events
-  case FLEXDATA_LYRIC: {      // Lyric Events
-    std::array<std::uint8_t, 12> text;
-    auto text_length = 0U;
-    for (uint8_t i = 1; i <= 3; i++) {
-      for (int j = 24; j >= 0; j -= 8) {
-        if (uint8_t const c = (message_[i] >> j) & 0xFF) {
-          text[text_length++] = c;
-        }
-      }
-    }
-    assert(text_length <= text.size());
+  case FLEXDATA_PERFORMANCE:
+  case FLEXDATA_LYRIC: this->flexdata_performance_or_lyric(mt, group); break;
 
-    umpData mess;
-    mess.common.group = group;
-    mess.common.messageType = mt;
-    mess.common.status = status;
-    mess.form = form;
-    mess.data = std::span{text.data(), text_length};
-    if (statusBank == FLEXDATA_LYRIC) {
-      callbacks_.flex_lyric(mess, addrs, channel);
-    } else {
-      assert(statusBank == FLEXDATA_PERFORMANCE);
-      callbacks_.flex_performance(mess, addrs, channel);
-    }
-    break;
-  }
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 4}); break;
   }
 }
