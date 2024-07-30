@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "umpToBytestream.h"
+#include "midi2/umpToBytestream.h"
 
 namespace {
 

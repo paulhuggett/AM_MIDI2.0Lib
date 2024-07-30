@@ -1,8 +1,11 @@
-#include <gmock/gmock.h>
+// DUT
+#include "midi2/fifo.h"
 
+// Standard library
 #include <queue>
 
-#include "fifo.h"
+// Google Test/Mock
+#include <gmock/gmock.h>
 
 namespace {
 

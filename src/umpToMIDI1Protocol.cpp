@@ -25,12 +25,12 @@
  *
  * ********************************************************/
 
-#include "umpToMIDI1Protocol.h"
+#include "midi2/umpToMIDI1Protocol.h"
 
 #include <cassert>
 
-#include "umpMessageCreate.h"
-#include "utils.h"
+#include "midi2/umpMessageCreate.h"
+#include "midi2/utils.h"
 
 void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
   switch (UMPPos) {

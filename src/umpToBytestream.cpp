@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "umpToBytestream.h"
+#include "midi2/umpToBytestream.h"
 
 void umpToBytestream::word1(uint32_t UMP) {
   // First part of a UMP Message

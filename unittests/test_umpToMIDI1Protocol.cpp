@@ -1,9 +1,12 @@
-#include <gmock/gmock.h>
+// DUT
+#include "midi2/umpToMIDI1Protocol.h"
 
+// Standard Library
 #include <algorithm>
 #include <vector>
 
-#include "umpToMIDI1Protocol.h"
+// Google Test/Mock
+#include <gmock/gmock.h>
 
 namespace {
 

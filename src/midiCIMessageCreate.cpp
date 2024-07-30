@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "midiCIMessageCreate.h"
+#include "midi2/midiCIMessageCreate.h"
 
 namespace {
 void setBytesFromNumbers(uint8_t *message, uint32_t number, uint16_t *start,

@@ -24,9 +24,9 @@
  * SOFTWARE.
  *
  * ********************************************************/
-#include "umpMessageCreate.h"
+#include "midi2/umpMessageCreate.h"
 
-#include "utils.h"
+#include "midi2/utils.h"
 
 namespace {
 

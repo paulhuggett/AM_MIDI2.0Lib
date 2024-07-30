@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "midiCIProcessor.h"
+#include "midi2/midiCIProcessor.h"
 
 #include <cassert>
 

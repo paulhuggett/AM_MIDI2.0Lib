@@ -2,11 +2,12 @@
 // Created by andrew on 3/05/24.
 //
 
-#include "include/bytestreamToUMP.h"
-#include "include/umpToBytestream.h"
-#include "include/umpToMIDI1Protocol.h"
-#include "include/umpMessageCreate.h"
 #include <cstdio>
+
+#include "midi2/bytestreamToUMP.h"
+#include "midi2/umpMessageCreate.h"
+#include "midi2/umpToBytestream.h"
+#include "midi2/umpToMIDI1Protocol.h"
 
 namespace {
 

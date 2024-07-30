@@ -2,7 +2,7 @@
 #include <functional>
 #include <numeric>
 
-#include "umpProcessor.h"
+#include "midi2/umpProcessor.h"
 
 // google mock/test/fuzz
 #include <gmock/gmock.h>

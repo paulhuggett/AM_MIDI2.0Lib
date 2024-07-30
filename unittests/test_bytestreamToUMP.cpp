@@ -1,5 +1,5 @@
 // DUT
-#include "bytestreamToUMP.h"
+#include "midi2/bytestreamToUMP.h"
 
 // Standard library
 #include <algorithm>

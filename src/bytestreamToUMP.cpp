@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "bytestreamToUMP.h"
+#include "midi2/bytestreamToUMP.h"
 
 void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
                                       std::uint8_t const b1,
