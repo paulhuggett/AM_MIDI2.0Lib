@@ -38,7 +38,7 @@ void setBytesFromNumbers(uint8_t *message, uint32_t number, uint16_t *start,
   }
 }
 
-void concatSysexArray(uint8_t *sysex, uint16_t *start, uint8_t *add,
+void concatSysexArray(uint8_t *sysex, uint16_t *start, uint8_t const *add,
                       uint16_t len) {
   uint16_t i;
   for (i = 0; i < len; i++) {

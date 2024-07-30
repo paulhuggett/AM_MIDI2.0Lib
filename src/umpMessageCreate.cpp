@@ -333,7 +333,7 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointDeviceInfoNotify(
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(
-    uint16_t replyType, uint8_t offset, uint8_t* text, uint8_t textLen) {
+    uint16_t replyType, uint8_t offset, uint8_t const* text, uint8_t textLen) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
   auto form = std::uint32_t{0};
   if (offset == 0) {
@@ -398,7 +398,7 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockInfoNotify(
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(
-    uint8_t fbIdx, uint8_t offset, uint8_t* text, uint8_t textLen) {
+    uint8_t fbIdx, uint8_t offset, uint8_t const* text, uint8_t textLen) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
   uint8_t form = 0;
   if (offset == 0) {

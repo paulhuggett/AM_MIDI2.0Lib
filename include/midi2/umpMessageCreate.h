@@ -134,7 +134,8 @@ std::array<uint32_t, 4> mtFMidiEndpointDeviceInfoNotify(
     std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version);
 
 std::array<uint32_t, 4> mtFMidiEndpointTextNotify(uint16_t replyType,
-                                                  uint8_t offset, uint8_t *text,
+                                                  uint8_t offset,
+                                                  uint8_t const *text,
                                                   uint8_t textLen);
 
 std::array<uint32_t, 4> mtFFunctionBlock(uint8_t fbIdx, uint8_t filter);
@@ -146,7 +147,7 @@ std::array<uint32_t, 4> mtFFunctionBlockInfoNotify(
 
 std::array<uint32_t, 4> mtFFunctionBlockNameNotify(uint8_t fbIdx,
                                                    uint8_t offset,
-                                                   uint8_t *text,
+                                                   uint8_t const *text,
                                                    uint8_t textLen);
 
 std::array<uint32_t, 4> mtFStartOfSeq();

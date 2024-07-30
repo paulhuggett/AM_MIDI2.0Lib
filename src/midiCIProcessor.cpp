@@ -287,10 +287,10 @@ void midiCIProcessor::processProtocolSysex(uint8_t s7Byte) {
       intTemp[1] = s7Byte;
     }
 
-    int protocolOffset = intTemp[1] * 5 + 14;
+    int const protocolOffset = intTemp[1] * 5 + 14;
 
     if (sysexPos >= 15 && sysexPos < protocolOffset) {
-      uint8_t pos = (sysexPos - 14) % 5;
+      uint8_t const pos = (sysexPos - 14) % 5;
       buffer[pos] = s7Byte;
       if (pos == 4 && recvProtocolAvailable != nullptr) {
         uint8_t protocol[5] = {buffer[0], buffer[1], buffer[2], buffer[3],
@@ -374,14 +374,14 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
     }
 
     // Disabled Profile Length
-    int enabledProfileOffset = intTemp[0] * 5 + 13;
+    int const enabledProfileOffset = intTemp[0] * 5 + 13;
     if (sysexPos == enabledProfileOffset ||
         sysexPos == 1 + enabledProfileOffset) {
       intTemp[1] += s7Byte << (7 * (sysexPos - enabledProfileOffset));
     }
 
     if (sysexPos >= 15 && sysexPos < enabledProfileOffset) {
-      uint8_t pos = (sysexPos - 13) % 5;
+      uint8_t const pos = (sysexPos - 13) % 5;
       buffer[pos] = s7Byte;
       if (pos == 4 && recvSetProfileEnabled != nullptr) {
         recvSetProfileEnabled(
@@ -391,7 +391,7 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
 
     if (sysexPos >= 2 + enabledProfileOffset &&
         sysexPos < enabledProfileOffset + intTemp[1] * 5) {
-      uint8_t pos = (sysexPos - 13) % 5;
+      uint8_t const pos = (sysexPos - 13) % 5;
       buffer[pos] = s7Byte;
       if (pos == 4 && recvSetProfileDisabled != nullptr) {
         recvSetProfileDisabled(
@@ -514,14 +514,14 @@ void midiCIProcessor::processProfileSysex(uint8_t s7Byte) {
 
     //******************
 
-    uint16_t charOffset = (sysexPos - 22) % S7_BUFFERLEN;
-    uint16_t dataLength = intTemp[0];
+    uint16_t const charOffset = (sysexPos - 22) % S7_BUFFERLEN;
+    uint16_t const dataLength = intTemp[0];
     if ((sysexPos >= 22 && sysexPos <= 21 + dataLength) ||
         (dataLength == 0 && sysexPos == 21)) {
       if (dataLength != 0)
         buffer[charOffset] = s7Byte;
 
-      bool lastByteOfSet = (sysexPos == 21 + dataLength);
+      bool const lastByteOfSet = (sysexPos == 21 + dataLength);
 
       if (charOffset == S7_BUFFERLEN - 1 || sysexPos == 21 + dataLength ||
           dataLength == 0) {
@@ -589,14 +589,14 @@ void midiCIProcessor::processPESysex(uint8_t s7Byte) {
       return;
     }
 
-    uint16_t headerLength = intTemp[0];
+    uint16_t const headerLength = intTemp[0];
 
     if (sysexPos == 16 && midici.numChunk == 1) {
       peHeaderStr[midici._peReqIdx] = "";
     }
 
     if (sysexPos >= 16 && sysexPos <= 15 + headerLength) {
-      uint16_t charOffset = (sysexPos - 16);
+      uint16_t const charOffset = (sysexPos - 16);
       buffer[charOffset] = s7Byte;
       peHeaderStr[midici._peReqIdx].push_back(static_cast<char> (s7Byte));
 
@@ -649,18 +649,18 @@ void midiCIProcessor::processPESysex(uint8_t s7Byte) {
       intTemp[1] += s7Byte << 7;
     }
 
-    uint16_t bodyLength = intTemp[1];
-    uint16_t initPos = 22 + headerLength;
-    uint16_t charOffset = (sysexPos - initPos) % S7_BUFFERLEN;
+    uint16_t const bodyLength = intTemp[1];
+    uint16_t const initPos = 22 + headerLength;
+    uint16_t const charOffset = (sysexPos - initPos) % S7_BUFFERLEN;
 
     if ((sysexPos >= initPos && sysexPos <= initPos - 1 + bodyLength) ||
         (bodyLength == 0 && sysexPos == initPos - 1)) {
       if (bodyLength != 0)
         buffer[charOffset] = s7Byte;
 
-      bool lastByteOfSet = (midici.numChunk == midici.totalChunks &&
-                            sysexPos == initPos - 1 + bodyLength);
-      bool lastByteOfChunk =
+      bool const lastByteOfSet = (midici.numChunk == midici.totalChunks &&
+                                  sysexPos == initPos - 1 + bodyLength);
+      bool const lastByteOfChunk =
           (bodyLength == 0 || sysexPos == initPos - 1 + bodyLength);
 
       if (charOffset == S7_BUFFERLEN - 1 || lastByteOfChunk) {

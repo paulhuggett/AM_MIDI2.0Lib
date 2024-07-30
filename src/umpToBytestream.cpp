@@ -52,7 +52,7 @@ void umpToBytestream::word1(uint32_t UMP) {
   }
     // 32 Bits MIDI 1.0 Channel Voice Message
   case ump_message_type::m1cvm: {
-    uint8_t stsCh = UMP >> 16 & 0xFF;
+    uint8_t const stsCh = UMP >> 16 & 0xFF;
     output_.push_back(stsCh);
     output_.push_back((UMP >> 8) & 0x7F);
     if (stsCh >> 4 != 0xC && stsCh >> 4 != 0xD) {
@@ -101,8 +101,8 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     // 64 bits Data Messages (including System Exclusive) part 2
   case ump_message_type::sysex7: {
     UMPPos = 0;
-    uint8_t status = (ump64word1 >> 20) & 0xF;
-    uint8_t numSysexBytes = (ump64word1 >> 16) & 0xF;
+    uint8_t const status = (ump64word1 >> 20) & 0xF;
+    uint8_t const numSysexBytes = (ump64word1 >> 16) & 0xF;
 
     if (status <= 1) {
       output_.push_back(sysex_start);
@@ -132,10 +132,10 @@ void umpToBytestream::word2(std::uint32_t UMP) {
   }
   case ump_message_type::m2cvm: {
     UMPPos = 0;
-    uint8_t status = (ump64word1 >> 16) & 0xF0;
-    uint8_t channel = (ump64word1 >> 16) & 0xF;
-    uint8_t val1 = (ump64word1 >> 8) & 0xFF;
-    uint8_t val2 = ump64word1 & 0xFF;
+    uint8_t const status = (ump64word1 >> 16) & 0xF0;
+    uint8_t const channel = (ump64word1 >> 16) & 0xF;
+    uint8_t const val1 = (ump64word1 >> 8) & 0xFF;
+    uint8_t const val2 = ump64word1 & 0xFF;
 
     switch (status) {
     case note_off:
