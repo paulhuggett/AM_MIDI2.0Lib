@@ -12,7 +12,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(setup_target)
 
-set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/midi2")
 set(LIBMIDI2_HEADERS
   "${INCLUDE_DIR}/bytestreamToUMP.h"
   "${INCLUDE_DIR}/fifo.h"
