@@ -27,6 +27,8 @@
 
 #include "midi2/bytestreamToUMP.h"
 
+namespace midi2 {
+
 void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
                                       std::uint8_t const b1,
                                       std::uint8_t const b2) {
@@ -42,7 +44,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
         auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
         output_.push_back(pack(ump_message_type::m2cvm, status | channel,
                                c.rpnMsb, c.rpnLsb));
-        output_.push_back(M2Utils::scaleUp(std::uint32_t{b2} << 7, 14, 32));
+        output_.push_back(midi2::scaleUp(std::uint32_t{b2} << 7, 14, 32));
       } else {
         c.rpnMsbValue = b2;
       }
@@ -55,7 +57,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
       output_.push_back(
           pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
       output_.push_back(
-          M2Utils::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
+          midi2::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
     }
     break;
   case control::nrpn_msb: c.rpnMode = false; c.rpnMsb = b2; break;
@@ -64,7 +66,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   case control::rpn_lsb: c.rpnMode = true; c.rpnLsb = b2; break;
   default:
     output_.push_back(pack(ump_message_type::m2cvm, b0, b1, 0));
-    output_.push_back(M2Utils::scaleUp(b2, 7, 32));
+    output_.push_back(midi2::scaleUp(b2, 7, 32));
     break;
   }
 }
@@ -73,7 +75,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
                               std::uint8_t b2) {
   assert((b1 & 0x80) == 0 && (b2 & 0x80) == 0 &&
          "The top bit of b1 and b2 must be zero");
-  using M2Utils::scaleUp;
+  using midi2::scaleUp;
   std::uint8_t const channel = b0 & 0x0F;
   std::uint8_t status = b0 & 0xF0;
 
@@ -219,3 +221,5 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
     }
   }
 }
+
+}  // end namespace midi2

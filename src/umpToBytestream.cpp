@@ -27,6 +27,8 @@
 
 #include "midi2/umpToBytestream.h"
 
+namespace midi2 {
+
 void umpToBytestream::word1(uint32_t UMP) {
   // First part of a UMP Message
   mType = static_cast<ump_message_type>(UMP >> 28);
@@ -138,8 +140,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     switch (status) {
     case note_off:
     case note_on: {
-      auto velocity =
-          static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7));
+      auto velocity = static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7));
       if (velocity == 0 && status == note_on) {
         velocity = 1;
       }
@@ -152,13 +153,11 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     case status::cc:
       output_.push_back((ump64word1 >> 16) & 0xFF);
       output_.push_back(val1);
-      output_.push_back(
-          static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7)));
+      output_.push_back(static_cast<std::uint8_t>(scaleDown(UMP, 32, 7)));
       break;
     case status::channel_pressure:
       output_.push_back((ump64word1 >> 16) & 0xFF);
-      output_.push_back(
-          static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7)));
+      output_.push_back(static_cast<std::uint8_t>(scaleDown(UMP, 32, 7)));
       break;
     case midi2status::rpn: {
       output_.push_back(status::cc + channel);
@@ -168,8 +167,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(100);
       output_.push_back(val2);
 
-      auto const val14bit =
-          static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+      auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
       output_.push_back(status::cc + channel);
       output_.push_back(6);
       output_.push_back((val14bit >> 7) & 0x7F);
@@ -186,8 +184,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(98);
       output_.push_back(val2);
 
-      auto const val14bit =
-          static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+      auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
       output_.push_back(status::cc + channel);
       output_.push_back(6);
       output_.push_back((val14bit >> 7) & 0x7F);
@@ -260,3 +257,5 @@ void umpToBytestream::UMPStreamParse(uint32_t UMP) {
   default: UMPPos = 0; break;
   }
 }
+
+}  // end namespace midi2

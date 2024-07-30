@@ -28,6 +28,8 @@
 
 #include "midi2/utils.h"
 
+using namespace midi2;
+
 namespace {
 
 uint32_t m1Create(uint8_t group, uint8_t status, uint8_t val1, uint8_t val2) {
@@ -55,6 +57,8 @@ uint32_t mt4CreateFirstWord(uint8_t group, uint8_t status, uint8_t channel,
 }
 
 }  // end anonymous namespace
+
+namespace midi2 {
 
 uint32_t UMPMessage::mt0NOOP() {
   return 0;
@@ -465,3 +469,5 @@ std::array<uint32_t, 4> UMPMessage::mtFNotifyProtocol(uint8_t protocol,
                static_cast<std::uint32_t>(jrtx);
   return umpMess;
 }
+
+}  // end namespace midi2

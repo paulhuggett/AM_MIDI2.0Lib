@@ -19,7 +19,7 @@ using byte_vector = std::vector<std::uint8_t>;
 using ump_vector = std::vector<std::uint32_t>;
 
 ump_vector bytesToUMP(byte_vector const& in) {
-  bytestreamToUMP bs2ump;
+  midi2::bytestreamToUMP bs2ump;
   ump_vector out;
   for (auto const v : in) {
     bs2ump.bytestreamParse(v);
@@ -31,7 +31,7 @@ ump_vector bytesToUMP(byte_vector const& in) {
 }
 
 byte_vector umpToBytes(ump_vector const& in) {
-  umpToBytestream ump2bs;
+  midi2::umpToBytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
     ump2bs.UMPStreamParse(v);

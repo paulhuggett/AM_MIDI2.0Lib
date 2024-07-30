@@ -25,14 +25,15 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2CPP_MIDICIMESSAGECREATE_H
-#define MIDI2CPP_MIDICIMESSAGECREATE_H
+#ifndef MIDI2_MIDICIMESSAGECREATE_H
+#define MIDI2_MIDICIMESSAGECREATE_H
+
 #include <array>
 #include <cstdint>
 
-#include "utils.h"
+#include "midi2/utils.h"
 
-namespace CIMessage {
+namespace midi2::CIMessage {
 
 uint16_t sendDiscoveryRequest(uint8_t *sysex, uint8_t midiCIVer,
                               uint32_t srcMUID, std::array<uint8_t, 3> manuId,
@@ -213,5 +214,5 @@ uint16_t sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer,
 uint16_t sendPIMMReportEnd(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
                            uint32_t destMuid, uint8_t destination);
 
-}  // namespace CIMessage
-#endif  // MIDI2CPP_MIDICIMESSAGECREATE_H
+}  // end namespace midi2::CIMessage
+#endif  // MIDI2_MIDICIMESSAGECREATE_H

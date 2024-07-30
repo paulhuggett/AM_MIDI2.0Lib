@@ -11,9 +11,9 @@
 
 namespace {
 
-bytestreamToUMP BS2UMP;
-umpToBytestream UMP2BS;
-umpToMIDI1Protocol UMP2M1;
+midi2::bytestreamToUMP BS2UMP;
+midi2::umpToBytestream UMP2BS;
+midi2::umpToMIDI1Protocol UMP2M1;
 
 auto testPassed = 0U;
 auto testFailed = 0U;
@@ -167,11 +167,11 @@ int main(){
 
     //***** UMP Meesage Create *************
     printf("UMP Message Create \n");
-    uint32_t inUmp1[] = {UMPMessage::mt0NOOP()};
+    uint32_t inUmp1[] = {midi2::UMPMessage::mt0NOOP()};
     uint32_t outUmp1[] = {0x00000000};
     testRun_umpToump(" UMP NOOP : ", inUmp1,  1, outUmp1);
 
-    uint32_t inUmp2[] = {UMPMessage::mt1TimingClock(8)};
+    uint32_t inUmp2[] = {midi2::UMPMessage::mt1TimingClock(8)};
     uint32_t outUmp2[] = {0x18f80000};
     testRun_umpToump(" UMP Timing Clock : ", inUmp2,  1, outUmp2);
 

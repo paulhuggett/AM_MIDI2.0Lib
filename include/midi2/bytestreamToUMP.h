@@ -24,8 +24,8 @@
  * SOFTWARE.
  * ********************************************************/
 
-#ifndef BSUMP_H
-#define BSUMP_H
+#ifndef MIDI2_BYTESTREAMTOUMP_H
+#define MIDI2_BYTESTREAMTOUMP_H
 
 #include <array>
 #include <cassert>
@@ -33,6 +33,8 @@
 
 #include "fifo.h"
 #include "utils.h"
+
+namespace midi2 {
 
 class bytestreamToUMP {
 public:
@@ -116,4 +118,6 @@ private:
   void bsToUMP(std::uint8_t b0, std::uint8_t b1, std::uint8_t b2);
 };
 
-#endif
+}  // end namespace midi2
+
+#endif  // MIDI2_BYTESTREAMTOUMP_H

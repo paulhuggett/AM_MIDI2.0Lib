@@ -25,12 +25,14 @@
  *
  * ********************************************************/
 
-#ifndef MESSAGE_CREATE_H
-#define MESSAGE_CREATE_H
+#ifndef MIDI2_MESSAGE_CREATE_H
+#define MIDI2_MESSAGE_CREATE_H
+
 #include <array>
 #include <cstdint>
 
-namespace UMPMessage {
+namespace midi2::UMPMessage {
+
 uint32_t mt0NOOP();
 
 uint32_t mt0JRClock(uint16_t clockTime);
@@ -157,5 +159,5 @@ std::array<uint32_t, 4> mtFRequestProtocol(uint8_t protocol, bool jrrx,
 std::array<uint32_t, 4> mtFNotifyProtocol(uint8_t protocol, bool jrrx,
                                           bool jrtx);
 
-}  // namespace UMPMessage
-#endif
+}  // namespace midi2::UMPMessage
+#endif  // MIDI2_MESSAGE_CREATE_H

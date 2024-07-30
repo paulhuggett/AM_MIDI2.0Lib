@@ -25,8 +25,8 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2CPP_MIDICIPROCESSOR_H
-#define MIDI2CPP_MIDICIPROCESSOR_H
+#ifndef MIDI2_MIDICIPROCESSOR_H
+#define MIDI2_MIDICIPROCESSOR_H
 
 #include <array>
 #include <cstdint>
@@ -35,7 +35,9 @@
 #include <string>
 #include <tuple>
 
-#include "utils.h"
+#include "midi2/utils.h"
+
+namespace midi2 {
 
 using reqId = std::tuple<uint32_t, uint8_t>;  // muid-requestId
 
@@ -332,4 +334,6 @@ private:
   void processPISysex(uint8_t s7Byte);
 };
 
-#endif  // MIDI2CPP_MIDICIPROCESSOR_H
+}  // end namespace midi2
+
+#endif  // MIDI2_MIDICIPROCESSOR_H

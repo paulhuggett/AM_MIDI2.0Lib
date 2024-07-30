@@ -11,7 +11,7 @@ namespace {
 
 template <typename InputIterator>
 auto convert(InputIterator first, InputIterator last) {
-  umpToBytestream ump2bs;
+  midi2::umpToBytestream ump2bs;
   std::vector<std::uint8_t> output;
   std::for_each(first, last, [&output, &ump2bs](std::uint32_t const ump) {
     ump2bs.UMPStreamParse(ump);

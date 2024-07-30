@@ -1,5 +1,5 @@
-#ifndef MC7_H
-#define MC7_H
+#ifndef MIDI2_MCODED7_H
+#define MIDI2_MCODED7_H
 
 #include <algorithm>
 #include <array>
@@ -31,7 +31,7 @@
 // are transmitted as:
 //     0ABC0000 0AAAaaaa 0BBBbbbb 0CCCcccc
 
-namespace mcoded7 {
+namespace midi2::mcoded7 {
 
 class encoder {
 public:
@@ -170,6 +170,6 @@ OutputIterator decoder::parse_byte(std::uint8_t const value,
   return out;
 }
 
-}  // end namespace mcoded7
+}  // end namespace midi2::mcoded7
 
-#endif  // MC7_H
+#endif  // MIDI2_MCODED7_H

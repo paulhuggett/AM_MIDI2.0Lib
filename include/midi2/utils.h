@@ -25,12 +25,14 @@
  *
  * ********************************************************/
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MIDI2_UTILS_H
+#define MIDI2_UTILS_H
 
 #include <cassert>
 #include <cstdint>
 #include <tuple>
+
+namespace midi2 {
 
 enum status : std::uint8_t {
   // Channel voice messages
@@ -253,8 +255,6 @@ enum class ump_message_type : std::uint32_t {
   midi_endpoint = 0x0F,
 };
 
-namespace M2Utils {
-
 inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
   for (auto i = std::size_t{0}; i < n; i++) {
     dest[i] = c;
@@ -305,6 +305,6 @@ constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits,
   return srcVal >> scaleBits;
 }
 
-}  // namespace M2Utils
+}  // end namespace midi2
 
-#endif
+#endif  // MIDI2_UTILS_H

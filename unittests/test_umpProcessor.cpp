@@ -11,6 +11,8 @@
 #include <fuzztest/fuzztest.h>
 #endif
 
+namespace midi2 {
+
 std::ostream& operator<<(std::ostream& os, umpCommon const& common);
 std::ostream& operator<<(std::ostream& os, umpCommon const& common) {
   return os << "{ group=" << static_cast<unsigned>(common.group)
@@ -39,6 +41,8 @@ std::ostream& operator<<(std::ostream& os, umpData const& data) {
   return os;
 }
 
+}  // end namespace midi2
+
 namespace {
 
 // We want to use mocked instances of a callback struct, but the umpProcessor
@@ -57,16 +61,16 @@ public:
   callbacks_proxy& operator=(callbacks_proxy&&) noexcept = delete;
 
   //-----------------------Handlers ---------------------------
-  void utility_message(umpGeneric const& message) {
+  void utility_message(midi2::umpGeneric const& message) {
     original_.utility_message(message);
   }
-  void channel_voice_message(umpCVM const& message) {
+  void channel_voice_message(midi2::umpCVM const& message) {
     original_.channel_voice_message(message);
   }
-  void system_message(umpGeneric const& message) {
+  void system_message(midi2::umpGeneric const& message) {
     original_.system_message(message);
   }
-  void send_out_sysex(umpData const& message) {
+  void send_out_sysex(midi2::umpData const& message) {
     original_.send_out_sysex(message);
   }
 
@@ -91,14 +95,14 @@ public:
     original_.flex_key_sig(group, addrs, channel, sharpFlats, tonic);
   }
   void flex_chord(std::uint8_t group, std::uint8_t addrs, std::uint8_t channel,
-                  chord const& chord) {
+                  midi2::chord const& chord) {
     original_.flex_chord(group, addrs, channel, chord);
   }
-  void flex_performance(umpData const& mess, std::uint8_t addrs,
+  void flex_performance(midi2::umpData const& mess, std::uint8_t addrs,
                         std::uint8_t channel) {
     original_.flex_performance(mess, addrs, channel);
   }
-  void flex_lyric(umpData const& mess, std::uint8_t addrs,
+  void flex_lyric(midi2::umpData const& mess, std::uint8_t addrs,
                   std::uint8_t channel) {
     original_.flex_lyric(mess, addrs, channel);
   }
@@ -108,10 +112,10 @@ public:
                     std::uint8_t filter) {
     original_.midiEndpoint(majVer, minVer, filter);
   }
-  void midiEndpointName(umpData const& mess) {
+  void midiEndpointName(midi2::umpData const& mess) {
     original_.midiEndpointName(mess);
   }
-  void midiEndpointProdId(umpData const& mess) {
+  void midiEndpointProdId(midi2::umpData const& mess) {
     original_.midiEndpointProdId(mess);
   }
   void midiEndpointJRProtocolReq(std::uint8_t protocol, bool jrrx, bool jrtx) {
@@ -146,7 +150,7 @@ public:
                                 firstGroup, groupLength, midiCIVersion, isMIDI1,
                                 maxS8Streams);
   }
-  void functionBlockName(umpData mess, std::uint8_t fbIdx) {
+  void functionBlockName(midi2::umpData mess, std::uint8_t fbIdx) {
     original_.functionBlockName(mess, fbIdx);
   }
 
@@ -163,29 +167,30 @@ private:
 
 template <typename T> callbacks_proxy(T&) -> callbacks_proxy<T>;
 
-class MockCallbacks : public callbacks_base {
+class MockCallbacks : public midi2::callbacks_base {
 public:
-  MOCK_METHOD(void, utility_message, (umpGeneric const&), (override));
-  MOCK_METHOD(void, channel_voice_message, (umpCVM const&), (override));
-  MOCK_METHOD(void, system_message, (umpGeneric const&), (override));
-  MOCK_METHOD(void, send_out_sysex, (umpData const&), (override));
+  MOCK_METHOD(void, utility_message, (midi2::umpGeneric const&), (override));
+  MOCK_METHOD(void, channel_voice_message, (midi2::umpCVM const&), (override));
+  MOCK_METHOD(void, system_message, (midi2::umpGeneric const&), (override));
+  MOCK_METHOD(void, send_out_sysex, (midi2::umpData const&), (override));
 };
 
 }  // end anonymous namespace
 
-template class umpProcessor<callbacks_proxy<MockCallbacks>>;
+template class midi2::umpProcessor<callbacks_proxy<MockCallbacks>>;
 
 namespace {
 
-constexpr std::uint32_t ump_cvm(status s) {
-  static_assert(std::is_same_v<std::underlying_type_t<status>, std::uint8_t>,
-                "status type must be a std::uint8_t");
+constexpr std::uint32_t ump_cvm(midi2::status s) {
+  static_assert(
+      std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
+      "status type must be a std::uint8_t");
   assert((s & 0x0F) == 0 &&
-         "Bottom 4 bits of a channel voice message status enum  must be 0");
+         "Bottom 4 bits of a channel voice message status enum must be 0");
   return std::uint32_t{s} >> 4;
 }
 
-constexpr auto ump_note_on = ump_cvm(status::note_on);
+constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
 
 constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
                              std::uint8_t const b2, std::uint8_t const b3) {
@@ -199,13 +204,13 @@ TEST(UMPProcessor, Midi1NoteOn) {
   constexpr auto velocity = std::uint16_t{0x43}; // 7 bits
   constexpr auto group = std::uint8_t{0};
 
-  umpCVM message;
+  midi2::umpCVM message;
   message.common.group = group;
-  message.common.messageType = ump_message_type::m1cvm;
-  message.common.status = status::note_on;
+  message.common.messageType = midi2::ump_message_type::m1cvm;
+  message.common.status = midi2::status::note_on;
   message.channel = channel;
   message.note = note_number;
-  message.value = M2Utils::scaleUp(velocity, 7, 16);
+  message.value = midi2::scaleUp(velocity, 7, 16);
   message.index = 0;
   message.bank = 0;
   message.flag1 = false;
@@ -214,10 +219,10 @@ TEST(UMPProcessor, Midi1NoteOn) {
   MockCallbacks callbacks;
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
-  umpProcessor p{callbacks_proxy{callbacks}};
-  p.processUMP(
-      pack((static_cast<std::uint8_t>(ump_message_type::m1cvm) << 4) | group,
-           (ump_note_on << 4) | channel, note_number, velocity));
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
+  p.processUMP(pack(
+      (static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
+      (ump_note_on << 4) | channel, note_number, velocity));
 }
 
 TEST(UMPProcessor, Midi2NoteOn) {
@@ -226,10 +231,10 @@ TEST(UMPProcessor, Midi2NoteOn) {
   constexpr auto velocity = std::uint16_t{0x432};
   constexpr auto group = std::uint8_t{0};
 
-  umpCVM message;
+  midi2::umpCVM message;
   message.common.group = group;
-  message.common.messageType = ump_message_type::m2cvm;
-  message.common.status = status::note_on;
+  message.common.messageType = midi2::ump_message_type::m2cvm;
+  message.common.status = midi2::status::note_on;
   message.channel = channel;
   message.note = note_number;
   message.value = velocity;
@@ -241,9 +246,9 @@ TEST(UMPProcessor, Midi2NoteOn) {
   MockCallbacks callbacks;
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
-  umpProcessor p{callbacks_proxy{callbacks}};
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
   p.processUMP(std::uint32_t{
-      (static_cast<std::uint32_t>(ump_message_type::m2cvm) << 28) |
+      (static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm) << 28) |
       (std::uint32_t{group} << 24) | (ump_note_on << 20) |
       (std::uint32_t{channel} << 16) | (std::uint32_t{note_number} << 8)});
   p.processUMP(std::uint32_t{velocity << 16});
@@ -260,11 +265,12 @@ using testing::InSequence;
 template <typename Iterator>
 auto UMPDataMatches(std::uint8_t group, std::uint8_t stream_id,
                     std::uint8_t form, Iterator first, Iterator last) {
-  return AllOf(Field("common", &umpData::common,
-                     Eq(umpCommon{group, ump_message_type::data, 0})),
-               Field("streamId", &umpData::streamId, Eq(stream_id)),
-               Field("form", &umpData::form, Eq(form)),
-               Field("data", &umpData::data, ElementsAreArray(first, last)));
+  return AllOf(
+      Field("common", &midi2::umpData::common,
+            Eq(midi2::umpCommon{group, midi2::ump_message_type::data, 0})),
+      Field("streamId", &midi2::umpData::streamId, Eq(stream_id)),
+      Field("form", &midi2::umpData::form, Eq(form)),
+      Field("data", &midi2::umpData::data, ElementsAreArray(first, last)));
 };
 
 TEST(UMPProcessor, Sysex8_16ByteMessage) {
@@ -290,18 +296,18 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
                 send_out_sysex(UMPDataMatches(group, stream_id, end_form,
                                               split_point, std::end(payload))));
   }
-  umpProcessor p{callbacks_proxy{callbacks}};
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
   // Send 13 bytes
-  p.processUMP(
-      pack((static_cast<std::uint8_t>(ump_message_type::data) << 4) | group,
-           (start_form << 4) | 13U, stream_id, payload[0]));
+  p.processUMP(pack(
+      (static_cast<std::uint8_t>(midi2::ump_message_type::data) << 4) | group,
+      (start_form << 4) | 13U, stream_id, payload[0]));
   p.processUMP(pack(payload[1], payload[2], payload[3], payload[4]));
   p.processUMP(pack(payload[5], payload[6], payload[7], payload[8]));
   p.processUMP(pack(payload[9], payload[10], payload[11], payload[12]));
   // Send the final 3 bytes.
-  p.processUMP(
-      pack((static_cast<std::uint8_t>(ump_message_type::data) << 4) | group,
-           (end_form << 4) | 3U, stream_id, payload[13]));
+  p.processUMP(pack(
+      (static_cast<std::uint8_t>(midi2::ump_message_type::data) << 4) | group,
+      (end_form << 4) | 3U, stream_id, payload[13]));
   p.processUMP(pack(payload[14], payload[15], 0, 0));
   p.processUMP(0);
   p.processUMP(0);
@@ -309,7 +315,7 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
 #if 0
   // Send 3 bytes.
   p.processUMP(std::uint32_t{
-      (static_cast<std::uint32_t>(ump_message_type::data) << 28) |
+      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28) |
       (std::uint32_t{group} << 24) | (std::uint32_t{0b0011} << 20) |
       (std::uint32_t{3} << 16) | (std::uint32_t{stream_id} << 8)} | payload[13]);
   p.processUMP((payload[14] << 24) | (payload[15] << 16));
@@ -320,7 +326,7 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
 
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
   using namespace std::placeholders;
-  umpProcessor p;
+  midi2::umpProcessor p;
   std::for_each(std::begin(in), std::end(in),
                 std::bind(&decltype(p)::processUMP, &p, _1));
 }
@@ -335,10 +341,11 @@ TEST(UMPProcessor, Empty) {
 
 void FourByteDataMessage(std::array<std::uint32_t, 4> message) {
   // Set the message type to "data".
-  message[0] = (message[0] & 0x00FFFFFF) |
-               (static_cast<std::uint32_t>(ump_message_type::data) << 28);
+  message[0] =
+      (message[0] & 0x00FFFFFF) |
+      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28);
   using namespace std::placeholders;
-  umpProcessor p;
+  midi2::umpProcessor p;
   std::for_each(std::begin(message), std::end(message),
                 std::bind(&decltype(p)::processUMP, &p, _1));
 }
@@ -357,13 +364,13 @@ TEST(UMPProcessor, PartialMessageThenClear) {
   constexpr auto velocity = std::uint16_t{0x43};  // 7 bits
   constexpr auto group = std::uint8_t{0};
 
-  umpCVM message;
+  midi2::umpCVM message;
   message.common.group = group;
-  message.common.messageType = ump_message_type::m1cvm;
-  message.common.status = status::note_on;
+  message.common.messageType = midi2::ump_message_type::m1cvm;
+  message.common.status = midi2::status::note_on;
   message.channel = channel;
   message.note = note_number;
-  message.value = M2Utils::scaleUp(velocity, 7, 16);
+  message.value = midi2::scaleUp(velocity, 7, 16);
   message.index = 0;
   message.bank = 0;
   message.flag1 = false;
@@ -372,17 +379,17 @@ TEST(UMPProcessor, PartialMessageThenClear) {
   MockCallbacks callbacks;
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
-  umpProcessor p{callbacks_proxy{callbacks}};
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
   // The first half of a 64-bit MIDI 2 note-on message.
-  p.processUMP(
-      pack((static_cast<std::uint8_t>(ump_message_type::m2cvm) << 4) | group,
-           (ump_note_on << 4) | channel, note_number, 0));
+  p.processUMP(pack(
+      (static_cast<std::uint8_t>(midi2::ump_message_type::m2cvm) << 4) | group,
+      (ump_note_on << 4) | channel, note_number, 0));
   p.clearUMP();
 
   // An entire 32-bit MIDI 1 note-on message.
-  p.processUMP(
-      pack((static_cast<std::uint8_t>(ump_message_type::m1cvm) << 4) | group,
-           (ump_note_on << 4) | channel, note_number, velocity));
+  p.processUMP(pack(
+      (static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
+      (ump_note_on << 4) | channel, note_number, velocity));
 }
 
 }  // end anonymous namespace

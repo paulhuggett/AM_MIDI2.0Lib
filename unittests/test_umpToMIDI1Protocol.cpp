@@ -13,7 +13,7 @@ namespace {
 template <typename InputIterator>
 auto convert(InputIterator first, InputIterator last) {
   std::vector<std::uint32_t> output;
-  umpToMIDI1Protocol UMP2M1;
+  midi2::umpToMIDI1Protocol UMP2M1;
   std::for_each(first, last, [&output, &UMP2M1](std::uint32_t const ump) {
     UMP2M1.UMPStreamParse(ump);
     while (UMP2M1.availableUMP()) {

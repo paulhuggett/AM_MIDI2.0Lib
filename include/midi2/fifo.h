@@ -1,5 +1,5 @@
-#ifndef FIFO_H
-#define FIFO_H
+#ifndef MIDI2_FIFO_H
+#define MIDI2_FIFO_H
 
 #include <array>
 #include <cassert>
@@ -97,4 +97,4 @@ private:
 
 }  // end namespace M2Utils
 
-#endif  // FIFO_H
+#endif  // MIDI2_FIFO_H

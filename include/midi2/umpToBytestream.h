@@ -25,13 +25,15 @@
  *
  * ********************************************************/
 
-#ifndef UMPBS_H
-#define UMPBS_H
+#ifndef MIDI2_UMPTOBYTESTREAM_H
+#define MIDI2_UMPTOBYTESTREAM_H
 
 #include <cstdint>
 
-#include "fifo.h"
-#include "utils.h"
+#include "midi2/fifo.h"
+#include "midi2/utils.h"
+
+namespace midi2 {
 
 class umpToBytestream {
 public:
@@ -56,4 +58,6 @@ private:
   void word3(std::uint32_t ump);
 };
 
-#endif
+}  // end namespace midi2
+
+#endif  // MIDI2_UMPTOBYTESTREAM_H

@@ -26,7 +26,7 @@ public:
   /// Takes a vector of bytes and returns the mcoded7 encoded equivalent vector.
   static std::vector<std::uint8_t> encode(
       std::vector<std::uint8_t> const& input) {
-    mcoded7::encoder encoder;
+    midi2::mcoded7::encoder encoder;
     std::vector<std::uint8_t> output;
     auto out = std::back_inserter(output);
     std::for_each(std::begin(input), std::end(input),
@@ -40,7 +40,7 @@ public:
   /// Decodes a vector of mcoded7 bytes.
   static std::vector<std::uint8_t> decode(
       std::vector<std::uint8_t> const& input) {
-    mcoded7::decoder decoder;
+    midi2::mcoded7::decoder decoder;
     std::vector<std::uint8_t> output;
     auto out = std::back_inserter(output);
     std::for_each(std::begin(input), std::end(input),
@@ -115,7 +115,7 @@ TEST(Mcoded7, EmptyRoundTrip) {
 
 // NOLINTNEXTLINE
 TEST(Mcoded7, GoodInput) {
-  mcoded7::decoder decoder;
+  midi2::mcoded7::decoder decoder;
   std::array<std::uint8_t, 1> output;
   auto* out = output.data();
   out = decoder.parse_byte(0b00000000, out);
@@ -126,7 +126,7 @@ TEST(Mcoded7, GoodInput) {
 
 // NOLINTNEXTLINE
 TEST(Mcoded7, BadInput) {
-  mcoded7::decoder decoder;
+  midi2::mcoded7::decoder decoder;
   std::array<std::uint8_t, 2> output;
   auto* out = output.data();
   out = decoder.parse_byte(0b00000000, out);

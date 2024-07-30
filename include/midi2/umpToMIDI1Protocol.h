@@ -25,13 +25,15 @@
  *
  * ********************************************************/
 
-#ifndef UMP2MIDI1_H
-#define UMP2MIDI1_H
+#ifndef MIDI2_UMPTOMIDI1PROTOCOL_H
+#define MIDI2_UMPTOMIDI1PROTOCOL_H
 
 #include <cstdint>
 
-#include "fifo.h"
-#include "utils.h"
+#include "midi2/fifo.h"
+#include "midi2/utils.h"
+
+namespace midi2 {
 
 class umpToMIDI1Protocol {
 public:
@@ -46,4 +48,6 @@ private:
   M2Utils::fifo<std::uint32_t, 4> output_;
 };
 
-#endif
+}  // end namespace midi2
+
+#endif  // MIDI2_UMPTOMIDI1PROTOCOL_H

@@ -32,6 +32,8 @@
 #include "midi2/umpMessageCreate.h"
 #include "midi2/utils.h"
 
+namespace midi2 {
+
 void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
   switch (UMPPos) {
   case 0: {  // First UMP Packet
@@ -96,11 +98,11 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       case note_off:
         output_.push_back(UMPMessage::mt2NoteOff(
             group, channel, val1,
-            static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7))));
+            static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7))));
         break;
       case note_on: {
         auto velocity =
-            static_cast<std::uint8_t>(M2Utils::scaleDown((UMP >> 16), 16, 7));
+            static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7));
         if (velocity == 0) {
           velocity = 1;
         }
@@ -111,23 +113,22 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       case key_pressure:
         output_.push_back(UMPMessage::mt2PolyPressure(
             group, channel, val1,
-            static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7))));
+            static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case cc:
         output_.push_back(UMPMessage::mt2CC(
             group, channel, val1,
-            static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7))));
+            static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case channel_pressure:
         output_.push_back(UMPMessage::mt2ChannelPressure(
-            group, channel,
-            static_cast<std::uint8_t>(M2Utils::scaleDown(UMP, 32, 7))));
+            group, channel, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case nrpn: {
         output_.push_back(UMPMessage::mt2CC(group, channel, 99, val1));
         output_.push_back(UMPMessage::mt2CC(group, channel, 98, val2));
         auto const val14bit =
-            static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+            static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
         output_.push_back(
             UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
         output_.push_back(
@@ -138,7 +139,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
         output_.push_back(UMPMessage::mt2CC(group, channel, 101, val1));
         output_.push_back(UMPMessage::mt2CC(group, channel, 100, val2));
         auto const val14bit =
-            static_cast<std::uint16_t>(M2Utils::scaleDown(UMP, 32, 14));
+            static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
         output_.push_back(
             UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
         output_.push_back(
@@ -210,3 +211,5 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
   default: assert(false); break;
   }
 }
+
+}  // end namespace midi2

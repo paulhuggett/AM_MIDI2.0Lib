@@ -24,8 +24,8 @@
  * SOFTWARE.
  *
  * ********************************************************/
-#ifndef UMP_PROCESSOR_H
-#define UMP_PROCESSOR_H
+#ifndef MIDI2_UMP_PROCESSOR_H
+#define MIDI2_UMP_PROCESSOR_H
 
 #include <algorithm>
 #include <array>
@@ -34,7 +34,9 @@
 #include <functional>
 #include <span>
 
-#include "utils.h"
+#include "midi2/utils.h"
+
+namespace midi2 {
 
 struct umpCommon {
   bool operator==(umpCommon const&) const = default;
@@ -322,16 +324,16 @@ void umpProcessor<Callbacks>::m1cvm_message(ump_message_type const mt,
   case status::note_on:
   case status::key_pressure:
     mess.note = val1;
-    mess.value = M2Utils::scaleUp(val2, 7, 16);
+    mess.value = scaleUp(val2, 7, 16);
     callbacks_.channel_voice_message(mess);
     break;
   case status::channel_pressure:
-    mess.value = M2Utils::scaleUp(val2, 7, 32);
+    mess.value = scaleUp(val2, 7, 32);
     callbacks_.channel_voice_message(mess);
     break;
   case status::cc:
     mess.index = val1;
-    mess.value = M2Utils::scaleUp(val2, 7, 32);
+    mess.value = scaleUp(val2, 7, 32);
     callbacks_.channel_voice_message(mess);
     break;
   case status::program_change:
@@ -339,7 +341,7 @@ void umpProcessor<Callbacks>::m1cvm_message(ump_message_type const mt,
     callbacks_.channel_voice_message(mess);
     break;
   case status::pitch_bend:
-    mess.value = M2Utils::scaleUp((std::uint32_t{val2} << 7) | val1, 14, 32);
+    mess.value = scaleUp((std::uint32_t{val2} << 7) | val1, 14, 32);
     callbacks_.channel_voice_message(mess);
     break;
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 2}); break;
@@ -803,4 +805,6 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
   }
 }
 
-#endif  // UMP_PROCESSOR_H
+}  // end namespace midi2
+
+#endif  // MIDI2_UMP_PROCESSOR_H

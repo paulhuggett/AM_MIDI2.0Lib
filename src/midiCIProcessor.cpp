@@ -29,6 +29,8 @@
 
 #include <cassert>
 
+namespace midi2 {
+
 void midiCIProcessor::endSysex7() {
   if (midici._reqTupleSet) {
     cleanupRequest(midici._peReqIdx);
@@ -747,3 +749,5 @@ void midiCIProcessor::processPISysex(uint8_t s7Byte) {
   }
   }
 }
+
+}  // end namespace midi2

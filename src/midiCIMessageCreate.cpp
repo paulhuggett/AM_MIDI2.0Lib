@@ -27,6 +27,8 @@
 
 #include "midi2/midiCIMessageCreate.h"
 
+using namespace midi2;
+
 namespace {
 void setBytesFromNumbers(uint8_t *message, uint32_t number, uint16_t *start,
                          uint8_t amount) {
@@ -155,6 +157,8 @@ uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
 }
 
 }  // end anonymous namespace
+
+namespace midi2 {
 
 uint16_t CIMessage::sendDiscoveryRequest(
     uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
@@ -579,3 +583,5 @@ uint16_t CIMessage::sendPIMMReportEnd(uint8_t *sysex, uint8_t midiCIVer,
                  srcMUID, destMUID);
   return 13;
 }
+
+}  // end namespace midi2
