@@ -6,6 +6,7 @@ option (MIDI2_WERROR "Enable warnings-as-errors" No)
 option (MIDI2_COVERAGE "Enable code coverage" No)
 option (MIDI2_SANITIZE "Enable sanitizers" No)
 option (MIDI2_FUZZTEST "Enable Fuzz Testing" No)
+option (MIDI2_UNITTEST "Enable Unit Testing" Yes)
 
 enable_testing ()
 
@@ -83,8 +84,10 @@ if (MIDI2_FUZZTEST)
   FetchContent_MakeAvailable (fuzztest)
   include (GoogleTest)
   fuzztest_setup_fuzzing_flags ()
+
+  add_subdirectory(unittests)
 else ()
-  if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt")
+  if (MIDI2_UNITTEST AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt")
     # Tell gtest to link against the "Multi-threaded Debug DLL runtime library"
     # on Windows.
     set (gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
@@ -92,7 +95,8 @@ else ()
     set (INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
     set (INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
     add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/googletest")
+
+    add_subdirectory(unittests)
   endif()
 endif (MIDI2_FUZZTEST)
 
-add_subdirectory(unittests)
