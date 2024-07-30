@@ -171,65 +171,72 @@ public:
   callbacks_base& operator=(callbacks_base const&) = default;
 
   //-----------------------Handlers ---------------------------
-  virtual void utility_message(umpGeneric const& /*mess*/) {}
-  virtual void channel_voice_message(umpCVM const& /*mess*/) {}
-  virtual void system_message(umpGeneric const& /*mess*/) {}
-  virtual void send_out_sysex(umpData const& /*mess*/) {}
+  virtual void utility_message(umpGeneric const& /*mess*/) { /* nop */ }
+  virtual void channel_voice_message(umpCVM const& /*mess*/) { /* nop */ }
+  virtual void system_message(umpGeneric const& /*mess*/) { /* nop */ }
+  virtual void send_out_sysex(umpData const& /*mess*/) { /* nop */ }
 
   //---------- Flex Data
-  virtual void flex_tempo(uint8_t /*group*/, uint32_t /*num10nsPQN*/) {}
+  virtual void flex_tempo(uint8_t /*group*/,
+                          uint32_t /*num10nsPQN*/) { /* nop */ }
   virtual void flex_time_sig(uint8_t /*group*/, uint8_t /*numerator*/,
-                             uint8_t /*denominator*/, uint8_t /*num32Notes*/) {}
+                             uint8_t /*denominator*/,
+                             uint8_t /*num32Notes*/) { /* nop */ }
   virtual void flex_metronome(uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
                               uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
                               uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/,
-                              uint8_t /*numSubDivCli2*/) {}
+                              uint8_t /*numSubDivCli2*/) { /* nop */ }
   virtual void flex_key_sig(uint8_t /*group*/, uint8_t /*addrs*/,
                             uint8_t /*channel*/, uint8_t /*sharpFlats*/,
-                            uint8_t /*tonic*/) {}
+                            uint8_t /*tonic*/) { /* nop */ }
   virtual void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/,
-                          uint8_t /*channel*/, chord const& /*chord*/) {}
+                          uint8_t /*channel*/,
+                          chord const& /*chord*/) { /* nop */ }
   virtual void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/,
-                                uint8_t /*channel*/) {}
+                                uint8_t /*channel*/) { /* nop */ }
   virtual void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/,
-                          uint8_t /*channel*/) {}
+                          uint8_t /*channel*/) { /* nop */ }
 
   //---------- UMP Stream
   virtual void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/,
-                            uint8_t /*filter*/) {}
-  virtual void midiEndpointName(umpData const& /*mess*/) {}
-  virtual void midiEndpointProdId(umpData const& /*mess*/) {}
+                            uint8_t /*filter*/) { /* nop */ }
+  virtual void midiEndpointName(umpData const& /*mess*/) { /* nop */ }
+  virtual void midiEndpointProdId(umpData const& /*mess*/) { /* nop */ }
   virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/,
-                                         bool /*jrtx*/) {}
+                                         bool /*jrtx*/) { /* nop */ }
   virtual void midiEndpointInfo(uint8_t /*majVer*/, uint8_t /*minVer*/,
                                 uint8_t /*numOfFuncBlocks*/, bool /*m2*/,
-                                bool /*m1*/, bool /*rxjr*/, bool /*txjr*/) {}
+                                bool /*m1*/, bool /*rxjr*/,
+                                bool /*txjr*/) { /* nop */ }
   virtual void midiEndpointDeviceInfo(
       std::array<uint8_t, 3> const& /*manuId*/,
       std::array<uint8_t, 2> const& /*familyId*/,
       std::array<uint8_t, 2> const& /*modelId*/,
-      std::array<uint8_t, 4> const& /*version*/) {}
+      std::array<uint8_t, 4> const& /*version*/) { /* nop */ }
   virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/,
-                                            bool /*jrtx*/) {}
+                                            bool /*jrtx*/) { /* nop */ }
 
-  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) {}
+  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */
+  }
   virtual void functionBlockInfo(uint8_t /*fbIdx*/, bool /*active*/,
                                  uint8_t /*direction*/, bool /*sender*/,
                                  bool /*recv*/, uint8_t /*firstGroup*/,
                                  uint8_t /*groupLength*/,
                                  uint8_t /*midiCIVersion*/, uint8_t /*isMIDI1*/,
-                                 uint8_t /*maxS8Streams*/) {}
-  virtual void functionBlockName(umpData /*mess*/, uint8_t /*fbIdx*/) {}
+                                 uint8_t /*maxS8Streams*/) { /* nop */ }
+  virtual void functionBlockName(umpData const& /*mess*/,
+                                 uint8_t /*fbIdx*/) { /* nop */ }
 
-  virtual void startOfSeq() {}
-  virtual void endOfFile() {}
+  virtual void startOfSeq() { /* nop */ }
+  virtual void endOfFile() { /* nop */ }
 
-  virtual void unknownUMPMessage(std::span<std::uint32_t>) {}
+  virtual void unknownUMPMessage(std::span<std::uint32_t>) { /* nop */ }
 };
 
 template <backend Callbacks = callbacks_base> class umpProcessor {
 public:
-  umpProcessor(Callbacks cb = Callbacks{}) : callbacks_{std::move(cb)} {}
+  explicit umpProcessor(Callbacks cb = Callbacks{})
+      : callbacks_{std::move(cb)} {}
 
   void clearUMP();
   void processUMP(uint32_t UMP);
