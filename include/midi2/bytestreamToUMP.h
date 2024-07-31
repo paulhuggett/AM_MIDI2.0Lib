@@ -45,6 +45,8 @@ public:
     assert(defaultGroup <= 0b1111);
   }
 
+  void set_output_midi2(bool enabled) { outputMIDI2_ = enabled; }
+
   constexpr bool availableUMP() const { return !output_.empty(); }
   std::uint32_t readUMP() {
     assert(!output_.empty());
