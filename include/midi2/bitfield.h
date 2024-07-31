@@ -14,17 +14,15 @@ template <std::unsigned_integral T, unsigned Bits>
 constexpr T max_value() noexcept {
   if constexpr (Bits == 8U) {
     return std::numeric_limits<std::uint8_t>::max();
-  }
-  if constexpr (Bits == 16U) {
+  } else if constexpr (Bits == 16U) {
     return std::numeric_limits<std::uint16_t>::max();
-  }
-  if constexpr (Bits == 32U) {
+  } else if constexpr (Bits == 32U) {
     return std::numeric_limits<std::uint32_t>::max();
-  }
-  if constexpr (Bits == 64U) {
+  } else if constexpr (Bits == 64U) {
     return std::numeric_limits<std::uint64_t>::max();
+  } else {
+    return static_cast<T>((T{1} << Bits) - 1U);
   }
-  return static_cast<T>((T{1} << Bits) - 1U);
 }
 
 /// \tparam ContainerType The underlying type used to store the bitfield.
