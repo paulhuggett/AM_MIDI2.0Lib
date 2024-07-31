@@ -3,7 +3,7 @@
 
 #include "midi2/bitfield.h"
 
-namespace midi2 {
+namespace midi2::types {
 
 template <unsigned Index, unsigned Bits>
 using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
@@ -20,7 +20,6 @@ using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
 // Channel Pressure
 // Pitch Bend
 union m1cvm_w1 {
-  std::uint32_t message{};
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -40,16 +39,6 @@ union m1cvm_w1 {
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
 union sysex8_w1 {
-  constexpr sysex8_w1() = default;
-  constexpr sysex8_w1(sysex8_w1 const &) = default;
-  constexpr explicit sysex8_w1(std::uint32_t m) : message{m} {}
-  sysex8_w1 &operator=(std::uint32_t m) {
-    message = m;
-    return *this;
-  }
-  sysex8_w1 &operator=(sysex8_w1 const &) = default;
-
-  std::uint32_t message{};
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -61,7 +50,6 @@ union sysex8_w1 {
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
 union mixed_data_set_w1 {
-  std::uint32_t message{};
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -74,7 +62,6 @@ union mixed_data_set_w1 {
 
 // Function Block Info Notification (word 1)
 union function_block_info_w1 {
-  std::uint32_t message{};
   ump_bitfield<28, 4> mt;
   ump_bitfield<26, 2> format;
   ump_bitfield<16, 10> status;
@@ -87,7 +74,6 @@ union function_block_info_w1 {
 };
 /// Function Block Info Notification (word 2)
 union function_block_info_w2 {
-  std::uint32_t message{};
   ump_bitfield<24, 8> first_group;
   ump_bitfield<16, 8> groups_spanned;
   ump_bitfield<8, 8> message_version;
@@ -96,7 +82,6 @@ union function_block_info_w2 {
 
 // Function Block Name Notification (word1)
 union function_block_name_w1 {
-  std::uint32_t message{};
   ump_bitfield<28, 4> mt;
   ump_bitfield<26, 2> format;
   ump_bitfield<16, 10> status;
@@ -104,6 +89,6 @@ union function_block_name_w1 {
   ump_bitfield<0, 8> name;
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::types
 
 #endif  // MIDI2_UMP_TYPES_H

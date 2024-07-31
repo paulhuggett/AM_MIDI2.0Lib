@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <bit>
 #include <functional>
 #include <numeric>
 
@@ -251,14 +252,14 @@ TEST(UMPProcessor, Midi1NoteOn) {
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  midi2::m1cvm_w1 w1;
+  midi2::types::m1cvm_w1 w1;
   w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm);
   w1.group = group;
   w1.status = midi2::status::note_on >> 4;
   w1.channel = channel;
   w1.byte_a = note_number;
   w1.byte_b = velocity;
-  p.processUMP(w1.message);
+  p.processUMP(std::bit_cast<std::uint32_t>(w1));
 }
 
 TEST(UMPProcessor, Midi2NoteOn) {
@@ -451,7 +452,7 @@ TEST(UMPProcessor, FunctionBlockInfo) {
   MockCallbacks callbacks;
   EXPECT_CALL(callbacks, functionBlockInfo(fbi)).Times(1);
 
-  midi2::function_block_info_w1 word1;
+  midi2::types::function_block_info_w1 word1;
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;
   word1.status =
@@ -464,15 +465,15 @@ TEST(UMPProcessor, FunctionBlockInfo) {
   word1.dir = static_cast<std::uint32_t>(
       midi2::function_block_info::fbdirection::output);
 
-  midi2::function_block_info_w2 word2;
+  midi2::types::function_block_info_w2 word2;
   word2.first_group = first_group;
   word2.groups_spanned = groups_spanned;
   word2.message_version = version;
   word2.num_sysex8_streams = num_sysex8_streams;
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  p.processUMP(word1.message);
-  p.processUMP(word2.message);
+  p.processUMP(std::bit_cast<std::uint32_t>(word1));
+  p.processUMP(std::bit_cast<std::uint32_t>(word2));
   p.processUMP(0);
   p.processUMP(0);
 }
@@ -496,7 +497,7 @@ TEST(UMPProcessor, FunctionBlockName) {
               stream_id, format, std::begin(payload), std::end(payload)),
           function_block_num));
 
-  midi2::function_block_name_w1 word1;
+  midi2::types::function_block_name_w1 word1;
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;  // "complete UMP"
   word1.status = static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_SET);
@@ -504,7 +505,7 @@ TEST(UMPProcessor, FunctionBlockName) {
   word1.name = 'n';
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  p.processUMP(word1.message);
+  p.processUMP(std::bit_cast<std::uint32_t>(word1));
   p.processUMP(pack('a', 'm', 'e', 0));
   p.processUMP(0);
   p.processUMP(0);

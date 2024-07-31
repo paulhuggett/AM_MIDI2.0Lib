@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <concepts>
 #include <cstdint>
 #include <functional>
@@ -331,7 +332,7 @@ void umpProcessor<Callbacks>::system_message(ump_message_type const mt,
 template <backend Callbacks> void umpProcessor<Callbacks>::m1cvm_message() {
   // 32 Bit MIDI 1.0 Channel Voice Messages
 
-  m1cvm_w1 w1{message_[0]};
+  auto const w1 = std::bit_cast<types::m1cvm_w1>(message_[0]);
 
   umpCVM mess;
   mess.common.group = w1.group;
@@ -534,7 +535,7 @@ constexpr OutputIterator umpProcessor<Callbacks>::payload(
 
 template <backend Callbacks>
 void umpProcessor<Callbacks>::functionblock_name() {
-  function_block_name_w1 w1{message_[0]};
+  auto w1 = std::bit_cast<types::function_block_name_w1>(message_[0]);
 
   std::uint8_t const fbIdx = w1.block_number;
   std::array<std::uint8_t, 13> text;
@@ -558,8 +559,8 @@ void umpProcessor<Callbacks>::functionblock_name() {
 template <backend Callbacks>
 void umpProcessor<Callbacks>::functionblock_info() {
   function_block_info info;
-  function_block_info_w1 const w1{message_[0]};
-  function_block_info_w2 const w2{message_[1]};
+  auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[0]);
+  auto const w2 = std::bit_cast<types::function_block_info_w2>(message_[1]);
 
   info.fbIdx = w1.block_number;
   info.active = w1.a;
@@ -648,19 +649,19 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   case data_message_status::sysex8_continue:
   case data_message_status::sysex8_end: {
     std::array<std::uint8_t, 13> sysex{};
-    sysex8_w1 m0{message_[0]};
+    auto const w1 = std::bit_cast<types::sysex8_w1>(message_[0]);
     auto const data_length =
-        std::min(std::size_t{m0.number_of_bytes}, sysex.size());
+        std::min(std::size_t{w1.number_of_bytes}, sysex.size());
     if (data_length >= 1) {
-      sysex[0] = m0.data;
+      sysex[0] = w1.data;
       umpProcessor::payload(message_, 0, data_length - 1,
                             std::begin(sysex) + 1);
     }
     umpData mess;
-    mess.common.group = m0.group;
-    mess.common.messageType = static_cast<ump_message_type>(m0.mt.value());
-    mess.streamId = m0.stream_id;
-    mess.form = m0.status;
+    mess.common.group = w1.group;
+    mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
+    mess.streamId = w1.stream_id;
+    mess.form = w1.status;
     assert(data_length <= sysex.size());
     mess.data = std::span{sysex.data(), data_length};
     callbacks_.send_out_sysex(mess);
