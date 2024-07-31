@@ -55,7 +55,7 @@ std::ostream& operator<<(std::ostream& os,
   case output: str = "output"; break;
   case bidirectional: str = "bidirectional"; break;
   default: str = "unknown"; break;
-  };
+  }
   return os << str;
 }
 
