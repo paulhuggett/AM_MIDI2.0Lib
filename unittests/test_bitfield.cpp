@@ -56,10 +56,11 @@ TYPED_TEST(BitFieldAssignment, Assignment) {
   };
   // Set all bits to 0.
   vt = 0;
-  EXPECT_EQ(std::bit_cast<bf> (f1).value(), 0U);
+  EXPECT_EQ(std::bit_cast<bf>(vt).value(), 0U);
   // Set all bits to 1.
   vt = static_cast<value_type>(~value_type{0U});
-  EXPECT_EQ(std::bit_cast<bf> (f1).value(), (bitfield<value_type, index, bits>::max()));
+  EXPECT_EQ(std::bit_cast<bf>(vt).value(),
+            (bitfield<value_type, index, bits>::max()));
   f1 = 0U;
   EXPECT_EQ(f1.value(), 0U);
   f1 = 1U;
@@ -77,24 +78,21 @@ TEST(BitField, IsolationFromOtherBitfields) {
   using bf2 = bitfield<std::uint8_t, 2, 6>;
   union {
     std::uint8_t value;
-    bf2 f1;  // f1 is bits [0-2)
+    bf1 f1;  // f1 is bits [0-2)
     bf2 f2;  // f2 is bits [2-8)
   };
 
   value = 0;
-  EXPECT_EQ(std::bit_cast<bf1> (f1), 0U);
-  EXPECT_EQ(std::bit_cast<bf2> (f2), 0U);
+  EXPECT_EQ(std::bit_cast<bf1>(value).value(), 0U);
+  EXPECT_EQ(std::bit_cast<bf2>(value).value(), 0U);
 
   f1 = decltype(f1)::max();
-  EXPECT_EQ(f1, decltype(f1)::max());
-  EXPECT_EQ(f2, 0x00U);
+  EXPECT_EQ(f1.value(), decltype(f1)::max());
+  EXPECT_EQ(std::bit_cast<std::uint8_t>(f1), 0x03);
 
   f1 = std::uint8_t{0};
   f2 = decltype(f2)::max();
-  EXPECT_EQ(f2, decltype(f2)::max());
-  EXPECT_EQ(f1, 0x00U);
-
-  EXPECT_EQ(std::bit_cast<std::uint8_t> (value), 0xFC);
+  EXPECT_EQ(std::bit_cast<std::uint8_t>(f2), 0xFC);
 }
 
 TEST(BitField, Max) {
