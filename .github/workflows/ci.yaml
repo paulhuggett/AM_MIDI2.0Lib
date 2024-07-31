@@ -22,18 +22,6 @@ jobs:
         include:
           # macOS builds
           # ~~~~~~~~~~~~
-          - name: macOS-12/Xcode/Debug
-            build_type: Debug
-            generator: Xcode
-            os: macos-12
-            package: TGZ
-
-          - name: macOS-12/Xcode/Release
-            build_type: Release
-            generator: Xcode
-            os: macos-12
-            package: TGZ
-
           - name: macOS-14/Xcode/Debug
             build_type: Debug
             generator: Xcode
