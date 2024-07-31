@@ -277,7 +277,7 @@ TEST(UMPProcessor, Midi1NoteOn) {
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  midi2::types::m1cvm_w1 w1;
+  midi2::types::m1cvm_w1 w1{};
   w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm);
   w1.group = group;
   w1.status = midi2::status::note_on >> 4;
