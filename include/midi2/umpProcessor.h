@@ -40,7 +40,6 @@ namespace midi2 {
 
 struct umpCommon {
   bool operator==(umpCommon const&) const = default;
-  bool operator!=(umpCommon const&) const = default;
 
   uint8_t group = 255;
   ump_message_type messageType = ump_message_type::utility;
@@ -48,7 +47,6 @@ struct umpCommon {
 };
 struct umpCVM {
   bool operator==(umpCVM const&) const = default;
-  bool operator!=(umpCVM const&) const = default;
 
   umpCommon common;
   uint8_t channel = 0xFF;
