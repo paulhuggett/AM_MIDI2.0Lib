@@ -20,10 +20,10 @@ auto testFailed = 0U;
 
 void passFail(std::size_t v1, std::size_t v2) {
   if (v1 == v2) {
-    printf(".");
+    std::printf(".");
     testPassed++;
   } else {
-    printf(" fail %#08zx != %#08zx ", v1, v2);
+    std::printf(" fail %#08zx != %#08zx ", v1, v2);
     testFailed++;
   }
 }
@@ -138,7 +138,7 @@ int main(){
                        0x30360000, 0x10000000};
   testRun_bsToUmp(" Test 4 Sysex : ", bytes4, 32, tests4, 10);
 
-  printf(" Switching to Mt4 \n");
+  std::printf(" Switching to Mt4 \n");
   BS2UMP.set_output_midi2(true);
   uint32_t tests1a[] = {0x40816000, 0xA0820000, 0x40817000, 0xe1860000};
   testRun_bsToUmp(" Test 5 MT4 Note On w/running status: ", bytes1, 5, tests1a,
@@ -158,7 +158,7 @@ int main(){
   testRun_bsToUmp(" Test 7 MT 4 RPN : ", bytes4b, 7, tests4b, 2);
 
   //******** UMP ByteSteam  ***************
-  printf("UMP to ByteSteam \n");
+  std::printf("UMP to ByteSteam \n");
   uint8_t bytes5[] = {0x81, 0x60, 0x50, 0x81, 0x70, 0x70};
   uint32_t tests5[] = {0x20816050, 0x20817070};
   testRun_umpToBs(" Test 5 Note On: ", bytes5, array_elements(bytes5), tests5,
@@ -171,7 +171,7 @@ int main(){
                   array_elements(tests4));
 
   //***** UMP2M1 *************
-  printf("UMP to MIDI 1 Protocol \n");
+  std::printf("UMP to MIDI 1 Protocol \n");
   uint32_t in[] = {0x20816050, 0x20817070};
   testRun_umpToM1(" Test MIDI 1 : ", in, 2, in, 2);
 
@@ -183,7 +183,7 @@ int main(){
   testRun_umpToM1(" Test MT4 : ", in2, 2, out2, 1);
 
   //***** UMP Meesage Create *************
-  printf("UMP Message Create \n");
+  std::printf("UMP Message Create \n");
   uint32_t inUmp1[] = {midi2::UMPMessage::mt0NOOP()};
   uint32_t outUmp1[] = {0x00000000};
   testRun_umpToump(" UMP NOOP : ", inUmp1, 1, outUmp1);
@@ -193,5 +193,5 @@ int main(){
   testRun_umpToump(" UMP Timing Clock : ", inUmp2, 1, outUmp2);
 
   ///****************************
-  printf("Tests Passed: %d    Failed : %d\n", testPassed, testFailed);
+  std::printf("Tests Passed: %d    Failed : %d\n", testPassed, testFailed);
 }
