@@ -34,6 +34,7 @@
 #include <functional>
 #include <span>
 
+#include "midi2/ump_types.h"
 #include "midi2/utils.h"
 
 namespace midi2 {
@@ -93,6 +94,26 @@ struct chord {
   uint8_t baAlt2Deg;
 };
 
+struct function_block_info {
+  bool operator==(function_block_info const&) const = default;
+
+  enum class fbdirection : std::uint8_t {
+    reserved = 0b00,
+    input = 0b01,
+    output = 0b10,
+    bidirectional = 0b11,
+  };
+
+  std::uint8_t fbIdx;
+  bool active;
+  fbdirection direction;
+  std::uint8_t firstGroup;
+  std::uint8_t groupLength;
+  std::uint8_t midiCIVersion;
+  std::uint8_t isMIDI1;
+  std::uint8_t maxS8Streams;
+};
+
 using uint32_ptr = std::uint32_t*;
 template <typename T, typename IntegerType = std::int64_t>
 concept backend = requires(T && v) {
@@ -147,11 +168,7 @@ concept backend = requires(T && v) {
   } -> std::same_as<void>;
 
   { v.functionBlock(std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
-  {
-    v.functionBlockInfo(std::uint8_t{}, bool{}, std::uint8_t{}, bool{}, bool{},
-                        std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
-                        std::uint8_t{}, std::uint8_t{})
-  } -> std::same_as<void>;
+  { v.functionBlockInfo(function_block_info{}) } -> std::same_as<void>;
   { v.functionBlockName(umpData{}, std::uint8_t{}) } -> std::same_as<void>;
 
   { v.startOfSeq() } -> std::same_as<void>;
@@ -216,12 +233,7 @@ public:
 
   virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */
   }
-  virtual void functionBlockInfo(uint8_t /*fbIdx*/, bool /*active*/,
-                                 uint8_t /*direction*/, bool /*sender*/,
-                                 bool /*recv*/, uint8_t /*firstGroup*/,
-                                 uint8_t /*groupLength*/,
-                                 uint8_t /*midiCIVersion*/, uint8_t /*isMIDI1*/,
-                                 uint8_t /*maxS8Streams*/) { /* nop */ }
+  virtual void functionBlockInfo(function_block_info const& fbi) { (void)fbi; }
   virtual void functionBlockName(umpData const& /*mess*/,
                                  uint8_t /*fbIdx*/) { /* nop */ }
 
@@ -242,11 +254,11 @@ public:
 private:
   void utility_message(ump_message_type mt);
   void system_message(ump_message_type mt, std::uint8_t group);
-  void m1cvm_message(ump_message_type mt, std::uint8_t group);
+  void m1cvm_message();
   void sysex7_message(ump_message_type mt, std::uint8_t group);
   void m2cvm_message(ump_message_type mt, std::uint8_t group);
   void midi_endpoint_message(ump_message_type mt);
-  void data_message(ump_message_type mt, std::uint8_t group);
+  void data_message();
   void flexdata_message(ump_message_type mt, std::uint8_t group);
 
   enum data_message_status : std::uint8_t {
@@ -259,12 +271,13 @@ private:
   };
 
   template <std::output_iterator<std::uint8_t> OutputIterator>
-  static constexpr OutputIterator sysex8_payload(
+  static constexpr OutputIterator payload(
       std::array<std::uint32_t, 4> const& message, std::size_t index,
       std::size_t limit, OutputIterator out);
 
   void midiendpoint_name_or_prodid(ump_message_type mt);
-  void functionblock_name(ump_message_type mt);
+  void functionblock_name();
+  void functionblock_info();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
   std::array<std::uint32_t, 4> message_{};
@@ -315,20 +328,20 @@ void umpProcessor<Callbacks>::system_message(ump_message_type const mt,
   }
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::m1cvm_message(ump_message_type const mt,
-                                            std::uint8_t const group) {
+template <backend Callbacks> void umpProcessor<Callbacks>::m1cvm_message() {
   // 32 Bit MIDI 1.0 Channel Voice Messages
+
+  m1cvm_w1 w1{message_[0]};
+
   umpCVM mess;
-  mess.common.group = group;
-  mess.common.messageType = mt;
-  mess.common.status = message_[0] >> 16 & 0xF0;
-  mess.channel = (message_[0] >> 16) & 0xF;
+  mess.common.group = w1.group;
+  mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
+  mess.common.status = w1.status;
+  mess.channel = w1.channel;
+  auto const val1 = w1.byte_a;
+  auto const val2 = w1.byte_b;
 
-  std::uint8_t const val1 = (message_[0] >> 8) & 0x7F;
-  std::uint8_t const val2 = message_[0] & 0x7F;
-
-  switch (mess.common.status) {
+  switch (mess.common.status << 4) {
   case status::note_off:
   case status::note_on:
   case status::key_pressure:
@@ -503,29 +516,61 @@ void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::functionblock_name(ump_message_type const mt) {
-  std::uint8_t fbIdx = (message_[0] >> 8) & 0x7F;
-  std::array<std::uint8_t, 13> text;
-  auto text_length = 0U;
+template <std::output_iterator<std::uint8_t> OutputIterator>
+constexpr OutputIterator umpProcessor<Callbacks>::payload(
+    std::array<std::uint32_t, 4> const& message, std::size_t index,
+    std::size_t limit, OutputIterator out) {
+  assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
+  if (index >= limit) {
+    return out;
+  }
+  // There are 4 bytes per packet and we start at packet #1.
+  auto const packet_num = (index >> 2) + 1U;
+  auto const rem4 = index & 0b11U;  // rem4 = index % 4
+  auto const shift = 24U - 8U * rem4;
+  *(out++) = (message[packet_num] >> shift) & 0xFF;
+  return umpProcessor::payload(message, index + 1U, limit, out);
+}
 
-  if (message_[0] & 0xFF) {
-    text[text_length++] = message_[0] & 0xFF;
-  }
-  for (uint8_t i = 1; i <= 3; i++) {
-    for (int j = 24; j >= 0; j -= 8) {
-      if (uint8_t c = (message_[i] >> j) & 0xFF) {
-        text[text_length++] = c;
-      }
-    }
-  }
-  assert(text_length <= text.size());
-  std::uint16_t status = (message_[0] >> 16) & 0x3FF;
+template <backend Callbacks>
+void umpProcessor<Callbacks>::functionblock_name() {
+  function_block_name_w1 w1{message_[0]};
+
+  std::uint8_t const fbIdx = w1.block_number;
+  std::array<std::uint8_t, 13> text;
+  text[0] = w1.name;
+  umpProcessor::payload(message_, 0, text.size() - 1, std::begin(text) + 1);
+  auto const text_length =
+      std::distance(find_if_not(std::rbegin(text), std::rend(text),
+                                [](std::uint8_t v) { return v == 0; }),
+                    std::rend(text));
+  assert(text_length >= 0 &&
+         static_cast<std::size_t>(text_length) <= text.size());
+
   umpData mess;
-  mess.common.messageType = mt;
-  mess.common.status = static_cast<std::uint8_t>(status);
-  mess.form = message_[0] >> 24 & 0x3;
-  mess.data = std::span{text.data(), text_length};
+  mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
+  mess.common.status = static_cast<std::uint8_t>(w1.status);
+  mess.form = w1.format;
+  mess.data = std::span{text.data(), static_cast<std::size_t>(text_length)};
   callbacks_.functionBlockName(mess, fbIdx);
+}
+
+template <backend Callbacks>
+void umpProcessor<Callbacks>::functionblock_info() {
+  function_block_info info;
+  function_block_info_w1 const w1{message_[0]};
+  function_block_info_w2 const w2{message_[1]};
+
+  info.fbIdx = w1.block_number;
+  info.active = w1.a;
+  info.direction =
+      static_cast<function_block_info::fbdirection>(w1.dir.value());
+  info.firstGroup = w2.first_group;
+  info.groupLength = w2.groups_spanned;
+  info.midiCIVersion = w2.message_version;
+  info.isMIDI1 = w1.m1;
+  info.maxS8Streams = w2.num_sysex8_streams;
+  callbacks_.functionBlockInfo(info);
 }
 
 template <backend Callbacks>
@@ -586,49 +631,15 @@ void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
     );
     break;
 
-  case FUNCTIONBLOCK_INFO_NOTFICATION:
-    callbacks_.functionBlockInfo((message_[0] >> 8) & 0x7F,     // fbIdx
-                                 (message_[0] >> 15) & 0x1,     // active
-                                 message_[0] & 0x3,             // dir
-                                 (message_[0] >> 7) & 0x1,      // Sender
-                                 (message_[0] >> 6) & 0x1,      // Receiver
-                                 ((message_[1] >> 24) & 0x1F),  // first group
-                                 ((message_[1] >> 16) & 0x1F),  // group length
-                                 ((message_[1] >> 8) & 0x7F),   // midiCIVersion
-                                 ((message_[0] >> 2) & 0x3),    // isMIDI 1
-                                 (message_[1] & 0xFF)           // max Streams
-    );
-    break;
-  case FUNCTIONBLOCK_NAME_NOTIFICATION: {
-    this->functionblock_name(mt);
-    break;
-  }
+  case FUNCTIONBLOCK_INFO_NOTFICATION: this->functionblock_info(); break;
+  case FUNCTIONBLOCK_NAME_NOTIFICATION: this->functionblock_name(); break;
   case STARTOFSEQ: callbacks_.startOfSeq(); break;
   case ENDOFFILE: callbacks_.endOfFile(); break;
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 4}); break;
   }
 }
 
-template <backend Callbacks>
-template <std::output_iterator<std::uint8_t> OutputIterator>
-constexpr OutputIterator umpProcessor<Callbacks>::sysex8_payload(
-    std::array<std::uint32_t, 4> const& message, std::size_t index,
-    std::size_t limit, OutputIterator out) {
-  assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
-  if (index >= limit) {
-    return out;
-  }
-  // There are 4 bytes per packet and we start at packet #1.
-  auto const packet_num = (index >> 2) + 1U;
-  auto const rem4 = index & 0b11U;  // rem4 = index % 4
-  auto const shift = 24U - 8U * rem4;
-  *(out++) = (message[packet_num] >> shift) & 0xFF;
-  return sysex8_payload(message, index + 1U, limit, out);
-}
-
-template <backend Callbacks>
-void umpProcessor<Callbacks>::data_message(ump_message_type const mt,
-                                           std::uint8_t const group) {
+template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   // 128 bit Data Messages (including System Exclusive 8)
   uint8_t const status = (message_[0] >> 20) & 0xF;
   switch (status) {
@@ -637,17 +648,19 @@ void umpProcessor<Callbacks>::data_message(ump_message_type const mt,
   case data_message_status::sysex8_continue:
   case data_message_status::sysex8_end: {
     std::array<std::uint8_t, 13> sysex{};
+    sysex8_w1 m0{message_[0]};
     auto const data_length =
-        std::min(std::size_t{(message_[0] >> 16) & 0x0F}, sysex.size());
+        std::min(std::size_t{m0.number_of_bytes}, sysex.size());
     if (data_length >= 1) {
-      sysex[0] = message_[0] & 0xFF;
-      sysex8_payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
+      sysex[0] = m0.data;
+      umpProcessor::payload(message_, 0, data_length - 1,
+                            std::begin(sysex) + 1);
     }
     umpData mess;
-    mess.common.group = group;
-    mess.common.messageType = mt;
-    mess.streamId = (message_[0] >> 8) & 0xFF;
-    mess.form = status;
+    mess.common.group = m0.group;
+    mess.common.messageType = static_cast<ump_message_type>(m0.mt.value());
+    mess.streamId = m0.stream_id;
+    mess.form = m0.status;
     assert(data_length <= sysex.size());
     mess.data = std::span{sysex.data(), data_length};
     callbacks_.send_out_sysex(mess);
@@ -794,7 +807,7 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
     } else if (mt == ump_message_type::system) {
       this->system_message(mt, group);
     } else if (mt == ump_message_type::m1cvm) {
-      this->m1cvm_message(mt, group);
+      this->m1cvm_message();
     }
     return;
 
@@ -823,7 +836,7 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
     if (mt == ump_message_type::midi_endpoint) {
       this->midi_endpoint_message(mt);
     } else if (mt == ump_message_type::data) {
-      this->data_message(mt, group);
+      this->data_message();
     } else if (mt == ump_message_type::flex_data) {
       this->flexdata_message(mt, group);
     } else {

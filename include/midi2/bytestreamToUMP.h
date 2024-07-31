@@ -86,7 +86,7 @@ private:
     }
   };
   sysex7 sysex7_;
-  M2Utils::fifo<std::uint32_t, 4> output_;
+  fifo<std::uint32_t, 4> output_;
 
   // Channel Based Data
   struct channel {

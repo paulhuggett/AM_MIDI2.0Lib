@@ -2,7 +2,9 @@
 #include <functional>
 #include <numeric>
 
+#include "midi2/bitfield.h"
 #include "midi2/umpProcessor.h"
+#include "midi2/ump_types.h"
 
 // google mock/test/fuzz
 #include <gmock/gmock.h>
@@ -37,8 +39,36 @@ std::ostream& operator<<(std::ostream& os, umpData const& data) {
      << ", form=" << static_cast<unsigned>(data.form) << ", data=[";
   std::copy(std::begin(data.data), std::end(data.data),
             std::ostream_iterator<unsigned>(os, ","));
-  os << ']';
+  os << "] }";
   return os;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         function_block_info::fbdirection const direction);
+std::ostream& operator<<(std::ostream& os,
+                         function_block_info::fbdirection const direction) {
+  using enum function_block_info::fbdirection;
+  char const* str = "";
+  switch (direction) {
+  case reserved: str = "reserved"; break;
+  case input: str = "input"; break;
+  case output: str = "output"; break;
+  case bidirectional: str = "bidirectional"; break;
+  default: str = "unknown"; break;
+  };
+  return os << str;
+}
+
+std::ostream& operator<<(std::ostream& os, function_block_info const& fbi);
+std::ostream& operator<<(std::ostream& os, function_block_info const& fbi) {
+  return os << "{ fbIdx=" << static_cast<unsigned>(fbi.fbIdx)
+            << ", active=" << fbi.active << ", direction=" << fbi.direction
+            << ", firstGroup=" << static_cast<unsigned>(fbi.firstGroup)
+            << ", groupLength=" << static_cast<unsigned>(fbi.groupLength)
+            << ", midiCIVersion=" << static_cast<unsigned>(fbi.midiCIVersion)
+            << ", isMIDI1=" << static_cast<unsigned>(fbi.isMIDI1)
+            << ", maxS8Streams=" << static_cast<unsigned>(fbi.maxS8Streams)
+            << " }";
 }
 
 }  // end namespace midi2
@@ -141,16 +171,10 @@ public:
   void functionBlock(std::uint8_t fbIdx, std::uint8_t filter) {
     original_.functionBlock(fbIdx, filter);
   }
-  void functionBlockInfo(std::uint8_t fbIdx, bool active,
-                         std::uint8_t direction, bool sender, bool recv,
-                         std::uint8_t firstGroup, std::uint8_t groupLength,
-                         std::uint8_t midiCIVersion, std::uint8_t isMIDI1,
-                         std::uint8_t maxS8Streams) {
-    original_.functionBlockInfo(fbIdx, active, direction, sender, recv,
-                                firstGroup, groupLength, midiCIVersion, isMIDI1,
-                                maxS8Streams);
+  void functionBlockInfo(midi2::function_block_info const& fbi) {
+    original_.functionBlockInfo(fbi);
   }
-  void functionBlockName(midi2::umpData mess, std::uint8_t fbIdx) {
+  void functionBlockName(midi2::umpData const& mess, std::uint8_t fbIdx) {
     original_.functionBlockName(mess, fbIdx);
   }
 
@@ -173,6 +197,13 @@ public:
   MOCK_METHOD(void, channel_voice_message, (midi2::umpCVM const&), (override));
   MOCK_METHOD(void, system_message, (midi2::umpGeneric const&), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::umpData const&), (override));
+
+  MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
+              (override));
+  MOCK_METHOD(void, functionBlockName, (midi2::umpData const&, std::uint8_t),
+              (override));
+
+  MOCK_METHOD(void, unknownUMPMessage, (std::span<std::uint32_t>), (override));
 };
 
 }  // end anonymous namespace
@@ -201,13 +232,13 @@ constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
 TEST(UMPProcessor, Midi1NoteOn) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
-  constexpr auto velocity = std::uint16_t{0x43}; // 7 bits
+  constexpr auto velocity = std::uint16_t{0x43};
   constexpr auto group = std::uint8_t{0};
 
   midi2::umpCVM message;
   message.common.group = group;
   message.common.messageType = midi2::ump_message_type::m1cvm;
-  message.common.status = midi2::status::note_on;
+  message.common.status = midi2::status::note_on >> 4;
   message.channel = channel;
   message.note = note_number;
   message.value = midi2::scaleUp(velocity, 7, 16);
@@ -220,9 +251,14 @@ TEST(UMPProcessor, Midi1NoteOn) {
   EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  p.processUMP(pack(
-      (static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
-      (ump_note_on << 4) | channel, note_number, velocity));
+  midi2::m1cvm_w1 w1;
+  w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm);
+  w1.group = group;
+  w1.status = midi2::status::note_on >> 4;
+  w1.channel = channel;
+  w1.byte_a = note_number;
+  w1.byte_b = velocity;
+  p.processUMP(w1.message);
 }
 
 TEST(UMPProcessor, Midi2NoteOn) {
@@ -262,12 +298,11 @@ using testing::InSequence;
 
 // The umpData type contains a std::span{} so we can't just lean on the default
 // operator==() for comparing instances.
-template <typename Iterator>
-auto UMPDataMatches(std::uint8_t group, std::uint8_t stream_id,
+template <std::input_iterator Iterator>
+auto UMPDataMatches(midi2::umpCommon const& common, std::uint8_t stream_id,
                     std::uint8_t form, Iterator first, Iterator last) {
   return AllOf(
-      Field("common", &midi2::umpData::common,
-            Eq(midi2::umpCommon{group, midi2::ump_message_type::data, 0})),
+      Field("common", &midi2::umpData::common, Eq(common)),
       Field("streamId", &midi2::umpData::streamId, Eq(stream_id)),
       Field("form", &midi2::umpData::form, Eq(form)),
       Field("data", &midi2::umpData::data, ElementsAreArray(first, last)));
@@ -289,11 +324,12 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
   MockCallbacks callbacks;
   {
     InSequence _;
+    midi2::umpCommon const common{group, midi2::ump_message_type::data, 0};
     EXPECT_CALL(callbacks, send_out_sysex(UMPDataMatches(
-                               group, stream_id, start_form,
+                               common, stream_id, start_form,
                                std::begin(payload), split_point)));
     EXPECT_CALL(callbacks,
-                send_out_sysex(UMPDataMatches(group, stream_id, end_form,
+                send_out_sysex(UMPDataMatches(common, stream_id, end_form,
                                               split_point, std::end(payload))));
   }
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
@@ -367,7 +403,7 @@ TEST(UMPProcessor, PartialMessageThenClear) {
   midi2::umpCVM message;
   message.common.group = group;
   message.common.messageType = midi2::ump_message_type::m1cvm;
-  message.common.status = midi2::status::note_on;
+  message.common.status = midi2::status::note_on >> 4;
   message.channel = channel;
   message.note = note_number;
   message.value = midi2::scaleUp(velocity, 7, 16);
@@ -390,6 +426,88 @@ TEST(UMPProcessor, PartialMessageThenClear) {
   p.processUMP(pack(
       (static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
       (ump_note_on << 4) | channel, note_number, velocity));
+}
+
+TEST(UMPProcessor, FunctionBlockInfo) {
+  constexpr auto active = std::uint32_t{0b1};  // 1 bit
+  constexpr auto first_group = std::uint8_t{0};
+  constexpr auto function_block_num = std::uint32_t{0b0101010};  // 7 bits
+  constexpr auto groups_spanned = std::uint8_t{1};
+  constexpr auto midi1 = std::uint32_t{0x00};  // 2 bits
+  constexpr auto num_sysex8_streams = std::uint8_t{0x17U};
+  constexpr auto ui_hint = std::uint32_t{0b10};  // 2 bits
+  constexpr auto version = std::uint8_t{0x01};
+
+  midi2::function_block_info fbi;
+  fbi.fbIdx = function_block_num;
+  fbi.active = active;
+  fbi.direction = midi2::function_block_info::fbdirection::output;
+  fbi.firstGroup = first_group;
+  fbi.groupLength = groups_spanned;
+  fbi.midiCIVersion = version;
+  fbi.isMIDI1 = false;
+  fbi.maxS8Streams = num_sysex8_streams;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, functionBlockInfo(fbi)).Times(1);
+
+  midi2::function_block_info_w1 word1;
+  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
+  word1.format = 0U;
+  word1.status =
+      static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_NEGOTIATION_REPLY);
+  word1.a = active;
+  word1.block_number = function_block_num;
+  word1.reserv = 0U;
+  word1.ui_hint = ui_hint;
+  word1.m1 = midi1;
+  word1.dir = static_cast<std::uint32_t>(
+      midi2::function_block_info::fbdirection::output);
+
+  midi2::function_block_info_w2 word2;
+  word2.first_group = first_group;
+  word2.groups_spanned = groups_spanned;
+  word2.message_version = version;
+  word2.num_sysex8_streams = num_sysex8_streams;
+
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
+  p.processUMP(word1.message);
+  p.processUMP(word2.message);
+  p.processUMP(0);
+  p.processUMP(0);
+}
+
+TEST(UMPProcessor, FunctionBlockName) {
+  constexpr auto function_block_num = std::uint8_t{0b0101010};  // 8 bits
+  constexpr auto group = std::uint8_t{0xFF};
+  constexpr auto stream_id = 0U;
+  constexpr auto format = 0U;
+
+  std::array<std::uint8_t, 4> const payload{'n', 'a', 'm', 'e'};
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(
+      callbacks,
+      functionBlockName(
+          UMPDataMatches(
+              midi2::umpCommon{
+                  group, midi2::ump_message_type::midi_endpoint,
+                  static_cast<std::uint8_t>(midi2::MIDICI_PROTOCOL_SET)},
+              stream_id, format, std::begin(payload), std::end(payload)),
+          function_block_num));
+
+  midi2::function_block_name_w1 word1;
+  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
+  word1.format = 0U;  // "complete UMP"
+  word1.status = static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_SET);
+  word1.block_number = function_block_num;
+  word1.name = 'n';
+
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
+  p.processUMP(word1.message);
+  p.processUMP(pack('a', 'm', 'e', 0));
+  p.processUMP(0);
+  p.processUMP(0);
 }
 
 }  // end anonymous namespace

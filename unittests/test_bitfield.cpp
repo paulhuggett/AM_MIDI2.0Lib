@@ -1,0 +1,124 @@
+// DUT
+#include <gtest/gtest.h>
+
+#include "midi2/bitfield.h"
+
+using midi2::bitfield;
+
+namespace {
+
+using testing::Types;
+
+template <typename T> class BitFieldAssignment : public testing::Test {};
+
+template <typename Type, unsigned Index, unsigned Bits> struct param {
+  using value_type = Type;
+  using index = std::integral_constant<Type, Index>;
+  using bits = std::integral_constant<Type, Bits>;
+};
+
+using assign_test_types =
+    Types<param<std::uint8_t, 0, 1>,  // testing bits [0,1)
+          param<std::uint8_t, 1, 1>,  // testing bits [1,2)
+          param<std::uint8_t, 7, 1>,  // ... and so on.
+          param<std::uint16_t, 8, 1>, param<std::uint16_t, 15, 1>,
+          param<std::uint32_t, 16, 1>, param<std::uint32_t, 31, 1>,
+          param<std::uint64_t, 32, 1>, param<std::uint64_t, 63, 1>,
+
+          param<std::uint8_t, 0, 2>, param<std::uint8_t, 1, 2>,
+          param<std::uint8_t, 6, 2>, param<std::uint16_t, 7, 2>,
+          param<std::uint16_t, 8, 2>, param<std::uint16_t, 14, 2>,
+          param<std::uint32_t, 15, 2>, param<std::uint32_t, 16, 2>,
+          param<std::uint64_t, 31, 2>, param<std::uint64_t, 32, 2>,
+          param<std::uint64_t, 62, 2>,
+
+          param<std::uint8_t, 0, 7>, param<std::uint8_t, 0, 8>,
+          param<std::uint16_t, 0, 9>, param<std::uint16_t, 0, 15>,
+          param<std::uint16_t, 0, 16>, param<std::uint32_t, 0, 17>,
+          param<std::uint32_t, 0, 31>, param<std::uint32_t, 0, 32>,
+          param<std::uint64_t, 0, 63>, param<std::uint64_t, 0, 64>>;
+
+TYPED_TEST_SUITE(BitFieldAssignment, assign_test_types, );
+
+TYPED_TEST(BitFieldAssignment, Assignment) {
+  using value_type = typename TypeParam::value_type;
+  constexpr value_type index = typename TypeParam::index();
+  constexpr value_type bits = typename TypeParam::bits();
+
+  union {
+    value_type vt;
+    bitfield<value_type, index, bits> f1;
+  };
+  // Set all bits to 0.
+  vt = 0;
+  EXPECT_EQ(f1.value(), 0U);
+  // Set all bits to 1.
+  vt = static_cast<value_type>(~value_type{0U});
+  EXPECT_EQ(f1.value(), (bitfield<value_type, index, bits>::max()));
+  f1 = 0U;
+  EXPECT_EQ(f1.value(), 0U);
+  f1 = 1U;
+  EXPECT_EQ(f1.value(), 1U);
+  constexpr auto v = decltype(f1)::max();
+  f1 = v;
+  // access the value of f1 by casting directly rather than using the value()
+  // member function.
+  EXPECT_EQ(static_cast<value_type>(f1), v);
+  EXPECT_EQ(vt, std::numeric_limits<value_type>::max());
+}
+
+TEST(BitField, IsolationFromOtherBitfields) {
+  union {
+    std::uint8_t value;
+    bitfield<std::uint8_t, 0, 2> f1;  // f1 is bits [0-2)
+    bitfield<std::uint8_t, 2, 6> f2;  // f2 is bits [2-8)
+  };
+
+  value = 0;
+  EXPECT_EQ(f1, 0U);
+  EXPECT_EQ(f2, 0U);
+
+  f1 = decltype(f1)::max();
+  EXPECT_EQ(f1, decltype(f1)::max());
+  EXPECT_EQ(f2, 0x00U);
+
+  f1 = std::uint8_t{0};
+  f2 = decltype(f2)::max();
+  EXPECT_EQ(f2, decltype(f2)::max());
+  EXPECT_EQ(f1, 0x00U);
+
+  EXPECT_EQ(value, 0xFC);
+}
+
+TEST(BitField, Max) {
+  EXPECT_EQ((bitfield<std::uint8_t, 0, 1>::max()), 1U);
+  EXPECT_EQ((bitfield<std::uint16_t, 0, 1>::max()), 1U);
+  EXPECT_EQ((bitfield<std::uint32_t, 0, 1>::max()), 1U);
+  EXPECT_EQ((bitfield<std::uint64_t, 0, 1>::max()), 1U);
+
+  EXPECT_EQ((bitfield<std::uint8_t, 0, 8>::max()),
+            std::numeric_limits<std::uint8_t>::max());
+  EXPECT_EQ((bitfield<std::uint16_t, 0, 8>::max()),
+            std::numeric_limits<std::uint8_t>::max());
+  EXPECT_EQ((bitfield<std::uint32_t, 0, 8>::max()),
+            std::numeric_limits<std::uint8_t>::max());
+  EXPECT_EQ((bitfield<std::uint64_t, 0, 8>::max()),
+            std::numeric_limits<std::uint8_t>::max());
+
+  EXPECT_EQ((bitfield<std::uint16_t, 0, 16>::max()),
+            std::numeric_limits<std::uint16_t>::max());
+  EXPECT_EQ((bitfield<std::uint32_t, 0, 16>::max()),
+            std::numeric_limits<std::uint16_t>::max());
+  EXPECT_EQ((bitfield<std::uint64_t, 0, 16>::max()),
+            std::numeric_limits<std::uint16_t>::max());
+
+  EXPECT_EQ((bitfield<std::uint32_t, 0, 32>::max()),
+            std::numeric_limits<std::uint32_t>::max());
+  EXPECT_EQ((bitfield<std::uint64_t, 0, 32>::max()),
+            std::numeric_limits<std::uint32_t>::max());
+
+  EXPECT_EQ((bitfield<std::uint64_t, 0, 64>::max()),
+            std::numeric_limits<std::uint64_t>::max());
+}
+
+}  // end anonymous namespace

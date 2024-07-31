@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace M2Utils {
+namespace midi2 {
 
 /// \returns True if the input value is a power of 2.
 template <std::unsigned_integral T>
@@ -95,6 +95,6 @@ private:
   bitfield_type readIndex_ : bits_ + 1 = 0;
 };
 
-}  // end namespace M2Utils
+}  // end namespace midi2
 
 #endif  // MIDI2_FIFO_H

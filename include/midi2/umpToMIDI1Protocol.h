@@ -45,7 +45,7 @@ private:
   ump_message_type mType;
   std::uint32_t ump64word1;
   std::uint8_t UMPPos = 0;
-  M2Utils::fifo<std::uint32_t, 4> output_;
+  fifo<std::uint32_t, 4> output_;
 };
 
 }  // end namespace midi2

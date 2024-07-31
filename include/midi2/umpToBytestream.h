@@ -51,7 +51,7 @@ private:
   std::uint32_t ump64word1 = 0;
 
   std::uint8_t UMPPos = 0;
-  M2Utils::fifo<std::uint8_t, 16> output_;
+  fifo<std::uint8_t, 16> output_;
 
   void word1(std::uint32_t ump);
   void word2(std::uint32_t ump);
