@@ -29,13 +29,13 @@ void passFail(std::size_t v1, std::size_t v2) {
 }
 
 void testRun_bsToUmp(const char* heading, uint8_t const* bytes,
-                     unsigned bytelength, uint32_t const* testCheck,
-                     unsigned outlength) {
+                     std::size_t bytelength, uint32_t const* testCheck,
+                     std::size_t outlength) {
   std::fputs(heading, stdout);
 
   auto testCounter = 0U;
 
-  for (auto i = 0U; i < bytelength; i++) {
+  for (auto i = std::size_t{0}; i < bytelength; i++) {
     BS2UMP.bytestreamParse(bytes[i]);
     while (BS2UMP.availableUMP()) {
       uint32_t const ump = BS2UMP.readUMP();
@@ -53,12 +53,12 @@ void testRun_bsToUmp(const char* heading, uint8_t const* bytes,
 
 void testRun_umpToBs(const char* heading, uint8_t const* testBytes,
                      std::size_t const bytelength, uint32_t const* umps,
-                     int umplength) {
+                     std::size_t const umplength) {
   std::fputs(heading, stdout);
 
   auto testCounter = 0U;
 
-  for (int i = 0; i < umplength; i++) {
+  for (auto i = std::size_t{0}; i < umplength; i++) {
     UMP2BS.UMPStreamParse(umps[i]);
     while (UMP2BS.availableBS()) {
       uint8_t byte = UMP2BS.readBS();
@@ -74,13 +74,14 @@ void testRun_umpToBs(const char* heading, uint8_t const* testBytes,
   std::printf("\n");
 }
 
-void testRun_umpToM1(const char* heading, uint32_t const* in, unsigned inlength,
-                     uint32_t const* out, unsigned outlength) {
+void testRun_umpToM1(const char* heading, uint32_t const* in,
+                     std::size_t const inlength, uint32_t const* out,
+                     std::size_t const outlength) {
   std::fputs(heading, stdout);
 
   auto testCounter = 0U;
 
-  for (auto i = 0U; i < inlength; i++) {
+  for (auto i = std::size_t{0}; i < inlength; i++) {
     UMP2M1.UMPStreamParse(in[i]);
     while (UMP2M1.availableUMP()) {
       uint32_t newUmp = UMP2M1.readUMP();
@@ -96,10 +97,10 @@ void testRun_umpToM1(const char* heading, uint32_t const* in, unsigned inlength,
   std::printf("\n");
 }
 
-void testRun_umpToump(const char* heading, uint32_t * in, int inlength, uint32_t * out)
-{
+void testRun_umpToump(const char* heading, uint32_t* in, std::size_t inlength,
+                      uint32_t* out) {
   std::fputs(heading, stdout);
-  for (int i = 0; i < inlength; i++) {
+  for (auto i = std::size_t{0}; i < inlength; i++) {
     passFail(in[i], out[i]);
   }
   std::printf("\n");
