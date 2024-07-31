@@ -23,6 +23,12 @@ std::ostream& operator<<(std::ostream& os, umpCommon const& common) {
             << ", status=" << static_cast<unsigned>(common.status) << " }";
 };
 
+std::ostream& operator<<(std::ostream& os, midi2::umpGeneric const& generic);
+std::ostream& operator<<(std::ostream& os, midi2::umpGeneric const& generic) {
+  return os << "{ common:" << generic.common << ", value=" << generic.value
+            << " }";
+}
+
 std::ostream& operator<<(std::ostream& os, umpCVM const& cvm);
 std::ostream& operator<<(std::ostream& os, umpCVM const& cvm) {
   return os << "{ common:" << cvm.common
@@ -212,6 +218,25 @@ public:
 template class midi2::umpProcessor<callbacks_proxy<MockCallbacks>>;
 
 namespace {
+
+TEST(UMPProcessor, Noop) {
+  midi2::umpGeneric message;
+  message.common.group = 255;
+  message.common.messageType = midi2::ump_message_type::utility;
+  message.common.status = 0;
+  message.value = 0;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, utility_message(message)).Times(1);
+
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
+  midi2::types::noop w1;
+  w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::utility);
+  w1.reserved = 0;
+  w1.status = 0b0000;
+  w1.data = 0;
+  p.processUMP(std::bit_cast<std::uint32_t>(w1));
+}
 
 constexpr std::uint32_t ump_cvm(midi2::status s) {
   static_assert(

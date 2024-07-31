@@ -61,6 +61,8 @@ struct umpCVM {
 };
 
 struct umpGeneric {
+  bool operator==(umpGeneric const&) const = default;
+
   umpCommon common;
   std::uint16_t value = 0;
 };
