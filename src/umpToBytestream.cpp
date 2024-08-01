@@ -41,6 +41,10 @@ void umpToBytestream::word1(uint32_t UMP) {
   // Exclusive)
   case ump_message_type::system: {
     uint8_t const sysByte = (UMP >> 16) & 0xFF;
+    if (sysByte == 0xF4 || sysByte == 0xF5 || sysByte == 0xFD ||
+        sysByte == 0xF9) {
+      break;
+    }
     output_.push_back(sysByte);
     if (sysByte == 0xF1 || sysByte == 0xF2 || sysByte == 0xF3) {
       output_.push_back((UMP >> 8) & 0x7F);

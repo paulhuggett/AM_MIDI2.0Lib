@@ -155,7 +155,13 @@ int main(){
 
   uint8_t bytes4b[] = {0xB6, 101, 0x00, 100, 0x06, 0x06, 0x08};
   uint32_t tests4b[] = {0x40260006, 0x10000000};
-  testRun_bsToUmp(" Test 7 MT 4 RPN : ", bytes4b, 7, tests4b, 2);
+  testRun_bsToUmp(" Test 8 MT 4 RPN : ", bytes4b, 7, tests4b, 2);
+
+  //Let's Send bad UMP Data
+  uint32_t const tests5_bad[] = {0x10F47F7F};
+  uint8_t const bytes5_bad[] = {0xF4, 0x7F, 0x7F,0x00,0x00};
+  testRun_bsToUmp(" Test 9 Bad System Message : ", bytes5_bad, 5, tests5_bad,0);
+  testRun_bsToUmp(" Test 10 Retest MT4 Note On w/running status: ", bytes1, 5, tests1a,4);
 
   //******** UMP ByteSteam  ***************
   std::printf("UMP to ByteSteam \n");
@@ -169,6 +175,8 @@ int main(){
                   tests3, array_elements(tests3));
   testRun_umpToBs(" Test 8 Sysex : ", bytes4, array_elements(bytes4), tests4,
                   array_elements(tests4));
+  testRun_umpToBs(" Test 9 Bad Data : ", bytes5_bad, 1, tests5_bad, 0);
+  testRun_umpToBs(" ReTest 5 Note On: ", bytes5, 6, tests5, 2);
 
   //***** UMP2M1 *************
   std::printf("UMP to MIDI 1 Protocol \n");
