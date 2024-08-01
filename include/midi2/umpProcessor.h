@@ -161,9 +161,7 @@ struct function_block_info {
   std::uint8_t maxS8Streams;
 };
 
-using uint32_ptr = std::uint32_t*;
-template <typename T, typename IntegerType = std::int64_t>
-concept backend = requires(T && v) {
+template <typename T> concept backend = requires(T && v) {
   { v.utility_message(umpGeneric{}) } -> std::same_as<void>;
   { v.channel_voice_message(umpCVM{}) } -> std::same_as<void>;
   { v.system_message(umpGeneric{}) } -> std::same_as<void>;
