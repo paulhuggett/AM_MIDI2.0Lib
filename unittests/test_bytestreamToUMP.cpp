@@ -5,6 +5,7 @@
 // Standard library
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <vector>
 
 // google mock/test/fuzz
