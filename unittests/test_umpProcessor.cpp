@@ -232,7 +232,7 @@ TEST(UMPProcessor, Noop) {
   EXPECT_CALL(callbacks, utility_message(message)).Times(1);
 
   midi2::umpProcessor p{callbacks_proxy{callbacks}};
-  midi2::types::noop w1;
+  midi2::types::noop w1{};
   w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::utility);
   w1.reserved = 0;
   w1.status = 0b0000;
@@ -473,7 +473,7 @@ TEST(UMPProcessor, FunctionBlockInfo) {
   MockCallbacks callbacks;
   EXPECT_CALL(callbacks, functionBlockInfo(fbi)).Times(1);
 
-  midi2::types::function_block_info_w1 word1;
+  midi2::types::function_block_info_w1 word1{};
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;
   word1.status =
@@ -486,7 +486,7 @@ TEST(UMPProcessor, FunctionBlockInfo) {
   word1.dir = static_cast<std::uint32_t>(
       midi2::function_block_info::fbdirection::output);
 
-  midi2::types::function_block_info_w2 word2;
+  midi2::types::function_block_info_w2 word2{};
   word2.first_group = first_group;
   word2.groups_spanned = groups_spanned;
   word2.message_version = version;
@@ -518,7 +518,7 @@ TEST(UMPProcessor, FunctionBlockName) {
               stream_id, format, std::begin(payload), std::end(payload)),
           function_block_num));
 
-  midi2::types::function_block_name_w1 word1;
+  midi2::types::function_block_name_w1 word1{};
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;  // "complete UMP"
   word1.status = static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_SET);

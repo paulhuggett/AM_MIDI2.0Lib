@@ -178,7 +178,7 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
       using enum sysex7::status;
-      types::sysex7_w1 w1;
+      types::sysex7_w1 w1{};
       w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
       w1.group = defaultGroup_;
       w1.status =
@@ -197,7 +197,7 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
              sysex7_.state == sysex7::status::cont ||
              sysex7_.state == sysex7::status::end) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      types::sysex7_w1 w1;
+      types::sysex7_w1 w1{};
       w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
       w1.group = defaultGroup_;
       w1.status = static_cast<std::uint8_t>(sysex7_.state);
