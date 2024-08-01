@@ -545,8 +545,8 @@ TEST(UMPProcessor, SetChordName) {
 
   midi2::types::set_chord_name_w2 word2{};
   word2.tonic_sharps_flats = 0x1;
-  word2.chord_tonic = chord_tonic;
-  word2.chord_type = chord_type;
+  word2.chord_tonic = static_cast<std::uint8_t>(chord_tonic);
+  word2.chord_type = static_cast<std::uint8_t>(chord_type);
   word2.alter_1_type = 1;
   word2.alter_1_degree = 5;
   word2.alter_2_type = 2;
@@ -561,7 +561,7 @@ TEST(UMPProcessor, SetChordName) {
 
   midi2::types::set_chord_name_w4 word4{};
   word4.bass_sharps_flats = 0xE;
-  word4.bass_note = bass_note;
+  word4.bass_note = static_cast<std::uint8_t>(bass_note);
   word4.bass_chord_type = static_cast<std::uint8_t>(bass_chord_type);
   word4.alter_1_type = 1;
   word4.alter_1_degree = 3;

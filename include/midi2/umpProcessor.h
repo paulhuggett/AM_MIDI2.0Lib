@@ -74,7 +74,7 @@ struct umpData {
   std::span<std::uint8_t> data;
 };
 
-enum note : std::uint8_t {
+enum class note : std::uint8_t {
   unknown = 0x0,
   A = 0x1,
   B = 0x2,
@@ -85,7 +85,7 @@ enum note : std::uint8_t {
   G = 0x7,
 };
 
-enum chord_type : std::uint8_t {
+enum class chord_type : std::uint8_t {
   no_chord = 0x00,
   major = 0x01,
   major_6th = 0x02,
@@ -127,14 +127,14 @@ struct chord {
     uint8_t degree : 4;
   };
 
-  uint8_t chShrpFlt;
+  std::uint8_t chShrpFlt;
   note chTonic;
   chord_type chType;
   alteration chAlt1;
   alteration chAlt2;
   alteration chAlt3;
   alteration chAlt4;
-  uint8_t baShrpFlt;
+  std::uint8_t baShrpFlt;
   note baTonic;
   chord_type baType;
   alteration baAlt1;
@@ -741,14 +741,21 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   auto const w3 = std::bit_cast<types::set_chord_name_w3>(message_[2]);
   auto const w4 = std::bit_cast<types::set_chord_name_w4>(message_[3]);
 
+  auto const valid_note = [](std::uint8_t n) {
+    return n <= static_cast<std::uint8_t>(note::G) ? static_cast<note>(n)
+                                                   : note::unknown;
+  };
+
+  auto const valid_chord_type = [](std::uint8_t ct) {
+    return ct <= static_cast<std::uint8_t>(chord_type::seven_suspended_4th)
+               ? static_cast<chord_type>(ct)
+               : chord_type::no_chord;
+  };
+
   chord c;
   c.chShrpFlt = w2.tonic_sharps_flats;
-  c.chTonic = (w2.chord_tonic <= note::G)
-                  ? static_cast<note>(w2.chord_tonic.value())
-                  : note::unknown;
-  c.chType = w2.chord_type <= chord_type::seven_suspended_4th
-                 ? static_cast<chord_type>(w2.chord_type.value())
-                 : chord_type::no_chord;
+  c.chTonic = valid_note(w2.chord_tonic);
+  c.chType = valid_chord_type(w2.chord_type);
   c.chAlt1.type = w2.alter_1_type;
   c.chAlt1.degree = w2.alter_1_degree;
   c.chAlt2.type = w2.alter_2_type;
@@ -758,11 +765,8 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   c.chAlt4.type = w3.alter_4_type;
   c.chAlt4.degree = w3.alter_4_degree;
   c.baShrpFlt = w4.bass_sharps_flats;
-  c.baTonic = w4.bass_note <= note::G ? static_cast<note>(w4.bass_note.value())
-                                      : note::unknown;
-  c.baType = w4.bass_chord_type <= chord_type::seven_suspended_4th
-                 ? static_cast<chord_type>(w4.bass_chord_type.value())
-                 : chord_type::no_chord;
+  c.baTonic = valid_note(w4.bass_note);
+  c.baType = valid_chord_type(w4.bass_chord_type);
   c.baAlt1.type = w4.alter_1_type;
   c.baAlt1.degree = w4.alter_1_degree;
   c.baAlt2.type = w4.alter_2_type;
