@@ -55,6 +55,128 @@ void midiCIProcessor::cleanupRequest(reqId peReqIdx) {
   peHeaderStr.erase(peReqIdx);
 }
 
+void midiCIProcessor::midiCI_discovery_request_reply(uint8_t s7Byte) {
+  if (sysexPos >= 13 && sysexPos <= 23) {
+    buffer[sysexPos - 13] = s7Byte;
+  }
+  if (sysexPos == 24) {
+    intTemp[0] = s7Byte;  // ciSupport
+  }
+  if (sysexPos >= 25 && sysexPos <= 28) {
+    intTemp[1] += s7Byte << (7 * (sysexPos - 25));  // maxSysEx
+  }
+
+  bool complete = false;
+  if (sysexPos == 28 && midici.ciVer == 1) {
+    complete = true;
+  } else if (sysexPos == 28) {
+    intTemp[2] = s7Byte;  // output path id
+    if (midici.ciType == MIDICI_DISCOVERY) {
+      complete = true;
+    }
+  } else if (sysexPos == 29) {
+    intTemp[3] = s7Byte;  // fbIdx id
+    if (midici.ciType == MIDICI_DISCOVERYREPLY) {
+      complete = true;
+    }
+  }
+
+  if (complete) {
+    if (midici.ciType == MIDICI_DISCOVERY) {
+      if (recvDiscoveryRequest != nullptr)
+        recvDiscoveryRequest(midici, {buffer[0], buffer[1], buffer[2]},
+                             {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
+                             {buffer[7], buffer[8], buffer[9], buffer[10]},
+                             static_cast<std::uint8_t>(intTemp[0]), intTemp[1],
+                             static_cast<std::uint8_t>(intTemp[2]));
+    } else {
+      if (recvDiscoveryReply != nullptr)
+        recvDiscoveryReply(midici, {buffer[0], buffer[1], buffer[2]},
+                           {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
+                           {buffer[7], buffer[8], buffer[9], buffer[10]},
+                           static_cast<std::uint8_t>(intTemp[0]), intTemp[1],
+                           static_cast<std::uint8_t>(intTemp[2]),
+                           static_cast<std::uint8_t>(intTemp[3]));
+    }
+  }
+}
+
+void midiCIProcessor::midiCI_ack_nak(uint8_t s7Byte) {
+  bool complete = false;
+
+  if (sysexPos == 13 && midici.ciVer == 1) {
+    complete = true;
+  } else if (sysexPos == 13 && midici.ciVer > 1) {
+    intTemp[0] = s7Byte;  // uint8_t origSubID,
+  }
+
+  if (sysexPos == 14) {
+    intTemp[1] = s7Byte;  // statusCode
+  }
+
+  if (sysexPos == 15) {
+    intTemp[2] = s7Byte;  // statusData
+  }
+
+  if (sysexPos >= 16 && sysexPos <= 20) {
+    buffer[sysexPos - 16] = s7Byte;  // ackNakDetails
+  }
+
+  if (sysexPos == 21 || sysexPos == 22) {
+    intTemp[3] += s7Byte << (7 * (sysexPos - 21));
+    return;
+  }
+
+  if (sysexPos >= 23 && sysexPos <= 23 + intTemp[3]) {
+    buffer[sysexPos - 23] = s7Byte;  // product ID
+  }
+  if (sysexPos == 23 + intTemp[3]) {
+    complete = true;
+  }
+
+  if (complete) {
+    uint8_t ackNakDetails[5] = {buffer[0], buffer[1], buffer[2], buffer[3],
+                                buffer[4]};
+
+    if (midici.ciType == MIDICI_NAK && recvNAK != nullptr)
+      recvNAK(midici, static_cast<std::uint8_t>(intTemp[0]),
+              static_cast<std::uint8_t>(intTemp[1]),
+              static_cast<std::uint8_t>(intTemp[2]), ackNakDetails, intTemp[3],
+              buffer);
+
+    if (midici.ciType == MIDICI_ACK && midici.ciVer > 1 && recvACK != nullptr)
+      recvACK(midici, static_cast<std::uint8_t>(intTemp[0]),
+              static_cast<std::uint8_t>(intTemp[1]),
+              static_cast<std::uint8_t>(intTemp[2]), ackNakDetails, intTemp[3],
+              buffer);
+  }
+}
+
+void midiCIProcessor::midiCI_endpoint_info_reply(uint8_t s7Byte) {
+  bool complete = false;
+  if (midici.ciVer < 2) {
+    return;
+  }
+  if (sysexPos == 13 && recvEndPointInfo != nullptr) {
+    intTemp[0] = s7Byte;
+  }
+  if (sysexPos == 14 || sysexPos == 15) {
+    intTemp[1] += s7Byte << (7 * (sysexPos - 14));
+    return;
+  }
+  if (sysexPos >= 16 && sysexPos <= 15 + intTemp[1]) {
+    buffer[sysexPos - 16] = s7Byte;  // Info Data
+  }
+  if (sysexPos == 16 + intTemp[1]) {
+    complete = true;
+  }
+
+  if (complete) {
+    recvEndPointInfoReply(midici, static_cast<std::uint8_t>(intTemp[0]),
+                          intTemp[1], buffer);
+  }
+}
+
 void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
   // printf("s7 Byte %d\n", s7Byte);
   if (sysexPos == 3) {
@@ -79,57 +201,8 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
   // break up each Process based on ciType
   if (sysexPos >= 12) {
     switch (midici.ciType) {
-    case MIDICI_DISCOVERYREPLY:  // Discovery Reply
-    case MIDICI_DISCOVERY: {     // Discovery Request
-      if (sysexPos >= 13 && sysexPos <= 23) {
-        buffer[sysexPos - 13] = s7Byte;
-      }
-      if (sysexPos == 24) {
-        intTemp[0] = s7Byte;  // ciSupport
-      }
-      if (sysexPos >= 25 && sysexPos <= 28) {
-        intTemp[1] += s7Byte << (7 * (sysexPos - 25));  // maxSysEx
-      }
-
-      bool complete = false;
-      if (sysexPos == 28 && midici.ciVer == 1) {
-        complete = true;
-      } else if (sysexPos == 28) {
-        intTemp[2] = s7Byte;  // output path id
-        if (midici.ciType == MIDICI_DISCOVERY) {
-          complete = true;
-        }
-      } else if (sysexPos == 29) {
-        intTemp[3] = s7Byte;  // fbIdx id
-        if (midici.ciType == MIDICI_DISCOVERYREPLY) {
-          complete = true;
-        }
-      }
-
-      if (complete) {
-        // debug("  - Discovery Request 28 ");
-
-        if (midici.ciType == MIDICI_DISCOVERY) {
-          if (recvDiscoveryRequest != nullptr)
-            recvDiscoveryRequest(midici, {buffer[0], buffer[1], buffer[2]},
-                                 {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
-                                 {buffer[7], buffer[8], buffer[9], buffer[10]},
-                                 static_cast<std::uint8_t>(intTemp[0]),
-                                 intTemp[1],
-                                 static_cast<std::uint8_t>(intTemp[2]));
-        } else {
-          if (recvDiscoveryReply != nullptr)
-            recvDiscoveryReply(midici, {buffer[0], buffer[1], buffer[2]},
-                               {buffer[3], buffer[4]}, {buffer[5], buffer[6]},
-                               {buffer[7], buffer[8], buffer[9], buffer[10]},
-                               static_cast<std::uint8_t>(intTemp[0]),
-                               intTemp[1],
-                               static_cast<std::uint8_t>(intTemp[2]),
-                               static_cast<std::uint8_t>(intTemp[3]));
-        }
-      }
-      break;
-    }
+    case MIDICI_DISCOVERYREPLY:
+    case MIDICI_DISCOVERY: this->midiCI_discovery_request_reply(s7Byte); break;
 
     case MIDICI_INVALIDATEMUID:  // MIDI-CI Invalidate MUID Message
       if (sysexPos >= 13 && sysexPos <= 16) {
@@ -150,83 +223,11 @@ void midiCIProcessor::processMIDICI(uint8_t s7Byte) {
       }
       break;
     }
-    case MIDICI_ENDPOINTINFO_REPLY: {
-      bool complete = false;
-      if (midici.ciVer < 2)
-        return;
-      if (sysexPos == 13 && recvEndPointInfo != nullptr) {
-        intTemp[0] = s7Byte;
-      }
-      if (sysexPos == 14 || sysexPos == 15) {
-        intTemp[1] += s7Byte << (7 * (sysexPos - 14));
-        return;
-      }
-      if (sysexPos >= 16 && sysexPos <= 15 + intTemp[1]) {
-        buffer[sysexPos - 16] = s7Byte;  // Info Data
-      }
-      if (sysexPos == 16 + intTemp[1]) {
-        complete = true;
-      }
-
-      if (complete) {
-        recvEndPointInfoReply(midici, static_cast<std::uint8_t>(intTemp[0]),
-                              intTemp[1], buffer);
-      }
+    case MIDICI_ENDPOINTINFO_REPLY:
+      this->midiCI_endpoint_info_reply(s7Byte);
       break;
-    }
     case MIDICI_ACK:
-    case MIDICI_NAK: {
-      bool complete = false;
-
-      if (sysexPos == 13 && midici.ciVer == 1) {
-        complete = true;
-      } else if (sysexPos == 13 && midici.ciVer > 1) {
-        intTemp[0] = s7Byte;  // uint8_t origSubID,
-      }
-
-      if (sysexPos == 14) {
-        intTemp[1] = s7Byte;  // statusCode
-      }
-
-      if (sysexPos == 15) {
-        intTemp[2] = s7Byte;  // statusData
-      }
-
-      if (sysexPos >= 16 && sysexPos <= 20) {
-        buffer[sysexPos - 16] = s7Byte;  // ackNakDetails
-      }
-
-      if (sysexPos == 21 || sysexPos == 22) {
-        intTemp[3] += s7Byte << (7 * (sysexPos - 21));
-        return;
-      }
-
-      if (sysexPos >= 23 && sysexPos <= 23 + intTemp[3]) {
-        buffer[sysexPos - 23] = s7Byte;  // product ID
-      }
-      if (sysexPos == 23 + intTemp[3]) {
-        complete = true;
-      }
-
-      if (complete) {
-        uint8_t ackNakDetails[5] = {buffer[0], buffer[1], buffer[2], buffer[3],
-                                    buffer[4]};
-
-        if (midici.ciType == MIDICI_NAK && recvNAK != nullptr)
-          recvNAK(midici, static_cast<std::uint8_t>(intTemp[0]),
-                  static_cast<std::uint8_t>(intTemp[1]),
-                  static_cast<std::uint8_t>(intTemp[2]), ackNakDetails,
-                  intTemp[3], buffer);
-
-        if (midici.ciType == MIDICI_ACK && midici.ciVer > 1 &&
-            recvACK != nullptr)
-          recvACK(midici, static_cast<std::uint8_t>(intTemp[0]),
-                  static_cast<std::uint8_t>(intTemp[1]),
-                  static_cast<std::uint8_t>(intTemp[2]), ackNakDetails,
-                  intTemp[3], buffer);
-      }
-      break;
-    }
+    case MIDICI_NAK: this->midiCI_ack_nak(s7Byte); break;
 
 #ifdef M2_ENABLE_PROTOCOL
     case MIDICI_PROTOCOL_NEGOTIATION:

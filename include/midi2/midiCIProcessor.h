@@ -334,6 +334,10 @@ private:
   recvPIMMReportEndFn recvPIMMReportEnd = nullptr;
 
   void processPISysex(uint8_t s7Byte);
+
+  void midiCI_discovery_request_reply(uint8_t s7Byte);
+  void midiCI_ack_nak(uint8_t s7Byte);
+  void midiCI_endpoint_info_reply(uint8_t s7Byte);
 };
 
 }  // end namespace midi2
