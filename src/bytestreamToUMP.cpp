@@ -27,6 +27,8 @@
 
 #include "midi2/bytestreamToUMP.h"
 
+#include <bit>
+
 #include "midi2/ump_types.h"
 
 namespace midi2 {

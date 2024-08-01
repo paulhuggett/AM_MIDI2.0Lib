@@ -413,7 +413,6 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   };
 
   constexpr auto group = std::uint32_t{0};
-  constexpr auto channel = std::uint32_t{0};
   auto in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     midi2::types::sysex7_w1 w1{};
     w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::sysex7);
