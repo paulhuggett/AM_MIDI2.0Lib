@@ -70,7 +70,9 @@ TYPED_TEST(BitFieldAssignment, Assignment) {
   // access the value of f1 by casting directly rather than using the value()
   // member function.
   EXPECT_EQ(static_cast<value_type>(f1), v);
-  EXPECT_EQ(vt, std::numeric_limits<value_type>::max());
+  // Access the unlerlying memory.
+  EXPECT_EQ(std::bit_cast<value_type>(f1),
+            std::numeric_limits<value_type>::max());
 }
 
 TEST(BitField, IsolationFromOtherBitfields) {
