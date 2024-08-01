@@ -249,12 +249,6 @@ constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
          (std::uint32_t{b2} << 8) | std::uint32_t{b3};
 }
 
-inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
-  for (auto i = std::size_t{0}; i < n; i++) {
-    dest[i] = c;
-  }
-}
-
 constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   assert(dstBits >= srcBits);
   // Handle value of 0 - skip processing
