@@ -30,6 +30,11 @@
 using namespace midi2;
 
 namespace {
+
+constexpr auto S7UNIVERSAL_NRT = 0x7E;
+// constexpr auto S7UNIVERSAL_RT = 0x7F;
+constexpr auto S7MIDICI = 0x0D;
+
 void setBytesFromNumbers(uint8_t *message, uint32_t number, uint16_t *start,
                          uint8_t amount) {
   for (int amountC = amount; amountC > 0; amountC--) {

@@ -39,6 +39,8 @@
 
 namespace midi2 {
 
+constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
+
 using reqId = std::tuple<uint32_t, uint8_t>;  // muid-requestId
 
 struct MIDICI {

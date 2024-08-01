@@ -29,6 +29,12 @@
 
 #include <cassert>
 
+namespace {
+
+constexpr auto S7_BUFFERLEN = 36;
+
+}
+
 namespace midi2 {
 
 void midiCIProcessor::endSysex7() {

@@ -127,13 +127,6 @@ enum : std::uint32_t {
   FUNCTIONBLOCK_NAME_NOTIFICATION = 0x012,
 };
 
-#ifndef S7_BUFFERLEN
-#define S7_BUFFERLEN 36
-#endif
-#define S7UNIVERSAL_NRT 0x7E
-#define S7UNIVERSAL_RT 0x7F
-#define S7MIDICI 0x0D
-
 enum : std::uint8_t {
   MIDICI_DISCOVERY = 0x70,
   MIDICI_DISCOVERYREPLY = 0x71,
@@ -224,17 +217,12 @@ enum : std::uint8_t {
   MIDICI_PE_MCODED7ZLIB = 3,
 };
 
-#define FUNCTION_BLOCK 0x7F
-#define M2_CI_BROADCAST 0xFFFFFFF
+constexpr auto M2_CI_BROADCAST = std::uint32_t{0xFFFFFFF};
 
 enum : std::uint32_t {
   UMP_VER_MAJOR = 1,
   UMP_VER_MINOR = 1,
 };
-
-#ifndef EXP_MIDICI_PE_EXPERIMENTAL_PATH
-#define EXP_MIDICI_PE_EXPERIMENTAL_PATH 1
-#endif
 
 enum class ump_message_type : std::uint32_t {
   utility = 0x00,
