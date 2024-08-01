@@ -1,5 +1,6 @@
 // DUT
 #include "midi2/bytestreamToUMP.h"
+#include "midi2/ump_types.h"
 
 // Standard library
 #include <algorithm>
@@ -370,6 +371,92 @@ TEST(BytestreamToUMP, SysEx) {
       std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
       std::uint32_t{0x30260100}, std::uint32_t{0x00000300},
       std::uint32_t{0x30360000}, std::uint32_t{0x10000000}};
+  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input)
+      << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+TEST(BytestreamToUMP, MultipleSysExMessages) {
+  using u8 = std::uint8_t;
+  constexpr auto start = u8{midi2::status::sysex_start};
+  constexpr auto stop = u8{midi2::status::sysex_stop};
+  std::array const input{
+      start,  // start sysex
+      u8{0x0A}, u8{0x0B}, u8{0x0C}, u8{0x0D}, u8{0x0E}, u8{0x0F},
+      u8{0x1A}, u8{0x1B}, u8{0x1C}, u8{0x1D}, u8{0x1E}, u8{0x1F},
+      stop,   // end sysex
+      start,  // start sysex
+      u8{0x2A}, u8{0x2B}, u8{0x2C}, u8{0x2D}, u8{0x2E}, u8{0x2F},
+      u8{0x3A}, u8{0x3B}, u8{0x3C}, u8{0x3D}, u8{0x3E},
+      stop,   // end sysex
+      start,  // start sysex
+      u8{0x4A}, u8{0x4B}, u8{0x4C}, u8{0x4D}, u8{0x4E},
+      stop,   // end sysex
+      start,  // start sysex
+      u8{0x5A}, u8{0x5B}, u8{0x5C}, u8{0x5D},
+      stop,   // end sysex
+      start,  // start sysex
+      u8{0x6A}, u8{0x6B}, u8{0x6C},
+      stop,   // end sysex
+      start,  // start sysex
+      u8{0x7A}, u8{0x7B},
+      stop,  // end sysex
+  };
+
+  enum class sysex7_status : std::uint8_t {
+    single_ump = 0x0,
+    start = 0x1,
+    cont = 0x02,
+    end = 0x03,
+  };
+
+  constexpr auto group = std::uint32_t{0};
+  constexpr auto channel = std::uint32_t{0};
+  auto in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+    midi2::types::sysex7_w1 w1;
+    w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::sysex7);
+    w1.group = group;
+    w1.status = static_cast<std::uint8_t>(sysex7_status::single_ump);
+    w1.number_of_bytes = number_of_bytes;
+    w1.data0 = data0;
+    w1.data1 = data1;
+    return std::bit_cast<std::uint32_t>(w1);
+  };
+  auto start_message = [](u8 data0, u8 data1) {
+    midi2::types::sysex7_w1 w1;
+    w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::sysex7);
+    w1.group = group;
+    w1.status = static_cast<std::uint8_t>(sysex7_status::start);
+    w1.number_of_bytes = std::uint8_t{6};
+    w1.data0 = data0;
+    w1.data1 = data1;
+    return std::bit_cast<std::uint32_t>(w1);
+  };
+  auto end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+    assert(number_of_bytes <= 6);
+    midi2::types::sysex7_w1 w1;
+    w1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::sysex7);
+    w1.group = group;
+    w1.status = static_cast<std::uint8_t>(sysex7_status::end);
+    w1.number_of_bytes = number_of_bytes;
+    w1.data0 = data0;
+    w1.data1 = data1;
+    return std::bit_cast<std::uint32_t>(w1);
+  };
+
+  std::array const expected{
+      start_message(0x0A, 0x0B),     midi2::pack(0x0C, 0x0D, 0x0E, 0x0F),
+      end_message(6, 0x1A, 0x1B),    midi2::pack(0x1C, 0x1D, 0x1E, 0x1F),
+      start_message(0x2A, 0x2B),     midi2::pack(0x2C, 0x2D, 0x2E, 0x2F),
+      end_message(5, 0x3A, 0x3B),    midi2::pack(0x3C, 0x3D, 0x3E, 0),
+      in_one_message(5, 0x4A, 0x4B), midi2::pack(0x4C, 0x4D, 0x4E, 0),
+      in_one_message(4, 0x5A, 0x5B), midi2::pack(0x5C, 0x5D, 0, 0),
+      in_one_message(3, 0x6A, 0x6B), midi2::pack(0x6C, 0, 0, 0),
+      in_one_message(2, 0x7A, 0x7B), midi2::pack(0, 0, 0, 0),
+  };
+
   auto const actual = convert(midi2::bytestreamToUMP{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input)

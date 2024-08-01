@@ -64,6 +64,18 @@ union m1cvm_w1 {
   ump_bitfield<0, 7> byte_b;
 };
 
+// F.2.1 Message Type 0x3: 8-Byte Data Messages
+// Table 29 8-Byte UMP Formats for Message Type 0x3: 8-Byte Data Messages
+
+union sysex7_w1 {
+  ump_bitfield<28, 4> mt;  // 0x3
+  ump_bitfield<24, 4> group;
+  ump_bitfield<20, 4> status;  // 0b0000..0b0011
+  ump_bitfield<16, 4> number_of_bytes;
+  ump_bitfield<8, 8> data0;
+  ump_bitfield<0, 8> data1;
+};
+
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
 // Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
 // 8 and Mixed Data Set

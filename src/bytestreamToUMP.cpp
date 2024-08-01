@@ -27,6 +27,8 @@
 
 #include "midi2/bytestreamToUMP.h"
 
+#include "midi2/ump_types.h"
+
 namespace midi2 {
 
 void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
@@ -176,12 +178,15 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
       using enum sysex7::status;
-      auto const status =
+      types::sysex7_w1 w1;
+      w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w1.group = defaultGroup_;
+      w1.status =
           static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
-      output_.push_back(
-          pack(ump_message_type::sysex7,
-               static_cast<std::uint8_t>((status << 4) | sysex7_.pos),
-               sysex7_.bytes[0], sysex7_.bytes[1]));
+      w1.number_of_bytes = sysex7_.pos;
+      w1.data0 = sysex7_.bytes[0];
+      w1.data1 = sysex7_.bytes[1];
+      output_.push_back(std::bit_cast<std::uint32_t>(w1));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
@@ -191,14 +196,15 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
   } else if (sysex7_.state == sysex7::status::start ||
              sysex7_.state == sysex7::status::cont ||
              sysex7_.state == sysex7::status::end) {
-    // Check for new UMP Message Type 3
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      static constexpr auto num_sysex_bytes = std::uint8_t{6};
-      auto const status = static_cast<std::uint8_t>(sysex7_.state);
-      output_.push_back(pack(ump_message_type::sysex7,
-                             std::uint8_t{static_cast<std::uint8_t>(
-                                 (status << 4) | num_sysex_bytes)},
-                             sysex7_.bytes[0], sysex7_.bytes[1]));
+      types::sysex7_w1 w1;
+      w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w1.group = defaultGroup_;
+      w1.status = static_cast<std::uint8_t>(sysex7_.state);
+      w1.number_of_bytes = std::uint8_t{6};
+      w1.data0 = sysex7_.bytes[0];
+      w1.data1 = sysex7_.bytes[1];
+      output_.push_back(std::bit_cast<std::uint32_t>(w1));
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 

@@ -82,6 +82,8 @@ std::ostream& operator<<(std::ostream& os, function_block_info const& fbi) {
 
 namespace {
 
+using midi2::pack;
+
 // We want to use mocked instances of a callback struct, but the umpProcessor
 // takes the callbacks by value and mocked structs can't be copied. This "proxy"
 // object *is* copyable and seves to simply forward any calls to the original
@@ -248,12 +250,6 @@ constexpr std::uint32_t ump_cvm(midi2::status s) {
 }
 
 constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
-
-constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
-                             std::uint8_t const b2, std::uint8_t const b3) {
-  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
-         (std::uint32_t{b2} << 8) | std::uint32_t{b3};
-}
 
 TEST(UMPProcessor, Midi1NoteOn) {
   constexpr auto channel = std::uint8_t{3};

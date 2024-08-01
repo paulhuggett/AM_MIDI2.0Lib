@@ -243,6 +243,12 @@ enum class ump_message_type : std::uint32_t {
   midi_endpoint = 0x0F,
 };
 
+constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
+                             std::uint8_t const b2, std::uint8_t const b3) {
+  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
+         (std::uint32_t{b2} << 8) | std::uint32_t{b3};
+}
+
 inline void clear(uint8_t* const dest, uint8_t const c, std::size_t const n) {
   for (auto i = std::size_t{0}; i < n; i++) {
     dest[i] = c;
