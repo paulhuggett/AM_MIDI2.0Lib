@@ -103,6 +103,45 @@ union mixed_data_set_w1 {
   ump_bitfield<0, 16> data;
 };
 
+// F.3.1 Message Type 0xD: Flex Data Messages
+// Table 32 128 bit UMP Formats for Message Type 0xD: Flex Data Messages
+
+// Set Chord Name
+union set_chord_name_w1 {
+  ump_bitfield<28, 4> mt;  // 0xD
+  ump_bitfield<24, 4> group;
+  ump_bitfield<22, 2> format;  // 0x0
+  ump_bitfield<20, 2> addrs;
+  ump_bitfield<16, 4> channel;
+  ump_bitfield<8, 8> status_bank;  // 0x00
+  ump_bitfield<0, 8> status;       // 0x06
+};
+union set_chord_name_w2 {
+  ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
+  ump_bitfield<24, 4> chord_tonic;
+  ump_bitfield<16, 8> chord_type;
+  ump_bitfield<12, 4> alter_1_type;
+  ump_bitfield<8, 4> alter_1_degree;
+  ump_bitfield<4, 4> alter_2_type;
+  ump_bitfield<0, 4> alter_2_degree;
+};
+union set_chord_name_w3 {
+  ump_bitfield<28, 4> alter_3_type;
+  ump_bitfield<24, 4> alter_3_degree;
+  ump_bitfield<20, 4> alter_4_type;
+  ump_bitfield<16, 4> alter_4_degree;
+  ump_bitfield<0, 16> reserved;  // 0x0000
+};
+union set_chord_name_w4 {
+  ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
+  ump_bitfield<24, 4> bass_note;
+  ump_bitfield<16, 8> bass_chord_type;
+  ump_bitfield<12, 4> alter_1_type;
+  ump_bitfield<8, 4> alter_1_degree;
+  ump_bitfield<4, 4> alter_2_type;
+  ump_bitfield<0, 4> alter_2_degree;
+};
+
 // F.3.2 Message Type 0xF: UMP Stream Messages
 // Table 33 128 bit UMP Formats for Message Type 0xF: UMP Stream Messages
 

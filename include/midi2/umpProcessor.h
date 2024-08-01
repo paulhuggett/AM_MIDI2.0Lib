@@ -74,27 +74,71 @@ struct umpData {
   std::span<std::uint8_t> data;
 };
 
+enum note : std::uint8_t {
+  unknown = 0x0,
+  A = 0x1,
+  B = 0x2,
+  C = 0x3,
+  D = 0x4,
+  E = 0x5,
+  F = 0x6,
+  G = 0x7,
+};
+
+enum chord_type : std::uint8_t {
+  no_chord = 0x00,
+  major = 0x01,
+  major_6th = 0x02,
+  major_7th = 0x03,
+  major_9th = 0x04,
+  major_11th = 0x05,
+  major_13th = 0x06,
+  minor = 0x07,
+  minor_6th = 0x08,
+  minor_7th = 0x09,
+  minor_9th = 0x0A,
+  minor_11th = 0x0B,
+  minor_13th = 0x0C,
+  dominant = 0x0D,
+  dominant_ninth = 0x0E,
+  dominant_11th = 0x0F,
+  dominant_13th = 0x10,
+  augmented = 0x11,
+  augmented_seventh = 0x12,
+  diminished = 0x13,
+  diminished_seventh = 0x14,
+  half_diminished = 0x15,
+  major_minor = 0x16,
+  pedal = 0x17,
+  power = 0x18,
+  suspended_2nd = 0x19,
+  suspended_4th = 0x1A,
+  seven_suspended_4th = 0x1B,
+};
+
 // (note that these are mostly four bit fields. The type fields are the
 // exception. )
 struct chord {
+  bool operator==(chord const&) const = default;
+
+  struct alteration {
+    bool operator==(alteration const&) const = default;
+    uint8_t type : 4;
+    uint8_t degree : 4;
+  };
+
   uint8_t chShrpFlt;
-  uint8_t chTonic;
-  uint8_t chType;
-  uint8_t chAlt1Type;
-  uint8_t chAlt1Deg;
-  uint8_t chAlt2Type;
-  uint8_t chAlt2Deg;
-  uint8_t chAlt3Type;
-  uint8_t chAlt3Deg;
-  uint8_t chAlt4Type;
-  uint8_t chAlt4Deg;
+  note chTonic;
+  chord_type chType;
+  alteration chAlt1;
+  alteration chAlt2;
+  alteration chAlt3;
+  alteration chAlt4;
   uint8_t baShrpFlt;
-  uint8_t baTonic;
-  uint8_t baType;
-  uint8_t baAlt1Type;
-  uint8_t baAlt1Deg;
-  uint8_t baAlt2Type;
-  uint8_t baAlt2Deg;
+  note baTonic;
+  chord_type baType;
+  alteration baAlt1;
+  alteration baAlt2;
 };
 
 struct function_block_info {
@@ -281,6 +325,7 @@ private:
   void midiendpoint_name_or_prodid(ump_message_type mt);
   void functionblock_name();
   void functionblock_info();
+  void set_chord_name();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
   std::array<std::uint32_t, 4> message_{};
@@ -690,6 +735,41 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   }
 }
 
+template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
+  auto const w1 = std::bit_cast<types::set_chord_name_w1>(message_[0]);
+  auto const w2 = std::bit_cast<types::set_chord_name_w2>(message_[1]);
+  auto const w3 = std::bit_cast<types::set_chord_name_w3>(message_[2]);
+  auto const w4 = std::bit_cast<types::set_chord_name_w4>(message_[3]);
+
+  chord c;
+  c.chShrpFlt = w2.tonic_sharps_flats;
+  c.chTonic = (w2.chord_tonic <= note::G)
+                  ? static_cast<note>(w2.chord_tonic.value())
+                  : note::unknown;
+  c.chType = w2.chord_type <= chord_type::seven_suspended_4th
+                 ? static_cast<chord_type>(w2.chord_type.value())
+                 : chord_type::no_chord;
+  c.chAlt1.type = w2.alter_1_type;
+  c.chAlt1.degree = w2.alter_1_degree;
+  c.chAlt2.type = w2.alter_2_type;
+  c.chAlt2.degree = w2.alter_2_degree;
+  c.chAlt3.type = w3.alter_3_type;
+  c.chAlt3.degree = w3.alter_3_degree;
+  c.chAlt4.type = w3.alter_4_type;
+  c.chAlt4.degree = w3.alter_4_degree;
+  c.baShrpFlt = w4.bass_sharps_flats;
+  c.baTonic = w4.bass_note <= note::G ? static_cast<note>(w4.bass_note.value())
+                                      : note::unknown;
+  c.baType = w4.bass_chord_type <= chord_type::seven_suspended_4th
+                 ? static_cast<chord_type>(w4.bass_chord_type.value())
+                 : chord_type::no_chord;
+  c.baAlt1.type = w4.alter_1_type;
+  c.baAlt1.degree = w4.alter_1_degree;
+  c.baAlt2.type = w4.alter_2_type;
+  c.baAlt2.degree = w4.alter_2_degree;
+  callbacks_.flex_chord(w1.group, w1.addrs, w1.channel, c);
+}
+
 template <backend Callbacks>
 void umpProcessor<Callbacks>::flexdata_performance_or_lyric(
     ump_message_type const mt, std::uint8_t const group) {
@@ -759,29 +839,7 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
                               (message_[1] >> 16) & 0xFF);
       break;
     }
-    case FLEXDATA_COMMON_CHORD: {  // Set Chord Message
-      chord c;
-      c.chShrpFlt = (message_[1] >> 28) & 0xF;
-      c.chTonic = (message_[1] >> 24) & 0x0F;
-      c.chType = (message_[1] >> 16) & 0xFF;
-      c.chAlt1Type = (message_[1] >> 12) & 0x0F;
-      c.chAlt1Deg = (message_[1] >> 8) & 0x0F;
-      c.chAlt2Type = (message_[1] >> 4) & 0x0F;
-      c.chAlt2Deg = message_[1] & 0x0F;
-      c.chAlt3Type = (message_[2] >> 28) & 0x0F;
-      c.chAlt3Deg = (message_[2] >> 24) & 0x0F;
-      c.chAlt4Type = (message_[2] >> 20) & 0x0F;
-      c.chAlt4Deg = (message_[2] >> 16) & 0x0F;
-      c.baShrpFlt = (message_[3] >> 28) & 0x0F;
-      c.baTonic = (message_[3] >> 24) & 0x0F;
-      c.baType = (message_[3] >> 16) & 0xFF;
-      c.baAlt1Type = (message_[3] >> 12) & 0x0F;
-      c.baAlt1Deg = (message_[3] >> 8) & 0x0F;
-      c.baAlt2Type = (message_[3] >> 4) & 0x0F;
-      c.baAlt2Deg = message_[1] & 0xF;
-      callbacks_.flex_chord(group, addrs, channel, c);
-      break;
-    }
+    case FLEXDATA_COMMON_CHORD: this->set_chord_name(); break;
     default: callbacks_.unknownUMPMessage(std::span{message_.data(), 4}); break;
     }
     break;

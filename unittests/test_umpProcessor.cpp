@@ -78,6 +78,25 @@ std::ostream& operator<<(std::ostream& os, function_block_info const& fbi) {
             << " }";
 }
 
+std::ostream& operator<<(std::ostream& os, chord::alteration const& alt);
+std::ostream& operator<<(std::ostream& os, chord::alteration const& alt) {
+  return os << "{ type=" << static_cast<unsigned>(alt.type)
+            << ", degree=" << static_cast<unsigned>(alt.degree) << " }";
+}
+
+std::ostream& operator<<(std::ostream& os, chord const& c);
+std::ostream& operator<<(std::ostream& os, chord const& c) {
+  return os << "{ chShrpFlt=" << static_cast<unsigned>(c.chShrpFlt)
+            << ", chTonic=" << static_cast<unsigned>(c.chTonic)
+            << ", chType=" << static_cast<unsigned>(c.chType)
+            << ", chAlt1=" << c.chAlt1 << ", chAlt2=" << c.chAlt2
+            << ", chAlt3=" << c.chAlt3 << ", chAlt4=" << c.chAlt4
+            << ", baShrpFlt=" << static_cast<unsigned>(c.baShrpFlt)
+            << ", baTonic=" << static_cast<unsigned>(c.baTonic)
+            << ", baType=" << static_cast<unsigned>(c.baType)
+            << ", baAlt1=" << c.baAlt1 << ", baAlt2=" << c.baAlt2 << " }";
+}
+
 }  // end namespace midi2
 
 namespace {
@@ -206,6 +225,10 @@ public:
   MOCK_METHOD(void, channel_voice_message, (midi2::umpCVM const&), (override));
   MOCK_METHOD(void, system_message, (midi2::umpGeneric const&), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::umpData const&), (override));
+
+  MOCK_METHOD(void, flex_chord,
+              (std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&),
+              (override));
 
   MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
               (override));
@@ -369,51 +392,6 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
   p.processUMP(pack(payload[14], payload[15], 0, 0));
   p.processUMP(0);
   p.processUMP(0);
-
-#if 0
-  // Send 3 bytes.
-  p.processUMP(std::uint32_t{
-      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28) |
-      (std::uint32_t{group} << 24) | (std::uint32_t{0b0011} << 20) |
-      (std::uint32_t{3} << 16) | (std::uint32_t{stream_id} << 8)} | payload[13]);
-  p.processUMP((payload[14] << 24) | (payload[15] << 16));
-  p.processUMP(0);
-  p.processUMP(0);
-#endif
-}
-
-void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
-  using namespace std::placeholders;
-  midi2::umpProcessor p;
-  std::for_each(std::begin(in), std::end(in),
-                std::bind(&decltype(p)::processUMP, &p, _1));
-}
-
-#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
-// NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessor, UMPProcessorNeverCrashes);
-#endif
-TEST(UMPProcessor, Empty) {
-  UMPProcessorNeverCrashes({});
-}
-
-void FourByteDataMessage(std::array<std::uint32_t, 4> message) {
-  // Set the message type to "data".
-  message[0] =
-      (message[0] & 0x00FFFFFF) |
-      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28);
-  using namespace std::placeholders;
-  midi2::umpProcessor p;
-  std::for_each(std::begin(message), std::end(message),
-                std::bind(&decltype(p)::processUMP, &p, _1));
-}
-
-#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
-// NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessor, FourByteDataMessage);
-#endif
-TEST(UMPProcessor, FourByteDataMessageAllZero) {
-  FourByteDataMessage({});
 }
 
 TEST(UMPProcessor, PartialMessageThenClear) {
@@ -530,6 +508,108 @@ TEST(UMPProcessor, FunctionBlockName) {
   p.processUMP(pack('a', 'm', 'e', 0));
   p.processUMP(0);
   p.processUMP(0);
+}
+
+TEST(UMPProcessor, SetChordName) {
+  constexpr auto group = std::uint8_t{0xF};
+  constexpr auto addrs = std::uint8_t{0x3};
+  constexpr auto channel = std::uint8_t{3};
+
+  constexpr auto chord_tonic = midi2::note::E;
+  constexpr auto chord_type = midi2::chord_type::augmented;
+  constexpr auto bass_note = midi2::note::unknown;
+  constexpr auto bass_chord_type = midi2::chord_type::diminished;
+
+  midi2::chord chord{};
+  chord.chShrpFlt = 0x1;  // Sharp
+  chord.chTonic = chord_tonic;
+  chord.chType = chord_type;
+  chord.chAlt1 = midi2::chord::alteration{1, 5};
+  chord.chAlt2 = midi2::chord::alteration{2, 6};
+  chord.chAlt3 = midi2::chord::alteration{3, 7};
+  chord.chAlt4 = midi2::chord::alteration{4, 8};
+  chord.baShrpFlt = 0xE;  // Double Flat
+  chord.baTonic = bass_note;
+  chord.baType = bass_chord_type;
+  chord.baAlt1 = midi2::chord::alteration{1, 3};
+  chord.baAlt2 = midi2::chord::alteration{2, 4};
+
+  midi2::types::set_chord_name_w1 word1{};
+  word1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::flex_data);
+  word1.group = group;
+  word1.format = 0x0;
+  word1.addrs = addrs;
+  word1.channel = channel;
+  word1.status_bank = 0x00;
+  word1.status = 0x06;
+
+  midi2::types::set_chord_name_w2 word2{};
+  word2.tonic_sharps_flats = 0x1;
+  word2.chord_tonic = chord_tonic;
+  word2.chord_type = chord_type;
+  word2.alter_1_type = 1;
+  word2.alter_1_degree = 5;
+  word2.alter_2_type = 2;
+  word2.alter_2_degree = 6;
+
+  midi2::types::set_chord_name_w3 word3{};
+  word3.alter_3_type = 3;
+  word3.alter_3_degree = 7;
+  word3.alter_4_type = 4;
+  word3.alter_4_degree = 8;
+  word3.reserved = 0x0000;
+
+  midi2::types::set_chord_name_w4 word4{};
+  word4.bass_sharps_flats = 0xE;
+  word4.bass_note = bass_note;
+  word4.bass_chord_type = static_cast<std::uint8_t>(bass_chord_type);
+  word4.alter_1_type = 1;
+  word4.alter_1_degree = 3;
+  word4.alter_2_type = 2;
+  word4.alter_2_degree = 4;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, flex_chord(group, addrs, channel, chord)).Times(1);
+
+  midi2::umpProcessor p{callbacks_proxy{callbacks}};
+  p.processUMP(std::bit_cast<std::uint32_t>(word1));
+  p.processUMP(std::bit_cast<std::uint32_t>(word2));
+  p.processUMP(std::bit_cast<std::uint32_t>(word3));
+  p.processUMP(std::bit_cast<std::uint32_t>(word4));
+}
+
+void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
+  using namespace std::placeholders;
+  midi2::umpProcessor p;
+  std::for_each(std::begin(in), std::end(in),
+                std::bind(&decltype(p)::processUMP, &p, _1));
+}
+
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, UMPProcessorNeverCrashes);
+#endif
+TEST(UMPProcessor, Empty) {
+  UMPProcessorNeverCrashes({});
+}
+
+void FourWordDataMessage(std::array<std::uint32_t, 4> message) {
+  // Set the message type to "data".
+  message[0] =
+      (message[0] & 0x00FFFFFF) |
+      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28);
+  using namespace std::placeholders;
+  midi2::umpProcessor p;
+  std::for_each(std::begin(message), std::end(message),
+                std::bind(&decltype(p)::processUMP, &p, _1));
+}
+
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, FourWordDataMessage);
+#endif
+TEST(UMPProcessor, FourWordDataMessage) {
+  FourWordDataMessage({});
 }
 
 }  // end anonymous namespace
