@@ -219,21 +219,68 @@ private:
 
 template <typename T> callbacks_proxy(T&) -> callbacks_proxy<T>;
 
-class MockCallbacks : public midi2::callbacks_base {
+class MockCallbacks final : public midi2::callbacks_base {
 public:
   MOCK_METHOD(void, utility_message, (midi2::umpGeneric const&), (override));
   MOCK_METHOD(void, channel_voice_message, (midi2::umpCVM const&), (override));
   MOCK_METHOD(void, system_message, (midi2::umpGeneric const&), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::umpData const&), (override));
 
+  MOCK_METHOD(void, flex_tempo, (std::uint8_t group, std::uint32_t num10nsPQN),
+              (override));
+  MOCK_METHOD(void, flex_time_sig,
+              (std::uint8_t group, std::uint8_t numerator,
+               std::uint8_t denominator, std::uint8_t num32Notes),
+              (override));
+  MOCK_METHOD(void, flex_metronome,
+              (std::uint8_t group, std::uint8_t numClkpPriCli,
+               std::uint8_t bAccP1, std::uint8_t bAccP2, std::uint8_t bAccP3,
+               std::uint8_t numSubDivCli1, std::uint8_t numSubDivCli2),
+              (override));
+  MOCK_METHOD(void, flex_key_sig,
+              (std::uint8_t group, std::uint8_t addrs, std::uint8_t channel,
+               std::uint8_t sharpFlats, std::uint8_t tonic),
+              (override));
   MOCK_METHOD(void, flex_chord,
               (std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&),
               (override));
+  MOCK_METHOD(void, flex_performance,
+              (midi2::umpData const& mess, std::uint8_t addrs,
+               std::uint8_t channel),
+              (override));
+  MOCK_METHOD(void, flex_lyric,
+              (midi2::umpData const& mess, std::uint8_t addrs,
+               std::uint8_t channel),
+              (override));
 
+  MOCK_METHOD(void, midiEndpoint, (std::uint8_t, std::uint8_t, std::uint8_t),
+              (override));
+  MOCK_METHOD(void, midiEndpointName, (midi2::umpData const&), (override));
+  MOCK_METHOD(void, midiEndpointProdId, (midi2::umpData const&), (override));
+  MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool),
+              (override));
+  MOCK_METHOD(void, midiEndpointInfo,
+              (std::uint8_t, std::uint8_t, std::uint8_t, bool, bool, bool,
+               bool),
+              (override));
+  MOCK_METHOD(void, midiEndpointDeviceInfo,
+              ((std::array<std::uint8_t, 3> const&),
+               (std::array<std::uint8_t, 2> const&),
+               (std::array<std::uint8_t, 2> const&),
+               (std::array<std::uint8_t, 4> const&)),
+              (override));
+  MOCK_METHOD(void, midiEndpointJRProtocolNotify,
+              (std::uint8_t protocol, bool jrrx, bool jrtx), (override));
+
+  MOCK_METHOD(void, functionBlock, (std::uint8_t fbIdx, std::uint8_t filter),
+              (override));
   MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
               (override));
   MOCK_METHOD(void, functionBlockName, (midi2::umpData const&, std::uint8_t),
               (override));
+
+  MOCK_METHOD(void, startOfSeq, (), (override));
+  MOCK_METHOD(void, endOfFile, (), (override));
 
   MOCK_METHOD(void, unknownUMPMessage, (std::span<std::uint32_t>), (override));
 };
