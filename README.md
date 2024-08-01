@@ -7,6 +7,7 @@ translations needed for most MIDI 2.0 Devices and Applications
 
 [![CI Build & Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib/graph/badge.svg?token=8q2aEvPTyv)](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=paulhuggett_AM_MIDI2.0Lib&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=paulhuggett_AM_MIDI2.0Lib)
 
 ## IMPORTANT! Please read first
 I hope that this library is useful to everyone making MIDI 2.0 Devices.
