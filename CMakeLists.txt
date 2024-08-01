@@ -28,14 +28,12 @@ set(LIBMIDI2_HEADERS
 )
 
 add_library(libmidi2 ${LIBMIDI2_HEADERS}
-  src/utils.cpp
   src/bytestreamToUMP.cpp
   src/umpToBytestream.cpp
   src/umpToMIDI1Protocol.cpp
   src/umpMessageCreate.cpp
   src/midiCIMessageCreate.cpp
   src/midiCIProcessor.cpp
-  src/umpProcessor.cpp
 )
 setup_target(libmidi2)
 
