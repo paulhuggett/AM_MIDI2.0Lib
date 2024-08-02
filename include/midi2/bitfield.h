@@ -55,6 +55,15 @@ public:
   constexpr small_type value() const noexcept {
     return (value_ >> Index) & mask_;
   }
+
+  /// Returns the value stored in the bitfield as a signed quantity.
+  constexpr std::make_signed_t<small_type> signed_value() const noexcept {
+    // Taken from Bit Twiddling Hacks by Sean Eron Anderson:
+    // https://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
+    constexpr auto m = value_type{1} << (Bits - 1U);
+    return static_cast<std::make_signed_t<small_type>>((this->value() ^ m) - m);
+  }
+
   /// Obtains the value of the bitfield.
   constexpr operator small_type() const noexcept { return this->value(); }
 

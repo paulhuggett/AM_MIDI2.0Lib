@@ -562,13 +562,13 @@ TEST(UMPProcessor, SetChordName) {
   constexpr auto addrs = std::uint8_t{0x3};
   constexpr auto channel = std::uint8_t{3};
 
-  constexpr auto chord_tonic = midi2::note::E;
-  constexpr auto chord_type = midi2::chord_type::augmented;
-  constexpr auto bass_note = midi2::note::unknown;
-  constexpr auto bass_chord_type = midi2::chord_type::diminished;
+  constexpr auto chord_tonic = midi2::chord::note::E;
+  constexpr auto chord_type = midi2::chord::chord_type::augmented;
+  constexpr auto bass_note = midi2::chord::note::unknown;
+  constexpr auto bass_chord_type = midi2::chord::chord_type::diminished;
 
   midi2::chord chord{};
-  chord.chShrpFlt = 0x1;  // Sharp
+  chord.chShrpFlt = midi2::chord::sharps_flats::sharp;
   chord.chTonic = chord_tonic;
   chord.chType = chord_type;
   chord.chAlt1 = midi2::chord::alteration{1, 5};

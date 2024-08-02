@@ -74,52 +74,62 @@ struct umpData {
   std::span<std::uint8_t> data;
 };
 
-enum class note : std::uint8_t {
-  unknown = 0x0,
-  A = 0x1,
-  B = 0x2,
-  C = 0x3,
-  D = 0x4,
-  E = 0x5,
-  F = 0x6,
-  G = 0x7,
-};
-
-enum class chord_type : std::uint8_t {
-  no_chord = 0x00,
-  major = 0x01,
-  major_6th = 0x02,
-  major_7th = 0x03,
-  major_9th = 0x04,
-  major_11th = 0x05,
-  major_13th = 0x06,
-  minor = 0x07,
-  minor_6th = 0x08,
-  minor_7th = 0x09,
-  minor_9th = 0x0A,
-  minor_11th = 0x0B,
-  minor_13th = 0x0C,
-  dominant = 0x0D,
-  dominant_ninth = 0x0E,
-  dominant_11th = 0x0F,
-  dominant_13th = 0x10,
-  augmented = 0x11,
-  augmented_seventh = 0x12,
-  diminished = 0x13,
-  diminished_seventh = 0x14,
-  half_diminished = 0x15,
-  major_minor = 0x16,
-  pedal = 0x17,
-  power = 0x18,
-  suspended_2nd = 0x19,
-  suspended_4th = 0x1A,
-  seven_suspended_4th = 0x1B,
-};
-
-// (note that these are mostly four bit fields. The type fields are the
-// exception. )
 struct chord {
   bool operator==(chord const&) const = default;
+
+  enum class sharps_flats : std::int8_t {
+    double_sharp = 2,
+    sharp = 1,
+    natural = 0,
+    flat = -1,
+    double_flat = -2,
+    /// Indicates that the bass note is the same as the chord tonic note; the
+    /// bass note field is set to note::unknown. Valid only for the bass
+    /// sharps/flats field.
+    chord_tonic = -8,
+  };
+
+  enum class note : std::uint8_t {
+    unknown = 0x0,
+    A = 0x1,
+    B = 0x2,
+    C = 0x3,
+    D = 0x4,
+    E = 0x5,
+    F = 0x6,
+    G = 0x7,
+  };
+
+  enum class chord_type : std::uint8_t {
+    no_chord = 0x00,
+    major = 0x01,
+    major_6th = 0x02,
+    major_7th = 0x03,
+    major_9th = 0x04,
+    major_11th = 0x05,
+    major_13th = 0x06,
+    minor = 0x07,
+    minor_6th = 0x08,
+    minor_7th = 0x09,
+    minor_9th = 0x0A,
+    minor_11th = 0x0B,
+    minor_13th = 0x0C,
+    dominant = 0x0D,
+    dominant_ninth = 0x0E,
+    dominant_11th = 0x0F,
+    dominant_13th = 0x10,
+    augmented = 0x11,
+    augmented_seventh = 0x12,
+    diminished = 0x13,
+    diminished_seventh = 0x14,
+    half_diminished = 0x15,
+    major_minor = 0x16,
+    pedal = 0x17,
+    power = 0x18,
+    suspended_2nd = 0x19,
+    suspended_4th = 0x1A,
+    seven_suspended_4th = 0x1B,
+  };
 
   struct alteration {
     bool operator==(alteration const&) const = default;
@@ -127,7 +137,7 @@ struct chord {
     uint8_t degree : 4;
   };
 
-  std::uint8_t chShrpFlt;
+  sharps_flats chShrpFlt;
   note chTonic;
   chord_type chType;
   alteration chAlt1;
@@ -740,18 +750,22 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   auto const w4 = std::bit_cast<types::set_chord_name_w4>(message_[3]);
 
   auto const valid_note = [](std::uint8_t n) {
-    return n <= static_cast<std::uint8_t>(note::G) ? static_cast<note>(n)
-                                                   : note::unknown;
+    return n <= static_cast<std::uint8_t>(chord::note::G)
+               ? static_cast<chord::note>(n)
+               : chord::note::unknown;
   };
 
   auto const valid_chord_type = [](std::uint8_t ct) {
-    return ct <= static_cast<std::uint8_t>(chord_type::seven_suspended_4th)
-               ? static_cast<chord_type>(ct)
-               : chord_type::no_chord;
+    return ct <= static_cast<std::uint8_t>(
+                     chord::chord_type::seven_suspended_4th)
+               ? static_cast<chord::chord_type>(ct)
+               : chord::chord_type::no_chord;
   };
 
   chord c;
-  c.chShrpFlt = w2.tonic_sharps_flats;
+  // TODO(pbh): validate the ShrpFlt fields.
+  c.chShrpFlt =
+      static_cast<chord::sharps_flats>(w2.tonic_sharps_flats.signed_value());
   c.chTonic = valid_note(w2.chord_tonic);
   c.chType = valid_chord_type(w2.chord_type);
   c.chAlt1.type = w2.alter_1_type;

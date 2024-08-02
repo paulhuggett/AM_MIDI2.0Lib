@@ -13,12 +13,12 @@ namespace {
 
 using testing::Types;
 
-template <typename T> class BitFieldAssignment : public testing::Test {};
+template <typename T> class BitfieldAssignment : public testing::Test {};
 
 template <typename Type, unsigned Index, unsigned Bits> struct param {
   using value_type = Type;
-  using index = std::integral_constant<Type, Index>;
-  using bits = std::integral_constant<Type, Bits>;
+  using index = std::integral_constant<unsigned, Index>;
+  using bits = std::integral_constant<unsigned, Bits>;
 };
 
 using assign_test_types =
@@ -42,12 +42,20 @@ using assign_test_types =
           param<std::uint32_t, 0, 31>, param<std::uint32_t, 0, 32>,
           param<std::uint64_t, 0, 63>, param<std::uint64_t, 0, 64>>;
 
-TYPED_TEST_SUITE(BitFieldAssignment, assign_test_types, );
+TYPED_TEST_SUITE(BitfieldAssignment, assign_test_types, );
 
-TYPED_TEST(BitFieldAssignment, Assignment) {
+TYPED_TEST(BitfieldAssignment, Signed) {
+  using bf = bitfield<typename TypeParam::value_type, TypeParam::index::value,
+                      TypeParam::bits::value>;
+  bf f1{};
+  f1 = bf::max();
+  EXPECT_EQ(f1.signed_value(), -1);
+}
+
+TYPED_TEST(BitfieldAssignment, Assignment) {
   using value_type = typename TypeParam::value_type;
-  constexpr value_type index = typename TypeParam::index();
-  constexpr value_type bits = typename TypeParam::bits();
+  constexpr auto index = typename TypeParam::index();
+  constexpr auto bits = typename TypeParam::bits();
 
   using bf = bitfield<value_type, index, bits>;
   union {
@@ -75,7 +83,7 @@ TYPED_TEST(BitFieldAssignment, Assignment) {
             std::numeric_limits<value_type>::max());
 }
 
-TEST(BitField, IsolationFromOtherBitfields) {
+TEST(Bitfield, IsolationFromOtherBitfields) {
   using bf1 = bitfield<std::uint8_t, 0, 2>;
   using bf2 = bitfield<std::uint8_t, 2, 6>;
   union {
@@ -97,7 +105,7 @@ TEST(BitField, IsolationFromOtherBitfields) {
   EXPECT_EQ(std::bit_cast<std::uint8_t>(f2), 0xFC);
 }
 
-TEST(BitField, Max) {
+TEST(Bitfield, Max) {
   EXPECT_EQ((bitfield<std::uint8_t, 0, 1>::max()), 1U);
   EXPECT_EQ((bitfield<std::uint16_t, 0, 1>::max()), 1U);
   EXPECT_EQ((bitfield<std::uint32_t, 0, 1>::max()), 1U);
