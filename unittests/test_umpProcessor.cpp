@@ -575,7 +575,7 @@ TEST(UMPProcessor, SetChordName) {
   chord.chAlt2 = midi2::chord::alteration{2, 6};
   chord.chAlt3 = midi2::chord::alteration{3, 7};
   chord.chAlt4 = midi2::chord::alteration{4, 8};
-  chord.baShrpFlt = 0xE;  // Double Flat
+  chord.baShrpFlt = midi2::chord::sharps_flats::double_flat;  // Double Flat
   chord.baTonic = bass_note;
   chord.baType = bass_chord_type;
   chord.baAlt1 = midi2::chord::alteration{1, 3};

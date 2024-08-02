@@ -144,7 +144,7 @@ struct chord {
   alteration chAlt2;
   alteration chAlt3;
   alteration chAlt4;
-  std::uint8_t baShrpFlt;
+  sharps_flats baShrpFlt;
   note baTonic;
   chord_type baType;
   alteration baAlt1;
@@ -776,7 +776,8 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   c.chAlt3.degree = w3.alter_3_degree;
   c.chAlt4.type = w3.alter_4_type;
   c.chAlt4.degree = w3.alter_4_degree;
-  c.baShrpFlt = w4.bass_sharps_flats;
+  c.baShrpFlt =
+      static_cast<chord::sharps_flats>(w4.bass_sharps_flats.signed_value());
   c.baTonic = valid_note(w4.bass_note);
   c.baType = valid_chord_type(w4.bass_chord_type);
   c.baAlt1.type = w4.alter_1_type;
