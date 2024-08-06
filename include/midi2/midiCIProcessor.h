@@ -64,50 +64,50 @@ class ci_callbacks {
 public:
   virtual ~ci_callbacks () = default;
 
-  virtual bool checkMUIDFn(std::uint8_t group, uint32_t muid) {}
-  virtual void recvDiscoveryRequestFn(MIDICI ciDetails, std::array<std::uint8_t, 3> manuId, std::array<std::uint8_t, 2> familyId, std::array<std::uint8_t, 2> modelId, std::array<std::uint8_t, 4> version, std::uint8_t ciSupport, std::uint16_t maxSysex, std::uint8_t outputPathId) { }
-  virtual void recvDiscoveryReplyFn(MIDICI ciDetails, std::array<std::uint8_t, 3> manuId, std::array<std::uint8_t, 2> familyId, std::array<std::uint8_t, 2> modelId, std::array<std::uint8_t, 4> version, std::uint8_t ciSupport, std::uint16_t maxSysex, std::uint8_t outputPathId, std::uint8_t fbIdx) {}
-  virtual void recvEndPointInfoFn(MIDICI ciDetails, std::uint8_t status) {}
-  virtual void recvEndPointInfoReplyFn(MIDICI ciDetails, std::uint8_t status, std::uint16_t infoLength, std::uint8_t* infoData) {}
-  virtual void recvNAKFn(MIDICI ciDetails, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData, std::uint8_t* ackNakDetails, std::uint16_t messageLength, std::uint8_t* ackNakMessage) {}
-  virtual void recvACKFn(MIDICI ciDetails, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData, std::uint8_t* ackNakDetails, std::uint16_t messageLength, std::uint8_t* ackNakMessage) {}
-  virtual void recvInvalidateMUIDFn(MIDICI ciDetails, uint32_t terminateMuid) {}
-  virtual void recvUnknownMIDICIFn(MIDICI ciDetails, std::uint8_t s7Byte) {}
+  virtual bool checkMUIDFn(std::uint8_t /*group*/, uint32_t /*muid*/) { return false; }
+  virtual void recvDiscoveryRequestFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 3> /*manuId*/, std::array<std::uint8_t, 2> /*familyId*/, std::array<std::uint8_t, 2> /*modelId*/, std::array<std::uint8_t, 4> /*version*/, std::uint8_t /*ciSupport*/, std::uint16_t /*maxSysex*/, std::uint8_t /*outputPathId*/) { }
+  virtual void recvDiscoveryReplyFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 3> /*manuId*/, std::array<std::uint8_t, 2> /*familyId*/, std::array<std::uint8_t, 2> /*modelId*/, std::array<std::uint8_t, 4> /*version*/, std::uint8_t /*ciSupport*/, std::uint16_t /*maxSysex*/, std::uint8_t /*outputPathId*/, std::uint8_t /*fbIdx*/) {}
+  virtual void recvEndPointInfoFn(MIDICI /*ciDetails*/, std::uint8_t /*status*/) {}
+  virtual void recvEndPointInfoReplyFn(MIDICI /*ciDetails*/, std::uint8_t /*status*/, std::uint16_t /*infoLength*/, std::uint8_t* /*infoData*/) {}
+  virtual void recvNAKFn(MIDICI /*ciDetails*/, std::uint8_t /*origSubID*/, std::uint8_t /*statusCode*/, std::uint8_t /*statusData*/, std::uint8_t* /*ackNakDetails*/, std::uint16_t /*messageLength*/, std::uint8_t* /*ackNakMessage*/) {}
+  virtual void recvACKFn(MIDICI /*ciDetails*/, std::uint8_t /*origSubID*/, std::uint8_t /*statusCode*/, std::uint8_t /*statusData*/, std::uint8_t* /*ackNakDetails*/, std::uint16_t /*messageLength*/, std::uint8_t* /*ackNakMessage*/) {}
+  virtual void recvInvalidateMUIDFn(MIDICI /*ciDetails*/, uint32_t /*terminateMuid*/) {}
+  virtual void recvUnknownMIDICIFn(MIDICI /*ciDetails*/, std::uint8_t /*s7Byte*/) {}
 
   // Protocol Negotiation
-  virtual void recvProtocolAvailableFn(MIDICI ciDetails, std::uint8_t authorityLevel, std::uint8_t* protocol) {}
-  virtual void recvSetProtocolFn(MIDICI ciDetails, std::uint8_t authorityLevel, std::uint8_t* protocol) {}
-  virtual void recvSetProtocolConfirmFn(MIDICI ciDetails, std::uint8_t authorityLevel) {}
-  virtual void recvProtocolTestFn(MIDICI ciDetails, std::uint8_t authorityLevel, bool testDataAccurate) {}
+  virtual void recvProtocolAvailableFn(MIDICI /*ciDetails*/, std::uint8_t /*authorityLevel*/, std::uint8_t* /*protocol*/) {}
+  virtual void recvSetProtocolFn(MIDICI /*ciDetails*/, std::uint8_t /*authorityLevel*/, std::uint8_t* /*protocol*/) {}
+  virtual void recvSetProtocolConfirmFn(MIDICI /*ciDetails*/, std::uint8_t /*authorityLevel*/) {}
+  virtual void recvProtocolTestFn(MIDICI /*ciDetails*/, std::uint8_t /*authorityLevel*/, bool /*testDataAccurate*/) {}
 
   // Profiles
-  virtual void recvProfileInquiryFn(MIDICI ciDetails) {}
-  virtual void recvSetProfileEnabledFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint8_t numberOfChannels) {}
-  virtual void recvSetProfileRemovedFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile) {}
-  virtual void recvSetProfileDisabledFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint8_t numberOfChannels) {}
-  virtual void recvSetProfileOnFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint8_t numberOfChannels) {}
-  virtual void recvSetProfileOffFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile) {}
-  virtual void recvProfileSpecificDataFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint16_t datalen, std::uint8_t* data, std::uint16_t part, bool lastByteOfSet) {}
-  virtual void recvSetProfileDetailsInquiryFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint8_t InquiryTarget) {}
-  virtual void recvSetProfileDetailsReplyFn(MIDICI ciDetails, std::array<std::uint8_t, 5> profile, std::uint8_t InquiryTarget, std::uint16_t datalen, std::uint8_t* data) {}
+  virtual void recvProfileInquiryFn(MIDICI /*ciDetails*/) {}
+  virtual void recvSetProfileEnabledFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint8_t /*numberOfChannels*/) {}
+  virtual void recvSetProfileRemovedFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/) {}
+  virtual void recvSetProfileDisabledFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint8_t /*numberOfChannels*/) {}
+  virtual void recvSetProfileOnFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint8_t /*numberOfChannels*/) {}
+  virtual void recvSetProfileOffFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/) {}
+  virtual void recvProfileSpecificDataFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint16_t /*datalen*/, std::uint8_t* /*data*/, std::uint16_t /*part*/, bool /*lastByteOfSet*/) {}
+  virtual void recvSetProfileDetailsInquiryFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint8_t /*InquiryTarget*/) {}
+  virtual void recvSetProfileDetailsReplyFn(MIDICI /*ciDetails*/, std::array<std::uint8_t, 5> /*profile*/, std::uint8_t /*InquiryTarget*/, std::uint16_t /*datalen*/, std::uint8_t* /*data*/) {}
 
   // Property Exchange
-  virtual void recvPECapabilitiesFn(MIDICI ciDetails, std::uint8_t numSimulRequests, std::uint8_t majVer, std::uint8_t minVer) {}
-  virtual void recvPECapabilitiesRepliesFn(MIDICI ciDetails, std::uint8_t numSimulRequests, std::uint8_t majVer, std::uint8_t minVer) {}
-  virtual void recvPEGetInquiryFn(MIDICI ciDetails, std::string requestDetails) {}
-  virtual void recvPESetReplyFn(MIDICI ciDetails, std::string requestDetails) {}
-  virtual void recvPESubReplyFn(MIDICI ciDetails, std::string requestDetails) {}
-  virtual void recvPENotifyFn(MIDICI ciDetails, std::string requestDetails) {}
-  virtual void recvPEGetReplyFn(MIDICI ciDetails, std::string requestDetails, std::uint16_t bodyLen, std::uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet) {}
-  virtual void recvPESetInquiryFn(MIDICI ciDetails, std::string requestDetails, std::uint16_t bodyLen, std::uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet) {}
-  virtual void recvPESubInquiryFn(MIDICI ciDetails, std::string requestDetails, std::uint16_t bodyLen, std::uint8_t* body, bool lastByteOfChunk, bool lastByteOfSet) {}
+  virtual void recvPECapabilitiesFn(MIDICI /*ciDetails*/, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/, std::uint8_t /*minVer*/) {}
+  virtual void recvPECapabilitiesRepliesFn(MIDICI /*ciDetails*/, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/, std::uint8_t /*minVer*/) {}
+  virtual void recvPEGetInquiryFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/) {}
+  virtual void recvPESetReplyFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/) {}
+  virtual void recvPESubReplyFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/) {}
+  virtual void recvPENotifyFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/) {}
+  virtual void recvPEGetReplyFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/, std::uint16_t /*bodyLen*/, std::uint8_t* /*body*/, bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
+  virtual void recvPESetInquiryFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/, std::uint16_t /*bodyLen*/, std::uint8_t* /*body*/, bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
+  virtual void recvPESubInquiryFn(MIDICI /*ciDetails*/, std::string /*requestDetails*/, std::uint16_t /*bodyLen*/, std::uint8_t* /*body*/, bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
 
   // Process Inquiry
-  virtual void recvPICapabilitiesFn(MIDICI ciDetails) {}
-  virtual void recvPICapabilitiesReplyFn(MIDICI ciDetails, std::uint8_t supportedFeatures) {}
-  virtual void recvPIMMReportFn(MIDICI ciDetails, std::uint8_t MDC, std::uint8_t systemBitmap, std::uint8_t chanContBitmap, std::uint8_t chanNoteBitmap) {}
-  virtual void recvPIMMReportReplyFn(MIDICI ciDetails, std::uint8_t systemBitmap, std::uint8_t chanContBitmap, std::uint8_t chanNoteBitmap) {}
-  virtual void recvPIMMReportEndFn(MIDICI ciDetails) {}
+  virtual void recvPICapabilitiesFn(MIDICI /*ciDetails*/) {}
+  virtual void recvPICapabilitiesReplyFn(MIDICI /*ciDetails*/, std::uint8_t /*supportedFeatures*/) {}
+  virtual void recvPIMMReportFn(MIDICI /*ciDetails*/, std::uint8_t /*MDC*/, std::uint8_t /*systemBitmap*/, std::uint8_t /*chanContBitmap*/, std::uint8_t /*chanNoteBitmap*/) {}
+  virtual void recvPIMMReportReplyFn(MIDICI /*ciDetails*/, std::uint8_t /*systemBitmap*/, std::uint8_t /*chanContBitmap*/, std::uint8_t /*chanNoteBitmap*/) {}
+  virtual void recvPIMMReportEndFn(MIDICI /*ciDetails*/) {}
 };
 
 template <typename Callbacks = ci_callbacks>
