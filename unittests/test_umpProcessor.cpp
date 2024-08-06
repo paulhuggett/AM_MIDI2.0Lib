@@ -626,37 +626,165 @@ TEST(UMPProcessor, SetChordName) {
 }
 
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
-  using namespace std::placeholders;
   midi2::umpProcessor p;
   std::for_each(std::begin(in), std::end(in),
-                std::bind(&decltype(p)::processUMP, &p, _1));
+                std::bind_front(&decltype(p)::processUMP, &p));
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
 FUZZ_TEST(UMPProcessor, UMPProcessorNeverCrashes);
 #endif
+// NOLINTNEXTLINE
 TEST(UMPProcessor, Empty) {
   UMPProcessorNeverCrashes({});
 }
 
-void FourWordDataMessage(std::array<std::uint32_t, 4> message) {
-  // Set the message type to "data".
-  message[0] =
-      (message[0] & 0x00FFFFFF) |
-      (static_cast<std::uint32_t>(midi2::ump_message_type::data) << 28);
-  using namespace std::placeholders;
-  midi2::umpProcessor p;
-  std::for_each(std::begin(message), std::end(message),
-                std::bind(&decltype(p)::processUMP, &p, _1));
+// See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
+//    Table 4 Message Type (MT) Allocation
+template <midi2::ump_message_type> struct message_size {};
+template <>
+struct message_size<midi2::ump_message_type::utility>
+    : std::integral_constant<unsigned, 1> {};
+template <>
+struct message_size<midi2::ump_message_type::system>
+    : std::integral_constant<unsigned, 1> {};
+template <>
+struct message_size<midi2::ump_message_type::m1cvm>
+    : std::integral_constant<unsigned, 1> {};
+template <>
+struct message_size<midi2::ump_message_type::sysex7>
+    : std::integral_constant<unsigned, 2> {};
+template <>
+struct message_size<midi2::ump_message_type::m2cvm>
+    : std::integral_constant<unsigned, 2> {};
+template <>
+struct message_size<midi2::ump_message_type::data>
+    : std::integral_constant<unsigned, 4> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved32_06>
+    : std::integral_constant<unsigned, 1> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved32_07>
+    : std::integral_constant<unsigned, 1> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved64_08>
+    : std::integral_constant<unsigned, 2> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved64_09>
+    : std::integral_constant<unsigned, 2> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved64_0A>
+    : std::integral_constant<unsigned, 2> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved96_0B>
+    : std::integral_constant<unsigned, 3> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved96_0C>
+    : std::integral_constant<unsigned, 3> {};
+template <>
+struct message_size<midi2::ump_message_type::flex_data>
+    : std::integral_constant<unsigned, 4> {};
+template <>
+struct message_size<midi2::ump_message_type::reserved128_0E>
+    : std::integral_constant<unsigned, 4> {};
+template <>
+struct message_size<midi2::ump_message_type::midi_endpoint>
+    : std::integral_constant<unsigned, 4> {};
+
+template <midi2::ump_message_type MessageType>
+void process_message(std::span<std::uint32_t> message) {
+  if (message.size() == message_size<MessageType>::value) {
+    message[0] = (message[0] & 0x00FFFFFF) |
+                 (static_cast<std::uint32_t>(MessageType) << 24);
+    midi2::umpProcessor p;
+    std::for_each(std::begin(message), std::end(message),
+                  std::bind_front(&decltype(p)::processUMP, &p));
+  }
 }
 
+void utility(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::utility>(
+      {std::begin(message), std::end(message)});
+}
+void system(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::system>(
+      {std::begin(message), std::end(message)});
+}
+void m1cvm(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::m1cvm>(
+      {std::begin(message), std::end(message)});
+}
+void sysex7(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::sysex7>(
+      {std::begin(message), std::end(message)});
+}
+void m2cvm(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::m2cvm>(
+      {std::begin(message), std::end(message)});
+}
+void data(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::data>(
+      {std::begin(message), std::end(message)});
+}
+void flex_data(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::flex_data>(
+      {std::begin(message), std::end(message)});
+}
+void midi_endpoint(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::midi_endpoint>(
+      {std::begin(message), std::end(message)});
+}
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessor, FourWordDataMessage);
+FUZZ_TEST(UMPProcessor, utility);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, system);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, m1cvm);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, sysex7);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, m2cvm);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, data);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, flex_data);
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPProcessor, midi_endpoint);
 #endif
-TEST(UMPProcessor, FourWordDataMessage) {
-  FourWordDataMessage({});
+
+// NOLINTNEXTLINE
+TEST(UMPProcessor, UtilityMessage) {
+  utility({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, SystemMessage) {
+  system({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, M1CVMMessage) {
+  m1cvm({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, Sysex7Message) {
+  sysex7({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, M2CVMMessage) {
+  m2cvm({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, DataaMessage) {
+  data({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, FlexDataMessage) {
+  flex_data({});
+}
+// NOLINTNEXTLINE
+TEST(UMPProcessor, MidiEndpointaMessage) {
+  midi_endpoint({});
 }
 
 }  // end anonymous namespace
