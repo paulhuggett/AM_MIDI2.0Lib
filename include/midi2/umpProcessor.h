@@ -300,8 +300,7 @@ public:
 
 template <backend Callbacks = callbacks_base> class umpProcessor {
 public:
-  explicit umpProcessor(Callbacks cb = Callbacks{})
-      : callbacks_{std::move(cb)} {}
+  explicit umpProcessor(Callbacks cb = Callbacks{}) : callbacks_{cb} {}
 
   void clearUMP();
   void processUMP(uint32_t UMP);
@@ -343,7 +342,9 @@ private:
 };
 
 umpProcessor() -> umpProcessor<callbacks_base>;
-template <typename T> umpProcessor(T) -> umpProcessor<T>;
+template <backend T> umpProcessor(T) -> umpProcessor<T>;
+template <backend T>
+umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
 
 template <backend Callbacks> void umpProcessor<Callbacks>::clearUMP() {
   pos_ = 0;
