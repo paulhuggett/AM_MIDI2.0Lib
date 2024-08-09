@@ -47,6 +47,7 @@ function (setup_target target)
     -Wno-covered-switch-default
     -Wno-ctad-maybe-unsupported
     -Wno-documentation-unknown-command
+    -Wno-packed
     -Wno-padded
     -Wno-weak-vtables
   )

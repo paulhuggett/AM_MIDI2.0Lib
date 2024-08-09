@@ -180,9 +180,8 @@ uint16_t CIMessage::sendDiscoveryReply(
     std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
     std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version,
     uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId, uint8_t fbIdx) {
-  return sendDiscovery(sysex, midiCIVer, MIDICI_DISCOVERYREPLY, srcMUID,
-                       destMUID, manuId, familyId, modelId, version, ciSupport,
-                       sysExMax, outputPathId, fbIdx);
+  return sendDiscovery(sysex, midiCIVer, MIDICI_DISCOVERY_REPLY, srcMUID, destMUID, manuId, familyId, modelId, version,
+                       ciSupport, sysExMax, outputPathId, fbIdx);
 }
 
 uint16_t CIMessage::sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer,

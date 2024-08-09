@@ -16,6 +16,7 @@ set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/bitfield.h"
   "${INCLUDE_DIR}/midi2/bytestreamToUMP.h"
+  "${INCLUDE_DIR}/midi2/ci_types.h"
   "${INCLUDE_DIR}/midi2/fifo.h"
   "${INCLUDE_DIR}/midi2/mcoded7.h"
   "${INCLUDE_DIR}/midi2/midiCIMessageCreate.h"
