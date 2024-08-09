@@ -174,16 +174,30 @@ public:
   virtual bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
 
   virtual void discovery(MIDICI const &, ci::discovery_current const &) { /* do nothing */ }
-  virtual void discovery_reply(MIDICI const &, ci::discovery_reply_current const &) {}
-  virtual void end_point_info(MIDICI const &, std::byte /*status*/) {}
-  virtual void end_point_info_reply(MIDICI const &, std::uint8_t /*status*/, std::uint16_t /*infoLength*/,
-                                    std::span<std::byte> /*infoData*/) {}
-  virtual void nak(MIDICI const &, std::uint8_t /*origSubID*/, std::uint8_t /*statusCode*/, std::uint8_t /*statusData*/,
-                   std::span<std::byte, 5> /*ackNakDetails*/, std::uint16_t /*messageLength*/,
-                   std::span<std::byte> /*ackNakMessage*/) {}
+  virtual void discovery_reply(MIDICI const &, ci::discovery_reply_current const &) { /* do nothing */ }
+  virtual void end_point_info(MIDICI const &, std::byte status) { (void)status; /* do nothing*/ }
+  virtual void end_point_info_reply(MIDICI const &, std::uint8_t status, std::uint16_t infoLength,
+                                    std::span<std::byte> infoData) {
+    (void)status;
+    (void)infoLength;
+    (void)infoData; /* do nothing */
+  }
+  virtual void nak(MIDICI const &, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData,
+                   std::span<std::byte, 5> ackNakDetails, std::uint16_t messageLength,
+                   std::span<std::byte> ackNakMessage) {
+    (void)origSubID;
+    (void)statusCode;
+    (void)statusData;
+    (void)ackNakDetails;
+    (void)messageLength;
+    (void)ackNakMessage;
+    /* do nothing */
+  }
   virtual void ack(MIDICI const &, std::uint8_t /*origSubID*/, std::uint8_t /*statusCode*/, std::uint8_t /*statusData*/,
                    std::span<std::byte, 5> /*ackNakDetails*/, std::uint16_t /*messageLength*/,
-                   std::span<std::byte> /*ackNakMessage*/) {}
+                   std::span<std::byte> /*ackNakMessage*/) {
+    /* do nothing */
+  }
   virtual void invalidate_muid(MIDICI const &, uint32_t muid) { (void)muid; }
 
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
@@ -198,17 +212,21 @@ public:
     (void)protocol;
   }
   virtual void recvSetProtocolConfirm(MIDICI const &, std::uint8_t /*authorityLevel*/) {}
-  virtual void recvProtocolTest(MIDICI const &, std::uint8_t /*authorityLevel*/, bool /*testDataAccurate*/) {}
+  virtual void recvProtocolTest(MIDICI const &, std::uint8_t /*authorityLevel*/,
+                                bool /*testDataAccurate*/) { /* do nothing */ }
 
   // Profiles
-  virtual void recvProfileInquiry(MIDICI const &) {}
-  virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/, std::uint8_t /*number_of_channels*/) {}
+  virtual void recvProfileInquiry(MIDICI const &) { /* do nothing */ }
+  virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
+                                     std::uint8_t /*number_of_channels*/) { /* do nothing */ }
   virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) {}
-  virtual void recvSetProfileDisabled(MIDICI const &, profile_span /*profile*/, std::uint8_t /*number_of_channels*/) {}
-  virtual void recvSetProfileOn(MIDICI const &, profile_span /*profile*/, std::uint8_t /*number_of_channels*/) {}
-  virtual void recvSetProfileOff(MIDICI const &, profile_span /*profile*/) {}
+  virtual void recvSetProfileDisabled(MIDICI const &, profile_span /*profile*/,
+                                      std::uint8_t /*number_of_channels*/) { /* do nothing*/ }
+  virtual void recvSetProfileOn(MIDICI const &, profile_span /*profile*/,
+                                std::uint8_t /*number_of_channels*/) { /* do nothing */ }
+  virtual void recvSetProfileOff(MIDICI const &, profile_span /*profile*/) { /* do nothing*/ }
   virtual void profile_specific_data(MIDICI const &, profile_span /*profile*/, std::span<std::byte> /*data*/,
-                                     std::uint16_t /*part*/, bool /*lastByteOfSet*/) {}
+                                     std::uint16_t /*part*/, bool /*lastByteOfSet*/) { /* do nothing*/ }
   virtual void set_profile_details_inquiry(MIDICI const &, profile_span /*profile*/, std::byte /*target*/) {}
   virtual void set_profile_details_reply(MIDICI const &, profile_span /*profile*/, std::byte /*target*/,
                                          std::span<std::byte> /*data*/) {}
