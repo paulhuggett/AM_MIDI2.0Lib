@@ -114,20 +114,6 @@ jobs:
             os: ubuntu-22.04
             package: TGZ
 
-          # Windows builds
-          # ~~~~~~~~~~~~~~
-          - name: Windows-latest/VS2022/Debug
-            build_type: Debug
-            generator: Visual Studio 17 2022
-            os: windows-latest
-            package: ZIP
-
-          - name: Windows-latest/VS2022/Release
-            build_type: Release
-            generator: Visual Studio 17 2022
-            os: windows-latest
-            package: ZIP
-
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
 
