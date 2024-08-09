@@ -33,6 +33,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <map>
 #include <optional>
