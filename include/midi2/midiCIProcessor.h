@@ -303,7 +303,7 @@ template <> void swaps<ci::discovery_v1>(ci::discovery_v1 &d1) {
 }
 
 template <> void swaps<ci::discovery_v2>(ci::discovery_v2 &(d2)) {
-  swaps<ci::discovery_v1>(d2);
+  swaps<ci::discovery_v1>(d2.v1);
 }
 
 template <> void swaps<ci::discovery_reply_v1>(ci::discovery_reply_v1 &dr1) {
@@ -312,7 +312,7 @@ template <> void swaps<ci::discovery_reply_v1>(ci::discovery_reply_v1 &dr1) {
   dr1.max_sysex_size = little_to_native(dr1.max_sysex_size);
 }
 template <> void swaps<ci::discovery_reply_v2>(ci::discovery_reply_v2 &dr2) {
-  swaps<ci::discovery_reply_v1>(dr2);
+  swaps<ci::discovery_reply_v1>(dr2.v1);
 }
 
 constexpr std::size_t expected_size(unsigned version, unsigned citype) {

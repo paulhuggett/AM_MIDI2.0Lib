@@ -62,14 +62,15 @@ static_assert(offsetof(discovery_v1, version) == 7);
 static_assert(offsetof(discovery_v1, capability) == 11);
 static_assert(offsetof(discovery_v1, max_sysex_size) == 12);
 
-struct __attribute__((packed)) discovery_v2 : public discovery_v1 {
+struct __attribute__((packed)) discovery_v2 {
   bool operator==(discovery_v2 const&) const = default;
 
+  discovery_v1 v1;
   std::uint8_t output_path_id = 0;  ///< Initiator's output path ID
 };
 
 static_assert(sizeof(discovery_v2) == 17);
-static_assert(offsetof(discovery_v2, manufacturer) == 0);
+static_assert(offsetof(discovery_v2, v1) == 0);
 static_assert(offsetof(discovery_v2, output_path_id) == 16);
 
 using discovery_current = discovery_v2;
@@ -92,15 +93,16 @@ static_assert(offsetof(discovery_reply_v1, version) == 7);
 static_assert(offsetof(discovery_reply_v1, capability) == 11);
 static_assert(offsetof(discovery_reply_v1, max_sysex_size) == 12);
 
-struct __attribute__((packed)) discovery_reply_v2 : public discovery_reply_v1 {
+struct __attribute__((packed)) discovery_reply_v2 {
   bool operator==(discovery_reply_v2 const&) const = default;
 
+  discovery_reply_v1 v1;
   std::uint8_t output_path_id = 0;  ///< Initiator's output path ID
   std::uint8_t function_block = 0;  ///< Function block
 };
 
 static_assert(sizeof(discovery_reply_v2) == 18);
-static_assert(offsetof(discovery_reply_v2, manufacturer) == 0);
+static_assert(offsetof(discovery_reply_v2, v1) == 0);
 static_assert(offsetof(discovery_reply_v2, output_path_id) == 16);
 static_assert(offsetof(discovery_reply_v2, function_block) == 17);
 

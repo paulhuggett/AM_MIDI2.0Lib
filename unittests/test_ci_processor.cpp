@@ -43,7 +43,7 @@ std::ostream &operator<<(std::ostream &os, ci::discovery_v1 const &d) {
 }
 std::ostream &operator<<(std::ostream &os, ci::discovery_v2 const &d);
 std::ostream &operator<<(std::ostream &os, ci::discovery_v2 const &d) {
-  return os << "{ " << static_cast<ci::discovery_v1 const &>(d) << "output_path_id=" << d.output_path_id << " }";
+  return os << "{ " << d.v1 << ", output_path_id=" << d.output_path_id << " }";
 }
 
 std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v1 const &d);
@@ -57,7 +57,7 @@ std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v1 const &d) {
 }
 std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v2 const &d);
 std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v2 const &d) {
-  return os << "{ " << static_cast<ci::discovery_reply_v1 const &>(d) << "output_path_id=" << d.output_path_id
+  return os << "{ " << d.v1 << ", output_path_id=" << d.output_path_id
             << "function_block=" << static_cast<unsigned>(d.function_block) << " }";
 }
 
@@ -181,12 +181,12 @@ TEST(CIProcessor, Discovery) {
   midici.requestId = std::byte{0xFF};
 
   midi2::ci::discovery_current discovery;
-  discovery.manufacturer = manufacturer;
-  discovery.family = family;
-  discovery.model = model;
-  discovery.version = version;
-  discovery.capability = static_cast<std::uint8_t>(capability);
-  discovery.max_sysex_size = max_sysex_size;
+  discovery.v1.manufacturer = manufacturer;
+  discovery.v1.family = family;
+  discovery.v1.model = model;
+  discovery.v1.version = version;
+  discovery.v1.capability = static_cast<std::uint8_t>(capability);
+  discovery.v1.max_sysex_size = max_sysex_size;
   discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
 
   mock_callbacks mocks;
@@ -239,12 +239,12 @@ TEST(CIProcessor, DiscoveryReply) {
   midici.requestId = std::byte{0xFF};
 
   midi2::ci::discovery_reply_current reply;
-  reply.manufacturer = manufacturer;
-  reply.family = family;
-  reply.model = model;
-  reply.version = version;
-  reply.capability = static_cast<std::uint8_t>(capability);
-  reply.max_sysex_size = max_sysex_size;
+  reply.v1.manufacturer = manufacturer;
+  reply.v1.family = family;
+  reply.v1.model = model;
+  reply.v1.version = version;
+  reply.v1.capability = static_cast<std::uint8_t>(capability);
+  reply.v1.max_sysex_size = max_sysex_size;
   reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
   reply.function_block = static_cast<std::uint8_t>(function_block);
 
