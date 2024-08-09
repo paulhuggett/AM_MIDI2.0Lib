@@ -41,11 +41,42 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
+#include <version>
 
 #include "midi2/ci_types.h"
 #include "midi2/utils.h"
 
 namespace midi2 {
+
+// unreachable
+// ~~~~~~~~~~~
+#if defined(__cpp_lib_unreachable)
+/// Executing unreachable() results in undefined behavior.
+///
+/// An implementation may, for example, optimize impossible code branches away
+/// or trap to prevent further execution.
+[[noreturn, maybe_unused]] inline void unreachable() {
+  assert(false && "unreachable");
+  std::unreachable();
+}
+#elif defined(__GNUC__)  // GCC 4.8+, Clang, Intel and other compilers
+[[noreturn]] inline __attribute__((always_inline)) void unreachable() {
+  assert(false && "unreachable");
+  __builtin_unreachable();
+}
+#elif defined(_MSC_VER)
+[[noreturn, maybe_unused]] __forceinline void unreachable() {
+  assert(false && "unreachable");
+  __assume(false);
+}
+#else
+// Unknown compiler so no extension is used, Undefined behavior is still raised
+// by an empty function body and the noreturn attribute.
+[[noreturn, maybe_unused]] inline void unreachable() {
+  assert(false && "unreachable");
+}
+#endif
 
 using MIDICI = ci::MIDICI;
 
@@ -320,8 +351,9 @@ constexpr std::size_t expected_size(unsigned version, unsigned citype) {
     return version == 1 ? sizeof(ci::discovery_v1) : sizeof(ci::discovery_v2);
   } else if (citype == MIDICI_DISCOVERY_REPLY) {
     return version == 1 ? sizeof(ci::discovery_reply_v1) : sizeof(ci::discovery_reply_v2);
+  } else {
+    unreachable();
   }
-  assert(false);
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_request_reply(std::byte s7) {
