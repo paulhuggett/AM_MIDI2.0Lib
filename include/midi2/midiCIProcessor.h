@@ -90,8 +90,8 @@ constexpr auto bytes = std::span<std::byte>{};
 template <typename T> concept ci_backend = requires(T && v) {
   { v.check_muid(std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
 
-  { v.discovery(MIDICI{}, ci::discovery_current{}) } -> std::same_as<void>;
-  { v.discovery_reply(MIDICI{}, ci::discovery_reply_current{}) } -> std::same_as<void>;
+  { v.discovery(MIDICI{}, ci::discovery{}) } -> std::same_as<void>;
+  { v.discovery_reply(MIDICI{}, ci::discovery_reply{}) } -> std::same_as<void>;
   { v.end_point_info(MIDICI{}, std::byte{}) } -> std::same_as<void>;
   {
     v.end_point_info_reply(MIDICI{}, std::uint8_t{}, std::uint16_t{} /*infoLength*/, std::span<std::byte>{})
@@ -173,8 +173,8 @@ public:
 
   virtual bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
 
-  virtual void discovery(MIDICI const &, ci::discovery_current const &) { /* do nothing */ }
-  virtual void discovery_reply(MIDICI const &, ci::discovery_reply_current const &) { /* do nothing */ }
+  virtual void discovery(MIDICI const &, ci::discovery const &) { /* do nothing */ }
+  virtual void discovery_reply(MIDICI const &, ci::discovery_reply const &) { /* do nothing */ }
   virtual void end_point_info(MIDICI const &, std::byte status) { (void)status; /* do nothing*/ }
   virtual void end_point_info_reply(MIDICI const &, std::uint8_t status, std::uint16_t infoLength,
                                     std::span<std::byte> infoData) {
@@ -227,34 +227,38 @@ public:
   virtual void recvSetProfileOff(MIDICI const &, profile_span /*profile*/) { /* do nothing*/ }
   virtual void profile_specific_data(MIDICI const &, profile_span /*profile*/, std::span<std::byte> /*data*/,
                                      std::uint16_t /*part*/, bool /*lastByteOfSet*/) { /* do nothing*/ }
-  virtual void set_profile_details_inquiry(MIDICI const &, profile_span /*profile*/, std::byte /*target*/) {}
+  virtual void set_profile_details_inquiry(MIDICI const &, profile_span /*profile*/, std::byte /*target*/) {
+    /* do nothing */
+  }
   virtual void set_profile_details_reply(MIDICI const &, profile_span /*profile*/, std::byte /*target*/,
-                                         std::span<std::byte> /*data*/) {}
+                                         std::span<std::byte> /*data*/) {
+    /* do nothing */
+  }
 
   // Property Exchange
   virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
-                                  std::uint8_t /*minVer*/) {}
+                                  std::uint8_t /*minVer*/) { /* do nothing */ }
   virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
-                                       std::uint8_t /*minVer*/) {}
-  virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) {}
-  virtual void recvPESetReply(MIDICI const &, std::string const & /*requestDetails*/) {}
-  virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) {}
-  virtual void recvPENotify(MIDICI const &, std::string const & /*requestDetails*/) {}
+                                       std::uint8_t /*minVer*/) { /* do nothing */ }
+  virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
+  virtual void recvPESetReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
+  virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
+  virtual void recvPENotify(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPEGetReply(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                              bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
+                              bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
   virtual void recvPESetInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
+                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
   virtual void recvPESubInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) {}
+                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
 
   // Process Inquiry
-  virtual void recvPICapabilities(MIDICI const &) {}
-  virtual void recvPICapabilitiesReply(MIDICI const &, std::byte /*supportedFeatures*/) {}
+  virtual void recvPICapabilities(MIDICI const &) { /* do nothing */ }
+  virtual void recvPICapabilitiesReply(MIDICI const &, std::byte /*supportedFeatures*/) { /* do nothing */ }
   virtual void recvPIMMReport(MIDICI const &, std::byte /*MDC*/, std::byte /*systemBitmap*/,
-                              std::byte /*chanContBitmap*/, std::byte /*chanNoteBitmap*/) {}
+                              std::byte /*chanContBitmap*/, std::byte /*chanNoteBitmap*/) { /* do nothing */ }
   virtual void recvPIMMReportReply(MIDICI const &, std::byte /*systemBitmap*/, std::byte /*chanContBitmap*/,
-                                   std::byte /*chanNoteBitmap*/) {}
-  virtual void recvPIMMReportEnd(MIDICI const &) {}
+                                   std::byte /*chanNoteBitmap*/) { /* do nothing */ }
+  virtual void recvPIMMReportEnd(MIDICI const &) { /* do nothing */ }
 };
 
 template <ci_backend Callbacks = ci_callbacks> class midiCIProcessor {
@@ -294,7 +298,9 @@ private:
   void processPESysex(std::byte s7Byte);
   void processPISysex(std::byte s7Byte);
 
-  void discovery_request_reply(std::byte s7Byte);
+  void discovery(std::byte s7);
+  void discovery_reply(std::byte s7);
+
   void midiCI_ack_nak(std::byte s7Byte);
   void midiCI_endpoint_info_reply(std::byte s7Byte);
 };
@@ -364,46 +370,51 @@ template <> void swaps<ci::discovery_reply_v2>(ci::discovery_reply_v2 &dr2) {
   swaps<ci::discovery_reply_v1>(dr2.v1);
 }
 
-constexpr std::size_t expected_size(unsigned version, unsigned citype) {
-  if (citype == MIDICI_DISCOVERY) {
-    return version == 1 ? sizeof(ci::discovery_v1) : sizeof(ci::discovery_v2);
-  } else if (citype == MIDICI_DISCOVERY_REPLY) {
-    return version == 1 ? sizeof(ci::discovery_reply_v1) : sizeof(ci::discovery_reply_v2);
-  } else {
-    unreachable();
-  }
-}
-
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_request_reply(std::byte s7) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
   }
   assert(sysexPos_ >= header_size);
   buffer_[sysexPos_ - header_size] = s7;
-  if (sysexPos_ < header_size + expected_size(midici_.ciVer, midici_.ciType) - 1) {
+
+  static_assert(sizeof(ci::discovery_v1) <= sizeof(ci::discovery_v2));
+  static_assert(std::is_same_v<ci::discovery_v2, ci::discovery>);
+  auto const expected_size = midici_.ciVer == 1 ? sizeof(ci::packed::discovery_v1) : sizeof(ci::packed::discovery_v2);
+  if (sysexPos_ < header_size + expected_size - 1) {
     return;
   }
 
-  if (midici_.ciType == MIDICI_DISCOVERY) {
-    ci::discovery_current dv;
-    static_assert(sizeof(ci::discovery_v1) <= sizeof(ci::discovery_v2));
-    static_assert(std::is_same_v<ci::discovery_v2, ci::discovery_current>);
-    std::memcpy(&dv, buffer_.data(), midici_.ciVer == 1 ? sizeof(ci::discovery_v1) : sizeof(ci::discovery_v2));
-    swaps(dv);
-    callbacks_.discovery(midici_, dv);
-  } else if (midici_.ciType == MIDICI_DISCOVERY_REPLY) {
-    ci::discovery_reply_current reply;
-    static_assert(sizeof(ci::discovery_reply_v1) <= sizeof(ci::discovery_reply_v2));
-    static_assert(std::is_same_v<ci::discovery_reply_v2, ci::discovery_reply_current>);
+  ci::packed::discovery_current packed_discovery{};
+  assert(expected_size <= sizeof(packed_discovery));
+  std::memcpy(&packed_discovery, buffer_.data(), expected_size);
+  ci::discovery d{packed_discovery};
+  swaps(d);
+  callbacks_.discovery(midici_, d);
+}
 
-    std::memcpy(&reply, buffer_.data(),
-                midici_.ciVer == 1 ? sizeof(ci::discovery_reply_v1) : sizeof(ci::discovery_reply_v2));
-    swaps(reply);
-    callbacks_.discovery_reply(midici_, reply);
-  } else {
-    assert(false);
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
+    return;
   }
+  assert(sysexPos_ >= header_size);
+  buffer_[sysexPos_ - header_size] = s7;
+
+  static_assert(sizeof(ci::discovery_reply_v1) <= sizeof(ci::discovery_reply_v2));
+  static_assert(std::is_same_v<ci::discovery_reply_v2, ci::discovery_reply>);
+  auto const expected_size =
+      midici_.ciVer == 1 ? sizeof(ci::packed::discovery_reply_v1) : sizeof(ci::packed::discovery_reply_v2);
+  if (sysexPos_ < header_size + expected_size - 1) {
+    return;
+  }
+
+  ci::packed::discovery_reply_current packed{};
+  assert(expected_size <= sizeof(packed));
+  std::memcpy(&packed, buffer_.data(), expected_size);
+  ci::discovery_reply reply{packed};
+  swaps(reply);
+  callbacks_.discovery_reply(midici_, reply);
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(std::byte s7Byte) {
@@ -498,8 +509,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
   // break up each Process based on ciType
   if (sysexPos_ >= 12) {
     switch (midici_.ciType) {
-    case MIDICI_DISCOVERY:
-    case MIDICI_DISCOVERY_REPLY: this->discovery_request_reply(s7Byte); break;
+    case MIDICI_DISCOVERY: this->discovery(s7Byte); break;
+    case MIDICI_DISCOVERY_REPLY: this->discovery_reply(s7Byte); break;
 
     case MIDICI_INVALIDATEMUID:  // MIDI-CI Invalidate MUID Message
       if (sysexPos_ >= 13 && sysexPos_ <= 16) {

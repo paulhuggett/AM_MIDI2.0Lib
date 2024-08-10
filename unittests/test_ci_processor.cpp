@@ -75,8 +75,8 @@ using midi2::profile_span;
 class mock_callbacks final : public midi2::ci_callbacks {
 public:
   MOCK_METHOD(bool, check_muid, (std::uint8_t group, std::uint32_t muid), (override));
-  MOCK_METHOD(void, discovery, (MIDICI const &, midi2::ci::discovery_current const &), (override));
-  MOCK_METHOD(void, discovery_reply, (MIDICI const &, midi2::ci::discovery_reply_current const &), (override));
+  MOCK_METHOD(void, discovery, (MIDICI const &, midi2::ci::discovery const &), (override));
+  MOCK_METHOD(void, discovery_reply, (MIDICI const &, midi2::ci::discovery_reply const &), (override));
   MOCK_METHOD(void, end_point_info, (MIDICI const &, std::byte), (override));
   MOCK_METHOD(void, end_point_info_reply, (MIDICI const &, std::uint8_t, std::uint16_t, std::span<std::byte>),
               (override));
@@ -180,7 +180,7 @@ TEST(CIProcessor, Discovery) {
   midici.partialChunkCount = 0;
   midici.requestId = std::byte{0xFF};
 
-  midi2::ci::discovery_current discovery;
+  midi2::ci::discovery discovery;
   discovery.v1.manufacturer = manufacturer;
   discovery.v1.family = family;
   discovery.v1.model = model;
@@ -238,7 +238,7 @@ TEST(CIProcessor, DiscoveryReply) {
   midici.partialChunkCount = 0;
   midici.requestId = std::byte{0xFF};
 
-  midi2::ci::discovery_reply_current reply;
+  midi2::ci::discovery_reply reply;
   reply.v1.manufacturer = manufacturer;
   reply.v1.family = family;
   reply.v1.model = model;
