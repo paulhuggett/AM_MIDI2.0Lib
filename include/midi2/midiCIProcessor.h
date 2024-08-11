@@ -95,12 +95,8 @@ template <typename T> concept ci_backend = requires(T && v) {
   { v.endpoint_info(MIDICI{}, ci::endpoint_info{}) } -> std::same_as<void>;
   { v.endpoint_info_reply(MIDICI{}, ci::endpoint_info_reply{}) } -> std::same_as<void>;
   { v.invalidate_muid(MIDICI{}, ci::invalidate_muid{}) } -> std::same_as<void>;
+  { v.ack(MIDICI{}, ci::ack{}) } -> std::same_as<void>;
 
-  {
-    v.ack(MIDICI{}, std::uint8_t{} /*origSubID*/, std::uint8_t{} /*statusCode*/, std::uint8_t{} /*statusData*/,
-          std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
-          std::span<std::byte>{} /*ackNakMessage*/)
-  } -> std::same_as<void>;
   {
     v.nak(MIDICI{}, std::uint8_t{} /*origSubID*/, std::uint8_t{} /*statusCode*/, std::uint8_t{} /*statusData*/,
           std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
@@ -177,6 +173,8 @@ public:
   virtual void endpoint_info(MIDICI const &, ci::endpoint_info const &) { /* do nothing*/ }
   virtual void endpoint_info_reply(MIDICI const &, ci::endpoint_info_reply const &) { /* do nothing */ }
   virtual void invalidate_muid(MIDICI const &, ci::invalidate_muid const &) { /* do nothing */ }
+  virtual void ack(MIDICI const &, midi2::ci::ack const &) { /* do nothing */ }
+
   virtual void nak(MIDICI const &, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData,
                    std::span<std::byte, 5> ackNakDetails, std::uint16_t messageLength,
                    std::span<std::byte> ackNakMessage) {
@@ -186,11 +184,6 @@ public:
     (void)ackNakDetails;
     (void)messageLength;
     (void)ackNakMessage;
-    /* do nothing */
-  }
-  virtual void ack(MIDICI const &, std::uint8_t /*origSubID*/, std::uint8_t /*statusCode*/, std::uint8_t /*statusData*/,
-                   std::span<std::byte, 5> /*ackNakDetails*/, std::uint16_t /*messageLength*/,
-                   std::span<std::byte> /*ackNakMessage*/) {
     /* do nothing */
   }
 
@@ -298,6 +291,7 @@ private:
   void endpoint_info(std::byte s7);
   void endpoint_info_reply(std::byte s7);
   void invalidate_muid(std::byte s7);
+  void ack(std::byte s7);
 
   void midiCI_ack_nak(std::byte s7Byte);
 };
@@ -349,6 +343,8 @@ template <> constexpr std::uint16_t little_to_native<std::uint16_t>(std::uint16_
 
 template <typename T> void swaps(T &);
 
+// discovery
+// ~~~~~~~~~
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
@@ -369,6 +365,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::
   callbacks_.discovery(midici_, ci::discovery{packed_discovery});
 }
 
+// discovery reply
+// ~~~~~~~~~~~~~~~
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
@@ -388,6 +386,29 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply
   assert(expected_size <= sizeof(packed));
   std::memcpy(&packed, buffer_.data(), expected_size);
   callbacks_.discovery_reply(midici_, ci::discovery_reply{packed});
+}
+
+// ack
+// ~~~
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
+    return;
+  }
+  assert(sysexPos_ >= header_size);
+  buffer_[sysexPos_ - header_size] = s7;
+
+  // Wait for the basic structure to arrive.
+  auto const expected_size = offsetof(ci::packed::ack_v1, message);
+  if (sysexPos_ < header_size + expected_size - 1) {
+    return;
+  }
+  // Wait for the variable-length data.
+  auto const *const packed_reply = std::bit_cast<ci::packed::ack_v1 const *>(buffer_.data());
+  if (sysexPos_ < header_size + expected_size + ci::packed::from_le7(packed_reply->message_length) - 1) {
+    return;
+  }
+  callbacks_.ack(midici_, ci::ack{*packed_reply});
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(std::byte s7Byte) {
@@ -428,10 +449,12 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(
                      static_cast<std::uint8_t>(intTemp_[2]), ackNakDetails, static_cast<std::uint16_t>(intTemp_[3]),
                      buffer_);
 
+#if 0
     if (midici_.ciType == MIDICI_ACK && midici_.ciVer > 1)
       callbacks_.ack(midici_, static_cast<std::uint8_t>(intTemp_[0]), static_cast<std::uint8_t>(intTemp_[1]),
                      static_cast<std::uint8_t>(intTemp_[2]), ackNakDetails, static_cast<std::uint16_t>(intTemp_[3]),
                      buffer_);
+#endif
   }
 }
 
@@ -515,7 +538,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
     case MIDICI_ENDPOINTINFO: this->endpoint_info(s7Byte); break;
     case MIDICI_ENDPOINTINFO_REPLY: this->endpoint_info_reply(s7Byte); break;
     case MIDICI_INVALIDATEMUID: this->invalidate_muid(s7Byte); break;
-    case MIDICI_ACK:
+    case MIDICI_ACK: this->ack(s7Byte); break;
     case MIDICI_NAK:
       this->midiCI_ack_nak(s7Byte);
       break;

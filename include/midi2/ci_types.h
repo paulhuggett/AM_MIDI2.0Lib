@@ -24,9 +24,11 @@
 
 namespace midi2::ci {
 
+using byte_array_1 = std::array<std::byte, 1>;
 using byte_array_2 = std::array<std::byte, 2>;
 using byte_array_3 = std::array<std::byte, 3>;
 using byte_array_4 = std::array<std::byte, 4>;
+using byte_array_5 = std::array<std::byte, 5>;
 
 constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
 
@@ -239,7 +241,7 @@ namespace packed {
 struct endpoint_info_reply_v1 {
   std::byte status;
   byte_array_2 data_length;
-  std::byte data[1];  // an array of size given by data_length
+  byte_array_1 data;  // an array of size given by data_length
 };
 static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
@@ -259,7 +261,7 @@ struct endpoint_info_reply {
 };
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
-    : status{packed::from_le7(other.status)}, information{other.data, packed::from_le7(other.data_length)} {
+    : status{packed::from_le7(other.status)}, information{std::begin(other.data), packed::from_le7(other.data_length)} {
 }
 
 //*  _              _ _    _      _         __  __ _   _ ___ ___   *
@@ -289,6 +291,52 @@ struct invalidate_muid {
 
 constexpr invalidate_muid::invalidate_muid(packed::invalidate_muid_v1 const &other)
     : target_muid{packed::from_le7(other.target_muid)} {
+}
+
+//*          _    *
+//*  __ _ __| |__ *
+//* / _` / _| / / *
+//* \__,_\__|_\_\ *
+//*               *
+namespace packed {
+
+struct ack_v1 {
+  std::byte original_id;        // Original Transaction Sub-ID#2 Classification
+  std::byte status_code;        // ACK Status Code
+  std::byte status_data;        // ACK Status Data
+  byte_array_5 details;         // ACK details for each SubID Classification
+  byte_array_2 message_length;  // Message Length (LSB firt)
+  byte_array_1 message;         // Message text
+};
+static_assert(offsetof(ack_v1, original_id) == 0);
+static_assert(offsetof(ack_v1, status_code) == 1);
+static_assert(offsetof(ack_v1, status_data) == 2);
+static_assert(offsetof(ack_v1, details) == 3);
+static_assert(offsetof(ack_v1, message_length) == 8);
+static_assert(offsetof(ack_v1, message) == 10);
+static_assert(sizeof(ack_v1) == 11);
+
+}  // end namespace packed
+
+struct ack {
+  constexpr ack() = default;
+  constexpr ack(ack const &) = default;
+  constexpr ack(ack &&) noexcept = default;
+  constexpr explicit ack(packed::ack_v1 const &);
+
+  std::uint8_t original_id = 0;
+  std::uint8_t status_code = 0;
+  std::uint8_t status_data = 0;
+  byte_array_5 details;
+  std::span<std::byte const> message;
+};
+
+constexpr ack::ack(packed::ack_v1 const &other)
+    : original_id{packed::from_le7(other.original_id)},
+      status_code{packed::from_le7(other.status_code)},
+      status_data{packed::from_le7(other.status_data)},
+      details{other.details},
+      message{std::begin(other.message), packed::from_le7(other.message_length)} {
 }
 
 }  // end namespace midi2::ci
