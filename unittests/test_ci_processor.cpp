@@ -4,7 +4,7 @@
 
 namespace {
 
-template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::array<std::byte, Size> const &arr) {
+template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::array<std::uint8_t, Size> const &arr) {
   os << '[';
   auto separator = "";
   for (auto m : arr) {
@@ -18,6 +18,7 @@ template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::arr
 }  // end anonymous namespace
 
 namespace midi2 {
+
 std::ostream &operator<<(std::ostream &os, MIDICI const &ci);
 std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
   return os << "{ umpGroup=" << static_cast<unsigned>(ci.umpGroup)
@@ -32,33 +33,24 @@ std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
             << ", requestId=" << static_cast<unsigned>(ci.requestId) << " }";
 }
 
-std::ostream &operator<<(std::ostream &os, ci::discovery_v1 const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery_v1 const &d) {
+std::ostream &operator<<(std::ostream &os, ci::discovery const &d);
+std::ostream &operator<<(std::ostream &os, ci::discovery const &d) {
   os << "{ manufacturer=";
   write_bytes(os, d.manufacturer);
   os << ", family=" << d.family << ", model=" << d.model << ", version=";
   write_bytes(os, d.version);
   os << ", capability=" << static_cast<unsigned>(d.capability) << ", max_sysex_size=" << d.max_sysex_size << " }";
   return os;
-}
-std::ostream &operator<<(std::ostream &os, ci::discovery_v2 const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery_v2 const &d) {
-  return os << "{ " << d.v1 << ", output_path_id=" << d.output_path_id << " }";
 }
 
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v1 const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v1 const &d) {
+std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d);
+std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d) {
   os << "{ manufacturer=";
   write_bytes(os, d.manufacturer);
   os << ", family=" << d.family << ", model=" << d.model << ", version=";
   write_bytes(os, d.version);
   os << ", capability=" << static_cast<unsigned>(d.capability) << ", max_sysex_size=" << d.max_sysex_size << " }";
   return os;
-}
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v2 const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply_v2 const &d) {
-  return os << "{ " << d.v1 << ", output_path_id=" << d.output_path_id
-            << "function_block=" << static_cast<unsigned>(d.function_block) << " }";
 }
 
 }  // end namespace midi2
@@ -77,9 +69,8 @@ public:
   MOCK_METHOD(bool, check_muid, (std::uint8_t group, std::uint32_t muid), (override));
   MOCK_METHOD(void, discovery, (MIDICI const &, midi2::ci::discovery const &), (override));
   MOCK_METHOD(void, discovery_reply, (MIDICI const &, midi2::ci::discovery_reply const &), (override));
-  MOCK_METHOD(void, end_point_info, (MIDICI const &, std::byte), (override));
-  MOCK_METHOD(void, end_point_info_reply, (MIDICI const &, std::uint8_t, std::uint16_t, std::span<std::byte>),
-              (override));
+  MOCK_METHOD(void, endpoint_info, (MIDICI const &, midi2::ci::endpoint_info const &), (override));
+  MOCK_METHOD(void, endpoint_info_reply, (MIDICI const &, midi2::ci::endpoint_info_reply const &), (override));
 
   MOCK_METHOD(void, ack,
               (MIDICI const &, std::uint8_t, std::uint8_t, std::uint8_t, (std::span<std::byte, 5>), std::uint16_t,
@@ -125,6 +116,7 @@ TEST(CIProcessor, Empty) {
 }
 
 using testing::ElementsAreArray;
+using testing::Return;
 
 template <std::unsigned_integral T> class swappable {
 public:
@@ -141,11 +133,11 @@ private:
 
 TEST(CIProcessor, Discovery) {
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
-  constexpr auto family = swappable<std::uint16_t>{0x6789};
-  constexpr auto model = swappable<std::uint16_t>{0xABCD};
-  constexpr auto version = std::array{std::byte{0xFE}, std::byte{0xDC}, std::byte{0xBA}, std::byte{0x98}};
+  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
+  constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
+  constexpr auto version = std::array{std::byte{0x4E}, std::byte{0x3C}, std::byte{0x2A}, std::byte{0x18}};
   constexpr auto capability = std::byte{0x7F};
-  constexpr auto max_sysex_size = swappable<std::uint32_t>{0x76543210};
+  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
   constexpr auto output_path_id = std::byte{0x71};
 
   // clang-format off
@@ -169,7 +161,7 @@ TEST(CIProcessor, Discovery) {
   static_assert(message.size() == 32 - 2);
   MIDICI midici;
   midici.umpGroup = 0xFF;
-  midici.deviceId = midi2::ci::FUNCTION_BLOCK;
+  midici.deviceId = 0xFF;
   midici.ciType = midi2::MIDICI_DISCOVERY;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
@@ -181,12 +173,12 @@ TEST(CIProcessor, Discovery) {
   midici.requestId = std::byte{0xFF};
 
   midi2::ci::discovery discovery;
-  discovery.v1.manufacturer = manufacturer;
-  discovery.v1.family = family;
-  discovery.v1.model = model;
-  discovery.v1.version = version;
-  discovery.v1.capability = static_cast<std::uint8_t>(capability);
-  discovery.v1.max_sysex_size = max_sysex_size;
+  discovery.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  discovery.family = midi2::ci::packed::from_le7(family);
+  discovery.model = midi2::ci::packed::from_le7(model);
+  discovery.version = midi2::ci::packed::from_array(version);
+  discovery.capability = static_cast<std::uint8_t>(capability);
+  discovery.max_sysex_size = midi2::ci::packed::from_le7(max_sysex_size);
   discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
 
   mock_callbacks mocks;
@@ -197,13 +189,13 @@ TEST(CIProcessor, Discovery) {
 
 TEST(CIProcessor, DiscoveryReply) {
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
-  constexpr auto family = swappable<std::uint16_t>{0x6789};
-  constexpr auto model = swappable<std::uint16_t>{0xABCD};
-  constexpr auto version = std::array{std::byte{0xFE}, std::byte{0xDC}, std::byte{0xBA}, std::byte{0x98}};
+  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
+  constexpr auto model = std::array{std::byte{0x5B}, std::byte{0x4D}};
+  constexpr auto version = std::array{std::byte{0x7E}, std::byte{0x6C}, std::byte{0x5A}, std::byte{0x48}};
   constexpr auto capability = std::byte{0x7F};
-  constexpr auto max_sysex_size = swappable<std::uint32_t>{0x76543210};
+  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
   constexpr auto output_path_id = std::byte{0x71};
-  constexpr auto function_block = std::byte{0x82};
+  constexpr auto function_block = std::byte{0x32};
 
   // clang-format off
   std::array const message{
@@ -227,7 +219,7 @@ TEST(CIProcessor, DiscoveryReply) {
   static_assert(message.size() == 33 - 2);
   MIDICI midici;
   midici.umpGroup = 0xFF;
-  midici.deviceId = midi2::ci::FUNCTION_BLOCK;
+  midici.deviceId = 0xFF;
   midici.ciType = midi2::MIDICI_DISCOVERY_REPLY;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
@@ -239,12 +231,12 @@ TEST(CIProcessor, DiscoveryReply) {
   midici.requestId = std::byte{0xFF};
 
   midi2::ci::discovery_reply reply;
-  reply.v1.manufacturer = manufacturer;
-  reply.v1.family = family;
-  reply.v1.model = model;
-  reply.v1.version = version;
-  reply.v1.capability = static_cast<std::uint8_t>(capability);
-  reply.v1.max_sysex_size = max_sysex_size;
+  reply.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  reply.family = midi2::ci::packed::from_le7(family);
+  reply.model = midi2::ci::packed::from_le7(model);
+  reply.version = midi2::ci::packed::from_array(version);
+  reply.capability = static_cast<std::uint8_t>(capability);
+  reply.max_sysex_size = midi2::ci::packed::from_le7(max_sysex_size);
   reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
   reply.function_block = static_cast<std::uint8_t>(function_block);
 
@@ -252,6 +244,115 @@ TEST(CIProcessor, DiscoveryReply) {
   EXPECT_CALL(mocks, discovery_reply(midici, reply)).Times(1);
   midi2::midiCIProcessor ci{std::ref(mocks)};
   std::for_each(std::begin(message), std::end(message), std::bind_front(&decltype(ci)::processMIDICI, &ci));
+}
+
+TEST(CIProcessor, EndpointInfo) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto status = std::uint8_t{0b0101010};
+  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+
+  // clang-format off
+  std::array const message{
+    std::byte{0x7E}, // Universal System Exclusive
+    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x72}, // Universal System Exclusive Sub-ID#2: Endpoint Information
+    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+    std::byte{status}, // Status
+  };
+  // clang-format on
+  static_assert(message.size() == 13 + sizeof(midi2::ci::packed::endpoint_info_v1));
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = 0x7F;
+  midici.ciType = midi2::MIDICI_ENDPOINTINFO;
+  midici.ciVer = 1;
+  midici.remoteMUID = midi2::ci::packed::from_le7(sender_muid);
+  midici.localMUID = midi2::ci::packed::from_le7(receiver_muid);
+  midici._peReqIdx = std::optional<midi2::ci::reqId>{};
+  midici.totalChunks = 0;
+  midici.numChunk = 0;
+  midici.partialChunkCount = 0;
+  midici.requestId = std::byte{0xFF};
+
+  midi2::ci::endpoint_info endpoint_info;
+  endpoint_info.status = status;
+
+  mock_callbacks mocks;
+  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(mocks, endpoint_info(midici, endpoint_info)).Times(1);
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(group, message[1]);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+using testing::AllOf;
+using testing::ElementsAreArray;
+using testing::Eq;
+using testing::Field;
+
+auto EndpointInfoReplyMatches(std::byte status, std::span<std::byte const> info) {
+  return AllOf(Field("status", &midi2::ci::endpoint_info_reply::status, Eq(status)),
+               Field("information", &midi2::ci::endpoint_info_reply::information, ElementsAreArray(info)));
+};
+
+TEST(CIProcessor, EndpointInfoReply) {
+  constexpr auto group = std::uint8_t{0x71};
+  constexpr auto device_id = std::uint8_t{0x7F};
+  constexpr auto status = std::byte{0b0101010};
+  constexpr auto length = swappable<std::uint16_t>{8};
+  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr std::array<std::byte, length.value()> information{
+      std::byte{2},  std::byte{3},  std::byte{5},  std::byte{7},  // Information data
+      std::byte{11}, std::byte{13}, std::byte{17}, std::byte{19},
+  };
+
+  // clang-format off
+  std::array const message{
+    std::byte{0x7E}, // Universal System Exclusive
+    static_cast<std::byte> (device_id), // Device ID: 0x7F = to MIDI Port
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x73}, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
+    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+    status, // Status
+    length[0], length[1], // Length of following data (LSB first)
+    information[0], information[1], information[2], information[3],
+    information[4], information[5],  information[6], information[7],
+  };
+  // clang-format on
+  static_assert(message.size() == 16 + length);
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = device_id;
+  midici.ciType = midi2::MIDICI_ENDPOINTINFO_REPLY;
+  midici.ciVer = 1;
+  midici.remoteMUID = midi2::ci::packed::from_le7(sender_muid);
+  midici.localMUID = midi2::ci::packed::from_le7(receiver_muid);
+  midici._peReqIdx = std::optional<midi2::ci::reqId>{};
+  midici.totalChunks = 0;
+  midici.numChunk = 0;
+  midici.partialChunkCount = 0;
+  midici.requestId = std::byte{0xFF};
+
+  mock_callbacks mocks;
+  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(mocks, endpoint_info_reply(
+                         midici, EndpointInfoReplyMatches(
+                                     status, std::span<std::byte const>{information.begin(), information.size()})))
+      .Times(1);
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(group, message[1]);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 }  // end anonymous namespace

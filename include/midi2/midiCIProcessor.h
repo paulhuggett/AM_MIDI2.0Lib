@@ -92,10 +92,8 @@ template <typename T> concept ci_backend = requires(T && v) {
 
   { v.discovery(MIDICI{}, ci::discovery{}) } -> std::same_as<void>;
   { v.discovery_reply(MIDICI{}, ci::discovery_reply{}) } -> std::same_as<void>;
-  { v.end_point_info(MIDICI{}, std::byte{}) } -> std::same_as<void>;
-  {
-    v.end_point_info_reply(MIDICI{}, std::uint8_t{}, std::uint16_t{} /*infoLength*/, std::span<std::byte>{})
-  } -> std::same_as<void>;
+  { v.endpoint_info(MIDICI{}, ci::endpoint_info{}) } -> std::same_as<void>;
+  { v.endpoint_info_reply(MIDICI{}, ci::endpoint_info_reply{}) } -> std::same_as<void>;
   {
     v.ack(MIDICI{}, std::uint8_t{} /*origSubID*/, std::uint8_t{} /*statusCode*/, std::uint8_t{} /*statusData*/,
           std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
@@ -175,13 +173,8 @@ public:
 
   virtual void discovery(MIDICI const &, ci::discovery const &) { /* do nothing */ }
   virtual void discovery_reply(MIDICI const &, ci::discovery_reply const &) { /* do nothing */ }
-  virtual void end_point_info(MIDICI const &, std::byte status) { (void)status; /* do nothing*/ }
-  virtual void end_point_info_reply(MIDICI const &, std::uint8_t status, std::uint16_t infoLength,
-                                    std::span<std::byte> infoData) {
-    (void)status;
-    (void)infoLength;
-    (void)infoData; /* do nothing */
-  }
+  virtual void endpoint_info(MIDICI const &, ci::endpoint_info const &) { /* do nothing*/ }
+  virtual void endpoint_info_reply(MIDICI const &, ci::endpoint_info_reply const &) { /* do nothing */ }
   virtual void nak(MIDICI const &, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData,
                    std::span<std::byte, 5> ackNakDetails, std::uint16_t messageLength,
                    std::span<std::byte> ackNakMessage) {
@@ -265,7 +258,7 @@ template <ci_backend Callbacks = ci_callbacks> class midiCIProcessor {
 public:
   explicit midiCIProcessor(Callbacks callbacks = Callbacks{}) : callbacks_{callbacks} {}
 
-  void startSysex7(std::uint8_t group, std::uint8_t deviceId);
+  void startSysex7(std::uint8_t group, std::byte deviceId);
   void endSysex7();
 
   void processMIDICI(std::byte s7Byte);
@@ -301,8 +294,10 @@ private:
   void discovery(std::byte s7);
   void discovery_reply(std::byte s7);
 
+  void endpoint_info(std::byte s7);
+  void endpoint_info_reply(std::byte s7);
+
   void midiCI_ack_nak(std::byte s7Byte);
-  void midiCI_endpoint_info_reply(std::byte s7Byte);
 };
 
 midiCIProcessor() -> midiCIProcessor<ci_callbacks>;
@@ -315,12 +310,11 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endSysex7() {
   }
 }
 
-template <ci_backend Callbacks>
-void midiCIProcessor<Callbacks>::startSysex7(std::uint8_t group, std::uint8_t deviceId) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::startSysex7(std::uint8_t group, std::byte deviceId) {
   sysexPos_ = 0;
   buffer_[0] = std::byte{0x00};
   midici_ = MIDICI();
-  midici_.deviceId = deviceId;
+  midici_.deviceId = static_cast<std::uint8_t>(deviceId);
   midici_.umpGroup = group;
 }
 
@@ -331,18 +325,20 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::cleanupRequest(
 template <std::unsigned_integral T> constexpr T little_to_native(T v);
 
 template <> constexpr std::uint32_t little_to_native<std::uint32_t>(std::uint32_t v) {
-  if constexpr (std::endian::native == std::endian::little) {
+  using enum std::endian;
+  if constexpr (native == little) {
     return v;
-  } else if constexpr (std::endian::native == std::endian::big) {
+  } else if constexpr (native == big) {
     return ((v >> 24) & 0xFF) | ((v >> 16) & 0x0000FF00) | ((v << 8) & 0x00FF0000) | ((v << 24) & 0xFF000000);
   } else {
     assert(false && "Can't byte swap if endian is mixed");
   }
 }
 template <> constexpr std::uint16_t little_to_native<std::uint16_t>(std::uint16_t v) {
-  if constexpr (std::endian::native == std::endian::little) {
+  using enum std::endian;
+  if constexpr (native == little) {
     return v;
-  } else if constexpr (std::endian::native == std::endian::big) {
+  } else if constexpr (native == big) {
     return ((v >> 8) & 0x00FF) | ((v << 8) & 0xFF00);
   } else {
     assert(false && "Can't byte swap if endian is mixed");
@@ -350,25 +346,6 @@ template <> constexpr std::uint16_t little_to_native<std::uint16_t>(std::uint16_
 }
 
 template <typename T> void swaps(T &);
-
-template <> void swaps<ci::discovery_v1>(ci::discovery_v1 &d1) {
-  d1.family = little_to_native(d1.family);
-  d1.model = little_to_native(d1.model);
-  d1.max_sysex_size = little_to_native(d1.max_sysex_size);
-}
-
-template <> void swaps<ci::discovery_v2>(ci::discovery_v2 &(d2)) {
-  swaps<ci::discovery_v1>(d2.v1);
-}
-
-template <> void swaps<ci::discovery_reply_v1>(ci::discovery_reply_v1 &dr1) {
-  dr1.family = little_to_native(dr1.family);
-  dr1.model = little_to_native(dr1.model);
-  dr1.max_sysex_size = little_to_native(dr1.max_sysex_size);
-}
-template <> void swaps<ci::discovery_reply_v2>(ci::discovery_reply_v2 &dr2) {
-  swaps<ci::discovery_reply_v1>(dr2.v1);
-}
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte s7) {
   static constexpr auto header_size = 13;
@@ -378,19 +355,16 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::
   assert(sysexPos_ >= header_size);
   buffer_[sysexPos_ - header_size] = s7;
 
-  static_assert(sizeof(ci::discovery_v1) <= sizeof(ci::discovery_v2));
-  static_assert(std::is_same_v<ci::discovery_v2, ci::discovery>);
+  static_assert(sizeof(ci::packed::discovery_v1) <= sizeof(ci::packed::discovery_v2));
   auto const expected_size = midici_.ciVer == 1 ? sizeof(ci::packed::discovery_v1) : sizeof(ci::packed::discovery_v2);
   if (sysexPos_ < header_size + expected_size - 1) {
     return;
   }
 
-  ci::packed::discovery_current packed_discovery{};
+  ci::packed::discovery_v2 packed_discovery{};
   assert(expected_size <= sizeof(packed_discovery));
   std::memcpy(&packed_discovery, buffer_.data(), expected_size);
-  ci::discovery d{packed_discovery};
-  swaps(d);
-  callbacks_.discovery(midici_, d);
+  callbacks_.discovery(midici_, ci::discovery{packed_discovery});
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte s7) {
@@ -401,20 +375,17 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply
   assert(sysexPos_ >= header_size);
   buffer_[sysexPos_ - header_size] = s7;
 
-  static_assert(sizeof(ci::discovery_reply_v1) <= sizeof(ci::discovery_reply_v2));
-  static_assert(std::is_same_v<ci::discovery_reply_v2, ci::discovery_reply>);
+  static_assert(sizeof(ci::packed::discovery_reply_v1) <= sizeof(ci::packed::discovery_reply_v2));
   auto const expected_size =
       midici_.ciVer == 1 ? sizeof(ci::packed::discovery_reply_v1) : sizeof(ci::packed::discovery_reply_v2);
   if (sysexPos_ < header_size + expected_size - 1) {
     return;
   }
 
-  ci::packed::discovery_reply_current packed{};
+  ci::packed::discovery_reply_v2 packed{};
   assert(expected_size <= sizeof(packed));
   std::memcpy(&packed, buffer_.data(), expected_size);
-  ci::discovery_reply reply{packed};
-  swaps(reply);
-  callbacks_.discovery_reply(midici_, reply);
+  callbacks_.discovery_reply(midici_, ci::discovery_reply{packed});
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(std::byte s7Byte) {
@@ -462,33 +433,42 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(
   }
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_endpoint_info_reply(std::byte s7Byte) {
-  bool complete = false;
-  if (midici_.ciVer < 2) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
     return;
   }
-  if (sysexPos_ == 13) {
-    intTemp_[0] = static_cast<std::uint32_t>(s7Byte);
-  }
-  if (sysexPos_ == 14 || sysexPos_ == 15) {
-    intTemp_[1] += static_cast<std::uint32_t>(s7Byte) << (7 * (sysexPos_ - 14));
+  buffer_[sysexPos_ - header_size] = s7;
+  if (sysexPos_ < header_size + sizeof(ci::packed::endpoint_info_v1) - 1) {
     return;
   }
-  if (sysexPos_ >= 16 && sysexPos_ <= 15 + intTemp_[1]) {
-    buffer_[sysexPos_ - 16] = s7Byte;  // Info Data
+  callbacks_.endpoint_info(midici_,
+                           ci::endpoint_info{*std::bit_cast<ci::packed::endpoint_info_v1 const *>(buffer_.data())});
+}
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_reply(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
+    return;
   }
-  if (sysexPos_ == 16 + intTemp_[1]) {
-    complete = true;
+  buffer_[sysexPos_ - header_size] = s7;
+
+  // Wait for the basic structure to arrive.
+  auto const expected_size = sizeof(ci::packed::endpoint_info_reply_v1);
+  if (sysexPos_ < header_size + expected_size - 1) {
+    return;
   }
 
-  if (complete) {
-    callbacks_.end_point_info_reply(midici_, static_cast<std::uint8_t>(intTemp_[0]),
-                                    static_cast<std::uint16_t>(intTemp_[1]), buffer_);
+  // Wait for the variable-length data.
+  auto const *const packed_reply = std::bit_cast<ci::packed::endpoint_info_reply_v1 const *>(buffer_.data());
+  auto const length = ci::packed::from_le7(packed_reply->data_length);
+  if (sysexPos_ < header_size + expected_size + length - 1) {
+    return;
   }
+  callbacks_.endpoint_info_reply(midici_, ci::endpoint_info_reply{*packed_reply});
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(std::byte s7Byte) {
-  // printf("s7 Byte %d\n", s7Byte);
+  assert((s7Byte & std::byte{0b10000000}) == std::byte{0});
   if (sysexPos_ == 3) {
     midici_.ciType = static_cast<std::uint8_t>(s7Byte);
   }
@@ -525,14 +505,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
         callbacks_.invalidate_muid(midici_, muid);
       }
       break;
-    case MIDICI_ENDPOINTINFO:
-      if (sysexPos_ == 13 && midici_.ciVer > 1) {
-        callbacks_.end_point_info(midici_, s7Byte);
-      }
-      break;
-    case MIDICI_ENDPOINTINFO_REPLY:
-      this->midiCI_endpoint_info_reply(s7Byte);
-      break;
+    case MIDICI_ENDPOINTINFO: this->endpoint_info(s7Byte); break;
+    case MIDICI_ENDPOINTINFO_REPLY: this->endpoint_info_reply(s7Byte); break;
     case MIDICI_ACK:
     case MIDICI_NAK:
       this->midiCI_ack_nak(s7Byte);
