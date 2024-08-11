@@ -229,12 +229,12 @@ namespace packed {
 struct endpoint_info_reply_v1 {
   std::byte status;
   byte_array_2 data_length;
-  std::byte data[];
+  std::byte data[1];  // an array of size given by data_length
 };
 static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
 static_assert(offsetof(endpoint_info_reply_v1, data) == 3);
-static_assert(sizeof(endpoint_info_reply_v1) == 3);
+static_assert(sizeof(endpoint_info_reply_v1) == 4);
 
 }  // end namespace packed
 

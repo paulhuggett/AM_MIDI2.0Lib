@@ -453,7 +453,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_r
   buffer_[sysexPos_ - header_size] = s7;
 
   // Wait for the basic structure to arrive.
-  auto const expected_size = sizeof(ci::packed::endpoint_info_reply_v1);
+  auto const expected_size = offsetof(ci::packed::endpoint_info_reply_v1, data);
   if (sysexPos_ < header_size + expected_size - 1) {
     return;
   }
