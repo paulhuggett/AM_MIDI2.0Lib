@@ -241,7 +241,7 @@ namespace packed {
 struct endpoint_info_reply_v1 {
   std::byte status;
   byte_array_2 data_length;
-  byte_array_1 data;  // an array of size given by data_length
+  std::byte data[1];  // an array of size given by data_length
 };
 static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
@@ -306,7 +306,7 @@ struct ack_v1 {
   std::byte status_data;        // ACK Status Data
   byte_array_5 details;         // ACK details for each SubID Classification
   byte_array_2 message_length;  // Message Length (LSB firt)
-  byte_array_1 message;         // Message text
+  std::byte message[1];         // Message text
 };
 static_assert(offsetof(ack_v1, original_id) == 0);
 static_assert(offsetof(ack_v1, status_code) == 1);
