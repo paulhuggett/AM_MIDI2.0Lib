@@ -94,6 +94,8 @@ template <typename T> concept ci_backend = requires(T && v) {
   { v.discovery_reply(MIDICI{}, ci::discovery_reply{}) } -> std::same_as<void>;
   { v.endpoint_info(MIDICI{}, ci::endpoint_info{}) } -> std::same_as<void>;
   { v.endpoint_info_reply(MIDICI{}, ci::endpoint_info_reply{}) } -> std::same_as<void>;
+  { v.invalidate_muid(MIDICI{}, ci::invalidate_muid{}) } -> std::same_as<void>;
+
   {
     v.ack(MIDICI{}, std::uint8_t{} /*origSubID*/, std::uint8_t{} /*statusCode*/, std::uint8_t{} /*statusData*/,
           std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
@@ -104,7 +106,6 @@ template <typename T> concept ci_backend = requires(T && v) {
           std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
           std::span<std::byte>{} /*ackNakMessage*/)
   } -> std::same_as<void>;
-  { v.invalidate_muid(MIDICI{}, std::uint32_t{}) } -> std::same_as<void>;
 
   { v.unknown_midici(MIDICI{}, std::byte{}) } -> std::same_as<void>;
 
@@ -175,6 +176,7 @@ public:
   virtual void discovery_reply(MIDICI const &, ci::discovery_reply const &) { /* do nothing */ }
   virtual void endpoint_info(MIDICI const &, ci::endpoint_info const &) { /* do nothing*/ }
   virtual void endpoint_info_reply(MIDICI const &, ci::endpoint_info_reply const &) { /* do nothing */ }
+  virtual void invalidate_muid(MIDICI const &, ci::invalidate_muid const &) { /* do nothing */ }
   virtual void nak(MIDICI const &, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData,
                    std::span<std::byte, 5> ackNakDetails, std::uint16_t messageLength,
                    std::span<std::byte> ackNakMessage) {
@@ -191,7 +193,6 @@ public:
                    std::span<std::byte> /*ackNakMessage*/) {
     /* do nothing */
   }
-  virtual void invalidate_muid(MIDICI const &, uint32_t muid) { (void)muid; }
 
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
 
@@ -212,7 +213,7 @@ public:
   virtual void recvProfileInquiry(MIDICI const &) { /* do nothing */ }
   virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
                                      std::uint8_t /*number_of_channels*/) { /* do nothing */ }
-  virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) {}
+  virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) { /* do nothing */ }
   virtual void recvSetProfileDisabled(MIDICI const &, profile_span /*profile*/,
                                       std::uint8_t /*number_of_channels*/) { /* do nothing*/ }
   virtual void recvSetProfileOn(MIDICI const &, profile_span /*profile*/,
@@ -296,6 +297,7 @@ private:
 
   void endpoint_info(std::byte s7);
   void endpoint_info_reply(std::byte s7);
+  void invalidate_muid(std::byte s7);
 
   void midiCI_ack_nak(std::byte s7Byte);
 };
@@ -394,7 +396,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(
     if (midici_.ciVer == 1) {
       complete = true;
     } else if (midici_.ciVer > 1) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);  // std::uint8_t origSubID,
+      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
     }
   }
   if (sysexPos_ == 14) {
@@ -433,6 +435,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(
   }
 }
 
+// endpoint info
+// ~~~~~~~~~~~~~
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
@@ -445,6 +449,9 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info(s
   callbacks_.endpoint_info(midici_,
                            ci::endpoint_info{*std::bit_cast<ci::packed::endpoint_info_v1 const *>(buffer_.data())});
 }
+
+// endpoint info reply
+// ~~~~~~~~~~~~~~~~~~~
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_reply(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
@@ -460,11 +467,25 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_r
 
   // Wait for the variable-length data.
   auto const *const packed_reply = std::bit_cast<ci::packed::endpoint_info_reply_v1 const *>(buffer_.data());
-  auto const length = ci::packed::from_le7(packed_reply->data_length);
-  if (sysexPos_ < header_size + expected_size + length - 1) {
+  if (sysexPos_ < header_size + expected_size + ci::packed::from_le7(packed_reply->data_length) - 1) {
     return;
   }
   callbacks_.endpoint_info_reply(midici_, ci::endpoint_info_reply{*packed_reply});
+}
+
+// invalidate muid
+// ~~~~~~~~~~~~~~~
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::invalidate_muid(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  if (sysexPos_ < header_size + sizeof(ci::packed::invalidate_muid_v1) - 1) {
+    return;
+  }
+  auto const *const p = std::bit_cast<ci::packed::invalidate_muid_v1 const *>(buffer_.data());
+  callbacks_.invalidate_muid(midici_, ci::invalidate_muid{*p});
 }
 
 template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(std::byte s7Byte) {
@@ -491,22 +512,9 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
     switch (midici_.ciType) {
     case MIDICI_DISCOVERY: this->discovery(s7Byte); break;
     case MIDICI_DISCOVERY_REPLY: this->discovery_reply(s7Byte); break;
-
-    case MIDICI_INVALIDATEMUID:  // MIDI-CI Invalidate MUID Message
-      if (sysexPos_ >= 13 && sysexPos_ <= 16) {
-        buffer_[sysexPos_ - 13] = s7Byte;
-      }
-
-      // terminate MUID
-      if (sysexPos_ == 16) {
-        std::uint32_t const muid =
-            static_cast<std::uint32_t>(buffer_[0]) | (static_cast<std::uint32_t>(buffer_[1]) << 7) |
-            (static_cast<std::uint32_t>(buffer_[2]) << 14) | (static_cast<std::uint32_t>(buffer_[3]) << 21);
-        callbacks_.invalidate_muid(midici_, muid);
-      }
-      break;
     case MIDICI_ENDPOINTINFO: this->endpoint_info(s7Byte); break;
     case MIDICI_ENDPOINTINFO_REPLY: this->endpoint_info_reply(s7Byte); break;
+    case MIDICI_INVALIDATEMUID: this->invalidate_muid(s7Byte); break;
     case MIDICI_ACK:
     case MIDICI_NAK:
       this->midiCI_ack_nak(s7Byte);

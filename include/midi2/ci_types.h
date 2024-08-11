@@ -110,8 +110,8 @@ struct discovery {
   constexpr discovery() = default;
   constexpr discovery(discovery const &) = default;
   constexpr discovery(discovery &&) noexcept = default;
-  constexpr discovery(packed::discovery_v1 const &v1);
-  constexpr discovery(packed::discovery_v2 const &v2);
+  constexpr explicit discovery(packed::discovery_v1 const &v1);
+  constexpr explicit discovery(packed::discovery_v2 const &v2);
   bool operator==(discovery const &) const = default;
 
   std::array<std::uint8_t, 3> manufacturer{};
@@ -174,8 +174,8 @@ struct discovery_reply {
   constexpr discovery_reply() = default;
   constexpr discovery_reply(discovery_reply const &) = default;
   constexpr discovery_reply(discovery_reply &&) noexcept = default;
-  constexpr discovery_reply(packed::discovery_reply_v1 const &v1);
-  constexpr discovery_reply(packed::discovery_reply_v2 const &v2);
+  constexpr explicit discovery_reply(packed::discovery_reply_v1 const &v1);
+  constexpr explicit discovery_reply(packed::discovery_reply_v2 const &v2);
   bool operator==(discovery_reply const &) const = default;
 
   std::array<std::uint8_t, 3> manufacturer{};
@@ -200,6 +200,11 @@ constexpr discovery_reply::discovery_reply(packed::discovery_reply_v2 const &v2)
   function_block = packed::from_le7(v2.function_block);
 }
 
+//*              _           _     _     _       __      *
+//*  ___ _ _  __| |_ __  ___(_)_ _| |_  (_)_ _  / _|___  *
+//* / -_) ' \/ _` | '_ \/ _ \ | ' \  _| | | ' \|  _/ _ \ *
+//* \___|_||_\__,_| .__/\___/_|_||_\__| |_|_||_|_| \___/ *
+//*               |_|                                    *
 namespace packed {
 
 struct endpoint_info_v1 {
@@ -214,7 +219,7 @@ struct endpoint_info {
   constexpr endpoint_info() = default;
   constexpr endpoint_info(endpoint_info const &) = default;
   constexpr endpoint_info(endpoint_info &&) noexcept = default;
-  constexpr endpoint_info(packed::endpoint_info_v1 const &);
+  constexpr explicit endpoint_info(packed::endpoint_info_v1 const &);
   bool operator==(endpoint_info const &) const = default;
 
   std::uint8_t status;
@@ -224,6 +229,11 @@ constexpr endpoint_info::endpoint_info(packed::endpoint_info_v1 const &other)
     : status{static_cast<std::uint8_t>(other.status)} {
 }
 
+//*              _           _     _     _       __                    _       *
+//*  ___ _ _  __| |_ __  ___(_)_ _| |_  (_)_ _  / _|___   _ _ ___ _ __| |_  _  *
+//* / -_) ' \/ _` | '_ \/ _ \ | ' \  _| | | ' \|  _/ _ \ | '_/ -_) '_ \ | || | *
+//* \___|_||_\__,_| .__/\___/_|_||_\__| |_|_||_|_| \___/ |_| \___| .__/_|\_, | *
+//*               |_|                                            |_|     |__/  *
 namespace packed {
 
 struct endpoint_info_reply_v1 {
@@ -242,7 +252,7 @@ struct endpoint_info_reply {
   constexpr endpoint_info_reply() = default;
   constexpr endpoint_info_reply(endpoint_info_reply const &) = default;
   constexpr endpoint_info_reply(endpoint_info_reply &&) noexcept = default;
-  constexpr endpoint_info_reply(packed::endpoint_info_reply_v1 const &);
+  constexpr explicit endpoint_info_reply(packed::endpoint_info_reply_v1 const &);
 
   std::byte status{};
   std::span<std::byte const> information;
@@ -250,6 +260,35 @@ struct endpoint_info_reply {
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
     : status{packed::from_le7(other.status)}, information{other.data, packed::from_le7(other.data_length)} {
+}
+
+//*  _              _ _    _      _         __  __ _   _ ___ ___   *
+//* (_)_ ___ ____ _| (_)__| |__ _| |_ ___  |  \/  | | | |_ _|   \  *
+//* | | ' \ V / _` | | / _` / _` |  _/ -_) | |\/| | |_| || || |) | *
+//* |_|_||_\_/\__,_|_|_\__,_\__,_|\__\___| |_|  |_|\___/|___|___/  *
+//*                                                                *
+namespace packed {
+
+struct invalidate_muid_v1 {
+  byte_array_4 target_muid;
+};
+static_assert(offsetof(invalidate_muid_v1, target_muid) == 0);
+static_assert(sizeof(invalidate_muid_v1) == 4);
+
+}  // end namespace packed
+
+struct invalidate_muid {
+  constexpr invalidate_muid() = default;
+  constexpr invalidate_muid(invalidate_muid const &) = default;
+  constexpr invalidate_muid(invalidate_muid &&) noexcept = default;
+  constexpr explicit invalidate_muid(packed::invalidate_muid_v1 const &);
+  constexpr bool operator==(invalidate_muid const &) const = default;
+
+  std::uint32_t target_muid = 0;
+};
+
+constexpr invalidate_muid::invalidate_muid(packed::invalidate_muid_v1 const &other)
+    : target_muid{packed::from_le7(other.target_muid)} {
 }
 
 }  // end namespace midi2::ci

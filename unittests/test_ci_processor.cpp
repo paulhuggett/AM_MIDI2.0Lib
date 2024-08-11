@@ -71,6 +71,7 @@ public:
   MOCK_METHOD(void, discovery_reply, (MIDICI const &, midi2::ci::discovery_reply const &), (override));
   MOCK_METHOD(void, endpoint_info, (MIDICI const &, midi2::ci::endpoint_info const &), (override));
   MOCK_METHOD(void, endpoint_info_reply, (MIDICI const &, midi2::ci::endpoint_info_reply const &), (override));
+  MOCK_METHOD(void, invalidate_muid, (MIDICI const &, midi2::ci::invalidate_muid const &), (override));
 
   MOCK_METHOD(void, ack,
               (MIDICI const &, std::uint8_t, std::uint8_t, std::uint8_t, (std::span<std::byte, 5>), std::uint16_t,
@@ -80,7 +81,6 @@ public:
               (MIDICI const &, std::uint8_t, std::uint8_t, std::uint8_t, (std::span<std::byte, 5>), std::uint16_t,
                std::span<std::byte>),
               (override));
-  MOCK_METHOD(void, invalidate_muid, (MIDICI const &, uint32_t), (override));
 
   using protocol_span = std::span<std::byte, 5>;
   MOCK_METHOD(void, protocol_available, (MIDICI const &midici, std::uint8_t authority_level, protocol_span protocol),
@@ -303,7 +303,7 @@ auto EndpointInfoReplyMatches(std::byte status, std::span<std::byte const> info)
 
 TEST(CIProcessor, EndpointInfoReply) {
   constexpr auto group = std::uint8_t{0x71};
-  constexpr auto device_id = std::uint8_t{0x7F};
+  constexpr auto device_id = std::byte{0x7F};
   constexpr auto status = std::byte{0b0101010};
   constexpr auto length = swappable<std::uint16_t>{8};
   constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -316,7 +316,7 @@ TEST(CIProcessor, EndpointInfoReply) {
   // clang-format off
   std::array const message{
     std::byte{0x7E}, // Universal System Exclusive
-    static_cast<std::byte> (device_id), // Device ID: 0x7F = to MIDI Port
+    device_id, // Device ID: 0x7F = to Function Block
     std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x73}, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
@@ -331,7 +331,7 @@ TEST(CIProcessor, EndpointInfoReply) {
   static_assert(message.size() == 16 + length);
   MIDICI midici;
   midici.umpGroup = group;
-  midici.deviceId = device_id;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
   midici.ciType = midi2::MIDICI_ENDPOINTINFO_REPLY;
   midici.ciVer = 1;
   midici.remoteMUID = midi2::ci::packed::from_le7(sender_muid);
@@ -349,7 +349,52 @@ TEST(CIProcessor, EndpointInfoReply) {
                                      status, std::span<std::byte const>{information.begin(), information.size()})))
       .Times(1);
   midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, message[1]);
+  processor.startSysex7(group, device_id);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, InvalidateMuid) {
+  constexpr auto group = std::uint8_t{0x71};
+  constexpr auto device_id = std::byte{0x7F};
+  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr std::array const target_muid{std::byte{0x21}, std::byte{0x43}, std::byte{0x75}, std::byte{0x71}};
+
+  // clang-format off
+  std::array const message{
+    std::byte{0x7E}, // Universal System Exclusive
+    device_id, // Device ID: 0x7F = to Function Block
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x7E}, // Universal System Exclusive Sub-ID#2: Invalidate MUID
+    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+    target_muid[0], target_muid[1], target_muid[2], target_muid[3] // Target MUID (the MUID to invalidate) (LSB first)
+  };
+  // clang-format on
+  static_assert(message.size() == 17);
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
+  midici.ciType = midi2::MIDICI_INVALIDATEMUID;
+  midici.ciVer = 1;
+  midici.remoteMUID = midi2::ci::packed::from_le7(sender_muid);
+  midici.localMUID = midi2::ci::packed::from_le7(receiver_muid);
+  midici._peReqIdx = std::optional<midi2::ci::reqId>{};
+  midici.totalChunks = 0;
+  midici.numChunk = 0;
+  midici.partialChunkCount = 0;
+  midici.requestId = std::byte{0xFF};
+
+  mock_callbacks mocks;
+  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  midi2::ci::invalidate_muid invalidate_muid;
+  invalidate_muid.target_muid = midi2::ci::packed::from_le7(target_muid);
+  EXPECT_CALL(mocks, invalidate_muid(midici, invalidate_muid)).Times(1);
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(group, device_id);
 
   std::for_each(std::begin(message), std::end(message),
                 std::bind_front(&decltype(processor)::processMIDICI, &processor));
