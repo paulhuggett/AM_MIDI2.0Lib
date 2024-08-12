@@ -100,6 +100,7 @@ static_assert(offsetof(discovery_v1, version) == 7);
 static_assert(offsetof(discovery_v1, capability) == 11);
 static_assert(offsetof(discovery_v1, max_sysex_size) == 12);
 static_assert(sizeof(discovery_v1) == 16);
+static_assert(alignof(discovery_v1) == 1);
 
 struct discovery_v2 {
   discovery_v1 v1;
@@ -159,6 +160,7 @@ static_assert(offsetof(discovery_reply_v1, version) == 7);
 static_assert(offsetof(discovery_reply_v1, capability) == 11);
 static_assert(offsetof(discovery_reply_v1, max_sysex_size) == 12);
 static_assert(sizeof(discovery_reply_v1) == 16);
+static_assert(alignof(discovery_reply_v1) == 1);
 
 struct discovery_reply_v2 {
   discovery_reply_v1 v1;
@@ -169,6 +171,7 @@ static_assert(offsetof(discovery_reply_v2, v1) == 0);
 static_assert(offsetof(discovery_reply_v2, output_path_id) == 16);
 static_assert(offsetof(discovery_reply_v2, function_block) == 17);
 static_assert(sizeof(discovery_reply_v2) == 18);
+static_assert(alignof(discovery_reply_v2) == 1);
 
 }  // end namespace packed
 
@@ -214,6 +217,7 @@ struct endpoint_info_v1 {
 };
 static_assert(offsetof(endpoint_info_v1, status) == 0);
 static_assert(sizeof(endpoint_info_v1) == 1);
+static_assert(alignof(endpoint_info_v1) == 1);
 
 }  // end namespace packed
 
@@ -247,6 +251,7 @@ static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
 static_assert(offsetof(endpoint_info_reply_v1, data) == 3);
 static_assert(sizeof(endpoint_info_reply_v1) == 4);
+static_assert(alignof(endpoint_info_reply_v1) == 1);
 
 }  // end namespace packed
 
@@ -276,6 +281,7 @@ struct invalidate_muid_v1 {
 };
 static_assert(offsetof(invalidate_muid_v1, target_muid) == 0);
 static_assert(sizeof(invalidate_muid_v1) == 4);
+static_assert(alignof(invalidate_muid_v1) == 1);
 
 }  // end namespace packed
 
@@ -315,6 +321,7 @@ static_assert(offsetof(ack_v1, details) == 3);
 static_assert(offsetof(ack_v1, message_length) == 8);
 static_assert(offsetof(ack_v1, message) == 10);
 static_assert(sizeof(ack_v1) == 11);
+static_assert(alignof(ack_v1) == 1);
 
 }  // end namespace packed
 
@@ -357,6 +364,7 @@ static_assert(offsetof(nak_v2, details) == 3);
 static_assert(offsetof(nak_v2, message_length) == 8);
 static_assert(offsetof(nak_v2, message) == 10);
 static_assert(sizeof(nak_v2) == 11);
+static_assert(alignof(nak_v2) == 1);
 
 }  // end namespace packed
 
