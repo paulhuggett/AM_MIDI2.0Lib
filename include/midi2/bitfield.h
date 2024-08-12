@@ -63,7 +63,7 @@ public:
   }
 
   /// Obtains the value of the bitfield.
-  [[nodicard]] constexpr operator small_type() const noexcept { return this->value(); }
+  constexpr operator small_type() const noexcept { return this->value(); }
 
   /// Assigns a value to the bitfield.
   /// \param v  The value to be stored.
