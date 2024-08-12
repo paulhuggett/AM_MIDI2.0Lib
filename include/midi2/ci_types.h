@@ -55,12 +55,14 @@ namespace packed {
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 constexpr std::uint32_t from_le7(byte_array_4 const &v) {
+  assert (((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
   return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
          (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
          (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
          (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
 }
 constexpr std::uint16_t from_le7(byte_array_2 const &v) {
+  assert (((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
   return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
                                     (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
 }
@@ -346,6 +348,11 @@ constexpr ack::ack(packed::ack_v1 const &other)
       message{std::begin(other.message), packed::from_le7(other.message_length)} {
 }
 
+//*            _    *
+//*  _ _  __ _| |__ *
+//* | ' \/ _` | / / *
+//* |_||_\__,_|_\_\ *
+//*                 *
 namespace packed {
 
 struct nak_v1 {};
