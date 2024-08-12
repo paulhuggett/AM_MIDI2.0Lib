@@ -1,12 +1,23 @@
-#include <gmock/gmock.h>
-
+// DUT
+#include "midi2/ci_types.h"
 #include "midi2/midiCIProcessor.h"
+
+// Standard library
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <optional>
+#include <ostream>
+
+// 3rd party
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 namespace {
 
 template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::array<std::uint8_t, Size> const &arr) {
   os << '[';
-  auto separator = "";
+  auto const *separator = "";
   for (auto m : arr) {
     os << separator << static_cast<unsigned>(m);
     separator = ",";

@@ -47,17 +47,15 @@ public:
   static constexpr auto last_bit = Index + Bits;
 
   /// Returns the smallest value that can be stored.
-  static constexpr small_type min() noexcept { return 0; }
+  [[nodiscard]] static constexpr small_type min() noexcept { return 0; }
   /// Returns the largest value that can be stored.
-  static constexpr small_type max() noexcept { return mask_; }
+  [[nodiscard]] static constexpr small_type max() noexcept { return mask_; }
 
   /// Returns the value stored in the bitfield.
-  constexpr small_type value() const noexcept {
-    return (value_ >> Index) & mask_;
-  }
+  [[nodiscard]] constexpr small_type value() const noexcept { return (value_ >> Index) & mask_; }
 
   /// Returns the value stored in the bitfield as a signed quantity.
-  constexpr std::make_signed_t<small_type> signed_value() const noexcept {
+  [[nodiscard]] constexpr std::make_signed_t<small_type> signed_value() const noexcept {
     // Taken from Bit Twiddling Hacks by Sean Eron Anderson:
     // https://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
     constexpr auto m = value_type{1} << (Bits - 1U);
@@ -65,7 +63,7 @@ public:
   }
 
   /// Obtains the value of the bitfield.
-  constexpr operator small_type() const noexcept { return this->value(); }
+  [[nodicard]] constexpr operator small_type() const noexcept { return this->value(); }
 
   /// Assigns a value to the bitfield.
   /// \param v  The value to be stored.

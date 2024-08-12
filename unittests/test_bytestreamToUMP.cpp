@@ -25,21 +25,20 @@ using testing::TestWithParam;
 template <typename ArrayLike> struct HexContainer {
   constexpr explicit HexContainer(ArrayLike const& container_)
       : container{container_} {}
+
+  friend std::ostream& operator<<(std::ostream& os, HexContainer<ArrayLike> const& hc) {
+    auto const* separator = "";
+    for (auto v : hc.container) {
+      os << separator << "0x" << std::hex << std::uppercase << static_cast<unsigned>(v);
+      separator = ", ";
+    }
+    return os;
+  }
+
   ArrayLike const& container;
 };
 template <typename ArrayLike>
 HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;
-
-template <typename ArrayLike>
-std::ostream& operator<<(std::ostream& os, HexContainer<ArrayLike> const& hc) {
-  auto const* separator = "";
-  for (auto v : hc.container) {
-    os << separator << "0x" << std::hex << std::uppercase
-       << static_cast<unsigned>(v);
-    separator = ", ";
-  }
-  return os;
-}
 
 template <std::size_t Size>
 auto convert(midi2::bytestreamToUMP&& bs2ump,
@@ -632,18 +631,15 @@ protected:
   static constexpr auto velocity_ = std::uint8_t{127};
   static constexpr auto channel_ = std::uint8_t{1};
 
-  auto input() const {
-    return std::array{
-        // a normal note-on message
-        static_cast<std::uint8_t>(midi2::status::note_on | channel_),
-        note_number_, velocity_,
-        //
-        this->GetParam(),    // one of the reserved status codes
-        std::uint8_t{0x01},  // two bytes to be ignored
-        std::uint8_t{0x02}, std::uint8_t{0x03},
-        // a normal note-off message
-        static_cast<std::uint8_t>(midi2::status::note_off | channel_),
-        note_number_, velocity_};
+  [[nodiscard]] auto input() const {
+    return std::array{// a normal note-on message
+                      static_cast<std::uint8_t>(midi2::status::note_on | channel_), note_number_, velocity_,
+                      //
+                      BytestreamToUMPReserved::GetParam(),  // one of the reserved status codes
+                      std::uint8_t{0x01},                   // two bytes to be ignored
+                      std::uint8_t{0x02}, std::uint8_t{0x03},
+                      // a normal note-off message
+                      static_cast<std::uint8_t>(midi2::status::note_off | channel_), note_number_, velocity_};
   }
 };
 
