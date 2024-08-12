@@ -96,12 +96,7 @@ template <typename T> concept ci_backend = requires(T && v) {
   { v.endpoint_info_reply(MIDICI{}, ci::endpoint_info_reply{}) } -> std::same_as<void>;
   { v.invalidate_muid(MIDICI{}, ci::invalidate_muid{}) } -> std::same_as<void>;
   { v.ack(MIDICI{}, ci::ack{}) } -> std::same_as<void>;
-
-  {
-    v.nak(MIDICI{}, std::uint8_t{} /*origSubID*/, std::uint8_t{} /*statusCode*/, std::uint8_t{} /*statusData*/,
-          std::span<std::byte, 5>{bytes} /*ackNakDetails*/, std::uint16_t{} /*messageLength*/,
-          std::span<std::byte>{} /*ackNakMessage*/)
-  } -> std::same_as<void>;
+  { v.nak(MIDICI{}, ci::nak{}) } -> std::same_as<void>;
 
   { v.unknown_midici(MIDICI{}, std::byte{}) } -> std::same_as<void>;
 
@@ -173,19 +168,8 @@ public:
   virtual void endpoint_info(MIDICI const &, ci::endpoint_info const &) { /* do nothing*/ }
   virtual void endpoint_info_reply(MIDICI const &, ci::endpoint_info_reply const &) { /* do nothing */ }
   virtual void invalidate_muid(MIDICI const &, ci::invalidate_muid const &) { /* do nothing */ }
-  virtual void ack(MIDICI const &, midi2::ci::ack const &) { /* do nothing */ }
-
-  virtual void nak(MIDICI const &, std::uint8_t origSubID, std::uint8_t statusCode, std::uint8_t statusData,
-                   std::span<std::byte, 5> ackNakDetails, std::uint16_t messageLength,
-                   std::span<std::byte> ackNakMessage) {
-    (void)origSubID;
-    (void)statusCode;
-    (void)statusData;
-    (void)ackNakDetails;
-    (void)messageLength;
-    (void)ackNakMessage;
-    /* do nothing */
-  }
+  virtual void ack(MIDICI const &, ci::ack const &) { /* do nothing */ }
+  virtual void nak(MIDICI const &, ci::nak const &) { /* do nothing */ }
 
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
 
@@ -293,7 +277,7 @@ private:
   void invalidate_muid(std::byte s7);
   void ack(std::byte s7);
 
-  void midiCI_ack_nak(std::byte s7Byte);
+  void nak(std::byte s7Byte);
 };
 
 midiCIProcessor() -> midiCIProcessor<ci_callbacks>;
@@ -318,34 +302,9 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::cleanupRequest(
   peHeaderStr.erase(peReqIdx);
 }
 
-template <std::unsigned_integral T> constexpr T little_to_native(T v);
-
-template <> constexpr std::uint32_t little_to_native<std::uint32_t>(std::uint32_t v) {
-  using enum std::endian;
-  if constexpr (native == little) {
-    return v;
-  } else if constexpr (native == big) {
-    return ((v >> 24) & 0xFF) | ((v >> 16) & 0x0000FF00) | ((v << 8) & 0x00FF0000) | ((v << 24) & 0xFF000000);
-  } else {
-    assert(false && "Can't byte swap if endian is mixed");
-  }
-}
-template <> constexpr std::uint16_t little_to_native<std::uint16_t>(std::uint16_t v) {
-  using enum std::endian;
-  if constexpr (native == little) {
-    return v;
-  } else if constexpr (native == big) {
-    return ((v >> 8) & 0x00FF) | ((v << 8) & 0xFF00);
-  } else {
-    assert(false && "Can't byte swap if endian is mixed");
-  }
-}
-
-template <typename T> void swaps(T &);
-
 // discovery
 // ~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte s7) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -367,7 +326,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::
 
 // discovery reply
 // ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte s7) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -390,7 +349,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply
 
 // ack
 // ~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte s7) {
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -411,51 +370,29 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte s
   callbacks_.ack(midici_, ci::ack{*packed_reply});
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::midiCI_ack_nak(std::byte s7Byte) {
-  bool complete = false;
-  if (sysexPos_ == 13) {
-    if (midici_.ciVer == 1) {
-      complete = true;
-    } else if (midici_.ciVer > 1) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
-    }
-  }
-  if (sysexPos_ == 14) {
-    intTemp_[1] = static_cast<std::uint32_t>(s7Byte);  // statusCode
-  }
-  if (sysexPos_ == 15) {
-    intTemp_[2] = static_cast<std::uint32_t>(s7Byte);  // statusData
-  }
-  if (sysexPos_ >= 16 && sysexPos_ <= 20) {
-    buffer_[sysexPos_ - 16] = s7Byte;  // ackNakDetails
-  }
-  if (sysexPos_ == 21 || sysexPos_ == 22) {
-    intTemp_[3] += static_cast<std::uint32_t>(s7Byte) << (7 * (sysexPos_ - 21));
+template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::nak(std::byte const s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < 13) {
     return;
   }
+  assert(sysexPos_ >= header_size);
+  buffer_[sysexPos_ - header_size] = s7;
 
-  if (sysexPos_ >= 23 && sysexPos_ <= 23 + intTemp_[3]) {
-    buffer_[sysexPos_ - 23] = s7Byte;  // product ID
+  // Wait for the basic structure to arrive.
+  auto const expected_size = midici_.ciVer == 1 ? sizeof(ci::packed::nak_v1) : offsetof(ci::packed::nak_v2, message);
+  if (sysexPos_ < header_size + expected_size - 1) {
+    return;
   }
-  if (sysexPos_ == 23 + intTemp_[3]) {
-    complete = true;
+  if (midici_.ciVer == 1) {
+    auto const *const v1 = std::bit_cast<ci::packed::nak_v1 const *>(buffer_.data());
+    return callbacks_.nak(midici_, ci::nak{*v1});
   }
-
-  if (complete) {
-    std::span<std::byte, 5> ackNakDetails{std::begin(buffer_), 5};
-
-    if (midici_.ciType == MIDICI_NAK)
-      callbacks_.nak(midici_, static_cast<std::uint8_t>(intTemp_[0]), static_cast<std::uint8_t>(intTemp_[1]),
-                     static_cast<std::uint8_t>(intTemp_[2]), ackNakDetails, static_cast<std::uint16_t>(intTemp_[3]),
-                     buffer_);
-
-#if 0
-    if (midici_.ciType == MIDICI_ACK && midici_.ciVer > 1)
-      callbacks_.ack(midici_, static_cast<std::uint8_t>(intTemp_[0]), static_cast<std::uint8_t>(intTemp_[1]),
-                     static_cast<std::uint8_t>(intTemp_[2]), ackNakDetails, static_cast<std::uint16_t>(intTemp_[3]),
-                     buffer_);
-#endif
+  // Wait for the variable-length data.
+  auto const *const v2 = std::bit_cast<ci::packed::nak_v2 const *>(buffer_.data());
+  if (sysexPos_ < header_size + expected_size + ci::packed::from_le7(v2->message_length) - 1) {
+    return;
   }
+  callbacks_.nak(midici_, ci::nak{*v2});
 }
 
 // endpoint info
@@ -539,9 +476,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
     case MIDICI_ENDPOINTINFO_REPLY: this->endpoint_info_reply(s7Byte); break;
     case MIDICI_INVALIDATEMUID: this->invalidate_muid(s7Byte); break;
     case MIDICI_ACK: this->ack(s7Byte); break;
-    case MIDICI_NAK:
-      this->midiCI_ack_nak(s7Byte);
-      break;
+    case MIDICI_NAK: this->nak(s7Byte); break;
 
       // #ifdef M2_ENABLE_PROTOCOL
     case MIDICI_PROTOCOL_NEGOTIATION:

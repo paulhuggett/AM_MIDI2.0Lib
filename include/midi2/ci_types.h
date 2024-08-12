@@ -339,6 +339,51 @@ constexpr ack::ack(packed::ack_v1 const &other)
       message{std::begin(other.message), packed::from_le7(other.message_length)} {
 }
 
+namespace packed {
+
+struct nak_v1 {};
+struct nak_v2 {
+  std::byte original_id;        // Original transaction sub-ID#2 classification
+  std::byte status_code;        // ACK Status Code
+  std::byte status_data;        // ACK Status Data
+  byte_array_5 details;         // ACK details for each SubID Classification
+  byte_array_2 message_length;  // Message Length (LSB firt)
+  std::byte message[1];         // Message text
+};
+static_assert(offsetof(nak_v2, original_id) == 0);
+static_assert(offsetof(nak_v2, status_code) == 1);
+static_assert(offsetof(nak_v2, status_data) == 2);
+static_assert(offsetof(nak_v2, details) == 3);
+static_assert(offsetof(nak_v2, message_length) == 8);
+static_assert(offsetof(nak_v2, message) == 10);
+static_assert(sizeof(nak_v2) == 11);
+
+}  // end namespace packed
+
+struct nak {
+  constexpr nak() = default;
+  constexpr nak(nak const &) = default;
+  constexpr nak(nak &&) noexcept = default;
+  constexpr explicit nak(packed::nak_v1 const &);
+  constexpr explicit nak(packed::nak_v2 const &);
+
+  std::uint8_t original_id;      // Original transaction sub-ID#2 classification
+  std::uint8_t status_code = 0;  // NAK Status Code
+  std::uint8_t status_data = 0;  // NAK Status Data
+  byte_array_5 details;          // NAK details for each SubID Classification
+  std::span<std::byte const> message;
+};
+
+constexpr nak::nak(packed::nak_v1 const &) {
+}
+constexpr nak::nak(packed::nak_v2 const &other)
+    : original_id{static_cast<std::uint8_t>(other.original_id)},
+      status_code{static_cast<std::uint8_t>(other.status_code)},
+      status_data{static_cast<std::uint8_t>(other.status_data)},
+      details{other.details},
+      message{std::begin(other.message), packed::from_le7(other.message_length)} {
+}
+
 }  // end namespace midi2::ci
 
 #endif  // MIDI2_CI_TYPES_H

@@ -73,11 +73,7 @@ public:
   MOCK_METHOD(void, endpoint_info_reply, (MIDICI const &, midi2::ci::endpoint_info_reply const &), (override));
   MOCK_METHOD(void, invalidate_muid, (MIDICI const &, midi2::ci::invalidate_muid const &), (override));
   MOCK_METHOD(void, ack, (MIDICI const &, midi2::ci::ack const &), (override));
-
-  MOCK_METHOD(void, nak,
-              (MIDICI const &, std::uint8_t, std::uint8_t, std::uint8_t, (std::span<std::byte, 5>), std::uint16_t,
-               std::span<std::byte>),
-              (override));
+  MOCK_METHOD(void, nak, (MIDICI const &, midi2::ci::nak const &), (override));
 
   using protocol_span = std::span<std::byte, 5>;
   MOCK_METHOD(void, protocol_available, (MIDICI const &midici, std::uint8_t authority_level, protocol_span protocol),
@@ -451,6 +447,69 @@ TEST(CIProcessor, Ack) {
                 Field("status_data", &midi2::ci::ack::status_data, Eq(static_cast<std::uint8_t>(ack_status_data))),
                 Field("details", &midi2::ci::ack::details, ElementsAreArray(ack_details)),
                 Field("message", &midi2::ci::ack::message, ElementsAreArray(text)))))
+      .Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(group, device_id);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, NakV2) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto device_id = std::byte{0x7F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+
+  constexpr auto original_id = std::byte{0x34};
+  constexpr auto nak_status_code = std::byte{0x00};
+  constexpr auto nak_status_data = std::byte{0x7F};
+  constexpr auto nakk_details =
+      std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
+  constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto text = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    device_id, // Device ID: 0x7F = to Function Block
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+    original_id, // Originl transaciton sub-ID#2 classification
+    nak_status_code, // NAK Status Code
+    nak_status_data, // NAK Status Data
+    nakk_details[0], nakk_details[1], nakk_details[2], nakk_details[3], nakk_details[4],
+    text_length[0], text_length[1],
+    text[0], text[1], text[2], text[3], text[4],
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
+  midici.ciType = midi2::MIDICI_NAK;
+  midici.ciVer = 2;
+  midici.remoteMUID = midi2::ci::packed::from_le7(sender_muid);
+  midici.localMUID = midi2::ci::packed::from_le7(receiver_muid);
+  midici._peReqIdx = std::optional<midi2::ci::reqId>{};
+  midici.totalChunks = 0;
+  midici.numChunk = 0;
+  midici.partialChunkCount = 0;
+  midici.requestId = std::byte{0xFF};
+
+  mock_callbacks mocks;
+  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(
+      mocks,
+      nak(midici,
+          AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(static_cast<std::uint8_t>(original_id))),
+                Field("status_code", &midi2::ci::nak::status_code, Eq(static_cast<std::uint8_t>(nak_status_code))),
+                Field("status_data", &midi2::ci::nak::status_data, Eq(static_cast<std::uint8_t>(nak_status_data))),
+                Field("details", &midi2::ci::nak::details, ElementsAreArray(nakk_details)),
+                Field("message", &midi2::ci::nak::message, ElementsAreArray(text)))))
       .Times(1);
 
   midi2::midiCIProcessor processor{std::ref(mocks)};
