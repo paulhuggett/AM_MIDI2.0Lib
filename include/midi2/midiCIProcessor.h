@@ -81,10 +81,6 @@ namespace midi2 {
 using MIDICI = ci::MIDICI;
 
 using profile_span = std::span<std::byte, 5>;
-using device_manufacturer = std::span<std::byte, 3>;
-using device_family = std::uint16_t;
-using device_model = std::uint16_t;
-using device_version = std::uint32_t;
 constexpr auto bytes = std::span<std::byte>{};
 
 template <typename T> concept ci_backend = requires(T && v) {
@@ -99,34 +95,6 @@ template <typename T> concept ci_backend = requires(T && v) {
   { v.nak(MIDICI{}, ci::nak{}) } -> std::same_as<void>;
 
   { v.unknown_midici(MIDICI{}, std::byte{}) } -> std::same_as<void>;
-
-  // Protocol Negotiation
-  {
-    v.protocol_available(MIDICI{}, std::uint8_t{} /*authority_level*/, std::span<std::byte, 5>{bytes} /*protocol*/)
-  } -> std::same_as<void>;
-  {
-    v.recvSetProtocol(MIDICI{}, std::uint8_t{} /*authority_level*/, std::span<std::byte, 5>{bytes} /*protocol*/)
-  } -> std::same_as<void>;
-  { v.recvSetProtocolConfirm(MIDICI{}, std::uint8_t{} /*authorityLevel*/) } -> std::same_as<void>;
-  {
-    v.recvProtocolTest(MIDICI{}, std::uint8_t{} /*authorityLevel*/, bool{} /*testDataAccurate*/)
-  } -> std::same_as<void>;
-
-  // Profiles
-  { v.recvProfileInquiry(MIDICI{}) } -> std::same_as<void>;
-  { v.recvSetProfileEnabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
-  { v.recvSetProfileRemoved(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
-  { v.recvSetProfileDisabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
-  { v.recvSetProfileOn(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
-  { v.recvSetProfileOff(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
-  {
-    v.profile_specific_data(MIDICI{}, profile_span{bytes}, std::span<std::byte>{}, std::uint16_t{} /*part*/,
-                            bool{} /*lastByteOfSet*/)
-  } -> std::same_as<void>;
-  { v.set_profile_details_inquiry(MIDICI{}, profile_span{bytes}, std::byte{} /*target*/) } -> std::same_as<void>;
-  {
-    v.set_profile_details_reply(MIDICI{}, profile_span{bytes}, std::byte{} /*target*/, std::span<std::byte>{} /*data*/)
-  } -> std::same_as<void>;
 
   // Property Exchange
   {
@@ -155,11 +123,30 @@ template <typename T> concept ci_backend = requires(T && v) {
   } -> std::same_as<void>;
 };
 
+template <typename T> concept profile_backend = requires(T && v) {
+  // Profiles
+  { v.inquiry(MIDICI{}) } -> std::same_as<void>;
+  { v.recvSetProfileEnabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.recvSetProfileRemoved(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
+  { v.recvSetProfileDisabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.recvSetProfileOn(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.recvSetProfileOff(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
+  {
+    v.profile_specific_data(MIDICI{}, profile_span{bytes}, std::span<std::byte>{}, std::uint16_t{} /*part*/,
+                            bool{} /*lastByteOfSet*/)
+  } -> std::same_as<void>;
+  { v.set_profile_details_inquiry(MIDICI{}, profile_span{bytes}, std::byte{} /*target*/) } -> std::same_as<void>;
+  {
+    v.set_profile_details_reply(MIDICI{}, profile_span{bytes}, std::byte{} /*target*/, std::span<std::byte>{} /*data*/)
+  } -> std::same_as<void>;
+};
+
 class ci_callbacks {
 public:
   ci_callbacks () = default;
   ci_callbacks (ci_callbacks const & ) = default;
-  virtual ~ci_callbacks () = default;
+  ci_callbacks(ci_callbacks &&) noexcept = default;
+  virtual ~ci_callbacks() noexcept = default;
 
   virtual bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
 
@@ -172,39 +159,6 @@ public:
   virtual void nak(MIDICI const &, ci::nak const &) { /* do nothing */ }
 
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
-
-  // Protocol Negotiation
-  virtual void protocol_available(MIDICI const &, std::uint8_t authority_level, std::span<std::byte, 5> protocol) {
-    (void)authority_level;
-    (void)protocol;
-  }
-  virtual void recvSetProtocol(MIDICI const &, std::uint8_t authority_level, std::span<std::byte, 5> protocol) {
-    (void)authority_level;
-    (void)protocol;
-  }
-  virtual void recvSetProtocolConfirm(MIDICI const &, std::uint8_t /*authorityLevel*/) {}
-  virtual void recvProtocolTest(MIDICI const &, std::uint8_t /*authorityLevel*/,
-                                bool /*testDataAccurate*/) { /* do nothing */ }
-
-  // Profiles
-  virtual void recvProfileInquiry(MIDICI const &) { /* do nothing */ }
-  virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
-                                     std::uint8_t /*number_of_channels*/) { /* do nothing */ }
-  virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) { /* do nothing */ }
-  virtual void recvSetProfileDisabled(MIDICI const &, profile_span /*profile*/,
-                                      std::uint8_t /*number_of_channels*/) { /* do nothing*/ }
-  virtual void recvSetProfileOn(MIDICI const &, profile_span /*profile*/,
-                                std::uint8_t /*number_of_channels*/) { /* do nothing */ }
-  virtual void recvSetProfileOff(MIDICI const &, profile_span /*profile*/) { /* do nothing*/ }
-  virtual void profile_specific_data(MIDICI const &, profile_span /*profile*/, std::span<std::byte> /*data*/,
-                                     std::uint16_t /*part*/, bool /*lastByteOfSet*/) { /* do nothing*/ }
-  virtual void set_profile_details_inquiry(MIDICI const &, profile_span /*profile*/, std::byte /*target*/) {
-    /* do nothing */
-  }
-  virtual void set_profile_details_reply(MIDICI const &, profile_span /*profile*/, std::byte /*target*/,
-                                         std::span<std::byte> /*data*/) {
-    /* do nothing */
-  }
 
   // Property Exchange
   virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
@@ -232,9 +186,38 @@ public:
   virtual void recvPIMMReportEnd(MIDICI const &) { /* do nothing */ }
 };
 
-template <ci_backend Callbacks = ci_callbacks> class midiCIProcessor {
+class profile_callbacks {
 public:
-  explicit midiCIProcessor(Callbacks callbacks = Callbacks{}) : callbacks_{callbacks} {}
+  profile_callbacks() = default;
+  profile_callbacks(profile_callbacks const &) = default;
+  profile_callbacks(profile_callbacks &&) noexcept = default;
+  virtual ~profile_callbacks() noexcept = default;
+
+  virtual void inquiry(MIDICI const &) { /* do nothing */ }
+  virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
+                                     std::uint8_t /*number_of_channels*/) { /* do nothing */ }
+  virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) { /* do nothing */ }
+  virtual void recvSetProfileDisabled(MIDICI const &, profile_span /*profile*/,
+                                      std::uint8_t /*number_of_channels*/) { /* do nothing*/ }
+  virtual void recvSetProfileOn(MIDICI const &, profile_span /*profile*/,
+                                std::uint8_t /*number_of_channels*/) { /* do nothing */ }
+  virtual void recvSetProfileOff(MIDICI const &, profile_span /*profile*/) { /* do nothing*/ }
+  virtual void profile_specific_data(MIDICI const &, profile_span /*profile*/, std::span<std::byte> /*data*/,
+                                     std::uint16_t /*part*/, bool /*lastByteOfSet*/) { /* do nothing*/ }
+  virtual void set_profile_details_inquiry(MIDICI const &, profile_span /*profile*/, std::byte /*target*/) {
+    /* do nothing */
+  }
+  virtual void set_profile_details_reply(MIDICI const &, profile_span /*profile*/, std::byte /*target*/,
+                                         std::span<std::byte> /*data*/) {
+    /* do nothing */
+  }
+};
+
+template <ci_backend Callbacks = ci_callbacks, profile_backend ProfileBackend = profile_callbacks>
+class midiCIProcessor {
+public:
+  explicit midiCIProcessor(Callbacks callbacks = Callbacks{}, ProfileBackend profile = ProfileBackend{})
+      : callbacks_{callbacks}, profile_backend_{profile} {}
 
   void startSysex7(std::uint8_t group, std::byte deviceId);
   void endSysex7();
@@ -245,6 +228,8 @@ private:
   static constexpr auto S7_BUFFERLEN = 36;
 
   Callbacks callbacks_;
+  ProfileBackend profile_backend_;
+
   MIDICI midici_;
   std::uint16_t sysexPos_ = 0;
 
@@ -259,7 +244,6 @@ private:
   // in PE this is [header length, Body Length]
   std::uint32_t intTemp_[4]{};
 
-  void processProtocolSysex(std::byte s7Byte);
   void processProfileSysex(std::byte s7Byte);
 
   // Property Exchange
@@ -284,13 +268,15 @@ midiCIProcessor() -> midiCIProcessor<ci_callbacks>;
 template <ci_backend T> midiCIProcessor(T) -> midiCIProcessor<T>;
 template <ci_backend T> midiCIProcessor(std::reference_wrapper<T>) -> midiCIProcessor<T &>;
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endSysex7() {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::endSysex7() {
   if (midici_._peReqIdx) {
     cleanupRequest(midici_._peReqIdx);
   }
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::startSysex7(std::uint8_t group, std::byte deviceId) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::startSysex7(std::uint8_t group, std::byte deviceId) {
   sysexPos_ = 0;
   buffer_[0] = std::byte{0x00};
   midici_ = MIDICI();
@@ -298,13 +284,15 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::startSysex7(std
   midici_.umpGroup = group;
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::cleanupRequest(ci::reqId peReqIdx) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::cleanupRequest(ci::reqId peReqIdx) {
   peHeaderStr.erase(peReqIdx);
 }
 
 // discovery
 // ~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::byte const s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::discovery(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -326,7 +314,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery(std::
 
 // discovery reply
 // ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply(std::byte const s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::discovery_reply(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -349,7 +338,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::discovery_reply
 
 // ack
 // ~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte const s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::ack(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -370,7 +360,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::ack(std::byte c
   callbacks_.ack(midici_, ci::ack{*packed_reply});
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::nak(std::byte const s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::nak(std::byte const s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -397,7 +388,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::nak(std::byte c
 
 // endpoint info
 // ~~~~~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info(std::byte s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -412,7 +404,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info(s
 
 // endpoint info reply
 // ~~~~~~~~~~~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_reply(std::byte s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info_reply(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -435,7 +428,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::endpoint_info_r
 
 // invalidate muid
 // ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::invalidate_muid(std::byte s7) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte s7) {
   static constexpr auto header_size = 13;
   if (sysexPos_ < 13) {
     return;
@@ -448,7 +442,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::invalidate_muid
   callbacks_.invalidate_muid(midici_, ci::invalidate_muid{*p});
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(std::byte s7Byte) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte) {
   assert((s7Byte & std::byte{0b10000000}) == std::byte{0});
   if (sysexPos_ == 3) {
     midici_.ciType = static_cast<std::uint8_t>(s7Byte);
@@ -477,17 +472,6 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
     case MIDICI_INVALIDATEMUID: this->invalidate_muid(s7Byte); break;
     case MIDICI_ACK: this->ack(s7Byte); break;
     case MIDICI_NAK: this->nak(s7Byte); break;
-
-      // #ifdef M2_ENABLE_PROTOCOL
-    case MIDICI_PROTOCOL_NEGOTIATION:
-    case MIDICI_PROTOCOL_NEGOTIATION_REPLY:
-    case MIDICI_PROTOCOL_SET:
-    case MIDICI_PROTOCOL_TEST:
-    case MIDICI_PROTOCOL_TEST_RESPONDER:
-    case MIDICI_PROTOCOL_CONFIRM:
-      this->processProtocolSysex(s7Byte);
-      break;
-      // #endif
 
       // #ifndef M2_DISABLE_PROFILE
     case MIDICI_PROFILE_INQUIRY:        // Profile Inquiry
@@ -532,88 +516,12 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processMIDICI(s
   sysexPos_++;
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProtocolSysex(std::byte s7Byte) {
-  switch (midici_.ciType) {
-  case MIDICI_PROTOCOL_NEGOTIATION:
-  case MIDICI_PROTOCOL_NEGOTIATION_REPLY: {
-    // Authority Level
-    if (sysexPos_ == 13) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
-    }
-    // Number of Supported Protocols (np)
-    if (sysexPos_ == 14) {
-      intTemp_[1] = static_cast<std::uint16_t>(s7Byte);
-    }
-
-    auto const protocolOffset = intTemp_[1] * 5 + 14;
-
-    if (sysexPos_ >= 15 && sysexPos_ < protocolOffset) {
-      std::uint8_t const pos = (sysexPos_ - 14) % 5;
-      buffer_[pos] = s7Byte;
-      if (pos == 4) {
-        std::span<std::byte, 5> protocol{std::begin(buffer_), 5};
-        callbacks_.protocol_available(midici_, static_cast<std::uint8_t>(intTemp_[0]), protocol);
-      }
-    }
-    if (midici_.ciVer > 1) {
-      if (sysexPos_ >= protocolOffset && sysexPos_ <= protocolOffset + 5) {
-        buffer_[sysexPos_ - protocolOffset] = s7Byte;
-      }
-      if (sysexPos_ == protocolOffset + 5) {
-        callbacks_.recvSetProtocolConfirm(midici_, static_cast<std::uint8_t>(intTemp_[0]));
-      }
-    }
-    break;
-  }
-
-  case MIDICI_PROTOCOL_SET:  // Set Profile On Message
-    // Authority Level
-    if (sysexPos_ == 13) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
-    }
-    if (sysexPos_ >= 14 && sysexPos_ <= 18) {
-      buffer_[sysexPos_ - 13] = s7Byte;
-    }
-    if (sysexPos_ == 18) {
-      std::span<std::byte, 5> protocol{std::begin(buffer_), 5};
-      callbacks_.recvSetProtocol(midici_, static_cast<std::uint8_t>(intTemp_[0]), protocol);
-    }
-    break;
-
-  case MIDICI_PROTOCOL_TEST_RESPONDER:
-  case MIDICI_PROTOCOL_TEST:
-    // Authority Level
-    if (sysexPos_ == 13) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
-      intTemp_[1] = 1;
-    }
-    if (sysexPos_ >= 14 && sysexPos_ <= 61) {
-      if (static_cast<std::uint8_t>(s7Byte) != sysexPos_ - 14) {
-        intTemp_[1] = 0;
-      }
-    }
-    if (sysexPos_ == 61) {
-      callbacks_.recvProtocolTest(midici_, static_cast<std::uint8_t>(intTemp_[0]), !!(intTemp_[1]));
-    }
-    break;
-
-  case MIDICI_PROTOCOL_CONFIRM:  // Set Profile Off Message
-    // Authority Level
-    if (sysexPos_ == 13) {
-      intTemp_[0] = static_cast<std::uint16_t>(s7Byte);
-      callbacks_.recvSetProtocolConfirm(midici_, static_cast<std::uint8_t>(intTemp_[0]));
-    }
-    break;
-
-  default: assert(false && "unknown protocol sysex type"); break;
-  }
-}
-
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileSysex(std::byte s7Byte) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s7Byte) {
   switch (midici_.ciType) {
   case MIDICI_PROFILE_INQUIRY:  // Profile Inquiry
     if (sysexPos_ == 12) {
-      callbacks_.recvProfileInquiry(midici_);
+      profile_backend_.inquiry(midici_);
     }
     break;
   case MIDICI_PROFILE_INQUIRYREPLY: {  // Reply to Profile Inquiry
@@ -632,7 +540,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
       std::uint8_t const pos = (sysexPos_ - 13) % 5;
       buffer_[pos] = s7Byte;
       if (pos == 4) {
-        callbacks_.recvSetProfileEnabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
+        profile_backend_.recvSetProfileEnabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
       }
     }
 
@@ -641,7 +549,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
       std::uint8_t const pos = (sysexPos_ - 13) % 5;
       buffer_[pos] = s7Byte;
       if (pos == 4) {
-        callbacks_.recvSetProfileDisabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
+        profile_backend_.recvSetProfileDisabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
       }
     }
     break;
@@ -671,22 +579,22 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
     if (complete) {
       auto const profile = std::span<std::byte, 5>{std::begin(buffer_), 5};
       if (midici_.ciType == MIDICI_PROFILE_ADD) {
-        callbacks_.recvSetProfileDisabled(midici_, profile, 0);
+        profile_backend_.recvSetProfileDisabled(midici_, profile, 0);
       }
       if (midici_.ciType == MIDICI_PROFILE_REMOVE) {
-        callbacks_.recvSetProfileRemoved(midici_, profile);
+        profile_backend_.recvSetProfileRemoved(midici_, profile);
       }
       if (midici_.ciType == MIDICI_PROFILE_SETON) {
-        callbacks_.recvSetProfileOn(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
+        profile_backend_.recvSetProfileOn(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
       }
       if (midici_.ciType == MIDICI_PROFILE_SETOFF) {
-        callbacks_.recvSetProfileOff(midici_, profile);
+        profile_backend_.recvSetProfileOff(midici_, profile);
       }
       if (midici_.ciType == MIDICI_PROFILE_ENABLED) {
-        callbacks_.recvSetProfileEnabled(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
+        profile_backend_.recvSetProfileEnabled(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
       }
       if (midici_.ciType == MIDICI_PROFILE_DISABLED) {
-        callbacks_.recvSetProfileDisabled(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
+        profile_backend_.recvSetProfileDisabled(midici_, profile, static_cast<std::uint8_t>(intTemp_[0]));
       }
     }
     break;
@@ -698,7 +606,7 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
     }
     if (sysexPos_ == 18) {  // Inquiry Target
       auto const profile = std::span<std::byte, 5>{std::begin(buffer_), 5};
-      callbacks_.set_profile_details_inquiry(midici_, profile, s7Byte);
+      profile_backend_.set_profile_details_inquiry(midici_, profile, s7Byte);
     }
     break;
 
@@ -720,8 +628,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
 
     if (sysexPos_ == 21 + intTemp_[0]) {
       auto const profile = std::span<std::byte, 5>{std::begin(buffer_), 5};
-      callbacks_.set_profile_details_reply(midici_, profile, buffer_[5],
-                                           std::span<std::byte>(&buffer_[6], intTemp_[0]));
+      profile_backend_.set_profile_details_reply(midici_, profile, buffer_[5],
+                                                 std::span<std::byte>(&buffer_[6], intTemp_[0]));
     }
 
     break;
@@ -751,8 +659,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
         bool const lastByteOfSet = (sysexPos_ == 21 + dataLength);
         auto const profile = profile_span{std::begin(buffer_), 5};
         auto data_length = charOffset + 1U;
-        callbacks_.profile_specific_data(midici_, profile, std::span<std::byte>{std::begin(buffer_), data_length},
-                                         static_cast<std::uint16_t> (intTemp_[1]), lastByteOfSet);
+        profile_backend_.profile_specific_data(midici_, profile, std::span<std::byte>{std::begin(buffer_), data_length},
+                                               static_cast<std::uint16_t>(intTemp_[1]), lastByteOfSet);
         intTemp_[1]++;
       }
     }
@@ -762,7 +670,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processProfileS
   }
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processPESysex(std::byte s7Byte) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::processPESysex(std::byte s7Byte) {
   switch (midici_.ciType) {
   case MIDICI_PE_CAPABILITY:
   case MIDICI_PE_CAPABILITYREPLY: {
@@ -904,7 +813,8 @@ template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processPESysex(
   }
 }
 
-template <ci_backend Callbacks> void midiCIProcessor<Callbacks>::processPISysex(std::byte s7Byte) {
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::processPISysex(std::byte s7Byte) {
   if (midici_.ciVer == 1) {
     return;
   }

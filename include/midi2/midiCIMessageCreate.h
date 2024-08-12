@@ -72,28 +72,6 @@ uint16_t sendNAK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
 uint16_t sendInvalidateMUID(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
                             uint32_t terminateMuid);
 
-// Profile Negotiation CI 1.1
-uint16_t sendProtocolNegotiation(uint8_t *sysex, uint8_t midiCIVer,
-                                 uint32_t srcMUID, uint32_t destMuid,
-                                 uint8_t authorityLevel, uint8_t numProtocols,
-                                 uint8_t *protocols, uint8_t *currentProtocol);
-
-uint16_t sendProtocolNegotiationReply(uint8_t *sysex, uint8_t midiCIVer,
-                                      uint32_t srcMUID, uint32_t destMuid,
-                                      uint8_t authorityLevel,
-                                      uint8_t numProtocols, uint8_t *protocols);
-
-uint16_t sendSetProtocol(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                         uint32_t destMuid, uint8_t authorityLevel,
-                         uint8_t *protocol);
-
-uint16_t sendProtocolTest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                          uint32_t destMuid, uint8_t authorityLevel);
-
-uint16_t sendProtocolTestResponder(uint8_t *sysex, uint8_t midiCIVer,
-                                   uint32_t srcMUID, uint32_t destMuid,
-                                   uint8_t authorityLevel);
-
 uint16_t sendProfileListRequest(uint8_t *sysex, uint8_t midiCIVer,
                                 uint32_t srcMUID, uint32_t destMuid,
                                 uint8_t destination);
