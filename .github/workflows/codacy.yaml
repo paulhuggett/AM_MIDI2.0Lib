@@ -60,7 +60,7 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          find . -name "*.?pp" -not -path "./$BUILD_DIR/*" -print0 | \
+          find . \( -name \*.h -or -name \*.cpp \) -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" \) -print0 | \
           xargs -0 "clang-tidy-$CLANG_VERSION" "-p=$BUILD_DIR/compile_commands.json" | \
           tee -a "${{ env.CLANG_TIDY_OUT }}"
 
