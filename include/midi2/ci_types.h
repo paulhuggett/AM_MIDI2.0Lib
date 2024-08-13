@@ -382,7 +382,7 @@ struct nak {
   constexpr explicit nak(packed::nak_v1 const &);
   constexpr explicit nak(packed::nak_v2 const &);
 
-  std::uint8_t original_id;      // Original transaction sub-ID#2 classification
+  std::uint8_t original_id = 0;  // Original transaction sub-ID#2 classification
   std::uint8_t status_code = 0;  // NAK Status Code
   std::uint8_t status_data = 0;  // NAK Status Data
   byte_array_5 details;          // NAK details for each SubID Classification
@@ -397,6 +397,53 @@ constexpr nak::nak(packed::nak_v2 const &other)
       status_data{static_cast<std::uint8_t>(other.status_data)},
       details{other.details},
       message{std::begin(other.message), packed::from_le7(other.message_length)} {
+}
+
+//*                __ _ _       _                _                         _       *
+//*  _ __ _ _ ___ / _(_) |___  (_)_ _  __ _ _  _(_)_ _ _  _   _ _ ___ _ __| |_  _  *
+//* | '_ \ '_/ _ \  _| | / -_) | | ' \/ _` | || | | '_| || | | '_/ -_) '_ \ | || | *
+//* | .__/_| \___/_| |_|_\___| |_|_||_\__, |\_,_|_|_|  \_, | |_| \___| .__/_|\_, | *
+//* |_|                                  |_|           |__/          |_|     |__/  *
+
+namespace packed {
+
+struct profile_inquiry_reply_v1_pt1 {
+  byte_array_2 num_enabled;  // Number of currently enabled profiles
+  byte_array_5 ids[1];       // Profile ID of currently enabled profiles
+};
+
+static_assert(offsetof(profile_inquiry_reply_v1_pt1, num_enabled) == 0);
+static_assert(offsetof(profile_inquiry_reply_v1_pt1, ids) == 2);
+static_assert(sizeof(profile_inquiry_reply_v1_pt1) == 7);
+static_assert(alignof(profile_inquiry_reply_v1_pt1) == 1);
+
+struct profile_inquiry_reply_v1_pt2 {
+  byte_array_2 num_disabled;  // Number of currently disabled profiles
+  byte_array_5 ids[1];        // Profile ID of currently disabled profiles
+};
+
+static_assert(offsetof(profile_inquiry_reply_v1_pt2, num_disabled) == 0);
+static_assert(offsetof(profile_inquiry_reply_v1_pt2, ids) == 2);
+static_assert(sizeof(profile_inquiry_reply_v1_pt2) == 7);
+static_assert(alignof(profile_inquiry_reply_v1_pt2) == 1);
+
+}  // end namespace packed
+
+struct profile_inquiry_reply {
+  constexpr profile_inquiry_reply() = default;
+  constexpr profile_inquiry_reply(profile_inquiry_reply const &) = default;
+  constexpr profile_inquiry_reply(profile_inquiry_reply &&) noexcept = default;
+  constexpr profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &,
+                                  packed::profile_inquiry_reply_v1_pt2 const &);
+
+  std::span<byte_array_5 const> enabled;
+  std::span<byte_array_5 const> disabled;
+};
+
+constexpr profile_inquiry_reply::profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &v1_pt1,
+                                                       packed::profile_inquiry_reply_v1_pt2 const &v2_pt2)
+    : enabled{std::begin(v1_pt1.ids), packed::from_le7(v1_pt1.num_enabled)},
+      disabled{std::begin(v2_pt2.ids), packed::from_le7(v2_pt2.num_disabled)} {
 }
 
 }  // end namespace midi2::ci

@@ -124,8 +124,9 @@ template <typename T> concept ci_backend = requires(T && v) {
 };
 
 template <typename T> concept profile_backend = requires(T && v) {
-  // Profiles
   { v.inquiry(MIDICI{}) } -> std::same_as<void>;
+  { v.inquiry_reply(MIDICI{}, ci::profile_inquiry_reply{}) } -> std::same_as<void>;
+
   { v.recvSetProfileEnabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
   { v.recvSetProfileRemoved(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
   { v.recvSetProfileDisabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
@@ -194,6 +195,8 @@ public:
   virtual ~profile_callbacks() noexcept = default;
 
   virtual void inquiry(MIDICI const &) { /* do nothing */ }
+  virtual void inquiry_reply(MIDICI const &, ci::profile_inquiry_reply const &) { /* do nothing */ }
+
   virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
                                      std::uint8_t /*number_of_channels*/) { /* do nothing */ }
   virtual void recvSetProfileRemoved(MIDICI const &, profile_span /*profile*/) { /* do nothing */ }
@@ -253,20 +256,26 @@ private:
   void processPESysex(std::byte s7Byte);
   void processPISysex(std::byte s7Byte);
 
+  // The "common" mesages
   void discovery(std::byte s7);
   void discovery_reply(std::byte s7);
-
   void endpoint_info(std::byte s7);
   void endpoint_info_reply(std::byte s7);
   void invalidate_muid(std::byte s7);
   void ack(std::byte s7);
+  void nak(std::byte s7);
 
-  void nak(std::byte s7Byte);
+  // Profile messages
+  void profile_inquiry(std::byte s7);
+  void profile_inquiry_reply(std::byte s7);
 };
 
-midiCIProcessor() -> midiCIProcessor<ci_callbacks>;
-template <ci_backend T> midiCIProcessor(T) -> midiCIProcessor<T>;
-template <ci_backend T> midiCIProcessor(std::reference_wrapper<T>) -> midiCIProcessor<T &>;
+midiCIProcessor() -> midiCIProcessor<>;
+template <ci_backend C> midiCIProcessor(C) -> midiCIProcessor<C>;
+template <ci_backend C> midiCIProcessor(std::reference_wrapper<C>) -> midiCIProcessor<C &>;
+template <ci_backend C, profile_backend P> midiCIProcessor(C, P) -> midiCIProcessor<C, P>;
+template <ci_backend C, profile_backend P>
+midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>) -> midiCIProcessor<C &, P &>;
 
 template <ci_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::endSysex7() {
@@ -431,7 +440,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info_reply(std::byte s
 template <ci_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte s7) {
   static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+  if (sysexPos_ < header_size) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
@@ -473,9 +482,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
     case MIDICI_ACK: this->ack(s7Byte); break;
     case MIDICI_NAK: this->nak(s7Byte); break;
 
-      // #ifndef M2_DISABLE_PROFILE
-    case MIDICI_PROFILE_INQUIRY:        // Profile Inquiry
-    case MIDICI_PROFILE_INQUIRYREPLY:   // Reply to Profile Inquiry
+    case MIDICI_PROFILE_INQUIRY: this->profile_inquiry(s7Byte); break;
+    case MIDICI_PROFILE_INQUIRYREPLY: this->profile_inquiry_reply(s7Byte); break;
+
     case MIDICI_PROFILE_SETON:          // Set Profile On Message
     case MIDICI_PROFILE_SETOFF:         // Set Profile Off Message
     case MIDICI_PROFILE_ENABLED:        // Set Profile Enabled Message
@@ -516,45 +525,54 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
   sysexPos_++;
 }
 
+// profile inquiry
+// ~~~~~~~~~~~~~~~
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry(std::byte) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < header_size - 1) {
+    return;
+  }
+  profile_backend_.inquiry(midici_);
+}
+
+// profile inquiry reply
+// ~~~~~~~~~~~~~~~~~~~~~
+template <ci_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry_reply(std::byte s7) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < header_size) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  // Wait for the first part to arrive.
+  constexpr auto pt1_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt1, ids);
+  auto end = header_size + pt1_size - 1;
+  if (sysexPos_ < end) {
+    return;
+  }
+  auto const *const pt1 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt1 const *>(buffer_.data());
+  end += ci::packed::from_le7(pt1->num_enabled) * sizeof(pt1->ids[0]);
+  if (sysexPos_ < end) {
+    return;
+  }
+  constexpr auto pt2_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt2, ids);
+  end += pt2_size;
+  if (sysexPos_ < end) {
+    return;
+  }
+  auto p2_pos = end - (header_size + pt1_size - 1);
+  auto const *const pt2 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt2 const *>(buffer_.data() + p2_pos);
+  end += ci::packed::from_le7(pt2->num_disabled) * sizeof(pt2->ids[0]);
+  if (sysexPos_ < end) {
+    return;
+  }
+  profile_backend_.inquiry_reply(midici_, ci::profile_inquiry_reply{*pt1, *pt2});
+}
+
 template <ci_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s7Byte) {
   switch (midici_.ciType) {
-  case MIDICI_PROFILE_INQUIRY:  // Profile Inquiry
-    if (sysexPos_ == 12) {
-      profile_backend_.inquiry(midici_);
-    }
-    break;
-  case MIDICI_PROFILE_INQUIRYREPLY: {  // Reply to Profile Inquiry
-    // Enabled Profiles Length
-    if (sysexPos_ == 13 || sysexPos_ == 14) {
-      intTemp_[0] += static_cast<std::uint32_t>(s7Byte) << (7 * (sysexPos_ - 13));
-    }
-
-    // Disabled Profile Length
-    auto const enabledProfileOffset = intTemp_[0] * 5 + 13;
-    if (sysexPos_ == enabledProfileOffset || sysexPos_ == 1 + enabledProfileOffset) {
-      intTemp_[1] += static_cast<std::uint32_t>(s7Byte) << (7 * (sysexPos_ - enabledProfileOffset));
-    }
-
-    if (sysexPos_ >= 15 && sysexPos_ < enabledProfileOffset) {
-      std::uint8_t const pos = (sysexPos_ - 13) % 5;
-      buffer_[pos] = s7Byte;
-      if (pos == 4) {
-        profile_backend_.recvSetProfileEnabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
-      }
-    }
-
-    if (sysexPos_ >= 2 + enabledProfileOffset &&
-        sysexPos_ < enabledProfileOffset + intTemp_[1] * 5) {
-      std::uint8_t const pos = (sysexPos_ - 13) % 5;
-      buffer_[pos] = s7Byte;
-      if (pos == 4) {
-        profile_backend_.recvSetProfileDisabled(midici_, std::span<std::byte, 5>{std::begin(buffer_), 5}, 0);
-      }
-    }
-    break;
-  }
-
   case MIDICI_PROFILE_ADD:
   case MIDICI_PROFILE_REMOVE:
   case MIDICI_PROFILE_ENABLED:
