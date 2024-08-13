@@ -466,7 +466,7 @@ struct profile_added {
   constexpr profile_added() = default;
   constexpr profile_added(profile_added const &) = default;
   constexpr profile_added(profile_added &&) noexcept = default;
-  constexpr profile_added(packed::profile_added_v1 const &);
+  constexpr explicit profile_added(packed::profile_added_v1 const &);
   constexpr bool operator==(profile_added const &) const = default;
 
   byte_array_5 pid;
@@ -495,7 +495,7 @@ struct profile_removed {
   constexpr profile_removed() = default;
   constexpr profile_removed(profile_removed const &) = default;
   constexpr profile_removed(profile_removed &&) noexcept = default;
-  constexpr profile_removed(packed::profile_removed_v1 const &);
+  constexpr explicit profile_removed(packed::profile_removed_v1 const &);
   constexpr bool operator==(profile_removed const &) const = default;
 
   byte_array_5 pid;
