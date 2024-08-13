@@ -424,7 +424,6 @@ void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte const
 // ~~~~~~~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry(std::byte) {
-  static constexpr auto header_size = 13;
   if (sysexPos_ < header_size - 1) {
     return;
   }
