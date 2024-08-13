@@ -49,41 +49,12 @@
 
 namespace midi2 {
 
-// unreachable
-// ~~~~~~~~~~~
-#if defined(__cpp_lib_unreachable)
-/// Executing unreachable() results in undefined behavior.
-///
-/// An implementation may, for example, optimize impossible code branches away
-/// or trap to prevent further execution.
-[[noreturn, maybe_unused]] inline void unreachable() {
-  assert(false && "unreachable");
-  std::unreachable();
-}
-#elif defined(__GNUC__)  // GCC 4.8+, Clang, Intel and other compilers
-[[noreturn]] inline __attribute__((always_inline)) void unreachable() {
-  assert(false && "unreachable");
-  __builtin_unreachable();
-}
-#elif defined(_MSC_VER)
-[[noreturn, maybe_unused]] __forceinline void unreachable() {
-  assert(false && "unreachable");
-  __assume(false);
-}
-#else
-// Unknown compiler so no extension is used, Undefined behavior is still raised
-// by an empty function body and the noreturn attribute.
-[[noreturn, maybe_unused]] inline void unreachable() {
-  assert(false && "unreachable");
-}
-#endif
-
 using MIDICI = ci::MIDICI;
 
 using profile_span = std::span<std::byte, 5>;
 constexpr auto bytes = std::span<std::byte>{};
 
-template <typename T> concept ci_backend = requires(T && v) {
+template <typename T> concept discovery_backend = requires(T && v) {
   { v.check_muid(std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
 
   { v.discovery(MIDICI{}, ci::discovery{}) } -> std::same_as<void>;
@@ -126,8 +97,9 @@ template <typename T> concept ci_backend = requires(T && v) {
 template <typename T> concept profile_backend = requires(T && v) {
   { v.inquiry(MIDICI{}) } -> std::same_as<void>;
   { v.inquiry_reply(MIDICI{}, ci::profile_inquiry_reply{}) } -> std::same_as<void>;
+  { v.profile_added(MIDICI{}, ci::profile_added{}) } -> std::same_as<void>;
+  { v.profile_removed(MIDICI{}, ci::profile_removed{}) } -> std::same_as<void>;
 
-  { v.recvSetProfileEnabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
   { v.recvSetProfileRemoved(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
   { v.recvSetProfileDisabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
   { v.recvSetProfileOn(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
@@ -196,6 +168,8 @@ public:
 
   virtual void inquiry(MIDICI const &) { /* do nothing */ }
   virtual void inquiry_reply(MIDICI const &, ci::profile_inquiry_reply const &) { /* do nothing */ }
+  virtual void profile_added(MIDICI const &, ci::profile_added const &) { /* do nothing */ }
+  virtual void profile_removed(MIDICI const &, ci::profile_removed const &) { /* do nothing */ }
 
   virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
                                      std::uint8_t /*number_of_channels*/) { /* do nothing */ }
@@ -216,7 +190,7 @@ public:
   }
 };
 
-template <ci_backend Callbacks = ci_callbacks, profile_backend ProfileBackend = profile_callbacks>
+template <discovery_backend Callbacks = ci_callbacks, profile_backend ProfileBackend = profile_callbacks>
 class midiCIProcessor {
 public:
   explicit midiCIProcessor(Callbacks callbacks = Callbacks{}, ProfileBackend profile = ProfileBackend{})
@@ -229,9 +203,10 @@ public:
 
 private:
   static constexpr auto S7_BUFFERLEN = 36;
+  static constexpr auto header_size = 13U;
 
-  Callbacks callbacks_;
-  ProfileBackend profile_backend_;
+  [[no_unique_address]] Callbacks callbacks_;
+  [[no_unique_address]] ProfileBackend profile_backend_;
 
   MIDICI midici_;
   std::uint16_t sysexPos_ = 0;
@@ -256,7 +231,7 @@ private:
   void processPESysex(std::byte s7Byte);
   void processPISysex(std::byte s7Byte);
 
-  // The "common" mesages
+  // The "discovery" mesages
   void discovery(std::byte s7);
   void discovery_reply(std::byte s7);
   void endpoint_info(std::byte s7);
@@ -268,23 +243,25 @@ private:
   // Profile messages
   void profile_inquiry(std::byte s7);
   void profile_inquiry_reply(std::byte s7);
+  void profile_added(std::byte s7);
+  void profile_removed(std::byte s7);
 };
 
 midiCIProcessor() -> midiCIProcessor<>;
-template <ci_backend C> midiCIProcessor(C) -> midiCIProcessor<C>;
-template <ci_backend C> midiCIProcessor(std::reference_wrapper<C>) -> midiCIProcessor<C &>;
-template <ci_backend C, profile_backend P> midiCIProcessor(C, P) -> midiCIProcessor<C, P>;
-template <ci_backend C, profile_backend P>
+template <discovery_backend C> midiCIProcessor(C) -> midiCIProcessor<C>;
+template <discovery_backend C> midiCIProcessor(std::reference_wrapper<C>) -> midiCIProcessor<C &>;
+template <discovery_backend C, profile_backend P> midiCIProcessor(C, P) -> midiCIProcessor<C, P>;
+template <discovery_backend C, profile_backend P>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>) -> midiCIProcessor<C &, P &>;
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::endSysex7() {
   if (midici_._peReqIdx) {
     cleanupRequest(midici_._peReqIdx);
   }
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::startSysex7(std::uint8_t group, std::byte deviceId) {
   sysexPos_ = 0;
   buffer_[0] = std::byte{0x00};
@@ -293,20 +270,18 @@ void midiCIProcessor<Callbacks, ProfileBackend>::startSysex7(std::uint8_t group,
   midici_.umpGroup = group;
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::cleanupRequest(ci::reqId peReqIdx) {
   peHeaderStr.erase(peReqIdx);
 }
 
 // discovery
 // ~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::discovery(std::byte const s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+  if (sysexPos_ < header_size) {
     return;
   }
-  assert(sysexPos_ >= header_size);
   buffer_[sysexPos_ - header_size] = s7;
 
   static_assert(sizeof(ci::packed::discovery_v1) <= sizeof(ci::packed::discovery_v2));
@@ -323,10 +298,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::discovery(std::byte const s7) {
 
 // discovery reply
 // ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::discovery_reply(std::byte const s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+  if (sysexPos_ < header_size) {
     return;
   }
   assert(sysexPos_ >= header_size);
@@ -347,10 +321,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::discovery_reply(std::byte const
 
 // ack
 // ~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::ack(std::byte const s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+  if (sysexPos_ < header_size) {
     return;
   }
   assert(sysexPos_ >= header_size);
@@ -369,10 +342,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::ack(std::byte const s7) {
   callbacks_.ack(midici_, ci::ack{*packed_reply});
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::nak(std::byte const s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+  if (sysexPos_ < header_size) {
     return;
   }
   assert(sysexPos_ >= header_size);
@@ -397,10 +369,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::nak(std::byte const s7) {
 
 // endpoint info
 // ~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
-void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info(std::byte s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info(std::byte const s7) {
+  if (sysexPos_ < header_size) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
@@ -413,10 +384,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info(std::byte s7) {
 
 // endpoint info reply
 // ~~~~~~~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
-void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info_reply(std::byte s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < 13) {
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info_reply(std::byte const s7) {
+  if (sysexPos_ < header_size) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
@@ -437,9 +407,8 @@ void midiCIProcessor<Callbacks, ProfileBackend>::endpoint_info_reply(std::byte s
 
 // invalidate muid
 // ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
-void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte s7) {
-  static constexpr auto header_size = 13;
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte const s7) {
   if (sysexPos_ < header_size) {
     return;
   }
@@ -451,7 +420,81 @@ void midiCIProcessor<Callbacks, ProfileBackend>::invalidate_muid(std::byte s7) {
   callbacks_.invalidate_muid(midici_, ci::invalidate_muid{*p});
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+// profile inquiry
+// ~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry(std::byte) {
+  static constexpr auto header_size = 13;
+  if (sysexPos_ < header_size - 1) {
+    return;
+  }
+  profile_backend_.inquiry(midici_);
+}
+
+// profile inquiry reply
+// ~~~~~~~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry_reply(std::byte const s7) {
+  if (sysexPos_ < header_size) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  // Wait for the first part to arrive.
+  constexpr auto pt1_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt1, ids);
+  auto end = header_size + pt1_size - 1;
+  if (sysexPos_ < end) {
+    return;
+  }
+  auto const *const pt1 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt1 const *>(buffer_.data());
+  end += ci::packed::from_le7(pt1->num_enabled) * sizeof(pt1->ids[0]);
+  if (sysexPos_ < end) {
+    return;
+  }
+  constexpr auto pt2_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt2, ids);
+  end += pt2_size;
+  if (sysexPos_ < end) {
+    return;
+  }
+  auto p2_pos = end - (header_size + pt1_size - 1);
+  auto const *const pt2 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt2 const *>(buffer_.data() + p2_pos);
+  end += ci::packed::from_le7(pt2->num_disabled) * sizeof(pt2->ids[0]);
+  if (sysexPos_ < end) {
+    return;
+  }
+  profile_backend_.inquiry_reply(midici_, ci::profile_inquiry_reply{*pt1, *pt2});
+}
+
+// profile added
+// ~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_added(std::byte const s7) {
+  if (sysexPos_ < header_size) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  if (sysexPos_ < header_size + sizeof(ci::packed::profile_added_v1) - 1) {
+    return;
+  }
+  auto const *const p = std::bit_cast<ci::packed::profile_added_v1 const *>(buffer_.data());
+  profile_backend_.profile_added(midici_, ci::profile_added{*p});
+}
+
+// profile removed
+// ~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_removed(std::byte const s7) {
+  if (sysexPos_ < header_size) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  if (sysexPos_ < header_size + sizeof(ci::packed::profile_removed_v1) - 1) {
+    return;
+  }
+  auto const *const p = std::bit_cast<ci::packed::profile_removed_v1 const *>(buffer_.data());
+  profile_backend_.profile_removed(midici_, ci::profile_removed{*p});
+}
+
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte) {
   assert((s7Byte & std::byte{0b10000000}) == std::byte{0});
   if (sysexPos_ == 3) {
@@ -484,6 +527,8 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
 
     case MIDICI_PROFILE_INQUIRY: this->profile_inquiry(s7Byte); break;
     case MIDICI_PROFILE_INQUIRYREPLY: this->profile_inquiry_reply(s7Byte); break;
+    case MIDICI_PROFILE_ADDED: this->profile_added(s7Byte); break;
+    case MIDICI_PROFILE_REMOVED: this->profile_removed(s7Byte); break;
 
     case MIDICI_PROFILE_SETON:          // Set Profile On Message
     case MIDICI_PROFILE_SETOFF:         // Set Profile Off Message
@@ -525,56 +570,11 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
   sysexPos_++;
 }
 
-// profile inquiry
-// ~~~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
-void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry(std::byte) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < header_size - 1) {
-    return;
-  }
-  profile_backend_.inquiry(midici_);
-}
-
-// profile inquiry reply
-// ~~~~~~~~~~~~~~~~~~~~~
-template <ci_backend Callbacks, profile_backend ProfileBackend>
-void midiCIProcessor<Callbacks, ProfileBackend>::profile_inquiry_reply(std::byte s7) {
-  static constexpr auto header_size = 13;
-  if (sysexPos_ < header_size) {
-    return;
-  }
-  buffer_[sysexPos_ - header_size] = s7;
-  // Wait for the first part to arrive.
-  constexpr auto pt1_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt1, ids);
-  auto end = header_size + pt1_size - 1;
-  if (sysexPos_ < end) {
-    return;
-  }
-  auto const *const pt1 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt1 const *>(buffer_.data());
-  end += ci::packed::from_le7(pt1->num_enabled) * sizeof(pt1->ids[0]);
-  if (sysexPos_ < end) {
-    return;
-  }
-  constexpr auto pt2_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt2, ids);
-  end += pt2_size;
-  if (sysexPos_ < end) {
-    return;
-  }
-  auto p2_pos = end - (header_size + pt1_size - 1);
-  auto const *const pt2 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt2 const *>(buffer_.data() + p2_pos);
-  end += ci::packed::from_le7(pt2->num_disabled) * sizeof(pt2->ids[0]);
-  if (sysexPos_ < end) {
-    return;
-  }
-  profile_backend_.inquiry_reply(midici_, ci::profile_inquiry_reply{*pt1, *pt2});
-}
-
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s7Byte) {
   switch (midici_.ciType) {
-  case MIDICI_PROFILE_ADD:
-  case MIDICI_PROFILE_REMOVE:
+  case MIDICI_PROFILE_ADDED:
+  case MIDICI_PROFILE_REMOVED:
   case MIDICI_PROFILE_ENABLED:
   case MIDICI_PROFILE_DISABLED:
   case MIDICI_PROFILE_SETOFF:
@@ -584,7 +584,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s
       buffer_[sysexPos_ - 13] = s7Byte;
     }
     if (sysexPos_ == 17 &&
-        (midici_.ciVer == 1 || midici_.ciType == MIDICI_PROFILE_ADD || midici_.ciType == MIDICI_PROFILE_REMOVE)) {
+        (midici_.ciVer == 1 || midici_.ciType == MIDICI_PROFILE_ADDED || midici_.ciType == MIDICI_PROFILE_REMOVED)) {
       complete = true;
     }
     if (midici_.ciVer > 1 && (sysexPos_ == 18 || sysexPos_ == 19)) {
@@ -596,10 +596,10 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s
 
     if (complete) {
       auto const profile = std::span<std::byte, 5>{std::begin(buffer_), 5};
-      if (midici_.ciType == MIDICI_PROFILE_ADD) {
+      if (midici_.ciType == MIDICI_PROFILE_ADDED) {
         profile_backend_.recvSetProfileDisabled(midici_, profile, 0);
       }
-      if (midici_.ciType == MIDICI_PROFILE_REMOVE) {
+      if (midici_.ciType == MIDICI_PROFILE_REMOVED) {
         profile_backend_.recvSetProfileRemoved(midici_, profile);
       }
       if (midici_.ciType == MIDICI_PROFILE_SETON) {
@@ -688,7 +688,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processProfileSysex(std::byte s
   }
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::processPESysex(std::byte s7Byte) {
   switch (midici_.ciType) {
   case MIDICI_PE_CAPABILITY:
@@ -831,7 +831,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processPESysex(std::byte s7Byte
   }
 }
 
-template <ci_backend Callbacks, profile_backend ProfileBackend>
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::processPISysex(std::byte s7Byte) {
   if (midici_.ciVer == 1) {
     return;

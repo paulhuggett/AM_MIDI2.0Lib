@@ -446,6 +446,64 @@ constexpr profile_inquiry_reply::profile_inquiry_reply(packed::profile_inquiry_r
       disabled{std::begin(v2_pt2.ids), packed::from_le7(v2_pt2.num_disabled)} {
 }
 
+//*                __ _ _               _    _        _  *
+//*  _ __ _ _ ___ / _(_) |___   __ _ __| |__| |___ __| | *
+//* | '_ \ '_/ _ \  _| | / -_) / _` / _` / _` / -_) _` | *
+//* | .__/_| \___/_| |_|_\___| \__,_\__,_\__,_\___\__,_| *
+//* |_|                                                  *
+namespace packed {
+
+struct profile_added_v1 {
+  byte_array_5 pid;  // Profile ID of profile being added
+};
+static_assert(offsetof(profile_added_v1, pid) == 0);
+static_assert(sizeof(profile_added_v1) == 5);
+static_assert(alignof(profile_added_v1) == 1);
+
+}  // end namespace packed
+
+struct profile_added {
+  constexpr profile_added() = default;
+  constexpr profile_added(profile_added const &) = default;
+  constexpr profile_added(profile_added &&) noexcept = default;
+  constexpr profile_added(packed::profile_added_v1 const &);
+  constexpr bool operator==(profile_added const &) const = default;
+
+  byte_array_5 pid;
+};
+
+constexpr profile_added::profile_added(packed::profile_added_v1 const &other) : pid{other.pid} {
+}
+
+//*                __ _ _                                    _  *
+//*  _ __ _ _ ___ / _(_) |___   _ _ ___ _ __  _____ _____ __| | *
+//* | '_ \ '_/ _ \  _| | / -_) | '_/ -_) '  \/ _ \ V / -_) _` | *
+//* | .__/_| \___/_| |_|_\___| |_| \___|_|_|_\___/\_/\___\__,_| *
+//* |_|                                                         *
+namespace packed {
+
+struct profile_removed_v1 {
+  byte_array_5 pid;  // Profile ID of profile being removed
+};
+static_assert(offsetof(profile_removed_v1, pid) == 0);
+static_assert(sizeof(profile_removed_v1) == 5);
+static_assert(alignof(profile_removed_v1) == 1);
+
+}  // end namespace packed
+
+struct profile_removed {
+  constexpr profile_removed() = default;
+  constexpr profile_removed(profile_removed const &) = default;
+  constexpr profile_removed(profile_removed &&) noexcept = default;
+  constexpr profile_removed(packed::profile_removed_v1 const &);
+  constexpr bool operator==(profile_removed const &) const = default;
+
+  byte_array_5 pid;
+};
+
+constexpr profile_removed::profile_removed(packed::profile_removed_v1 const &other) : pid{other.pid} {
+}
+
 }  // end namespace midi2::ci
 
 #endif  // MIDI2_CI_TYPES_H

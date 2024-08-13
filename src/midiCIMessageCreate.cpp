@@ -139,8 +139,7 @@ uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
   createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
-  if (midiCIVer == 1 || ciType == MIDICI_PROFILE_ADD ||
-      ciType == MIDICI_PROFILE_REMOVE) {
+  if (midiCIVer == 1 || ciType == MIDICI_PROFILE_ADDED || ciType == MIDICI_PROFILE_REMOVED) {
     return length;
   }
   setBytesFromNumbers(sysex, numberOfChannels, &length, 2);
@@ -267,16 +266,14 @@ uint16_t CIMessage::sendProfileAdd(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t destination,
                                    std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, 0, MIDICI_PROFILE_ADD);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, MIDICI_PROFILE_ADDED);
 }
 
 uint16_t CIMessage::sendProfileRemove(uint8_t *sysex, uint8_t midiCIVer,
                                       uint32_t srcMUID, uint32_t destMUID,
                                       uint8_t destination,
                                       std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, 0, MIDICI_PROFILE_REMOVE);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, MIDICI_PROFILE_REMOVED);
 }
 
 uint16_t CIMessage::sendProfileOn(uint8_t *sysex, uint8_t midiCIVer,
