@@ -504,6 +504,39 @@ struct profile_removed {
 constexpr profile_removed::profile_removed(packed::profile_removed_v1 const &other) : pid{other.pid} {
 }
 
+//*                __      _     _        _ _      _                _           *
+//*  _ __ _ _ ___ / _|  __| |___| |_ __ _(_) |___ (_)_ _  __ _ _  _(_)_ _ _  _  *
+//* | '_ \ '_/ _ \  _| / _` / -_)  _/ _` | | (_-< | | ' \/ _` | || | | '_| || | *
+//* | .__/_| \___/_|   \__,_\___|\__\__,_|_|_/__/ |_|_||_\__, |\_,_|_|_|  \_, | *
+//* |_|                                                     |_|           |__/  *
+namespace packed {
+
+struct profile_details_inquiry_v1 {
+  byte_array_5 pid;  // Profile ID of profile
+  std::byte target;
+};
+static_assert(offsetof(profile_details_inquiry_v1, pid) == 0);
+static_assert(offsetof(profile_details_inquiry_v1, target) == 5);
+static_assert(sizeof(profile_details_inquiry_v1) == 6);
+static_assert(alignof(profile_details_inquiry_v1) == 1);
+
+}  // end namespace packed
+
+struct profile_details_inquiry {
+  constexpr profile_details_inquiry() = default;
+  constexpr profile_details_inquiry(profile_details_inquiry const &) = default;
+  constexpr profile_details_inquiry(profile_details_inquiry &&) noexcept = default;
+  constexpr explicit profile_details_inquiry(packed::profile_details_inquiry_v1 const &);
+  constexpr bool operator==(profile_details_inquiry const &) const = default;
+
+  byte_array_5 pid;
+  std::uint8_t target;
+};
+
+constexpr profile_details_inquiry::profile_details_inquiry(packed::profile_details_inquiry_v1 const &other)
+    : pid{other.pid}, target{static_cast<std::uint8_t>(other.target)} {
+}
+
 }  // end namespace midi2::ci
 
 #endif  // MIDI2_CI_TYPES_H

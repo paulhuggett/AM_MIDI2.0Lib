@@ -97,8 +97,9 @@ template <typename T> concept discovery_backend = requires(T && v) {
 template <typename T> concept profile_backend = requires(T && v) {
   { v.inquiry(MIDICI{}) } -> std::same_as<void>;
   { v.inquiry_reply(MIDICI{}, ci::profile_inquiry_reply{}) } -> std::same_as<void>;
-  { v.profile_added(MIDICI{}, ci::profile_added{}) } -> std::same_as<void>;
-  { v.profile_removed(MIDICI{}, ci::profile_removed{}) } -> std::same_as<void>;
+  { v.added(MIDICI{}, ci::profile_added{}) } -> std::same_as<void>;
+  { v.removed(MIDICI{}, ci::profile_removed{}) } -> std::same_as<void>;
+  { v.details_inquiry(MIDICI{}, ci::profile_details_inquiry{}) } -> std::same_as<void>;
 
   { v.recvSetProfileRemoved(MIDICI{}, profile_span{bytes}) } -> std::same_as<void>;
   { v.recvSetProfileDisabled(MIDICI{}, profile_span{bytes}, std::uint8_t{}) } -> std::same_as<void>;
@@ -168,8 +169,9 @@ public:
 
   virtual void inquiry(MIDICI const &) { /* do nothing */ }
   virtual void inquiry_reply(MIDICI const &, ci::profile_inquiry_reply const &) { /* do nothing */ }
-  virtual void profile_added(MIDICI const &, ci::profile_added const &) { /* do nothing */ }
-  virtual void profile_removed(MIDICI const &, ci::profile_removed const &) { /* do nothing */ }
+  virtual void added(MIDICI const &, ci::profile_added const &) { /* do nothing */ }
+  virtual void removed(MIDICI const &, ci::profile_removed const &) { /* do nothing */ }
+  virtual void details_inquiry(MIDICI const &, ci::profile_details_inquiry const &) { /* do nothing */ }
 
   virtual void recvSetProfileEnabled(MIDICI const &, profile_span /*profile*/,
                                      std::uint8_t /*number_of_channels*/) { /* do nothing */ }
@@ -245,6 +247,7 @@ private:
   void profile_inquiry_reply(std::byte s7);
   void profile_added(std::byte s7);
   void profile_removed(std::byte s7);
+  void profile_details_inquiry(std::byte s7);
 };
 
 midiCIProcessor() -> midiCIProcessor<>;
@@ -475,7 +478,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::profile_added(std::byte const s
     return;
   }
   auto const *const p = std::bit_cast<ci::packed::profile_added_v1 const *>(buffer_.data());
-  profile_backend_.profile_added(midici_, ci::profile_added{*p});
+  profile_backend_.added(midici_, ci::profile_added{*p});
 }
 
 // profile removed
@@ -490,7 +493,22 @@ void midiCIProcessor<Callbacks, ProfileBackend>::profile_removed(std::byte const
     return;
   }
   auto const *const p = std::bit_cast<ci::packed::profile_removed_v1 const *>(buffer_.data());
-  profile_backend_.profile_removed(midici_, ci::profile_removed{*p});
+  profile_backend_.removed(midici_, ci::profile_removed{*p});
+}
+
+// profile details inquiry
+// ~~~~~~~~~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend>
+void midiCIProcessor<Callbacks, ProfileBackend>::profile_details_inquiry(std::byte const s7) {
+  if (sysexPos_ < header_size) {
+    return;
+  }
+  buffer_[sysexPos_ - header_size] = s7;
+  if (sysexPos_ < header_size + sizeof(ci::packed::profile_details_inquiry_v1) - 1) {
+    return;
+  }
+  auto const *const p = std::bit_cast<ci::packed::profile_details_inquiry_v1 const *>(buffer_.data());
+  profile_backend_.details_inquiry(midici_, ci::profile_details_inquiry{*p});
 }
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend>
@@ -528,13 +546,13 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
     case MIDICI_PROFILE_INQUIRYREPLY: this->profile_inquiry_reply(s7Byte); break;
     case MIDICI_PROFILE_ADDED: this->profile_added(s7Byte); break;
     case MIDICI_PROFILE_REMOVED: this->profile_removed(s7Byte); break;
+    case MIDICI_PROFILE_DETAILS_INQUIRY: this->profile_details_inquiry(s7Byte); break;
 
     case MIDICI_PROFILE_SETON:          // Set Profile On Message
     case MIDICI_PROFILE_SETOFF:         // Set Profile Off Message
     case MIDICI_PROFILE_ENABLED:        // Set Profile Enabled Message
     case MIDICI_PROFILE_DISABLED:       // Set Profile Disabled Message
     case MIDICI_PROFILE_SPECIFIC_DATA:  // ProfileSpecific Data
-    case MIDICI_PROFILE_DETAILS_INQUIRY:
     case MIDICI_PROFILE_DETAILS_REPLY:
       this->processProfileSysex(s7Byte);
       break;
