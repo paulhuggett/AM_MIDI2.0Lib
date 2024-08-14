@@ -103,11 +103,17 @@ static_assert(offsetof(discovery_v1, capability) == 11);
 static_assert(offsetof(discovery_v1, max_sysex_size) == 12);
 static_assert(sizeof(discovery_v1) == 16);
 static_assert(alignof(discovery_v1) == 1);
+static_assert(std::is_trivially_copyable_v<discovery_v1>);
 
 struct discovery_v2 {
   discovery_v1 v1;
   std::byte output_path_id;
 };
+static_assert(offsetof(discovery_v2, v1) == 0);
+static_assert(offsetof(discovery_v2, output_path_id) == 16);
+static_assert(sizeof(discovery_v2) == 17);
+static_assert(alignof(discovery_v2) == 1);
+static_assert(std::is_trivially_copyable_v<discovery_v2>);
 
 }  // end namespace packed
 
@@ -163,6 +169,7 @@ static_assert(offsetof(discovery_reply_v1, capability) == 11);
 static_assert(offsetof(discovery_reply_v1, max_sysex_size) == 12);
 static_assert(sizeof(discovery_reply_v1) == 16);
 static_assert(alignof(discovery_reply_v1) == 1);
+static_assert(std::is_trivially_copyable_v<discovery_reply_v1>);
 
 struct discovery_reply_v2 {
   discovery_reply_v1 v1;
@@ -174,6 +181,7 @@ static_assert(offsetof(discovery_reply_v2, output_path_id) == 16);
 static_assert(offsetof(discovery_reply_v2, function_block) == 17);
 static_assert(sizeof(discovery_reply_v2) == 18);
 static_assert(alignof(discovery_reply_v2) == 1);
+static_assert(std::is_trivially_copyable_v<discovery_reply_v2>);
 
 }  // end namespace packed
 
@@ -220,6 +228,7 @@ struct endpoint_info_v1 {
 static_assert(offsetof(endpoint_info_v1, status) == 0);
 static_assert(sizeof(endpoint_info_v1) == 1);
 static_assert(alignof(endpoint_info_v1) == 1);
+static_assert(std::is_trivially_copyable_v<endpoint_info_v1>);
 
 }  // end namespace packed
 
@@ -254,6 +263,7 @@ static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
 static_assert(offsetof(endpoint_info_reply_v1, data) == 3);
 static_assert(sizeof(endpoint_info_reply_v1) == 4);
 static_assert(alignof(endpoint_info_reply_v1) == 1);
+static_assert(std::is_trivially_copyable_v<endpoint_info_reply_v1>);
 
 }  // end namespace packed
 
@@ -284,6 +294,7 @@ struct invalidate_muid_v1 {
 static_assert(offsetof(invalidate_muid_v1, target_muid) == 0);
 static_assert(sizeof(invalidate_muid_v1) == 4);
 static_assert(alignof(invalidate_muid_v1) == 1);
+static_assert(std::is_trivially_copyable_v<invalidate_muid_v1>);
 
 }  // end namespace packed
 
@@ -372,6 +383,7 @@ static_assert(offsetof(nak_v2, message_length) == 8);
 static_assert(offsetof(nak_v2, message) == 10);
 static_assert(sizeof(nak_v2) == 11);
 static_assert(alignof(nak_v2) == 1);
+static_assert(std::is_trivially_copyable_v<nak_v2>);
 
 }  // end namespace packed
 
@@ -416,6 +428,7 @@ static_assert(offsetof(profile_inquiry_reply_v1_pt1, num_enabled) == 0);
 static_assert(offsetof(profile_inquiry_reply_v1_pt1, ids) == 2);
 static_assert(sizeof(profile_inquiry_reply_v1_pt1) == 7);
 static_assert(alignof(profile_inquiry_reply_v1_pt1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt1>);
 
 struct profile_inquiry_reply_v1_pt2 {
   byte_array_2 num_disabled;  // Number of currently disabled profiles
@@ -426,6 +439,7 @@ static_assert(offsetof(profile_inquiry_reply_v1_pt2, num_disabled) == 0);
 static_assert(offsetof(profile_inquiry_reply_v1_pt2, ids) == 2);
 static_assert(sizeof(profile_inquiry_reply_v1_pt2) == 7);
 static_assert(alignof(profile_inquiry_reply_v1_pt2) == 1);
+static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt2>);
 
 }  // end namespace packed
 
@@ -459,6 +473,7 @@ struct profile_added_v1 {
 static_assert(offsetof(profile_added_v1, pid) == 0);
 static_assert(sizeof(profile_added_v1) == 5);
 static_assert(alignof(profile_added_v1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_added_v1>);
 
 }  // end namespace packed
 
@@ -488,6 +503,7 @@ struct profile_removed_v1 {
 static_assert(offsetof(profile_removed_v1, pid) == 0);
 static_assert(sizeof(profile_removed_v1) == 5);
 static_assert(alignof(profile_removed_v1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_removed_v1>);
 
 }  // end namespace packed
 
@@ -519,6 +535,7 @@ static_assert(offsetof(profile_details_inquiry_v1, pid) == 0);
 static_assert(offsetof(profile_details_inquiry_v1, target) == 5);
 static_assert(sizeof(profile_details_inquiry_v1) == 6);
 static_assert(alignof(profile_details_inquiry_v1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_details_inquiry_v1>);
 
 }  // end namespace packed
 
@@ -535,6 +552,95 @@ struct profile_details_inquiry {
 
 constexpr profile_details_inquiry::profile_details_inquiry(packed::profile_details_inquiry_v1 const &other)
     : pid{other.pid}, target{static_cast<std::uint8_t>(other.target)} {
+}
+
+//*                __ _ _                 *
+//*  _ __ _ _ ___ / _(_) |___   ___ _ _   *
+//* | '_ \ '_/ _ \  _| | / -_) / _ \ ' \  *
+//* | .__/_| \___/_| |_|_\___| \___/_||_| *
+//* |_|                                   *
+namespace packed {
+
+struct profile_on_v1 {
+  byte_array_5 pid;  // Profile ID of Profile to be Set to On (to be Enabled)
+};
+static_assert(offsetof(profile_on_v1, pid) == 0);
+static_assert(sizeof(profile_on_v1) == 5);
+static_assert(alignof(profile_on_v1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_on_v1>);
+
+struct profile_on_v2 {
+  profile_on_v1 v1;
+  byte_array_2 num_channels;  // Number Channels Requested (LSB First) to assign to this Profile when it is enabled
+};
+static_assert(offsetof(profile_on_v2, v1) == 0);
+static_assert(offsetof(profile_on_v2, num_channels) == 5);
+static_assert(sizeof(profile_on_v2) == 7);
+static_assert(alignof(profile_on_v2) == 1);
+static_assert(std::is_trivially_copyable_v<profile_on_v2>);
+
+}  // end namespace packed
+
+struct profile_on {
+  constexpr profile_on() = default;
+  constexpr profile_on(profile_on const &) = default;
+  constexpr profile_on(profile_on &&) noexcept = default;
+  constexpr explicit profile_on(packed::profile_on_v1 const &);
+  constexpr explicit profile_on(packed::profile_on_v2 const &);
+  constexpr bool operator==(profile_on const &) const = default;
+
+  byte_array_5 pid{};
+  std::uint16_t num_channels = 0;
+};
+
+constexpr profile_on::profile_on(packed::profile_on_v1 const &other) : pid{other.pid} {
+}
+constexpr profile_on::profile_on(packed::profile_on_v2 const &other) : profile_on(other.v1) {
+  num_channels = packed::from_le7(other.num_channels);
+}
+
+//*                __ _ _            __  __  *
+//*  _ __ _ _ ___ / _(_) |___   ___ / _|/ _| *
+//* | '_ \ '_/ _ \  _| | / -_) / _ \  _|  _| *
+//* | .__/_| \___/_| |_|_\___| \___/_| |_|   *
+//* |_|                                      *
+namespace packed {
+
+struct profile_off_v1 {
+  byte_array_5 pid;  // Profile ID of Profile to be Set to On (to be Enabled)
+};
+static_assert(offsetof(profile_off_v1, pid) == 0);
+static_assert(sizeof(profile_off_v1) == 5);
+static_assert(alignof(profile_off_v1) == 1);
+static_assert(std::is_trivially_copyable_v<profile_off_v1>);
+
+struct profile_off_v2 {
+  profile_off_v1 v1;
+  byte_array_2 reserved;
+};
+static_assert(offsetof(profile_off_v2, v1) == 0);
+static_assert(offsetof(profile_off_v2, reserved) == 5);
+static_assert(sizeof(profile_off_v2) == 7);
+static_assert(alignof(profile_off_v2) == 1);
+static_assert(std::is_trivially_copyable_v<profile_off_v2>);
+
+}  // end namespace packed
+
+struct profile_off {
+  constexpr profile_off() = default;
+  constexpr profile_off(profile_off const &) = default;
+  constexpr profile_off(profile_off &&) noexcept = default;
+  constexpr explicit profile_off(packed::profile_off_v1 const &);
+  constexpr explicit profile_off(packed::profile_off_v2 const &);
+  constexpr bool operator==(profile_off const &) const = default;
+
+  byte_array_5 pid{};
+  // There's a 14 bit field in the specification that's "reserved"
+};
+
+constexpr profile_off::profile_off(packed::profile_off_v1 const &other) : pid{other.pid} {
+}
+constexpr profile_off::profile_off(packed::profile_off_v2 const &other) : profile_off(other.v1) {
 }
 
 }  // end namespace midi2::ci

@@ -98,6 +98,9 @@ public:
   MOCK_METHOD(void, added, (MIDICI const &, midi2::ci::profile_added const &), (override));
   MOCK_METHOD(void, removed, (MIDICI const &, midi2::ci::profile_removed const &), (override));
   MOCK_METHOD(void, details_inquiry, (MIDICI const &, midi2::ci::profile_details_inquiry const &), (override));
+
+  MOCK_METHOD(void, on, (MIDICI const &, midi2::ci::profile_on const &), (override));
+  MOCK_METHOD(void, off, (MIDICI const &, midi2::ci::profile_off const &), (override));
 };
 
 TEST(CIProcessor, Empty) {
@@ -674,6 +677,97 @@ TEST(CIProcessor, ProfileDetailsInquiry) {
   inquiry.target = 0x23;
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks, details_inquiry(midici, inquiry)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
+  processor.startSysex7(group, destination);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, ProfileOn) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto channels = std::array{std::byte{0x23}, std::byte{0x00}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x22}, // Universal System Exclusive Sub-ID#2: Set Profile On
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    channels[0], channels[1], // Number of channels
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PROFILE_SETON;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+
+  midi2::ci::profile_on on;
+  on.pid = pid;
+  on.num_channels = from_le7(channels);
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks, on(midici, on)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
+  processor.startSysex7(group, destination);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, ProfileOff) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto reserved = std::array{std::byte{0x00}, std::byte{0x00}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x23}, // Universal System Exclusive Sub-ID#2: Set Profile Off
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    reserved[0], reserved[1], // Number of channels
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PROFILE_SETOFF;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+
+  midi2::ci::profile_off off;
+  off.pid = pid;
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks, off(midici, off)).Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
   processor.startSysex7(group, destination);
