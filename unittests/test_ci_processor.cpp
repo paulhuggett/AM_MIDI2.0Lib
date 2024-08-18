@@ -145,7 +145,6 @@ TEST(CIProcessor, DiscoveryV1) {
   constexpr auto version = std::array{std::byte{0x4E}, std::byte{0x3C}, std::byte{0x2A}, std::byte{0x18}};
   constexpr auto capability = std::byte{0x7F};
   constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
-  constexpr auto output_path_id = std::byte{0x71};
 
   // clang-format off
   std::array const message{
@@ -498,14 +497,6 @@ TEST(CIProcessor, NakV1) {
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
-  constexpr auto original_id = std::byte{0x34};
-  constexpr auto nak_status_code = std::byte{0x00};
-  constexpr auto nak_status_data = std::byte{0x7F};
-  constexpr auto nakk_details =
-      std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
-  constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
-  constexpr auto text = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
-
   // clang-format off
   constexpr std::array message{
     std::byte{0x7E}, // Universal System Exclusive
@@ -552,7 +543,7 @@ TEST(CIProcessor, NakV2) {
   constexpr auto original_id = std::byte{0x34};
   constexpr auto nak_status_code = std::byte{0x00};
   constexpr auto nak_status_data = std::byte{0x7F};
-  constexpr auto nakk_details =
+  constexpr auto nak_details =
       std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
   constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
   constexpr auto text = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
@@ -569,7 +560,7 @@ TEST(CIProcessor, NakV2) {
     original_id, // Originl transaciton sub-ID#2 classification
     nak_status_code, // NAK Status Code
     nak_status_data, // NAK Status Data
-    nakk_details[0], nakk_details[1], nakk_details[2], nakk_details[3], nakk_details[4],
+    nak_details[0], nak_details[1], nak_details[2], nak_details[3], nak_details[4],
     text_length[0], text_length[1],
     text[0], text[1], text[2], text[3], text[4],
 
@@ -592,7 +583,7 @@ TEST(CIProcessor, NakV2) {
           AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(static_cast<std::uint8_t>(original_id))),
                 Field("status_code", &midi2::ci::nak::status_code, Eq(static_cast<std::uint8_t>(nak_status_code))),
                 Field("status_data", &midi2::ci::nak::status_data, Eq(static_cast<std::uint8_t>(nak_status_data))),
-                Field("details", &midi2::ci::nak::details, ElementsAreArray(nakk_details)),
+                Field("details", &midi2::ci::nak::details, ElementsAreArray(nak_details)),
                 Field("message", &midi2::ci::nak::message, ElementsAreArray(text)))))
       .Times(1);
 

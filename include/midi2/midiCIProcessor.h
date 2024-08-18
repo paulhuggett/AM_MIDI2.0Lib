@@ -32,6 +32,7 @@
 #include <bit>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
@@ -41,8 +42,6 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <utility>
-#include <version>
 
 #include "midi2/ci_types.h"
 #include "midi2/utils.h"
@@ -204,7 +203,7 @@ private:
   requires(FixedSize <= sizeof(PackedType)) void trailing_data(std::byte s7, GetDataSize get_data_size,
                                                                Handler handler);
 
-  bool gather(std::byte const s7, std::size_t size);
+  bool gather(std::byte s7, std::size_t size);
 
   // The "management" mesages
   void discovery(std::byte s7);

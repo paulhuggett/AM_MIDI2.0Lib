@@ -115,6 +115,8 @@ static_assert(sizeof(discovery_v2) == 17);
 static_assert(alignof(discovery_v2) == 1);
 static_assert(std::is_trivially_copyable_v<discovery_v2>);
 
+static_assert(sizeof(discovery_v2) > sizeof(discovery_v1));
+
 }  // end namespace packed
 
 struct discovery {
@@ -276,7 +278,7 @@ struct endpoint_info_reply {
   constexpr explicit endpoint_info_reply(packed::endpoint_info_reply_v1 const &);
 
   std::byte status{};
-  std::span<std::byte const> information;
+  std::span<std::byte const> information{};
 };
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
@@ -349,8 +351,8 @@ struct ack {
   std::uint8_t original_id = 0;
   std::uint8_t status_code = 0;
   std::uint8_t status_data = 0;
-  byte_array_5 details;
-  std::span<std::byte const> message;
+  byte_array_5 details{};
+  std::span<std::byte const> message{};
 };
 
 constexpr ack::ack(packed::ack_v1 const &other)
@@ -403,7 +405,7 @@ struct nak {
   std::uint8_t status_code = 0;  // NAK Status Code
   std::uint8_t status_data = 0;  // NAK Status Data
   byte_array_5 details{};        // NAK details for each SubID Classification
-  std::span<std::byte const> message;
+  std::span<std::byte const> message{};
 };
 
 constexpr nak::nak(packed::nak_v1 const &) {
@@ -455,8 +457,8 @@ struct profile_inquiry_reply {
   constexpr profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &,
                                   packed::profile_inquiry_reply_v1_pt2 const &);
 
-  std::span<byte_array_5 const> enabled;
-  std::span<byte_array_5 const> disabled;
+  std::span<byte_array_5 const> enabled{};
+  std::span<byte_array_5 const> disabled{};
 };
 
 constexpr profile_inquiry_reply::profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &v1_pt1,
@@ -586,7 +588,7 @@ struct profile_details_reply {
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
-  std::span<std::byte const> data;
+  std::span<std::byte const> data{};
 };
 
 constexpr profile_details_reply::profile_details_reply(packed::profile_details_reply_v1 const &other)
@@ -805,7 +807,7 @@ struct profile_specific_data {
   constexpr explicit profile_specific_data(packed::profile_specific_data_v1 const &);
 
   byte_array_5 pid{};               ///< Profile ID
-  std::span<std::byte const> data;  ///< Profile specific data
+  std::span<std::byte const> data{};  ///< Profile specific data
 };
 
 constexpr profile_specific_data::profile_specific_data(packed::profile_specific_data_v1 const &other)

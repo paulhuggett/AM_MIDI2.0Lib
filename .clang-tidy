@@ -21,6 +21,7 @@ Checks:            |-
   -google-readability-todo,
   -hicpp-avoid-c-arrays,
   -hicpp-braces-around-statements,
+  -hicpp-named-parameter,
   -hicpp-no-array-decay,
   -hicpp-signed-bitwise,
   -hicpp-use-auto,
@@ -35,7 +36,8 @@ Checks:            |-
   -readability-function-cognitive-complexity,
   -readability-identifier-length,
   -readability-implicit-bool-conversion,
-  -readability-magic-numbers
+  -readability-magic-numbers,
+  -readability-named-parameter
 
 WarningsAsErrors:  ''
 HeaderFilterRegex: ''

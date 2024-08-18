@@ -1,11 +1,15 @@
 // DUT
 #include "midi2/bytestreamToUMP.h"
 #include "midi2/ump_types.h"
+#include "midi2/utils.h"
 
 // Standard library
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cassert>
+#include <cstdint>
+#include <type_traits>
 #include <vector>
 
 // google mock/test/fuzz
@@ -40,9 +44,7 @@ template <typename ArrayLike> struct HexContainer {
 template <typename ArrayLike>
 HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;
 
-template <std::size_t Size>
-auto convert(midi2::bytestreamToUMP&& bs2ump,
-             std::array<std::uint8_t, Size> const& input) {
+template <std::size_t Size> auto convert(midi2::bytestreamToUMP bs2ump, std::array<std::uint8_t, Size> const& input) {
   std::vector<std::uint32_t> output;
   for (std::uint8_t const b : input) {
     bs2ump.bytestreamParse(b);
@@ -631,7 +633,7 @@ protected:
   static constexpr auto velocity_ = std::uint8_t{127};
   static constexpr auto channel_ = std::uint8_t{1};
 
-  [[nodiscard]] auto input() const {
+  [[nodiscard]] static auto input() {
     return std::array{// a normal note-on message
                       static_cast<std::uint8_t>(midi2::status::note_on | channel_), note_number_, velocity_,
                       //
@@ -656,7 +658,7 @@ TEST_P(BytestreamToUMPReserved, Midi1ReservedStatusCodeThenNoteOn) {
                     (ump_note_off << 20) | (std::uint32_t{note_number_} << 8) |
                     (static_cast<std::uint32_t>(velocity_))}};
 
-  auto const input = this->input();
+  auto const input = BytestreamToUMPReserved::input();
   auto const actual = convert(midi2::bytestreamToUMP{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << "Input: " << HexContainer(input)
@@ -680,7 +682,7 @@ TEST_P(BytestreamToUMPReserved, Midi2ReservedStatusCodeThenNoteOn) {
                     (ump_note_off << 20) | (std::uint32_t{note_number_} << 8) |
                     attribute_type},
       std::uint32_t{(midi2::scaleUp(velocity_, 7, 16) << 16) | attribute}};
-  auto const input = this->input();
+  auto const input = BytestreamToUMPReserved::input();
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << "Input: " << HexContainer(input)

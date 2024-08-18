@@ -30,7 +30,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <tuple>
 
 namespace midi2 {
 
@@ -260,15 +259,15 @@ constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   }
 
   // simple bit shift
-  uint8_t scaleBits = (dstBits - srcBits);
+  uint8_t const scaleBits = (dstBits - srcBits);
   auto bitShiftedValue = static_cast<std::uint32_t>(srcVal << scaleBits);
-  uint32_t srcCenter = 1 << (srcBits - 1);
+  uint32_t const srcCenter = 1 << (srcBits - 1);
   if (srcVal <= srcCenter) {
     return bitShiftedValue;
   }
 
   // expanded bit repeat scheme
-  uint8_t repeatBits = srcBits - 1;
+  uint8_t const repeatBits = srcBits - 1;
   auto repeatMask = (std::uint32_t{1} << repeatBits) - std::uint32_t{1};
   uint32_t repeatValue = srcVal & repeatMask;
   if (scaleBits > repeatBits) {
