@@ -1,5 +1,5 @@
 // DUT
-#include "midi2/fifo.h"
+#include "midi2/fifo.hpp"
 
 // Standard library
 #include <queue>

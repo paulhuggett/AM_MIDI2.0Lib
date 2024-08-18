@@ -1,7 +1,7 @@
 // DUT
-#include "midi2/bytestreamToUMP.h"
-#include "midi2/ump_types.h"
-#include "midi2/utils.h"
+#include "midi2/bytestreamToUMP.hpp"
+#include "midi2/ump_types.hpp"
+#include "midi2/utils.hpp"
 
 // Standard library
 #include <algorithm>

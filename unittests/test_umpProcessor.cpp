@@ -3,9 +3,9 @@
 #include <functional>
 #include <numeric>
 
-#include "midi2/bitfield.h"
-#include "midi2/umpProcessor.h"
-#include "midi2/ump_types.h"
+#include "midi2/bitfield.hpp"
+#include "midi2/umpProcessor.hpp"
+#include "midi2/ump_types.hpp"
 
 // google mock/test/fuzz
 #include <gmock/gmock.h>

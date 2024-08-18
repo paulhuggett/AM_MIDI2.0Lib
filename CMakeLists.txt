@@ -14,18 +14,18 @@ include(setup_target)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMIDI2_HEADERS
-  "${INCLUDE_DIR}/midi2/bitfield.h"
-  "${INCLUDE_DIR}/midi2/bytestreamToUMP.h"
-  "${INCLUDE_DIR}/midi2/ci_types.h"
-  "${INCLUDE_DIR}/midi2/fifo.h"
-  "${INCLUDE_DIR}/midi2/mcoded7.h"
-  "${INCLUDE_DIR}/midi2/midiCIMessageCreate.h"
-  "${INCLUDE_DIR}/midi2/midiCIProcessor.h"
-  "${INCLUDE_DIR}/midi2/umpMessageCreate.h"
-  "${INCLUDE_DIR}/midi2/umpProcessor.h"
-  "${INCLUDE_DIR}/midi2/umpToBytestream.h"
-  "${INCLUDE_DIR}/midi2/umpToMIDI1Protocol.h"
-  "${INCLUDE_DIR}/midi2/utils.h"
+  "${INCLUDE_DIR}/midi2/bitfield.hpp"
+  "${INCLUDE_DIR}/midi2/bytestreamToUMP.hpp"
+  "${INCLUDE_DIR}/midi2/ci_types.hpp"
+  "${INCLUDE_DIR}/midi2/fifo.hpp"
+  "${INCLUDE_DIR}/midi2/mcoded7.hpp"
+  "${INCLUDE_DIR}/midi2/midiCIMessageCreate.hpp"
+  "${INCLUDE_DIR}/midi2/midiCIProcessor.hpp"
+  "${INCLUDE_DIR}/midi2/umpMessageCreate.hpp"
+  "${INCLUDE_DIR}/midi2/umpProcessor.hpp"
+  "${INCLUDE_DIR}/midi2/umpToBytestream.hpp"
+  "${INCLUDE_DIR}/midi2/umpToMIDI1Protocol.hpp"
+  "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 
 add_library(libmidi2 ${LIBMIDI2_HEADERS}

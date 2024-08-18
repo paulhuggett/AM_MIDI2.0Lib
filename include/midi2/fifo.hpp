@@ -1,5 +1,5 @@
-#ifndef MIDI2_FIFO_H
-#define MIDI2_FIFO_H
+#ifndef MIDI2_FIFO_HPP
+#define MIDI2_FIFO_HPP
 
 #include <array>
 #include <cassert>
@@ -11,15 +11,13 @@
 namespace midi2 {
 
 /// \returns True if the input value is a power of 2.
-template <std::unsigned_integral T>
-constexpr bool is_power_of_two(T const n) noexcept {
+template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) noexcept {
   // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
   return n > 0U && !(n & (n - 1U));
 }
 
 /// \returns  The number of bits required for value.
-template <std::unsigned_integral T>
-constexpr unsigned bits_required(T const value) {
+template <std::unsigned_integral T> constexpr unsigned bits_required(T const value) {
   return value == 0U ? 0U : 1U + bits_required(static_cast<T>(value >> 1U));
 }
 
@@ -35,8 +33,7 @@ constexpr unsigned bits_required(T const value) {
 /// \tparam ElementType The type of the elements held by this container.
 /// \tparam Elements The number of elements in the FIFO. Must be less than 2^32.
 template <typename ElementType, std::uint32_t Elements>
-requires(Elements > 1 && is_power_of_two(Elements) &&
-         Elements < std::uint32_t{1} << 31) class fifo {
+requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31) class fifo {
 public:
   /// \brief Inserts an element at the end.
   /// \param value  The value of the element to append.
@@ -63,9 +60,7 @@ public:
   /// The FIFO is full then when both indices are equal but the "wrap" fields
   /// different.
   /// \returns True if the container is full, false otherwise.
-  constexpr bool full() const {
-    return (writeIndex_ & mask_) == (readIndex_ & mask_) && wrapped();
-  }
+  constexpr bool full() const { return (writeIndex_ & mask_) == (readIndex_ & mask_) && wrapped(); }
   /// \brief Returns the number of elements.
   constexpr std::size_t size() const {
     auto const w = (writeIndex_ & mask_) + (wrapped() ? Elements : 0U);
@@ -79,16 +74,13 @@ public:
 private:
   std::array<ElementType, Elements> arr_{};
 
-  constexpr bool wrapped() const {
-    return (writeIndex_ & ~mask_) != (readIndex_ & ~mask_);
-  }
+  constexpr bool wrapped() const { return (writeIndex_ & ~mask_) != (readIndex_ & ~mask_); }
 
   // The number of bits required to represent the maximum index in the arr_
   // container.
   static constexpr auto bits_ = bits_required(Elements - 1U);
-  using bitfield_type = std::conditional_t<
-      (bits_ < 4U), std::uint8_t,
-      std::conditional_t<(bits_ < 8U), std::uint16_t, std::uint32_t>>;
+  using bitfield_type =
+      std::conditional_t<(bits_ < 4U), std::uint8_t, std::conditional_t<(bits_ < 8U), std::uint16_t, std::uint32_t>>;
   static constexpr auto mask_ = (bitfield_type{1} << bits_) - 1U;
 
   bitfield_type writeIndex_ : bits_ + 1 = 0;
@@ -97,4 +89,4 @@ private:
 
 }  // end namespace midi2
 
-#endif  // MIDI2_FIFO_H
+#endif  // MIDI2_FIFO_HPP

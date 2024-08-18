@@ -25,13 +25,13 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2_UMPTOBYTESTREAM_H
-#define MIDI2_UMPTOBYTESTREAM_H
+#ifndef MIDI2_UMPTOBYTESTREAM_HPP
+#define MIDI2_UMPTOBYTESTREAM_HPP
 
 #include <cstdint>
 
-#include "midi2/fifo.h"
-#include "midi2/utils.h"
+#include "midi2/fifo.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 
@@ -60,4 +60,4 @@ private:
 
 }  // end namespace midi2
 
-#endif  // MIDI2_UMPTOBYTESTREAM_H
+#endif  // MIDI2_UMPTOBYTESTREAM_HPP

@@ -1,5 +1,5 @@
 // DUT
-#include "midi2/bitfield.h"
+#include "midi2/bitfield.hpp"
 
 // Standard Library
 #include <bit>

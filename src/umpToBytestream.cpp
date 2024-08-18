@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "midi2/umpToBytestream.h"
+#include "midi2/umpToBytestream.hpp"
 
 namespace midi2 {
 

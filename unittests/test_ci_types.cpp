@@ -1,6 +1,6 @@
-#include "midi2/ci_types.h"
-
 #include <gtest/gtest.h>
+
+#include "midi2/ci_types.hpp"
 
 namespace {
 

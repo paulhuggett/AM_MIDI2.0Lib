@@ -24,23 +24,22 @@
  * SOFTWARE.
  * ********************************************************/
 
-#ifndef MIDI2_BYTESTREAMTOUMP_H
-#define MIDI2_BYTESTREAMTOUMP_H
+#ifndef MIDI2_BYTESTREAMTOUMP_HPP
+#define MIDI2_BYTESTREAMTOUMP_HPP
 
 #include <array>
 #include <cassert>
 #include <cstdint>
 
-#include "fifo.h"
-#include "utils.h"
+#include "midi2/fifo.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 
 class bytestreamToUMP {
 public:
   bytestreamToUMP() = default;
-  explicit bytestreamToUMP(bool const outputMIDI2,
-                           std::uint8_t const defaultGroup = 0)
+  explicit bytestreamToUMP(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
       : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
     assert(defaultGroup <= 0b1111);
   }
@@ -81,9 +80,7 @@ private:
     /// System exclusive message bytes gathered for the current UMP
     std::array<std::uint8_t, 6> bytes{};
 
-    void reset() {
-      std::fill(std::begin(bytes), std::end(bytes), std::uint8_t{0});
-    }
+    void reset() { std::fill(std::begin(bytes), std::end(bytes), std::uint8_t{0}); }
   };
   sysex7 sysex7_;
   fifo<std::uint32_t, 4> output_;
@@ -99,21 +96,14 @@ private:
   };
   std::array<channel, 16> channel_;
 
-  static constexpr std::uint32_t pack(std::uint8_t const b0,
-                                      std::uint8_t const b1,
-                                      std::uint8_t const b2,
+  static constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
                                       std::uint8_t const b3) {
-    return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
-           (std::uint32_t{b2} << 8) | std::uint32_t{b3};
+    return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
   }
 
-  constexpr std::uint32_t pack(ump_message_type const message_type,
-                               std::uint8_t const b1, std::uint8_t const b2,
+  constexpr std::uint32_t pack(ump_message_type const message_type, std::uint8_t const b1, std::uint8_t const b2,
                                std::uint8_t const b3) {
-    return pack(
-        static_cast<std::uint8_t>(
-            (static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_),
-        b1, b2, b3);
+    return pack(static_cast<std::uint8_t>((static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_), b1, b2, b3);
   }
 
   void controllerToUMP(std::uint8_t b0, std::uint8_t b1, std::uint8_t b2);
@@ -122,4 +112,4 @@ private:
 
 }  // end namespace midi2
 
-#endif  // MIDI2_BYTESTREAMTOUMP_H
+#endif  // MIDI2_BYTESTREAMTOUMP_HPP

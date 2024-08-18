@@ -25,8 +25,8 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2_MIDICIPROCESSOR_H
-#define MIDI2_MIDICIPROCESSOR_H
+#ifndef MIDI2_MIDICIPROCESSOR_HPP
+#define MIDI2_MIDICIPROCESSOR_HPP
 
 #include <array>
 #include <bit>
@@ -43,8 +43,8 @@
 #include <tuple>
 #include <type_traits>
 
-#include "midi2/ci_types.h"
-#include "midi2/utils.h"
+#include "midi2/ci_types.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 
@@ -82,21 +82,36 @@ template <typename T> concept profile_backend = requires(T && v) {
 };
 
 template <typename T> concept property_exchange_backend = requires(T && v) {
-  { v.recvPECapabilities(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/, std::uint8_t{} /*minVer*/) } -> std::same_as<void>;
-  { v.recvPECapabilitiesReply(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/, std::uint8_t{} /*minVer*/) } -> std::same_as<void>;
+  {
+    v.recvPECapabilities(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/,
+                         std::uint8_t{} /*minVer*/)
+  } -> std::same_as<void>;
+  {
+    v.recvPECapabilitiesReply(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/,
+                              std::uint8_t{} /*minVer*/)
+  } -> std::same_as<void>;
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESetReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESubReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPENotify(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
-  { v.recvPEGetReply(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/, bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/) } -> std::same_as<void>;
-  { v.recvPESetInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/, bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/) } -> std::same_as<void>;
-  { v.recvPESubInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/, bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/) } -> std::same_as<void>;
+  {
+    v.recvPEGetReply(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
+                     bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
+  } -> std::same_as<void>;
+  {
+    v.recvPESetInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
+                       bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
+  } -> std::same_as<void>;
+  {
+    v.recvPESubInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
+                       bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
+  } -> std::same_as<void>;
 };
 
 class ci_callbacks {
 public:
-  ci_callbacks () = default;
-  ci_callbacks (ci_callbacks const & ) = default;
+  ci_callbacks() = default;
+  ci_callbacks(ci_callbacks const &) = default;
   ci_callbacks(ci_callbacks &&) noexcept = default;
   virtual ~ci_callbacks() noexcept = default;
 
@@ -113,8 +128,10 @@ public:
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
 
   // Property Exchange
-  virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/, std::uint8_t /*minVer*/) { /* do nothing */ }
-  virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/, std::uint8_t /*minVer*/) { /* do nothing */ }
+  virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
+                                  std::uint8_t /*minVer*/) { /* do nothing */ }
+  virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
+                                       std::uint8_t /*minVer*/) { /* do nothing */ }
   virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPESetReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
@@ -129,8 +146,10 @@ public:
   // Process Inquiry
   virtual void recvPICapabilities(MIDICI const &) { /* do nothing */ }
   virtual void recvPICapabilitiesReply(MIDICI const &, std::byte /*supportedFeatures*/) { /* do nothing */ }
-  virtual void recvPIMMReport(MIDICI const &, std::byte /*MDC*/, std::byte /*systemBitmap*/, std::byte /*chanContBitmap*/, std::byte /*chanNoteBitmap*/) { /* do nothing */ }
-  virtual void recvPIMMReportReply(MIDICI const &, std::byte /*systemBitmap*/, std::byte /*chanContBitmap*/, std::byte /*chanNoteBitmap*/) { /* do nothing */ }
+  virtual void recvPIMMReport(MIDICI const &, std::byte /*MDC*/, std::byte /*systemBitmap*/,
+                              std::byte /*chanContBitmap*/, std::byte /*chanNoteBitmap*/) { /* do nothing */ }
+  virtual void recvPIMMReportReply(MIDICI const &, std::byte /*systemBitmap*/, std::byte /*chanContBitmap*/,
+                                   std::byte /*chanNoteBitmap*/) { /* do nothing */ }
   virtual void recvPIMMReportEnd(MIDICI const &) { /* do nothing */ }
 };
 
@@ -283,8 +302,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::fixed_size(std::byte const s7, 
 template <discovery_backend Callbacks, profile_backend ProfileBackend>
 template <unaligned_copyable PackedType, std::size_t FixedSize, std::invocable<PackedType> GetDataSize,
           std::invocable<PackedType> Handler>
-requires(FixedSize <= sizeof(PackedType))
-void midiCIProcessor<Callbacks, ProfileBackend>::trailing_data(
+requires(FixedSize <= sizeof(PackedType)) void midiCIProcessor<Callbacks, ProfileBackend>::trailing_data(
     std::byte const s7, GetDataSize const get_data_size, Handler const handler) {
   if (sysexPos_ < header_size) {
     return;
@@ -558,7 +576,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processMIDICI(std::byte s7Byte)
     case MIDICI_PROFILE_SETON: this->profile_on(s7Byte); break;
     case MIDICI_PROFILE_ENABLED: this->profile_enabled(s7Byte); break;
     case MIDICI_PROFILE_DISABLED: this->profile_disabled(s7Byte); break;
-    case MIDICI_PROFILE_SPECIFIC_DATA: this->profile_specific_data(s7Byte); break;
+    case MIDICI_PROFILE_SPECIFIC_DATA:
+      this->profile_specific_data(s7Byte);
+      break;
 
       // #ifndef M2_DISABLE_PE
     case MIDICI_PE_CAPABILITY:       // Inquiry: Property Exchange Capabilities
@@ -639,7 +659,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processPESysex(std::byte s7Byte
       return;
     }
 
-    auto const headerLength = static_cast<std::uint16_t> (intTemp_[0]);
+    auto const headerLength = static_cast<std::uint16_t>(intTemp_[0]);
 
     if (sysexPos_ == 16 && midici_.numChunk == 1) {
       peHeaderStr[*midici_._peReqIdx] = "";
@@ -780,11 +800,10 @@ void midiCIProcessor<Callbacks, ProfileBackend>::processPISysex(std::byte s7Byte
       callbacks_.recvPIMMReportReply(midici_, buffer_[0], buffer_[1], s7Byte);
     }
     break;
-  default:
-    break;
+  default: break;
   }
 }
 
 }  // end namespace midi2
 
-#endif  // MIDI2_MIDICIPROCESSOR_H
+#endif  // MIDI2_MIDICIPROCESSOR_HPP

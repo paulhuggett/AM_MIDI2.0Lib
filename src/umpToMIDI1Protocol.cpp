@@ -25,12 +25,12 @@
  *
  * ********************************************************/
 
-#include "midi2/umpToMIDI1Protocol.h"
+#include "midi2/umpToMIDI1Protocol.hpp"
 
 #include <cassert>
 
-#include "midi2/umpMessageCreate.h"
-#include "midi2/utils.h"
+#include "midi2/umpMessageCreate.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 

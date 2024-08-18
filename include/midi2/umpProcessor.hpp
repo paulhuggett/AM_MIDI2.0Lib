@@ -24,8 +24,8 @@
  * SOFTWARE.
  *
  * ********************************************************/
-#ifndef MIDI2_UMP_PROCESSOR_H
-#define MIDI2_UMP_PROCESSOR_H
+#ifndef MIDI2_UMP_PROCESSOR_HPP
+#define MIDI2_UMP_PROCESSOR_HPP
 
 #include <algorithm>
 #include <array>
@@ -35,8 +35,8 @@
 #include <functional>
 #include <span>
 
-#include "midi2/ump_types.h"
-#include "midi2/utils.h"
+#include "midi2/ump_types.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 
@@ -178,49 +178,30 @@ template <typename T> concept backend = requires(T && v) {
   { v.send_out_sysex(umpData{}) } -> std::same_as<void>;
 
   { v.flex_tempo(std::uint8_t{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.flex_time_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   {
-    v.flex_time_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
-                    std::uint8_t{})
-  } -> std::same_as<void>;
-  {
-    v.flex_metronome(std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
-                     std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
+    v.flex_metronome(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
                      std::uint8_t{})
   } -> std::same_as<void>;
   {
-    v.flex_key_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
-                   std::uint8_t{}, std::uint8_t{})
+    v.flex_key_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{})
   } -> std::same_as<void>;
-  {
-    v.flex_chord(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, chord{})
-  } -> std::same_as<void>;
-  {
-    v.flex_performance(umpData{}, std::uint8_t{}, std::uint8_t{})
-  } -> std::same_as<void>;
-  {
-    v.flex_lyric(umpData{}, std::uint8_t{}, std::uint8_t{})
-  } -> std::same_as<void>;
+  { v.flex_chord(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, chord{}) } -> std::same_as<void>;
+  { v.flex_performance(umpData{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.flex_lyric(umpData{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
 
-  {
-    v.midiEndpoint(std::uint8_t{}, std::uint8_t{}, std::uint8_t{})
-  } -> std::same_as<void>;
+  { v.midiEndpoint(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.midiEndpointName(umpData{}) } -> std::same_as<void>;
   { v.midiEndpointProdId(umpData{}) } -> std::same_as<void>;
+  { v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
   {
-    v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{})
+    v.midiEndpointInfo(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, bool{}, bool{}, bool{}, bool{})
   } -> std::same_as<void>;
   {
-    v.midiEndpointInfo(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, bool{},
-                       bool{}, bool{}, bool{})
+    v.midiEndpointDeviceInfo(std::array<std::uint8_t, 3>{}, std::array<std::uint8_t, 2>{},
+                             std::array<std::uint8_t, 2>{}, std::array<std::uint8_t, 4>{})
   } -> std::same_as<void>;
-  {
-    v.midiEndpointDeviceInfo(
-        std::array<std::uint8_t, 3>{}, std::array<std::uint8_t, 2>{},
-        std::array<std::uint8_t, 2>{}, std::array<std::uint8_t, 4>{})
-  } -> std::same_as<void>;
-  {
-    v.midiEndpointJRProtocolNotify(std::uint8_t{}, bool{}, bool{})
-  } -> std::same_as<void>;
+  { v.midiEndpointJRProtocolNotify(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
 
   { v.functionBlock(std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.functionBlockInfo(function_block_info{}) } -> std::same_as<void>;
@@ -247,50 +228,34 @@ public:
   virtual void send_out_sysex(umpData const& /*mess*/) { /* nop */ }
 
   //---------- Flex Data
-  virtual void flex_tempo(uint8_t /*group*/,
-                          uint32_t /*num10nsPQN*/) { /* nop */ }
-  virtual void flex_time_sig(uint8_t /*group*/, uint8_t /*numerator*/,
-                             uint8_t /*denominator*/,
+  virtual void flex_tempo(uint8_t /*group*/, uint32_t /*num10nsPQN*/) { /* nop */ }
+  virtual void flex_time_sig(uint8_t /*group*/, uint8_t /*numerator*/, uint8_t /*denominator*/,
                              uint8_t /*num32Notes*/) { /* nop */ }
-  virtual void flex_metronome(uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
-                              uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
-                              uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/,
-                              uint8_t /*numSubDivCli2*/) { /* nop */ }
-  virtual void flex_key_sig(uint8_t /*group*/, uint8_t /*addrs*/,
-                            uint8_t /*channel*/, uint8_t /*sharpFlats*/,
+  virtual void flex_metronome(uint8_t /*group*/, uint8_t /*numClkpPriCli*/, uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
+                              uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/, uint8_t /*numSubDivCli2*/) { /* nop */ }
+  virtual void flex_key_sig(uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/, uint8_t /*sharpFlats*/,
                             uint8_t /*tonic*/) { /* nop */ }
-  virtual void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/,
-                          uint8_t /*channel*/,
-                          chord const& /*chord*/) { /* nop */ }
-  virtual void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/,
-                                uint8_t /*channel*/) { /* nop */ }
-  virtual void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/,
-                          uint8_t /*channel*/) { /* nop */ }
+  virtual void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/, chord const& /*chord*/) { /* nop */
+  }
+  virtual void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
+  virtual void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
 
   //---------- UMP Stream
-  virtual void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/,
-                            uint8_t /*filter*/) { /* nop */ }
+  virtual void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/, uint8_t /*filter*/) { /* nop */ }
   virtual void midiEndpointName(umpData const& /*mess*/) { /* nop */ }
   virtual void midiEndpointProdId(umpData const& /*mess*/) { /* nop */ }
-  virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/,
-                                         bool /*jrtx*/) { /* nop */ }
-  virtual void midiEndpointInfo(uint8_t /*majVer*/, uint8_t /*minVer*/,
-                                uint8_t /*numOfFuncBlocks*/, bool /*m2*/,
-                                bool /*m1*/, bool /*rxjr*/,
-                                bool /*txjr*/) { /* nop */ }
-  virtual void midiEndpointDeviceInfo(
-      std::array<uint8_t, 3> const& /*manuId*/,
-      std::array<uint8_t, 2> const& /*familyId*/,
-      std::array<uint8_t, 2> const& /*modelId*/,
-      std::array<uint8_t, 4> const& /*version*/) { /* nop */ }
-  virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/,
-                                            bool /*jrtx*/) { /* nop */ }
+  virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* nop */ }
+  virtual void midiEndpointInfo(uint8_t /*majVer*/, uint8_t /*minVer*/, uint8_t /*numOfFuncBlocks*/, bool /*m2*/,
+                                bool /*m1*/, bool /*rxjr*/, bool /*txjr*/) { /* nop */ }
+  virtual void midiEndpointDeviceInfo(std::array<uint8_t, 3> const& /*manuId*/,
+                                      std::array<uint8_t, 2> const& /*familyId*/,
+                                      std::array<uint8_t, 2> const& /*modelId*/,
+                                      std::array<uint8_t, 4> const& /*version*/) { /* nop */ }
+  virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* nop */ }
 
-  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */
-  }
+  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */ }
   virtual void functionBlockInfo(function_block_info const& fbi) { (void)fbi; }
-  virtual void functionBlockName(umpData const& /*mess*/,
-                                 uint8_t /*fbIdx*/) { /* nop */ }
+  virtual void functionBlockName(umpData const& /*mess*/, uint8_t /*fbIdx*/) { /* nop */ }
 
   virtual void startOfSeq() { /* nop */ }
   virtual void endOfFile() { /* nop */ }
@@ -325,9 +290,8 @@ private:
   };
 
   template <std::output_iterator<std::uint8_t> OutputIterator>
-  static constexpr OutputIterator payload(
-      std::array<std::uint32_t, 4> const& message, std::size_t index,
-      std::size_t limit, OutputIterator out);
+  static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
+                                          std::size_t limit, OutputIterator out);
 
   void midiendpoint_name_or_prodid(ump_message_type mt);
   void functionblock_name();
@@ -343,16 +307,14 @@ private:
 
 umpProcessor() -> umpProcessor<callbacks_base>;
 template <backend T> umpProcessor(T) -> umpProcessor<T>;
-template <backend T>
-umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
+template <backend T> umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
 
 template <backend Callbacks> void umpProcessor<Callbacks>::clearUMP() {
   pos_ = 0;
   std::fill(std::begin(message_), std::end(message_), std::uint8_t{0});
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
+template <backend Callbacks> void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
   // 32 bit utility messages
   umpGeneric mess;
   mess.common.messageType = mt;
@@ -362,8 +324,7 @@ void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::system_message(ump_message_type const mt,
-                                             std::uint8_t const group) {
+void umpProcessor<Callbacks>::system_message(ump_message_type const mt, std::uint8_t const group) {
   // 32 bit System Real Time and System Common Messages (except System
   // Exclusive)
   umpGeneric mess;
@@ -377,8 +338,7 @@ void umpProcessor<Callbacks>::system_message(ump_message_type const mt,
     callbacks_.system_message(mess);
     break;
   case status::spp:
-    mess.value = static_cast<std::uint16_t>(((message_[0] >> 8) & 0x7F) |
-                                            ((message_[0] & 0x7F) << 7));
+    mess.value = static_cast<std::uint16_t>(((message_[0] >> 8) & 0x7F) | ((message_[0] & 0x7F) << 7));
     callbacks_.system_message(mess);
     break;
   default: callbacks_.system_message(mess); break;
@@ -428,8 +388,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::m1cvm_message() {
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt,
-                                             std::uint8_t const group) {
+void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt, std::uint8_t const group) {
   // 64 bit Data Messages (including System Exclusive)
   std::array<std::uint8_t, 7> sysex{};
   auto const data_length = (message_[0] >> 16) & 0x7;
@@ -461,8 +420,7 @@ void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt,
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt,
-                                            std::uint8_t const group) {
+void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt, std::uint8_t const group) {
   // 64 bits MIDI 2.0 Channel Voice Messages
   umpCVM mess;
   mess.common.group = group;
@@ -537,12 +495,9 @@ void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt,
   }
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(
-    ump_message_type const mt) {
+template <backend Callbacks> void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(ump_message_type const mt) {
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
-  assert(status == MIDIENDPOINT_NAME_NOTIFICATION ||
-         status == MIDIENDPOINT_PRODID_NOTIFICATION);
+  assert(status == MIDIENDPOINT_NAME_NOTIFICATION || status == MIDIENDPOINT_PRODID_NOTIFICATION);
 
   std::array<std::uint8_t, 14> text;
   auto text_length = 0U;
@@ -574,9 +529,8 @@ void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(
 
 template <backend Callbacks>
 template <std::output_iterator<std::uint8_t> OutputIterator>
-constexpr OutputIterator umpProcessor<Callbacks>::payload(
-    std::array<std::uint32_t, 4> const& message, std::size_t index,
-    std::size_t limit, OutputIterator out) {
+constexpr OutputIterator umpProcessor<Callbacks>::payload(std::array<std::uint32_t, 4> const& message,
+                                                          std::size_t index, std::size_t limit, OutputIterator out) {
   assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
   if (index >= limit) {
     return out;
@@ -589,20 +543,16 @@ constexpr OutputIterator umpProcessor<Callbacks>::payload(
   return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::functionblock_name() {
+template <backend Callbacks> void umpProcessor<Callbacks>::functionblock_name() {
   auto w1 = std::bit_cast<types::function_block_name_w1>(message_[0]);
 
   std::uint8_t const fbIdx = w1.block_number;
   std::array<std::uint8_t, 13> text;
   text[0] = w1.name;
   umpProcessor::payload(message_, 0, text.size() - 1, std::begin(text) + 1);
-  auto const text_length =
-      std::distance(find_if_not(std::rbegin(text), std::rend(text),
-                                [](std::uint8_t v) { return v == 0; }),
-                    std::rend(text));
-  assert(text_length >= 0 &&
-         static_cast<std::size_t>(text_length) <= text.size());
+  auto const text_length = std::distance(
+      find_if_not(std::rbegin(text), std::rend(text), [](std::uint8_t v) { return v == 0; }), std::rend(text));
+  assert(text_length >= 0 && static_cast<std::size_t>(text_length) <= text.size());
 
   umpData mess;
   mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
@@ -612,16 +562,14 @@ void umpProcessor<Callbacks>::functionblock_name() {
   callbacks_.functionBlockName(mess, fbIdx);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::functionblock_info() {
+template <backend Callbacks> void umpProcessor<Callbacks>::functionblock_info() {
   function_block_info info;
   auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[0]);
   auto const w2 = std::bit_cast<types::function_block_info_w2>(message_[1]);
 
   info.fbIdx = w1.block_number;
   info.active = w1.a;
-  info.direction =
-      static_cast<function_block_info::fbdirection>(w1.dir.value());
+  info.direction = static_cast<function_block_info::fbdirection>(w1.dir.value());
   info.firstGroup = w2.first_group;
   info.groupLength = w2.groups_spanned;
   info.midiCIVersion = w2.message_version;
@@ -630,8 +578,7 @@ void umpProcessor<Callbacks>::functionblock_info() {
   callbacks_.functionBlockInfo(info);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
+template <backend Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
   // 128 bits UMP Stream Messages
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   switch (status) {
@@ -642,44 +589,34 @@ void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
     break;
 
   case MIDIENDPOINT_INFO_NOTIFICATION:
-    callbacks_.midiEndpointInfo(
-        (message_[0] >> 8) & 0xFF,   // Maj Ver
-        message_[0] & 0xFF,          // Min Ver
-        (message_[1] >> 24) & 0xFF,  // Num Of Func Block
-        ((message_[1] >> 9) & 0x1),  // M2 Support
-        ((message_[1] >> 8) & 0x1),  // M1 Support
-        ((message_[1] >> 1) & 0x1),  // rxjr Support
-        (message_[1] & 0x1)          // txjr Support
+    callbacks_.midiEndpointInfo((message_[0] >> 8) & 0xFF,   // Maj Ver
+                                message_[0] & 0xFF,          // Min Ver
+                                (message_[1] >> 24) & 0xFF,  // Num Of Func Block
+                                ((message_[1] >> 9) & 0x1),  // M2 Support
+                                ((message_[1] >> 8) & 0x1),  // M1 Support
+                                ((message_[1] >> 1) & 0x1),  // rxjr Support
+                                (message_[1] & 0x1)          // txjr Support
     );
     break;
 
   case MIDIENDPOINT_DEVICEINFO_NOTIFICATION:
     callbacks_.midiEndpointDeviceInfo(
-        {static_cast<std::uint8_t>((message_[1] >> 16) & 0x7F),
-         static_cast<std::uint8_t>((message_[1] >> 8) & 0x7F),
+        {static_cast<std::uint8_t>((message_[1] >> 16) & 0x7F), static_cast<std::uint8_t>((message_[1] >> 8) & 0x7F),
          static_cast<std::uint8_t>(message_[1] & 0x7F)},
-        {static_cast<std::uint8_t>((message_[2] >> 24) & 0x7F),
-         static_cast<std::uint8_t>((message_[2] >> 16) & 0x7F)},
-        {static_cast<std::uint8_t>((message_[2] >> 8) & 0x7F),
-         static_cast<std::uint8_t>(message_[2] & 0x7F)},
-        {static_cast<std::uint8_t>((message_[3] >> 24) & 0x7F),
-         static_cast<std::uint8_t>((message_[3] >> 16) & 0x7F),
-         static_cast<std::uint8_t>((message_[3] >> 8) & 0x7F),
-         static_cast<std::uint8_t>(message_[3] & 0x7F)});
+        {static_cast<std::uint8_t>((message_[2] >> 24) & 0x7F), static_cast<std::uint8_t>((message_[2] >> 16) & 0x7F)},
+        {static_cast<std::uint8_t>((message_[2] >> 8) & 0x7F), static_cast<std::uint8_t>(message_[2] & 0x7F)},
+        {static_cast<std::uint8_t>((message_[3] >> 24) & 0x7F), static_cast<std::uint8_t>((message_[3] >> 16) & 0x7F),
+         static_cast<std::uint8_t>((message_[3] >> 8) & 0x7F), static_cast<std::uint8_t>(message_[3] & 0x7F)});
     break;
   case MIDIENDPOINT_NAME_NOTIFICATION:
-  case MIDIENDPOINT_PRODID_NOTIFICATION:
-    this->midiendpoint_name_or_prodid(mt);
-    break;
+  case MIDIENDPOINT_PRODID_NOTIFICATION: this->midiendpoint_name_or_prodid(mt); break;
   case MIDIENDPOINT_PROTOCOL_REQUEST:  // JR Protocol Req
-    callbacks_.midiEndpointJRProtocolReq(
-        static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
-        message_[0] & 1);
+    callbacks_.midiEndpointJRProtocolReq(static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
+                                         message_[0] & 1);
     break;
   case MIDIENDPOINT_PROTOCOL_NOTIFICATION:  // JR Protocol Req
-    callbacks_.midiEndpointJRProtocolNotify(
-        static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
-        message_[0] & 1);
+    callbacks_.midiEndpointJRProtocolNotify(static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
+                                            message_[0] & 1);
     break;
 
   case FUNCTIONBLOCK:
@@ -706,12 +643,10 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   case data_message_status::sysex8_end: {
     std::array<std::uint8_t, 13> sysex{};
     auto const w1 = std::bit_cast<types::sysex8_w1>(message_[0]);
-    auto const data_length =
-        std::min(std::size_t{w1.number_of_bytes}, sysex.size());
+    auto const data_length = std::min(std::size_t{w1.number_of_bytes}, sysex.size());
     if (data_length >= 1) {
       sysex[0] = w1.data;
-      umpProcessor::payload(message_, 0, data_length - 1,
-                            std::begin(sysex) + 1);
+      umpProcessor::payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
     }
     umpData mess;
     mess.common.group = w1.group;
@@ -751,22 +686,17 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   auto const w4 = std::bit_cast<types::set_chord_name_w4>(message_[3]);
 
   auto const valid_note = [](std::uint8_t n) {
-    return n <= static_cast<std::uint8_t>(chord::note::G)
-               ? static_cast<chord::note>(n)
-               : chord::note::unknown;
+    return n <= static_cast<std::uint8_t>(chord::note::G) ? static_cast<chord::note>(n) : chord::note::unknown;
   };
 
   auto const valid_chord_type = [](std::uint8_t ct) {
-    return ct <= static_cast<std::uint8_t>(
-                     chord::chord_type::seven_suspended_4th)
-               ? static_cast<chord::chord_type>(ct)
-               : chord::chord_type::no_chord;
+    return ct <= static_cast<std::uint8_t>(chord::chord_type::seven_suspended_4th) ? static_cast<chord::chord_type>(ct)
+                                                                                   : chord::chord_type::no_chord;
   };
 
   chord c;
   // TODO(pbh): validate the ShrpFlt fields.
-  c.chShrpFlt =
-      static_cast<chord::sharps_flats>(w2.tonic_sharps_flats.signed_value());
+  c.chShrpFlt = static_cast<chord::sharps_flats>(w2.tonic_sharps_flats.signed_value());
   c.chTonic = valid_note(w2.chord_tonic);
   c.chType = valid_chord_type(w2.chord_type);
   c.chAlt1.type = w2.alter_1_type;
@@ -777,8 +707,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
   c.chAlt3.degree = w3.alter_3_degree;
   c.chAlt4.type = w3.alter_4_type;
   c.chAlt4.degree = w3.alter_4_degree;
-  c.baShrpFlt =
-      static_cast<chord::sharps_flats>(w4.bass_sharps_flats.signed_value());
+  c.baShrpFlt = static_cast<chord::sharps_flats>(w4.bass_sharps_flats.signed_value());
   c.baTonic = valid_note(w4.bass_note);
   c.baType = valid_chord_type(w4.bass_chord_type);
   c.baAlt1.type = w4.alter_1_type;
@@ -789,8 +718,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::flexdata_performance_or_lyric(
-    ump_message_type const mt, std::uint8_t const group) {
+void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type const mt, std::uint8_t const group) {
   std::uint8_t const statusBank = (message_[0] >> 8) & 0xFF;
   std::uint8_t const status = message_[0] & 0xFF;
   std::uint8_t const channel = (message_[0] >> 16) & 0xF;
@@ -823,8 +751,7 @@ void umpProcessor<Callbacks>::flexdata_performance_or_lyric(
 }
 
 template <backend Callbacks>
-void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
-                                               std::uint8_t const group) {
+void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt, std::uint8_t const group) {
   // 128 bit Data Messages (including System Exclusive 8)
   uint8_t statusBank = (message_[0] >> 8) & 0xFF;
   uint8_t status = message_[0] & 0xFF;
@@ -840,21 +767,18 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
       break;
     }
     case FLEXDATA_COMMON_TIMESIG: {  // Set Time Signature Message
-      callbacks_.flex_time_sig(group, (message_[1] >> 24) & 0xFF,
-                               (message_[1] >> 16) & 0xFF,
+      callbacks_.flex_time_sig(group, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF,
                                (message_[1] >> 8) & 0xFF);
       break;
     }
     case FLEXDATA_COMMON_METRONOME: {  // Set Metronome Message
-      callbacks_.flex_metronome(
-          group, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF,
-          (message_[1] >> 8) & 0xFF, message_[1] & 0xFF,
-          (message_[2] >> 24) & 0xFF, (message_[2] >> 16) & 0xFF);
+      callbacks_.flex_metronome(group, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF,
+                                (message_[1] >> 8) & 0xFF, message_[1] & 0xFF, (message_[2] >> 24) & 0xFF,
+                                (message_[2] >> 16) & 0xFF);
       break;
     }
     case FLEXDATA_COMMON_KEYSIG: {  // Set Key Signature Message
-      callbacks_.flex_key_sig(group, addrs, channel, (message_[1] >> 24) & 0xFF,
-                              (message_[1] >> 16) & 0xFF);
+      callbacks_.flex_key_sig(group, addrs, channel, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF);
       break;
     }
     case FLEXDATA_COMMON_CHORD: this->set_chord_name(); break;
@@ -869,17 +793,15 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt,
   }
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
+template <backend Callbacks> void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
   message_[pos_] = UMP;
 
   auto mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
   uint8_t group = (message_[0] >> 24) & 0xF;
 
   if (pos_ == 0 &&
-      (mt == ump_message_type::utility || mt == ump_message_type::system ||
-       mt == ump_message_type::m1cvm || mt == ump_message_type::reserved32_06 ||
-       mt == ump_message_type::reserved32_07)) {
+      (mt == ump_message_type::utility || mt == ump_message_type::system || mt == ump_message_type::m1cvm ||
+       mt == ump_message_type::reserved32_06 || mt == ump_message_type::reserved32_07)) {
     // 32bit Messages
     if (mt == ump_message_type::utility) {
       this->utility_message(mt);
@@ -890,11 +812,9 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
     }
     return;
 
-  } else if (pos_ == 1 &&
-             (mt == ump_message_type::sysex7 || mt == ump_message_type::m2cvm ||
-              mt == ump_message_type::reserved64_08 ||
-              mt == ump_message_type::reserved64_09 ||
-              mt == ump_message_type::reserved64_0A)) {  // 64bit Messages
+  } else if (pos_ == 1 && (mt == ump_message_type::sysex7 || mt == ump_message_type::m2cvm ||
+                           mt == ump_message_type::reserved64_08 || mt == ump_message_type::reserved64_09 ||
+                           mt == ump_message_type::reserved64_0A)) {  // 64bit Messages
     if (mt == ump_message_type::sysex7) {
       this->sysex7_message(mt, group);
     } else if (mt == ump_message_type::m2cvm) {
@@ -902,15 +822,12 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
     }
     pos_ = 0;
   } else if (pos_ == 2 &&
-             (mt == ump_message_type::reserved96_0B ||
-              mt == ump_message_type::reserved96_0C)) {  // 96bit Messages
+             (mt == ump_message_type::reserved96_0B || mt == ump_message_type::reserved96_0C)) {  // 96bit Messages
     pos_ = 0;
     callbacks_.unknownUMPMessage(std::span{message_.data(), 3});
   } else if (pos_ == 3 &&
-             (mt == ump_message_type::data ||
-              mt == ump_message_type::flex_data ||
-              mt == ump_message_type::reserved128_0E ||
-              mt == ump_message_type::midi_endpoint)) {  // 128bit Messages
+             (mt == ump_message_type::data || mt == ump_message_type::flex_data ||
+              mt == ump_message_type::reserved128_0E || mt == ump_message_type::midi_endpoint)) {  // 128bit Messages
 
     if (mt == ump_message_type::midi_endpoint) {
       this->midi_endpoint_message(mt);
@@ -929,4 +846,4 @@ void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
 
 }  // end namespace midi2
 
-#endif  // MIDI2_UMP_PROCESSOR_H
+#endif  // MIDI2_UMP_PROCESSOR_HPP

@@ -1,6 +1,14 @@
 name: Codacy Clang-Tidy
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**.[ch]pp'
+      - '**/codacy.yaml'
+  pull_request:
+    paths:
+      - '**.[ch]pp'
+      - '**/codacy.yaml'
 
 permissions:
   contents: read
@@ -33,7 +41,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake
+          sudo apt-get install -y cmake ninja-build
 
       - name: Install Dependencies (LLVM)
         uses: paulhuggett/install-llvm@ad897b4b1cf03f54c1218ec6d97a23ff4b10b870 # v1.0
@@ -53,6 +61,7 @@ jobs:
         run: |
           cmake -S .                                           \
                 -B "$BUILD_DIR"                                \
+                -G Ninja                                       \
                 -D CMAKE_BUILD_TYPE=Release                    \
                 -D CMAKE_EXPORT_COMPILE_COMMANDS=Yes           \
                 -D "CMAKE_C_COMPILER=clang-$CLANG_VERSION"     \
@@ -60,8 +69,8 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          find . \( -name \*.h -or -name \*.cpp \) -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" \) -print0 | \
-          xargs -0 "clang-tidy-$CLANG_VERSION" "-p=$BUILD_DIR/compile_commands.json" | \
+          find . -name \*.cpp -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" \) -print0 | \
+          xargs -0 -I % "clang-tidy-$CLANG_VERSION" "-p=$BUILD_DIR/compile_commands.json" -header-filter=.* % | \
           tee -a "${{ env.CLANG_TIDY_OUT }}"
 
       # Convert the clang-tidy output to a format that the Codacy API accepts

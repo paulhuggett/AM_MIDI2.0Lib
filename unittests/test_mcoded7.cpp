@@ -1,5 +1,5 @@
 // DUT
-#include "midi2/mcoded7.h"
+#include "midi2/mcoded7.hpp"
 
 // standard library
 #include <algorithm>

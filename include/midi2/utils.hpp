@@ -25,8 +25,8 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2_UTILS_H
-#define MIDI2_UTILS_H
+#ifndef MIDI2_UTILS_HPP
+#define MIDI2_UTILS_HPP
 
 #include <cassert>
 #include <cstdint>
@@ -240,10 +240,9 @@ enum class ump_message_type : std::uint32_t {
   midi_endpoint = 0x0F,
 };
 
-constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1,
-                             std::uint8_t const b2, std::uint8_t const b3) {
-  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) |
-         (std::uint32_t{b2} << 8) | std::uint32_t{b3};
+constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
+                             std::uint8_t const b3) {
+  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
 }
 
 constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
@@ -283,8 +282,7 @@ constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   return bitShiftedValue;
 }
 
-constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits,
-                             uint8_t dstBits) {
+constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
   assert(srcBits >= dstBits);
   uint8_t const scaleBits = (srcBits - dstBits);
   return srcVal >> scaleBits;
@@ -292,4 +290,4 @@ constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits,
 
 }  // end namespace midi2
 
-#endif  // MIDI2_UTILS_H
+#endif  // MIDI2_UTILS_HPP

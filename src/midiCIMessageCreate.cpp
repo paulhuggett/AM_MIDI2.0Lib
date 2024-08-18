@@ -25,7 +25,7 @@
  *
  * ********************************************************/
 
-#include "midi2/midiCIMessageCreate.h"
+#include "midi2/midiCIMessageCreate.hpp"
 
 using namespace midi2;
 

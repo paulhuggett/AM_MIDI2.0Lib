@@ -1,6 +1,6 @@
 // DUT
-#include "midi2/ci_types.h"
-#include "midi2/midiCIProcessor.h"
+#include "midi2/ci_types.hpp"
+#include "midi2/midiCIProcessor.hpp"
 
 // Standard library
 #include <array>

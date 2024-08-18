@@ -1,12 +1,11 @@
-#ifndef MIDI2_UMP_TYPES_H
-#define MIDI2_UMP_TYPES_H
+#ifndef MIDI2_UMP_TYPES_HPP
+#define MIDI2_UMP_TYPES_HPP
 
-#include "midi2/bitfield.h"
+#include "midi2/bitfield.hpp"
 
 namespace midi2::types {
 
-template <unsigned Index, unsigned Bits>
-using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
+template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
 
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
@@ -176,4 +175,4 @@ union function_block_name_w1 {
 
 }  // end namespace midi2::types
 
-#endif  // MIDI2_UMP_TYPES_H
+#endif  // MIDI2_UMP_TYPES_HPP

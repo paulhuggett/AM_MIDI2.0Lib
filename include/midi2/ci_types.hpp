@@ -5,8 +5,8 @@
 //  Created by Paul Bowen-Huggett on 09/08/2024.
 //
 
-#ifndef MIDI2_CI_TYPES_H
-#define MIDI2_CI_TYPES_H
+#ifndef MIDI2_CI_TYPES_HPP
+#define MIDI2_CI_TYPES_HPP
 
 #include <algorithm>
 #include <array>
@@ -35,7 +35,7 @@ constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
 using reqId = std::tuple<uint32_t, std::byte>;  // muid-requestId
 
 struct MIDICI {
-  bool operator==(MIDICI const&) const = default;
+  bool operator==(MIDICI const &) const = default;
 
   std::uint8_t umpGroup = 0xFF;
   std::uint8_t deviceId = 0xFF;
@@ -55,14 +55,14 @@ namespace packed {
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 constexpr std::uint32_t from_le7(byte_array_4 const &v) {
-  assert (((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
+  assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
   return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
          (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
          (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
          (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
 }
 constexpr std::uint16_t from_le7(byte_array_2 const &v) {
-  assert (((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
+  assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
   return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
                                     (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
 }
@@ -806,7 +806,7 @@ struct profile_specific_data {
   constexpr profile_specific_data(profile_specific_data &&) noexcept = default;
   constexpr explicit profile_specific_data(packed::profile_specific_data_v1 const &);
 
-  byte_array_5 pid{};               ///< Profile ID
+  byte_array_5 pid{};                 ///< Profile ID
   std::span<std::byte const> data{};  ///< Profile specific data
 };
 
@@ -816,4 +816,4 @@ constexpr profile_specific_data::profile_specific_data(packed::profile_specific_
 
 }  // end namespace midi2::ci
 
-#endif  // MIDI2_CI_TYPES_H
+#endif  // MIDI2_CI_TYPES_HPP

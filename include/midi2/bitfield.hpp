@@ -1,5 +1,5 @@
-#ifndef MIDI2_BITFIELD_H
-#define MIDI2_BITFIELD_H
+#ifndef MIDI2_BITFIELD_HPP
+#define MIDI2_BITFIELD_HPP
 
 #include <cassert>
 #include <concepts>
@@ -10,8 +10,7 @@ namespace midi2 {
 
 ///\returns The maximum value that can be held in \p Bits bits of type \p T.
 template <std::unsigned_integral T, unsigned Bits>
-  requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
-constexpr T max_value() noexcept {
+requires(Bits <= sizeof(T) * 8 && Bits <= 64U) constexpr T max_value() noexcept {
   if constexpr (Bits == 8U) {
     return std::numeric_limits<std::uint8_t>::max();
   } else if constexpr (Bits == 16U) {
@@ -29,17 +28,14 @@ constexpr T max_value() noexcept {
 /// \tparam Index The bit number used as the first bit of the bitfield. Index 0 is the least-significant bit.
 /// \tparam Bits The number of bits to be allocated for this value.
 template <std::unsigned_integral ContainerType, unsigned Index, unsigned Bits>
-  requires(Bits > 0 && Index + Bits <= sizeof(ContainerType) * 8)
-class bitfield {
+requires(Bits > 0 && Index + Bits <= sizeof(ContainerType) * 8) class bitfield {
 public:
   /// The underlying type used to store the bitfield.
   using value_type = ContainerType;
 
   using small_type = std::conditional_t<
       Bits <= 8, std::uint8_t,
-      std::conditional_t<
-          Bits <= 16, std::uint16_t,
-          std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
+      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
 
   /// The index of the first bit used by the bitfield.
   static constexpr auto first_bit = Index;
@@ -69,9 +65,8 @@ public:
   /// \param v  The value to be stored.
   void assign(small_type const v) noexcept {
     assert(v <= this->max() && "Value too large for bitfield");
-    value_ =
-        static_cast<value_type>(value_ & ~(mask_ << Index)) |
-        static_cast<value_type>((static_cast<value_type>(v) & mask_) << Index);
+    value_ = static_cast<value_type>(value_ & ~(mask_ << Index)) |
+             static_cast<value_type>((static_cast<value_type>(v) & mask_) << Index);
   }
 
   /// Assigns the value \p v to the bitfield.
@@ -84,11 +79,10 @@ public:
 
 private:
   static constexpr auto mask_ = max_value<ContainerType, Bits>();
-  static_assert(mask_ <= std::numeric_limits<small_type>::max(),
-                "small_type must be able to hold mask_");
+  static_assert(mask_ <= std::numeric_limits<small_type>::max(), "small_type must be able to hold mask_");
   value_type value_;
 };
 
 }  // end namespace midi2
 
-#endif  // MIDI2_BITFIELD_H
+#endif  // MIDI2_BITFIELD_HPP

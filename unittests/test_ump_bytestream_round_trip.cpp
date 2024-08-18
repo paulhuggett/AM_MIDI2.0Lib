@@ -1,6 +1,6 @@
 // DUT includes
-#include "midi2/bytestreamToUMP.h"
-#include "midi2/umpToBytestream.h"
+#include "midi2/bytestreamToUMP.hpp"
+#include "midi2/umpToBytestream.hpp"
 
 // Standard Library
 #include <ios>

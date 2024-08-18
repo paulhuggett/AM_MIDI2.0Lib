@@ -1,5 +1,5 @@
 // DUT
-#include "midi2/umpToMIDI1Protocol.h"
+#include "midi2/umpToMIDI1Protocol.hpp"
 
 // Standard Library
 #include <algorithm>

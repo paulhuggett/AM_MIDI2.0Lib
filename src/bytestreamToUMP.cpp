@@ -25,11 +25,11 @@
  *
  * ********************************************************/
 
-#include "midi2/bytestreamToUMP.h"
+#include "midi2/bytestreamToUMP.hpp"
 
 #include <bit>
 
-#include "midi2/ump_types.h"
+#include "midi2/ump_types.hpp"
 
 namespace midi2 {
 
