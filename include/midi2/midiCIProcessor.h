@@ -82,9 +82,7 @@ template <typename T> concept profile_backend = requires(T && v) {
   { v.specific_data(MIDICI{}, ci::profile_specific_data{}) } -> std::same_as<void>;
 };
 
-// Property Exchange
-template <typename T>
-concept pe_backend = requires(T && v) {
+template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.recvPECapabilities(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/, std::uint8_t{} /*minVer*/) } -> std::same_as<void>;
   { v.recvPECapabilitiesReply(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/, std::uint8_t{} /*minVer*/) } -> std::same_as<void>;
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
@@ -310,7 +308,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::trailing_data(
 // ~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::discovery(std::byte const s7) {
-  auto const handler = [this](auto const &v) { callbacks_.discovery(midici_, ci::discovery{v}); };
+  auto const handler = [this](unaligned_copyable auto const &v) { callbacks_.discovery(midici_, ci::discovery{v}); };
   if (midici_.ciVer == 1) {
     return fixed_size<ci::packed::discovery_v1>(s7, handler);
   }
@@ -321,7 +319,9 @@ void midiCIProcessor<Callbacks, ProfileBackend>::discovery(std::byte const s7) {
 // ~~~~~~~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend>
 void midiCIProcessor<Callbacks, ProfileBackend>::discovery_reply(std::byte const s7) {
-  auto const handler = [this](auto const &v) { callbacks_.discovery_reply(midici_, ci::discovery_reply{v}); };
+  auto const handler = [this](unaligned_copyable auto const &v) {
+    callbacks_.discovery_reply(midici_, ci::discovery_reply{v});
+  };
   if (midici_.ciVer == 1) {
     return this->fixed_size<ci::packed::discovery_reply_v1>(s7, handler);
   }
@@ -354,7 +354,7 @@ void midiCIProcessor<Callbacks, ProfileBackend>::nak(std::byte const s7) {
   using v1_type = ci::packed::nak_v1;
   using v2_type = ci::packed::nak_v2;
 
-  auto const handler = [this](auto const &reply) { return callbacks_.nak(midici_, ci::nak{reply}); };
+  auto const handler = [this](unaligned_copyable auto const &reply) { return callbacks_.nak(midici_, ci::nak{reply}); };
   if (midici_.ciVer == 1) {
     return this->fixed_size<v1_type>(s7, handler);
   }
