@@ -131,6 +131,11 @@ public:
   MOCK_METHOD(void, specific_data, (MIDICI const &, midi2::ci::profile_specific_data const &), (override));
 };
 
+class mock_property_exchange_callbacks final : public midi2::property_exchange_callbacks {
+public:
+  MOCK_METHOD(void, capabilities, (MIDICI const &, midi2::ci::property_exchange_capabilities const &), (override));
+};
+
 constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
 
 TEST(CIProcessor, Empty) {
@@ -1065,6 +1070,56 @@ TEST(CIProcessor, ProfileSpecificData) {
       .Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
+  processor.startSysex7(group, destination);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, PropertyExchangeCapabilities) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x30}, // Universal System Exclusive Sub-ID#2: Inquiry: Property Data Exchange Capabilities
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    std::byte{0x02}, // Number of Simultaneous Property Exchange Requests Supported
+    std::byte{0x03}, // Property Exchange Major Version
+    std::byte{0x04}, // Property Exchange Minor Version
+
+    std::byte{0}, // stray extra byte
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PE_CAPABILITY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange_capabilities caps;
+  caps.num_simultaneous = 2;
+  caps.major_version = 3;
+  caps.minor_version = 4;
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks, capabilities(midici, caps)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
 
   std::for_each(std::begin(message), std::end(message),

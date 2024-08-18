@@ -900,6 +900,59 @@ constexpr profile_specific_data::profile_specific_data(packed::profile_specific_
     : pid{other.pid}, data{std::begin(other.data), packed::from_le7(other.data_length)} {
 }
 
+namespace packed {
+
+struct property_exchange_capabilities_v1 {
+  std::byte num_simultaneous;
+};
+static_assert(offsetof(property_exchange_capabilities_v1, num_simultaneous) == 0);
+static_assert(sizeof(property_exchange_capabilities_v1) == 1);
+static_assert(alignof(property_exchange_capabilities_v1) == 1);
+static_assert(std::is_trivially_copyable_v<property_exchange_capabilities_v1>);
+
+struct property_exchange_capabilities_v2 {
+  property_exchange_capabilities_v1 v1;
+  std::byte major_version;
+  std::byte minor_version;
+};
+static_assert(offsetof(property_exchange_capabilities_v2, v1) == 0);
+static_assert(offsetof(property_exchange_capabilities_v2, major_version) == 1);
+static_assert(offsetof(property_exchange_capabilities_v2, minor_version) == 2);
+static_assert(sizeof(property_exchange_capabilities_v2) == 3);
+static_assert(alignof(property_exchange_capabilities_v2) == 1);
+static_assert(std::is_trivially_copyable_v<property_exchange_capabilities_v2>);
+
+}  // end namespace packed
+
+struct property_exchange_capabilities {
+  constexpr property_exchange_capabilities() = default;
+  constexpr property_exchange_capabilities(property_exchange_capabilities const &) = default;
+  constexpr property_exchange_capabilities(property_exchange_capabilities &&) noexcept = default;
+  constexpr explicit property_exchange_capabilities(packed::property_exchange_capabilities_v1 const &other);
+  constexpr explicit property_exchange_capabilities(packed::property_exchange_capabilities_v2 const &other);
+  ~property_exchange_capabilities() noexcept = default;
+
+  property_exchange_capabilities &operator=(property_exchange_capabilities const &other) = default;
+  property_exchange_capabilities &operator=(property_exchange_capabilities &&other) = default;
+
+  bool operator==(property_exchange_capabilities const &) const = default;
+
+  std::uint8_t num_simultaneous = 0;
+  std::uint8_t major_version = 0;
+  std::uint8_t minor_version = 0;
+};
+
+constexpr property_exchange_capabilities::property_exchange_capabilities(
+    packed::property_exchange_capabilities_v1 const &other)
+    : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
+}
+constexpr property_exchange_capabilities::property_exchange_capabilities(
+    packed::property_exchange_capabilities_v2 const &other)
+    : property_exchange_capabilities{other.v1} {
+  major_version = static_cast<std::uint8_t>(other.major_version);
+  minor_version = static_cast<std::uint8_t>(other.minor_version);
+}
+
 }  // end namespace midi2::ci
 
 #endif  // MIDI2_CI_TYPES_HPP
