@@ -37,8 +37,8 @@ namespace midi2 {
 
 class umpToMIDI1Protocol {
 public:
-  constexpr bool availableUMP() const { return !output_.empty(); }
-  std::uint32_t readUMP() { return output_.pop_front(); }
+  [[nodiscard]] constexpr bool availableUMP() const { return !output_.empty(); }
+  [[nodiscard]] std::uint32_t readUMP() { return output_.pop_front(); }
   void UMPStreamParse(uint32_t UMP);
 
 private:

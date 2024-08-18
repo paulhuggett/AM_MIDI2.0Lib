@@ -96,13 +96,13 @@ private:
   };
   std::array<channel, 16> channel_;
 
-  static constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
-                                      std::uint8_t const b3) {
+  [[nodiscard]] static constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
+                                                    std::uint8_t const b3) {
     return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
   }
 
-  constexpr std::uint32_t pack(ump_message_type const message_type, std::uint8_t const b1, std::uint8_t const b2,
-                               std::uint8_t const b3) const {
+  [[nodiscard]] constexpr std::uint32_t pack(ump_message_type const message_type, std::uint8_t const b1,
+                                             std::uint8_t const b2, std::uint8_t const b3) const {
     return pack(static_cast<std::uint8_t>((static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_), b1, b2, b3);
   }
 

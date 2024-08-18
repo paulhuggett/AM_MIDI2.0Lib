@@ -34,7 +34,6 @@ add_library(libmidi2 ${LIBMIDI2_HEADERS}
   src/umpToMIDI1Protocol.cpp
   src/umpMessageCreate.cpp
   src/midiCIMessageCreate.cpp
-  src/midiCIProcessor.cpp
 )
 setup_target(libmidi2)
 
