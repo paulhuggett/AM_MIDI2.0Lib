@@ -3,9 +3,11 @@
 
 // Standard library
 #include <queue>
+#include <type_traits>
 
 // Google Test/Mock
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 namespace {
 
