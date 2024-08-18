@@ -82,12 +82,9 @@ template <typename T> concept profile_backend = requires(T && v) {
 };
 
 template <typename T> concept property_exchange_backend = requires(T && v) {
-  { v.capabilities(MIDICI{}, ci::property_exchange_capabilities{}) } -> std::same_as<void>;
+  { v.capabilities(MIDICI{}, ci::pe_capabilities{}) } -> std::same_as<void>;
+  { v.capabilities_reply(MIDICI{}, ci::pe_capabilities_reply{}) } -> std::same_as<void>;
 #if 0
-  {
-    v.recvPECapabilitiesReply(MIDICI{}, std::uint8_t{} /*numSimulRequests*/, std::uint8_t{} /*majVer*/,
-                              std::uint8_t{} /*minVer*/)
-  } -> std::same_as<void>;
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESetReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESubReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
@@ -129,8 +126,8 @@ public:
   // Property Exchange
   //  virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
   //                              std::uint8_t /*minVer*/) { /* do nothing */ }
-  virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
-                                       std::uint8_t /*minVer*/) { /* do nothing */ }
+  // virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
+  //                                     std::uint8_t /*minVer*/) { /* do nothing */ }
   virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPESetReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
@@ -182,7 +179,8 @@ public:
   property_exchange_callbacks &operator=(property_exchange_callbacks const &) = default;
   property_exchange_callbacks &operator=(property_exchange_callbacks &&) noexcept = default;
 
-  virtual void capabilities(MIDICI const &, ci::property_exchange_capabilities const &) { /* do nothing */ }
+  virtual void capabilities(MIDICI const &, ci::pe_capabilities const &) { /* do nothing */ }
+  virtual void capabilities_reply(MIDICI const &, midi2::ci::pe_capabilities_reply const &) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -263,6 +261,7 @@ private:
 
   // Property Exchange messages
   void pe_capabilities(std::byte s7);
+  void pe_capabilities_reply(std::byte s7);
 };
 
 midiCIProcessor() -> midiCIProcessor<>;
@@ -561,17 +560,30 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::profile_specific_dat
   return this->trailing_data<type, offsetof(type, data)>(s7, get_data_size, handler);
 }
 
-// pe capability
-// ~~~~~~~~~~~~~
+// pe capabilities
+// ~~~~~~~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::pe_capabilities(std::byte const s7) {
   auto const handler = [this](unaligned_copyable auto const &v) {
-    pe_backend_.capabilities(midici_, ci::property_exchange_capabilities{v});
+    pe_backend_.capabilities(midici_, ci::pe_capabilities{v});
   };
   if (midici_.ciVer == 1) {
-    return this->fixed_size<ci::packed::property_exchange_capabilities_v1>(s7, handler);
+    return this->fixed_size<ci::packed::pe_capabilities_v1>(s7, handler);
   }
-  return this->fixed_size<ci::packed::property_exchange_capabilities_v2>(s7, handler);
+  return this->fixed_size<ci::packed::pe_capabilities_v2>(s7, handler);
+}
+
+// pe capabilities reply
+// ~~~~~~~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::pe_capabilities_reply(std::byte const s7) {
+  auto const handler = [this](unaligned_copyable auto const &v) {
+    pe_backend_.capabilities_reply(midici_, ci::pe_capabilities_reply{v});
+  };
+  if (midici_.ciVer == 1) {
+    return this->fixed_size<ci::packed::pe_capabilities_reply_v1>(s7, handler);
+  }
+  return this->fixed_size<ci::packed::pe_capabilities_reply_v2>(s7, handler);
 }
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
@@ -619,12 +631,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processMIDICI(std::b
       this->profile_specific_data(s7Byte);
       break;
 
-    case MIDICI_PE_CAPABILITY:
-      this->pe_capabilities(s7Byte);
-      break;
+    case MIDICI_PE_CAPABILITY: this->pe_capabilities(s7Byte); break;
+    case MIDICI_PE_CAPABILITYREPLY: this->pe_capabilities_reply(s7Byte); break;
       // #ifndef M2_DISABLE_PE
-      // case MIDICI_PE_CAPABILITY:       // Inquiry: Property Exchange Capabilities
-    case MIDICI_PE_CAPABILITYREPLY:  // Reply to Property Exchange Capabilities
     case MIDICI_PE_GET:              // Inquiry: Get Property Data
     case MIDICI_PE_GETREPLY:         // Reply To Get Property Data - Needs Work!
     case MIDICI_PE_SET:              // Inquiry: Set Property Data
@@ -655,41 +664,7 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::byte s7Byte) {
   switch (midici_.ciType) {
   case MIDICI_PE_CAPABILITY:
-  case MIDICI_PE_CAPABILITYREPLY: {
-    bool complete = false;
-
-    if (sysexPos_ == 13) {
-      buffer_[0] = s7Byte;
-    }
-
-    if (sysexPos_ == 13 && midici_.ciVer == 1) {
-      complete = true;
-    }
-
-    if (sysexPos_ == 14) {
-      buffer_[1] = s7Byte;
-    }
-    if (sysexPos_ == 15) {
-      buffer_[2] = s7Byte;
-      complete = true;
-    }
-
-    if (complete) {
-#if 0
-        if (midici_.ciType == MIDICI_PE_CAPABILITY) {
-        callbacks_.recvPECapabilities(midici_, static_cast<std::uint8_t>(buffer_[0]),
-                                      static_cast<std::uint8_t>(buffer_[1]), static_cast<std::uint8_t>(buffer_[2]));
-      }
-#endif
-      if (midici_.ciType == MIDICI_PE_CAPABILITYREPLY) {
-        callbacks_.recvPECapabilitiesReply(midici_, static_cast<std::uint8_t>(buffer_[0]),
-                                           static_cast<std::uint8_t>(buffer_[1]),
-                                           static_cast<std::uint8_t>(buffer_[2]));
-      }
-    }
-
-    break;
-  }
+  case MIDICI_PE_CAPABILITYREPLY: break;
   default: {
     if (sysexPos_ == 13) {
       midici_._peReqIdx = std::make_tuple(midici_.remoteMUID, s7Byte);
