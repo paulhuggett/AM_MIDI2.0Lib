@@ -55,15 +55,14 @@ std::ostream& operator<<(std::ostream& os,
 std::ostream& operator<<(std::ostream& os,
                          function_block_info::fbdirection const direction) {
   using enum function_block_info::fbdirection;
-  char const* str = "";
   switch (direction) {
-  case reserved: str = "reserved"; break;
-  case input: str = "input"; break;
-  case output: str = "output"; break;
-  case bidirectional: str = "bidirectional"; break;
-  default: str = "unknown"; break;
+  case reserved: os << "reserved"; break;
+  case input: os << "input"; break;
+  case output: os << "output"; break;
+  case bidirectional: os << "bidirectional"; break;
+  default: os << "unknown"; break;
   }
-  return os << str;
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, function_block_info const& fbi);

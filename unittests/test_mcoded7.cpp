@@ -122,6 +122,7 @@ TEST(Mcoded7, GoodInput) {
   EXPECT_TRUE(decoder.good());
   out = decoder.parse_byte(0b00010010, out);
   EXPECT_TRUE(decoder.good());
+  EXPECT_EQ(out, output.data() + 1);
 }
 
 // NOLINTNEXTLINE
