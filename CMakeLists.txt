@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(libmidi2)
+project(midi2)
 
 option (MIDI2_WERROR "Enable warnings-as-errors" No)
 option (MIDI2_COVERAGE "Enable code coverage" No)
@@ -13,7 +13,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(setup_target)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(LIBMIDI2_HEADERS
+set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/bitfield.hpp"
   "${INCLUDE_DIR}/midi2/bytestreamToUMP.hpp"
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
@@ -28,30 +28,30 @@ set(LIBMIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 
-add_library(libmidi2 ${LIBMIDI2_HEADERS}
+add_library(midi2 ${MIDI2_HEADERS}
   src/bytestreamToUMP.cpp
   src/umpToBytestream.cpp
   src/umpToMIDI1Protocol.cpp
   src/umpMessageCreate.cpp
   src/midiCIMessageCreate.cpp
 )
-setup_target(libmidi2)
+setup_target(midi2)
 
-target_include_directories(libmidi2 PUBLIC
+target_include_directories(midi2 PUBLIC
     $<BUILD_INTERFACE:${INCLUDE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
 
-set(LIBMIDI2_EXPORT_NAME libmidi2-config)
-install(TARGETS libmidi2
-        EXPORT ${LIBMIDI2_EXPORT_NAME}
+set(MIDI2_EXPORT_NAME midi2-config)
+install(TARGETS midi2
+        EXPORT ${MIDI2_EXPORT_NAME}
 )
-install(EXPORT ${LIBMIDI2_EXPORT_NAME}
-        NAMESPACE libmidi2::
+install(EXPORT ${MIDI2_EXPORT_NAME}
+        NAMESPACE midi2::
         DESTINATION "share/${PROJECT_NAME}"
 )
 
-install(FILES ${LIBMIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
+install(FILES ${MIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 
 
 if (MIDI2_UNITTEST OR MIDI2_FUZZTEST)

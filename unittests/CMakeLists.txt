@@ -11,7 +11,7 @@ add_executable (m2unittests
   test_ump_bytestream_round_trip.cpp
 )
 target_compile_definitions (m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)
-target_link_libraries(m2unittests PRIVATE libmidi2)
+target_link_libraries(m2unittests PRIVATE midi2)
 setup_target(m2unittests PEDANTIC $<NOT:$<BOOL:${MIDI2_FUZZTEST}>>)
 set (clang_options -Wno-exit-time-destructors -Wno-global-constructors -Wno-used-but-marked-unused)
 set (gcc_options)
