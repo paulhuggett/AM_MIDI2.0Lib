@@ -188,7 +188,9 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       w1.number_of_bytes = sysex7_.pos;
       w1.data0 = sysex7_.bytes[0];
       w1.data1 = sysex7_.bytes[1];
-      output_.push_back(std::bit_cast<std::uint32_t>(w1));
+      static_assert(sizeof(w1) == sizeof(std::uint32_t));
+      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
+      output_.push_back(w1_32);
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
@@ -206,7 +208,9 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       w1.number_of_bytes = std::uint8_t{6};
       w1.data0 = sysex7_.bytes[0];
       w1.data1 = sysex7_.bytes[1];
-      output_.push_back(std::bit_cast<std::uint32_t>(w1));
+      static_assert(sizeof(w1) == sizeof(std::uint32_t));
+      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
+      output_.push_back(w1_32);
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
