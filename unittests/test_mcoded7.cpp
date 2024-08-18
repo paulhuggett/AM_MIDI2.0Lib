@@ -3,6 +3,7 @@
 
 // standard library
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <iterator>
 #include <vector>
@@ -116,7 +117,7 @@ TEST(Mcoded7, EmptyRoundTrip) {
 // NOLINTNEXTLINE
 TEST(Mcoded7, GoodInput) {
   midi2::mcoded7::decoder decoder;
-  std::array<std::uint8_t, 1> output;
+  std::array<std::uint8_t, 1> output{};
   auto* out = output.data();
   out = decoder.parse_byte(0b00000000, out);
   EXPECT_TRUE(decoder.good());
@@ -128,7 +129,7 @@ TEST(Mcoded7, GoodInput) {
 // NOLINTNEXTLINE
 TEST(Mcoded7, BadInput) {
   midi2::mcoded7::decoder decoder;
-  std::array<std::uint8_t, 2> output;
+  std::array<std::uint8_t, 2> output{};
   auto* out = output.data();
   out = decoder.parse_byte(0b00000000, out);
   EXPECT_TRUE(decoder.good());
@@ -137,4 +138,5 @@ TEST(Mcoded7, BadInput) {
       << "Most significant bit was set: state should be bad";
   out = decoder.parse_byte(0b00010010, out);
   EXPECT_FALSE(decoder.good()) << "Expected the 'good' state to be sticky";
+  EXPECT_EQ(out, output.data() + 2);
 }

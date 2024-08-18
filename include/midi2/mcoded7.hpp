@@ -95,7 +95,7 @@ public:
   template <typename OutputIterator> OutputIterator flush(OutputIterator out) { return out; }
 
   /// Returns true if the input was valid Mcoded7, false otherwise.
-  constexpr bool good() const noexcept { return !static_cast<bool>(bad_); }
+  [[nodiscard]] constexpr bool good() const noexcept { return !static_cast<bool>(bad_); }
 
   void reset() noexcept {
     pos_ = msbs_byte_pos_;
@@ -134,6 +134,7 @@ template <typename OutputIterator> OutputIterator encoder::parse_byte(std::uint8
 
 template <typename OutputIterator> OutputIterator encoder::flush(OutputIterator out) {
   if (pos_ > 0U) {
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const first = std::begin(buffer_);
     out = std::copy(first, first + pos_ + 1, out);
     this->reset();
