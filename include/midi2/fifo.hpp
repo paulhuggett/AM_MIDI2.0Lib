@@ -55,26 +55,26 @@ public:
   /// \brief Checks whether the container is empty.
   /// The FIFO is empty when both indices are equal.
   /// \returns True if the container is empty, false otherwise.
-  constexpr bool empty() const { return writeIndex_ == readIndex_; }
+  [[nodiscard]] constexpr bool empty() const { return writeIndex_ == readIndex_; }
   /// \brief Checks whether the container is full.
   /// The FIFO is full then when both indices are equal but the "wrap" fields
   /// different.
   /// \returns True if the container is full, false otherwise.
-  constexpr bool full() const { return (writeIndex_ & mask_) == (readIndex_ & mask_) && wrapped(); }
+  [[nodiscard]] constexpr bool full() const { return (writeIndex_ & mask_) == (readIndex_ & mask_) && wrapped(); }
   /// \brief Returns the number of elements.
-  constexpr std::size_t size() const {
+  [[nodiscard]] constexpr std::size_t size() const {
     auto const w = (writeIndex_ & mask_) + (wrapped() ? Elements : 0U);
     auto const r = readIndex_ & mask_;
     assert(w >= r);
     return w - r;
   }
   /// \brief Returns the maximum possible number of elements.
-  constexpr std::size_t max_size() const { return Elements; }
+  [[nodiscard]] constexpr std::size_t max_size() const { return Elements; }
 
 private:
   std::array<ElementType, Elements> arr_{};
 
-  constexpr bool wrapped() const { return (writeIndex_ & ~mask_) != (readIndex_ & ~mask_); }
+  [[nodiscard]] constexpr bool wrapped() const { return (writeIndex_ & ~mask_) != (readIndex_ & ~mask_); }
 
   // The number of bits required to represent the maximum index in the arr_
   // container.
