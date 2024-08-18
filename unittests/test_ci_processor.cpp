@@ -1,13 +1,15 @@
 // DUT
 #include "midi2/ci_types.hpp"
 #include "midi2/midiCIProcessor.hpp"
+#include "midi2/utils.hpp"
 
 // Standard library
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <ostream>
+#include <span>
 
 // 3rd party
 #include <gmock/gmock.h>
@@ -91,7 +93,6 @@ std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
 namespace {
 
 using testing::AllOf;
-using testing::ElementsAre;
 using testing::ElementsAreArray;
 using testing::Eq;
 using testing::Field;

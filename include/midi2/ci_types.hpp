@@ -52,6 +52,7 @@ struct MIDICI {
 };
 
 namespace packed {
+
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 constexpr std::uint32_t from_le7(byte_array_4 const &v) {
@@ -125,6 +126,10 @@ struct discovery {
   constexpr discovery(discovery &&) noexcept = default;
   constexpr explicit discovery(packed::discovery_v1 const &v1);
   constexpr explicit discovery(packed::discovery_v2 const &v2);
+
+  constexpr discovery &operator=(discovery const &) = default;
+  constexpr discovery &operator=(discovery &&) noexcept = default;
+
   bool operator==(discovery const &) const = default;
 
   std::array<std::uint8_t, 3> manufacturer{};
@@ -195,6 +200,10 @@ struct discovery_reply {
   constexpr discovery_reply(discovery_reply &&) noexcept = default;
   constexpr explicit discovery_reply(packed::discovery_reply_v1 const &v1);
   constexpr explicit discovery_reply(packed::discovery_reply_v2 const &v2);
+
+  constexpr discovery_reply &operator=(discovery_reply const &) = default;
+  constexpr discovery_reply &operator=(discovery_reply &&) noexcept = default;
+
   bool operator==(discovery_reply const &) const = default;
 
   std::array<std::uint8_t, 3> manufacturer{};
@@ -241,6 +250,10 @@ struct endpoint_info {
   constexpr endpoint_info(endpoint_info const &) = default;
   constexpr endpoint_info(endpoint_info &&) noexcept = default;
   constexpr explicit endpoint_info(packed::endpoint_info_v1 const &);
+
+  constexpr endpoint_info &operator=(endpoint_info const &) = default;
+  constexpr endpoint_info &operator=(endpoint_info &&) noexcept = default;
+
   bool operator==(endpoint_info const &) const = default;
 
   std::uint8_t status;
@@ -277,6 +290,9 @@ struct endpoint_info_reply {
   constexpr endpoint_info_reply(endpoint_info_reply &&) noexcept = default;
   constexpr explicit endpoint_info_reply(packed::endpoint_info_reply_v1 const &);
 
+  constexpr endpoint_info_reply &operator=(endpoint_info_reply const &) = default;
+  constexpr endpoint_info_reply &operator=(endpoint_info_reply &&) noexcept = default;
+
   std::byte status{};
   std::span<std::byte const> information{};
 };
@@ -307,6 +323,10 @@ struct invalidate_muid {
   constexpr invalidate_muid(invalidate_muid const &) = default;
   constexpr invalidate_muid(invalidate_muid &&) noexcept = default;
   constexpr explicit invalidate_muid(packed::invalidate_muid_v1 const &);
+
+  constexpr invalidate_muid &operator=(invalidate_muid const &) = default;
+  constexpr invalidate_muid &operator=(invalidate_muid &&) noexcept = default;
+
   constexpr bool operator==(invalidate_muid const &) const = default;
 
   std::uint32_t target_muid = 0;
@@ -347,6 +367,9 @@ struct ack {
   constexpr ack(ack const &) = default;
   constexpr ack(ack &&) noexcept = default;
   constexpr explicit ack(packed::ack_v1 const &);
+
+  constexpr ack &operator=(ack const &) = default;
+  constexpr ack &operator=(ack &&) noexcept = default;
 
   std::uint8_t original_id = 0;
   std::uint8_t status_code = 0;
@@ -399,6 +422,10 @@ struct nak {
   constexpr nak(nak &&) noexcept = default;
   constexpr explicit nak(packed::nak_v1 const &);
   constexpr explicit nak(packed::nak_v2 const &);
+
+  constexpr nak &operator=(nak const &) = default;
+  constexpr nak &operator=(nak &&) noexcept = default;
+
   constexpr bool operator==(nak const &) const;
 
   std::uint8_t original_id = 0;  // Original transaction sub-ID#2 classification
@@ -457,6 +484,9 @@ struct profile_inquiry_reply {
   constexpr profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &,
                                   packed::profile_inquiry_reply_v1_pt2 const &);
 
+  constexpr profile_inquiry_reply &operator=(profile_inquiry_reply const &) = default;
+  constexpr profile_inquiry_reply &operator=(profile_inquiry_reply &&) noexcept = default;
+
   std::span<byte_array_5 const> enabled{};
   std::span<byte_array_5 const> disabled{};
 };
@@ -489,6 +519,10 @@ struct profile_added {
   constexpr profile_added(profile_added const &) = default;
   constexpr profile_added(profile_added &&) noexcept = default;
   constexpr explicit profile_added(packed::profile_added_v1 const &);
+
+  constexpr profile_added &operator=(profile_added const &) = default;
+  constexpr profile_added &operator=(profile_added &&) noexcept = default;
+
   constexpr bool operator==(profile_added const &) const = default;
 
   byte_array_5 pid{};
@@ -519,6 +553,10 @@ struct profile_removed {
   constexpr profile_removed(profile_removed const &) = default;
   constexpr profile_removed(profile_removed &&) noexcept = default;
   constexpr explicit profile_removed(packed::profile_removed_v1 const &);
+
+  constexpr profile_removed &operator=(profile_removed const &) = default;
+  constexpr profile_removed &operator=(profile_removed &&) noexcept = default;
+
   constexpr bool operator==(profile_removed const &) const = default;
 
   byte_array_5 pid{};
@@ -551,6 +589,10 @@ struct profile_details_inquiry {
   constexpr profile_details_inquiry(profile_details_inquiry const &) = default;
   constexpr profile_details_inquiry(profile_details_inquiry &&) noexcept = default;
   constexpr explicit profile_details_inquiry(packed::profile_details_inquiry_v1 const &);
+
+  constexpr profile_details_inquiry &operator=(profile_details_inquiry const &) = default;
+  constexpr profile_details_inquiry &operator=(profile_details_inquiry &&) noexcept = default;
+
   constexpr bool operator==(profile_details_inquiry const &) const = default;
 
   byte_array_5 pid{};
@@ -585,6 +627,9 @@ struct profile_details_reply {
   constexpr profile_details_reply(profile_details_reply const &) = default;
   constexpr profile_details_reply(profile_details_reply &&) noexcept = default;
   constexpr explicit profile_details_reply(packed::profile_details_reply_v1 const &);
+
+  constexpr profile_details_reply &operator=(profile_details_reply const &) = default;
+  constexpr profile_details_reply &operator=(profile_details_reply &&) noexcept = default;
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
@@ -632,6 +677,10 @@ struct profile_on {
   constexpr profile_on(profile_on &&) noexcept = default;
   constexpr explicit profile_on(packed::profile_on_v1 const &);
   constexpr explicit profile_on(packed::profile_on_v2 const &);
+
+  constexpr profile_on &operator=(profile_on const &) = default;
+  constexpr profile_on &operator=(profile_on &&) noexcept = default;
+
   constexpr bool operator==(profile_on const &) const = default;
 
   byte_array_5 pid{};
@@ -679,6 +728,10 @@ struct profile_off {
   constexpr profile_off(profile_off &&) noexcept = default;
   constexpr explicit profile_off(packed::profile_off_v1 const &);
   constexpr explicit profile_off(packed::profile_off_v2 const &);
+
+  constexpr profile_off &operator=(profile_off const &) = default;
+  constexpr profile_off &operator=(profile_off &&) noexcept = default;
+
   constexpr bool operator==(profile_off const &) const = default;
 
   byte_array_5 pid{};
@@ -725,6 +778,10 @@ struct profile_enabled {
   constexpr profile_enabled(profile_enabled &&) noexcept = default;
   constexpr explicit profile_enabled(packed::profile_enabled_v1 const &);
   constexpr explicit profile_enabled(packed::profile_enabled_v2 const &);
+
+  constexpr profile_enabled &operator=(profile_enabled const &) = default;
+  constexpr profile_enabled &operator=(profile_enabled &&) noexcept = default;
+
   constexpr bool operator==(profile_enabled const &) const = default;
 
   byte_array_5 pid{};
@@ -772,6 +829,10 @@ struct profile_disabled {
   constexpr profile_disabled(profile_disabled &&) noexcept = default;
   constexpr explicit profile_disabled(packed::profile_disabled_v1 const &);
   constexpr explicit profile_disabled(packed::profile_disabled_v2 const &);
+
+  constexpr profile_disabled &operator=(profile_disabled const &) = default;
+  constexpr profile_disabled &operator=(profile_disabled &&) noexcept = default;
+
   constexpr bool operator==(profile_disabled const &) const = default;
 
   byte_array_5 pid{};
@@ -784,6 +845,11 @@ constexpr profile_disabled::profile_disabled(packed::profile_disabled_v2 const &
   num_channels = packed::from_le7(other.num_channels);
 }
 
+//*                __ _ _                       _  __ _         _      _         *
+//*  _ __ _ _ ___ / _(_) |___   ____ __  ___ __(_)/ _(_)__   __| |__ _| |_ __ _  *
+//* | '_ \ '_/ _ \  _| | / -_) (_-< '_ \/ -_) _| |  _| / _| / _` / _` |  _/ _` | *
+//* | .__/_| \___/_| |_|_\___| /__/ .__/\___\__|_|_| |_\__| \__,_\__,_|\__\__,_| *
+//* |_|                           |_|                                            *
 namespace packed {
 
 struct profile_specific_data_v1 {
@@ -805,6 +871,9 @@ struct profile_specific_data {
   constexpr profile_specific_data(profile_specific_data const &) = default;
   constexpr profile_specific_data(profile_specific_data &&) noexcept = default;
   constexpr explicit profile_specific_data(packed::profile_specific_data_v1 const &);
+
+  constexpr profile_specific_data &operator=(profile_specific_data const &) = default;
+  constexpr profile_specific_data &operator=(profile_specific_data &&) noexcept = default;
 
   byte_array_5 pid{};                 ///< Profile ID
   std::span<std::byte const> data{};  ///< Profile specific data
