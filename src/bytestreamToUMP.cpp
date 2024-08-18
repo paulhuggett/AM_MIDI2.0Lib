@@ -28,8 +28,11 @@
 #include "midi2/bytestreamToUMP.hpp"
 
 #include <bit>
+#include <cassert>
+#include <cstdint>
 
 #include "midi2/ump_types.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2 {
 
@@ -169,7 +172,8 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       if (midi1Byte == status::tunerequest) {
         d0_ = midi1Byte;
       }
-      return this->bsToUMP(midi1Byte, 0, 0);
+      this->bsToUMP(midi1Byte, 0, 0);
+      return;
     }
 
     d0_ = midi1Byte;

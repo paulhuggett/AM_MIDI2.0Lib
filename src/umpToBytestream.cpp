@@ -27,6 +27,11 @@
 
 #include "midi2/umpToBytestream.hpp"
 
+#include <cassert>
+#include <cstdint>
+
+#include "midi2/utils.hpp"
+
 namespace midi2 {
 
 void umpToBytestream::word1(uint32_t UMP) {

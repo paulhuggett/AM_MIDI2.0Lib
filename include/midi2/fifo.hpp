@@ -17,7 +17,7 @@ template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) no
 }
 
 /// \returns  The number of bits required for value.
-template <std::unsigned_integral T> constexpr unsigned bits_required(T const value) {
+template <std::unsigned_integral T> consteval unsigned bits_required(T const value) {
   return value == 0U ? 0U : 1U + bits_required(static_cast<T>(value >> 1U));
 }
 

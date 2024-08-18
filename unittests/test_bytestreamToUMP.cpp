@@ -702,7 +702,7 @@ void NeverCrashes(std::vector<std::uint8_t> const& bytes) {
   for (auto const b : bytes) {
     bs2ump.bytestreamParse(b);
     while (bs2ump.availableUMP()) {
-      bs2ump.readUMP();
+      (void)bs2ump.readUMP();
     }
   }
 }

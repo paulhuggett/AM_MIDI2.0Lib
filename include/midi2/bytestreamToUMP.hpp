@@ -46,8 +46,8 @@ public:
 
   void set_output_midi2(bool enabled) { outputMIDI2_ = enabled; }
 
-  constexpr bool availableUMP() const { return !output_.empty(); }
-  std::uint32_t readUMP() {
+  [[nodiscard]] constexpr bool availableUMP() const { return !output_.empty(); }
+  [[nodiscard]] std::uint32_t readUMP() {
     assert(!output_.empty());
     return output_.pop_front();
   }
@@ -102,7 +102,7 @@ private:
   }
 
   constexpr std::uint32_t pack(ump_message_type const message_type, std::uint8_t const b1, std::uint8_t const b2,
-                               std::uint8_t const b3) {
+                               std::uint8_t const b3) const {
     return pack(static_cast<std::uint8_t>((static_cast<std::uint8_t>(message_type) << 4) | defaultGroup_), b1, b2, b3);
   }
 

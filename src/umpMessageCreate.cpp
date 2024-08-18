@@ -26,6 +26,9 @@
  * ********************************************************/
 #include "midi2/umpMessageCreate.hpp"
 
+#include <array>
+#include <cstdint>
+
 #include "midi2/utils.hpp"
 
 using namespace midi2;

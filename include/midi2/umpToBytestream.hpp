@@ -41,8 +41,8 @@ public:
 
   umpToBytestream() = default;
 
-  constexpr bool availableBS() const { return !output_.empty(); }
-  uint8_t readBS() { return output_.pop_front(); }
+  [[nodiscard]] constexpr bool availableBS() const { return !output_.empty(); }
+  [[nodiscard]] uint8_t readBS() { return output_.pop_front(); }
 
   void UMPStreamParse(uint32_t UMP);
 
