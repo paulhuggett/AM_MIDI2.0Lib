@@ -3,8 +3,11 @@
 #include "midi2/umpToBytestream.hpp"
 
 // Standard Library
+#include <algorithm>
+#include <cstdint>
 #include <ios>
 #include <ostream>
+#include <vector>
 
 // google mock/test/fuzz
 #include <gmock/gmock.h>

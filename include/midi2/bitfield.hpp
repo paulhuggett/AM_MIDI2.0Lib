@@ -59,6 +59,7 @@ public:
   }
 
   /// Obtains the value of the bitfield.
+  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
   constexpr operator small_type() const noexcept { return this->value(); }
 
   /// Assigns a value to the bitfield.

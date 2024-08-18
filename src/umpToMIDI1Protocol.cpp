@@ -28,6 +28,7 @@
 #include "midi2/umpToMIDI1Protocol.hpp"
 
 #include <cassert>
+#include <cstdint>
 
 #include "midi2/umpMessageCreate.hpp"
 #include "midi2/utils.hpp"

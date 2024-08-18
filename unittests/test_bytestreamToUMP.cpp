@@ -4,11 +4,11 @@
 #include "midi2/utils.hpp"
 
 // Standard library
-#include <algorithm>
 #include <array>
 #include <bit>
 #include <cassert>
 #include <cstdint>
+#include <ostream>
 #include <type_traits>
 #include <vector>
 
@@ -27,19 +27,18 @@ using testing::IsEmpty;
 using testing::TestWithParam;
 
 template <typename ArrayLike> struct HexContainer {
-  constexpr explicit HexContainer(ArrayLike const& container_)
-      : container{container_} {}
+  constexpr explicit HexContainer(ArrayLike const& container_) : container{&container_} {}
 
   friend std::ostream& operator<<(std::ostream& os, HexContainer<ArrayLike> const& hc) {
     auto const* separator = "";
-    for (auto v : hc.container) {
+    for (auto v : *hc.container) {
       os << separator << "0x" << std::hex << std::uppercase << static_cast<unsigned>(v);
       separator = ", ";
     }
     return os;
   }
 
-  ArrayLike const& container;
+  ArrayLike const* container;
 };
 template <typename ArrayLike>
 HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;

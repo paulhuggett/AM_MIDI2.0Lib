@@ -45,7 +45,7 @@ public:
   /// \param value  The value to be encoded.
   /// \param out  An output iterator to which the output sequence is written.
   /// \returns  Iterator one past the last element assigned.
-  template <typename OutputIterator> OutputIterator parse_byte(std::uint8_t const value, OutputIterator out);
+  template <typename OutputIterator> OutputIterator parse_byte(std::uint8_t value, OutputIterator out);
 
   /// Call once the entire input sequence has been fed to encoder::parse_byte().
   /// This function flushes any remaining buffered output.
@@ -56,7 +56,7 @@ public:
   template <typename OutputIterator> OutputIterator flush(OutputIterator out);
 
   /// All input is good for encoding, so this function always returns true.
-  constexpr bool good() const { return true; }
+  [[nodiscard]] constexpr bool good() const { return true; }
 
   /// Resets the internal state.
   ///
@@ -69,7 +69,7 @@ public:
 
 private:
   std::uint8_t pos_ = 0;
-  std::array<std::uint8_t, max_size> buffer_;
+  std::array<std::uint8_t, max_size> buffer_{};
 };
 
 class decoder {
@@ -84,7 +84,7 @@ public:
   /// \param value  The value to be decoded.
   /// \param out  An output iterator to which the output sequence is written.
   /// \returns  Iterator one past the last element assigned.
-  template <typename OutputIterator> OutputIterator parse_byte(std::uint8_t const value, OutputIterator out);
+  template <typename OutputIterator> OutputIterator parse_byte(std::uint8_t value, OutputIterator out);
 
   /// Call once the entire input sequence has been fed to decoder::parse_byte().
   /// This function flushes any remaining buffered output.
@@ -109,8 +109,8 @@ private:
   std::uint8_t msbs_ = 0U;  ///< The most significant bigs of the current group of bytes.
   ///< Position within the current group of bytes (starting at 7 and counting
   ///< down).
-  std::uint8_t pos_ : 3;
-  std::uint8_t bad_ : 1;  ///< 1 if bad input was detected, 0 otherwise.
+  std::uint8_t pos_ : 3 = 0;
+  std::uint8_t bad_ : 1 = 0;  ///< 1 if bad input was detected, 0 otherwise.
 };
 
 //*  _            _                   _        _   _           *
