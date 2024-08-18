@@ -15,7 +15,7 @@
 
 namespace {
 
-template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::array<std::uint8_t, Size> const &arr) {
+std::ostream &write_bytes(std::ostream &os, std::span<std::uint8_t const> const &arr) {
   os << '[';
   auto const *separator = "";
   for (auto m : arr) {
@@ -26,9 +26,20 @@ template <std::size_t Size> std::ostream &write_bytes(std::ostream &os, std::arr
   return os;
 }
 
+std::ostream &write_bytes(std::ostream &os, std::span<std::byte const> const &b) {
+  os << '[';
+  auto const *separator = "";
+  for (auto m : b) {
+    os << separator << static_cast<unsigned>(m);
+    separator = ",";
+  }
+  os << ']';
+  return os;
+}
+
 }  // end anonymous namespace
 
-namespace midi2 {
+namespace midi2::ci {
 
 std::ostream &operator<<(std::ostream &os, MIDICI const &ci);
 std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
@@ -47,7 +58,7 @@ std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
 std::ostream &operator<<(std::ostream &os, ci::discovery const &d);
 std::ostream &operator<<(std::ostream &os, ci::discovery const &d) {
   os << "{ manufacturer=";
-  write_bytes(os, d.manufacturer);
+  write_bytes(os, std::span{d.manufacturer});
   os << ", family=" << d.family << ", model=" << d.model << ", version=";
   write_bytes(os, d.version);
   os << ", capability=" << static_cast<unsigned>(d.capability) << ", max_sysex_size=" << d.max_sysex_size << " }";
@@ -64,14 +75,27 @@ std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d) {
   return os;
 }
 
-}  // end namespace midi2
+std::ostream &operator<<(std::ostream &os, ci::nak const &nak);
+std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
+  os << "{ original_id=" << static_cast<unsigned>(nak.original_id)
+     << ", status_code=" << static_cast<unsigned>(nak.status_code)
+     << ", status_data=" << static_cast<unsigned>(nak.status_data) << ", details=";
+  write_bytes(os, nak.details);
+  os << ", message=";
+  write_bytes(os, nak.message);
+  return os;
+}
+
+}  // end namespace midi2::ci
 
 namespace {
 
 using testing::AllOf;
+using testing::ElementsAre;
 using testing::ElementsAreArray;
 using testing::Eq;
 using testing::Field;
+using testing::IsEmpty;
 using testing::Return;
 
 using midi2::MIDICI;
@@ -114,7 +138,57 @@ TEST(CIProcessor, Empty) {
   ci.processMIDICI(std::byte{0});
 }
 
-TEST(CIProcessor, Discovery) {
+TEST(CIProcessor, DiscoveryV1) {
+  constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
+  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
+  constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
+  constexpr auto version = std::array{std::byte{0x4E}, std::byte{0x3C}, std::byte{0x2A}, std::byte{0x18}};
+  constexpr auto capability = std::byte{0x7F};
+  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
+  constexpr auto output_path_id = std::byte{0x71};
+
+  // clang-format off
+  std::array const message{
+    std::byte{0x7E}, // Universal System Exclusive
+    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x70}, // Universal System Exclusive Sub-ID#2: Discovery
+    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    std::byte{0}, std::byte{0}, std::byte{0}, std::byte{0}, // 4 bytes Source MUID (LSB first)
+    std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, // Destination MUID (LSB first) (to Broadcast MUID)
+    manufacturer[0], manufacturer[1], manufacturer[2], // 3 bytes Device Manufacturer (System Exclusive ID Number)
+    family[0], family[1],  // 2 bytes Device Family (LSB first)
+    model[0], model[1], // 2 bytes Device Family Model Number (LSB first)
+    version[0], version[1], version[2], version[3],  // 4 bytes Software Revision Level
+    capability, // 1 byte Capability Inquiry Category Supported (bitmap)
+    max_sysex_size[0], max_sysex_size[1], max_sysex_size[2], max_sysex_size[3], // Maximum sysex message size (LSB first)
+
+    std::byte{0}, // a stray extra byte.
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = 0xFF;
+  midici.deviceId = 0xFF;
+  midici.ciType = midi2::MIDICI_DISCOVERY;
+  midici.ciVer = 1;
+  midici.remoteMUID = 0;
+  midici.localMUID = 0x0FFFFFFF;
+
+  midi2::ci::discovery discovery;
+  discovery.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  discovery.family = from_le7(family);
+  discovery.model = from_le7(model);
+  discovery.version = midi2::ci::packed::from_array(version);
+  discovery.capability = static_cast<std::uint8_t>(capability);
+  discovery.max_sysex_size = from_le7(max_sysex_size);
+
+  mock_discovery_callbacks mocks;
+  EXPECT_CALL(mocks, discovery(midici, discovery)).Times(1);
+  midi2::midiCIProcessor ci{std::ref(mocks)};
+  std::for_each(std::begin(message), std::end(message), std::bind_front(&decltype(ci)::processMIDICI, &ci));
+}
+
+TEST(CIProcessor, DiscoveryV2) {
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
   constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
@@ -293,7 +367,7 @@ TEST(CIProcessor, EndpointInfoReply) {
     information[0], information[1], information[2], information[3],
     information[4], information[5],  information[6], information[7],
 
-            std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -335,7 +409,7 @@ TEST(CIProcessor, InvalidateMuid) {
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     target_muid[0], target_muid[1], target_muid[2], target_muid[3], // Target MUID (the MUID to invalidate) (LSB first)
 
-              std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -388,7 +462,7 @@ TEST(CIProcessor, Ack) {
     text_length[0], text_length[1],
     text[0], text[1], text[2], text[3], text[4],
 
-              std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -418,6 +492,57 @@ TEST(CIProcessor, Ack) {
                 std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
+TEST(CIProcessor, NakV1) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto device_id = std::byte{0x7F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+
+  constexpr auto original_id = std::byte{0x34};
+  constexpr auto nak_status_code = std::byte{0x00};
+  constexpr auto nak_status_data = std::byte{0x7F};
+  constexpr auto nakk_details =
+      std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
+  constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto text = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    device_id, // Device ID: 0x7F = to Function Block
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+
+    std::byte{0}, // stray extra byte
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
+  midici.ciType = midi2::MIDICI_NAK;
+  midici.ciVer = 1;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(receiver_muid);
+
+  mock_discovery_callbacks mocks;
+
+  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(mocks, nak(midici, AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
+                                       Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
+                                       Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
+                                       Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
+                                       Field("message", &midi2::ci::nak::message, IsEmpty()))))
+      .Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(group, device_id);
+
+  std::for_each(std::begin(message), std::end(message),
+                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
 TEST(CIProcessor, NakV2) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
@@ -448,7 +573,7 @@ TEST(CIProcessor, NakV2) {
     text_length[0], text_length[1],
     text[0], text[1], text[2], text[3], text[4],
 
-              std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -494,7 +619,7 @@ TEST(CIProcessor, ProfileInquiry) {
     sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
 
-            std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -546,7 +671,7 @@ TEST(CIProcessor, ProfileInquiryReply) {
     std::byte{1}, std::byte{0},
     disabled[0][0], disabled[0][1], disabled[0][2], disabled[0][3], disabled[0][4],
 
-          std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -593,7 +718,7 @@ TEST(CIProcessor, ProfileAdded) {
     broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being added
 
-          std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -636,7 +761,7 @@ TEST(CIProcessor, ProfileRemoved) {
     broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being removed
 
-          std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -785,7 +910,7 @@ TEST(CIProcessor, ProfileOn) {
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     channels[0], channels[1], // Number of channels
 
-        std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -833,7 +958,7 @@ TEST(CIProcessor, ProfileOff) {
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     reserved[0], reserved[1], // Number of channels
 
-      std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -879,7 +1004,7 @@ TEST(CIProcessor, ProfileEnabled) {
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     num_channels[0], num_channels[1], // Number of channels
 
-      std::byte{0}, // stray extra byte
+    std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;

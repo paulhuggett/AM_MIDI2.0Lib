@@ -397,11 +397,12 @@ struct nak {
   constexpr nak(nak &&) noexcept = default;
   constexpr explicit nak(packed::nak_v1 const &);
   constexpr explicit nak(packed::nak_v2 const &);
+  constexpr bool operator==(nak const &) const;
 
   std::uint8_t original_id = 0;  // Original transaction sub-ID#2 classification
   std::uint8_t status_code = 0;  // NAK Status Code
   std::uint8_t status_data = 0;  // NAK Status Data
-  byte_array_5 details;          // NAK details for each SubID Classification
+  byte_array_5 details{};        // NAK details for each SubID Classification
   std::span<std::byte const> message;
 };
 
@@ -488,7 +489,7 @@ struct profile_added {
   constexpr explicit profile_added(packed::profile_added_v1 const &);
   constexpr bool operator==(profile_added const &) const = default;
 
-  byte_array_5 pid;
+  byte_array_5 pid{};
 };
 
 constexpr profile_added::profile_added(packed::profile_added_v1 const &other) : pid{other.pid} {
@@ -518,7 +519,7 @@ struct profile_removed {
   constexpr explicit profile_removed(packed::profile_removed_v1 const &);
   constexpr bool operator==(profile_removed const &) const = default;
 
-  byte_array_5 pid;
+  byte_array_5 pid{};
 };
 
 constexpr profile_removed::profile_removed(packed::profile_removed_v1 const &other) : pid{other.pid} {
@@ -550,8 +551,8 @@ struct profile_details_inquiry {
   constexpr explicit profile_details_inquiry(packed::profile_details_inquiry_v1 const &);
   constexpr bool operator==(profile_details_inquiry const &) const = default;
 
-  byte_array_5 pid;
-  std::uint8_t target;
+  byte_array_5 pid{};
+  std::uint8_t target = 0;
 };
 
 constexpr profile_details_inquiry::profile_details_inquiry(packed::profile_details_inquiry_v1 const &other)
@@ -583,7 +584,7 @@ struct profile_details_reply {
   constexpr profile_details_reply(profile_details_reply &&) noexcept = default;
   constexpr explicit profile_details_reply(packed::profile_details_reply_v1 const &);
 
-  byte_array_5 pid;         ///< Profile ID of profile
+  byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
   std::span<std::byte const> data;
 };
@@ -803,7 +804,7 @@ struct profile_specific_data {
   constexpr profile_specific_data(profile_specific_data &&) noexcept = default;
   constexpr explicit profile_specific_data(packed::profile_specific_data_v1 const &);
 
-  byte_array_5 pid;                 ///< Profile ID
+  byte_array_5 pid{};               ///< Profile ID
   std::span<std::byte const> data;  ///< Profile specific data
 };
 
