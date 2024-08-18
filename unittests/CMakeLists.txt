@@ -23,8 +23,9 @@ target_compile_options (
     $<$<CXX_COMPILER_ID:GNU>:${gcc_options}>
     $<$<CXX_COMPILER_ID:MSVC>:${msvc_options}>
 )
-add_test(NAME m2unittests COMMAND m2unittests)
 
+include(GoogleTest)
+gtest_discover_tests(m2unittests)
 
 if (MIDI2_FUZZTEST)
   target_link_libraries (m2unittests PRIVATE gtest gmock)
