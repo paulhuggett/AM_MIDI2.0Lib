@@ -32,6 +32,7 @@ Checks:            |-
   -modernize-avoid-c-arrays,
   -modernize-use-auto,
   -modernize-use-trailing-return-type,
+  -performance-enum-size,
   -readability-braces-around-statements,
   -readability-function-cognitive-complexity,
   -readability-identifier-length,
