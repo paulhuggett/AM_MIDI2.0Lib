@@ -84,6 +84,8 @@ template <typename T> concept profile_backend = requires(T && v) {
 template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.capabilities(MIDICI{}, ci::pe_capabilities{}) } -> std::same_as<void>;
   { v.capabilities_reply(MIDICI{}, ci::pe_capabilities_reply{}) } -> std::same_as<void>;
+  { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, std::span<char const>{}, std::span<std::byte const>{}) } -> std::same_as<void>;
+
 #if 0
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESetReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
@@ -124,16 +126,10 @@ public:
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
 
   // Property Exchange
-  //  virtual void recvPECapabilities(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
-  //                              std::uint8_t /*minVer*/) { /* do nothing */ }
-  // virtual void recvPECapabilitiesReply(MIDICI const &, std::uint8_t /*numSimulRequests*/, std::uint8_t /*majVer*/,
-  //                                     std::uint8_t /*minVer*/) { /* do nothing */ }
   virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPESetReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
+  virtual void recvPESetReply(MIDICI const &, ci::pe_chunk_info const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
   virtual void recvPENotify(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPEGetReply(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                              bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
   virtual void recvPESetInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
                                 bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
   virtual void recvPESubInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
@@ -181,6 +177,9 @@ public:
 
   virtual void capabilities(MIDICI const &, ci::pe_capabilities const &) { /* do nothing */ }
   virtual void capabilities_reply(MIDICI const &, midi2::ci::pe_capabilities_reply const &) { /* do nothing */ }
+
+  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, std::span<char const>,
+                         std::span<std::byte const>) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -207,7 +206,11 @@ private:
   [[no_unique_address]] PEBackend pe_backend_;
 
   MIDICI midici_;
+  ci::pe_chunk_info chunk_;
   std::uint16_t sysexPos_ = 0;
+
+  using reqId = std::tuple<std::uint32_t, std::byte>;  // muid-requestId
+  std::optional<reqId> _peReqIdx;
 
   // in Discovery this is [sysexID1,sysexID2,sysexID3,famId1,famid2,modelId1,modelId2,ver1,ver2,ver3,ver4,...product Id]
   // in Profiles this is  [pf1, pf1, pf3, pf4, pf5]
@@ -221,9 +224,9 @@ private:
   std::uint32_t intTemp_[4]{};
 
   // Property Exchange
-  std::map<ci::reqId, std::string> peHeaderStr;
+  std::map<reqId, std::string> peHeaderStr;
 
-  void cleanupRequest(ci::reqId peReqIdx);
+  void cleanupRequest(reqId peReqIdx);
   void processPESysex(std::byte s7Byte);
   void processPISysex(std::byte s7Byte);
 
@@ -279,8 +282,8 @@ midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>,
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::endSysex7() {
-  if (midici_._peReqIdx) {
-    cleanupRequest(midici_._peReqIdx);
+  if (_peReqIdx) {
+    cleanupRequest(_peReqIdx);
   }
 }
 
@@ -294,7 +297,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::startSysex7(std::uin
 }
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::cleanupRequest(ci::reqId peReqIdx) {
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::cleanupRequest(reqId peReqIdx) {
   peHeaderStr.erase(peReqIdx);
 }
 
@@ -446,16 +449,18 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::profile_inquiry_repl
   if (sysexPos_ < end) {
     return;
   }
+  // Wait for the variable length data following the first part.
   auto const *const pt1 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt1 const *>(buffer_.data());
   end += ci::packed::from_le7(pt1->num_enabled) * sizeof(pt1->ids[0]);
   if (sysexPos_ < end) {
     return;
   }
-  constexpr auto pt2_size = offsetof(ci::packed::profile_inquiry_reply_v1_pt2, ids);
-  end += pt2_size;
+  // Wait for the second part to arrive.
+  end += offsetof(ci::packed::profile_inquiry_reply_v1_pt2, ids);
   if (sysexPos_ < end) {
     return;
   }
+  // Now the second block of variable-length data.
   auto p2_pos = end - (header_size + pt1_size - 1);
   auto const *const pt2 = std::bit_cast<ci::packed::profile_inquiry_reply_v1_pt2 const *>(buffer_.data() + p2_pos);
   end += ci::packed::from_le7(pt2->num_disabled) * sizeof(pt2->ids[0]);
@@ -661,113 +666,49 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processMIDICI(std::b
 }
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::byte s7Byte) {
-  switch (midici_.ciType) {
-  case MIDICI_PE_CAPABILITY:
-  case MIDICI_PE_CAPABILITYREPLY: break;
-  default: {
-    if (sysexPos_ == 13) {
-      midici_._peReqIdx = std::make_tuple(midici_.remoteMUID, s7Byte);
-      midici_.requestId = s7Byte;
-      intTemp_[0] = 0;
-      return;
-    }
-
-    if (sysexPos_ == 14 || sysexPos_ == 15) {  // header Length
-      intTemp_[0] += static_cast<std::uint32_t>(s7Byte) << (7U * (sysexPos_ - 14U));
-      return;
-    }
-
-    auto const headerLength = static_cast<std::uint16_t>(intTemp_[0]);
-
-    if (sysexPos_ == 16 && midici_.numChunk == 1) {
-      peHeaderStr[*midici_._peReqIdx] = "";
-    }
-
-    if (sysexPos_ >= 16 && sysexPos_ <= 15 + headerLength) {
-      std::uint16_t const charOffset = (sysexPos_ - 16);
-      buffer_[charOffset] = s7Byte;
-      peHeaderStr[*midici_._peReqIdx].push_back(static_cast<char>(s7Byte));
-
-      if (sysexPos_ == 15 + headerLength) {
-        switch (midici_.ciType) {
-        case MIDICI_PE_GET:
-          callbacks_.recvPEGetInquiry(midici_, peHeaderStr[*midici_._peReqIdx]);
-          cleanupRequest(*midici_._peReqIdx);
-          break;
-        case MIDICI_PE_SETREPLY:
-          callbacks_.recvPESetReply(midici_, peHeaderStr[*midici_._peReqIdx]);
-          cleanupRequest(*midici_._peReqIdx);
-          break;
-        case MIDICI_PE_SUBREPLY:
-          callbacks_.recvPESubReply(midici_, peHeaderStr[*midici_._peReqIdx]);
-          cleanupRequest(*midici_._peReqIdx);
-          break;
-        case MIDICI_PE_NOTIFY:
-          callbacks_.recvPENotify(midici_, peHeaderStr[*midici_._peReqIdx]);
-          cleanupRequest(*midici_._peReqIdx);
-          break;
-        default: break;
-        }
-      }
-    }
-
-    if (sysexPos_ == 16 + headerLength || sysexPos_ == 17 + headerLength) {
-      midici_.totalChunks += static_cast<std::uint8_t>(s7Byte) << (7 * (sysexPos_ - 16 - headerLength));
-      return;
-    }
-
-    if (sysexPos_ == 18 + headerLength || sysexPos_ == 19 + headerLength) {
-      midici_.numChunk += static_cast<std::uint8_t>(s7Byte) << (7 * (sysexPos_ - 18 - headerLength));
-      return;
-    }
-
-    if (sysexPos_ == 20 + headerLength) {  // Body Length
-      intTemp_[1] = static_cast<std::uint16_t>(s7Byte);
-      return;
-    }
-    if (sysexPos_ == 21 + headerLength) {  // Body Length
-      intTemp_[1] += static_cast<std::uint32_t>(s7Byte) << 7;
-    }
-
-    auto const bodyLength = intTemp_[1];
-    std::uint16_t const initPos = 22 + headerLength;
-    std::uint16_t const charOffset = (sysexPos_ - initPos) % S7_BUFFERLEN;
-
-    if ((sysexPos_ >= initPos && sysexPos_ <= initPos - 1 + bodyLength) ||
-        (bodyLength == 0 && sysexPos_ == initPos - 1)) {
-      if (bodyLength != 0) {
-        buffer_[charOffset] = s7Byte;
-      }
-
-      bool const lastByteOfSet = midici_.numChunk == midici_.totalChunks && sysexPos_ == initPos - 1 + bodyLength;
-      bool const lastByteOfChunk = bodyLength == 0 || sysexPos_ == initPos - 1 + bodyLength;
-
-      if (charOffset == S7_BUFFERLEN - 1 || lastByteOfChunk) {
-        if (midici_.ciType == MIDICI_PE_GETREPLY) {
-          callbacks_.recvPEGetReply(midici_, peHeaderStr[*midici_._peReqIdx],
-                                    std::span<std::byte>{buffer_.data(), charOffset + 1U}, lastByteOfChunk,
-                                    lastByteOfSet);
-        }
-        if (midici_.ciType == MIDICI_PE_SUB) {
-          callbacks_.recvPESubInquiry(midici_, peHeaderStr[*midici_._peReqIdx],
-                                      std::span<std::byte>{buffer_.data(), charOffset + 1U}, lastByteOfChunk,
-                                      lastByteOfSet);
-        }
-        if (midici_.ciType == MIDICI_PE_SET) {
-          callbacks_.recvPESetInquiry(midici_, peHeaderStr[*midici_._peReqIdx],
-                                      std::span<std::byte>{buffer_.data(), charOffset + 1U}, lastByteOfChunk,
-                                      lastByteOfSet);
-        }
-        midici_.partialChunkCount++;
-      }
-
-      if (lastByteOfSet) {
-        cleanupRequest(*midici_._peReqIdx);
-      }
-    }
-    break;
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::byte s7) {
+  if (sysexPos_ < header_size) {
+    return;
   }
+  buffer_[sysexPos_ - header_size] = s7;
+  // Wait for the first part to arrive.
+  constexpr auto pt1_size = offsetof(ci::packed::property_exchange_pt1, header);
+  auto end = header_size + pt1_size - 1;
+  if (sysexPos_ < end) {
+    return;
+  }
+  // Wait for the variable-length header data following the first part.
+  auto const *const pt1 = std::bit_cast<ci::packed::property_exchange_pt1 const *>(buffer_.data());
+  auto const hlength = ci::packed::from_le7(pt1->header_length);
+  end += hlength * sizeof(pt1->header[0]);
+  if (sysexPos_ < end) {
+    return;
+  }
+  // Wait for the second part to arrive.
+  end += offsetof(ci::packed::property_exchange_pt2, data);
+  if (sysexPos_ < end) {
+    return;
+  }
+
+  // Now the second block of variable-length data.
+  auto const p2_pos = pt1_size + hlength;
+  auto const *const pt2 = std::bit_cast<ci::packed::property_exchange_pt2 const *>(buffer_.data() + p2_pos);
+
+  auto const data_length = ci::packed::from_le7(pt2->data_length);
+  end += data_length * sizeof(pt2->data[0]);
+  if (sysexPos_ == end) {
+    ci::pe_chunk_info chunk;
+    chunk.requestId = static_cast<std::uint8_t>(pt1->request_id);
+    chunk.totalChunks = ci::packed::from_le7(pt2->number_of_chunks);
+    chunk.numChunk = ci::packed::from_le7(pt2->chunk_number);
+
+    auto const header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), hlength};
+    auto const data = std::span<std::byte const>{&pt2->data[0], data_length};
+    switch (midici_.ciType) {
+    case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, header, data); break;
+    default: break;
+    }
+    return;
   }
 }
 

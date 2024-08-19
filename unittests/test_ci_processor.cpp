@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <functional>
 #include <ostream>
+#include <ranges>
 #include <span>
 
 // 3rd party
@@ -47,14 +48,15 @@ std::ostream &operator<<(std::ostream &os, MIDICI const &ci);
 std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
   return os << "{ umpGroup=" << static_cast<unsigned>(ci.umpGroup)
             << ", deviceId=" << static_cast<unsigned>(ci.deviceId) << ", ciType=" << static_cast<unsigned>(ci.ciType)
-            << ", ciVer=" << static_cast<unsigned>(ci.ciVer) << ", remoteMUID=" << ci.remoteMUID << ", localMUID="
-            << ci.localMUID
-            //  std::optional<reqId> _peReqIdx;
+            << ", ciVer=" << static_cast<unsigned>(ci.ciVer) << ", remoteMUID=" << ci.remoteMUID
+            << ", localMUID=" << ci.localMUID << " }";
+}
 
+std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci);
+std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci) {
+  return os << "{ requestId=" << static_cast<unsigned>(ci.requestId)
             << ", totalChunks=" << static_cast<unsigned>(ci.totalChunks)
-            << ", numChunk=" << static_cast<unsigned>(ci.numChunk)
-            << ", partialChunkCount=" << static_cast<unsigned>(ci.partialChunkCount)
-            << ", requestId=" << static_cast<unsigned>(ci.requestId) << " }";
+            << ", numChunk=" << static_cast<unsigned>(ci.numChunk) << " }";
 }
 
 std::ostream &operator<<(std::ostream &os, ci::discovery const &d);
@@ -100,8 +102,8 @@ using testing::IsEmpty;
 using testing::Return;
 
 using midi2::MIDICI;
-using midi2::profile_span;
 using midi2::ci::byte_array_5;
+using midi2::ci::pe_chunk_info;
 using midi2::ci::packed::from_le7;
 
 class mock_discovery_callbacks final : public midi2::ci_callbacks {
@@ -135,6 +137,10 @@ class mock_property_exchange_callbacks final : public midi2::property_exchange_c
 public:
   MOCK_METHOD(void, capabilities, (MIDICI const &, midi2::ci::pe_capabilities const &), (override));
   MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::pe_capabilities_reply const &), (override));
+
+  MOCK_METHOD(void, get_reply,
+              (MIDICI const &, midi2::ci::pe_chunk_info const &, std::span<char const>, std::span<std::byte const>),
+              (override));
 };
 
 constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
@@ -1175,6 +1181,93 @@ TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
 
   std::for_each(std::begin(message), std::end(message),
                 std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+using namespace std::string_view_literals;
+
+TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request_id = std::byte{1};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto property_data_size = std::array{std::byte{76}, std::byte{0}};
+
+  auto const header = R"({"status":200})" sv;
+  auto const property_data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])" sv;
+
+  // clang-format off
+  constexpr std::array ci_prolog {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x35}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request_id,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  std::vector<std::byte> message;
+  // The standard MIDI CI header
+  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  out = std::ranges::copy(header_size, out).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(property_data_size), property_data.length());
+  out = std::ranges::copy(property_data_size, out).out;
+  // Property Data
+  std::ranges::copy(std::views::transform(property_data, as_byte), out);
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PE_GETREPLY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::pe_chunk_info chunk_info;
+  chunk_info.totalChunks = from_le7(total_chunks);
+  chunk_info.numChunk = from_le7(chunk_number);
+  chunk_info.requestId = static_cast<std::uint8_t>(request_id);
+
+  midi2::ci::pe_capabilities_reply caps;
+  caps.num_simultaneous = 2;
+  caps.major_version = 3;
+  caps.minor_version = 4;
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+
+  std::vector<std::byte> pd;
+  std::ranges::copy(std::views::transform(property_data, as_byte), std::back_inserter(pd));
+
+  EXPECT_CALL(pe_mocks,
+              get_reply(midici, chunk_info, testing::ElementsAreArray(header), testing::ElementsAreArray(pd)));
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 }  // end anonymous namespace

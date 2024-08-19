@@ -32,8 +32,6 @@ using byte_array_5 = std::array<std::byte, 5>;
 
 constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
 
-using reqId = std::tuple<uint32_t, std::byte>;  // muid-requestId
-
 struct MIDICI {
   bool operator==(MIDICI const &) const = default;
 
@@ -43,12 +41,14 @@ struct MIDICI {
   std::uint8_t ciVer = 1;
   std::uint32_t remoteMUID = 0;
   std::uint32_t localMUID = 0;
-  std::optional<reqId> _peReqIdx;
+};
+// This is all related to property exchange...
+struct pe_chunk_info {
+  bool operator==(pe_chunk_info const &) const = default;
 
-  std::uint8_t totalChunks = 0;
-  std::uint8_t numChunk = 0;
-  std::uint8_t partialChunkCount = 0;
-  std::byte requestId{0xFF};
+  std::uint16_t totalChunks = 0;
+  std::uint16_t numChunk = 0;
+  std::uint8_t requestId = 0xFF;
 };
 
 namespace packed {
@@ -1010,6 +1010,36 @@ constexpr pe_capabilities_reply::pe_capabilities_reply(packed::pe_capabilities_r
   major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
+
+namespace packed {
+
+struct property_exchange_pt1 {
+  std::byte request_id;
+  byte_array_2 header_length;
+  std::byte header[1];
+};
+static_assert(offsetof(property_exchange_pt1, request_id) == 0);
+static_assert(offsetof(property_exchange_pt1, header_length) == 1);
+static_assert(offsetof(property_exchange_pt1, header) == 3);
+static_assert(alignof(property_exchange_pt1) == 1);
+static_assert(sizeof(property_exchange_pt1) == 4);
+static_assert(std::is_trivially_copyable_v<property_exchange_pt1>);
+
+struct property_exchange_pt2 {
+  byte_array_2 number_of_chunks;
+  byte_array_2 chunk_number;
+  byte_array_2 data_length;
+  std::byte data[1];
+};
+static_assert(offsetof(property_exchange_pt2, number_of_chunks) == 0);
+static_assert(offsetof(property_exchange_pt2, chunk_number) == 2);
+static_assert(offsetof(property_exchange_pt2, data_length) == 4);
+static_assert(offsetof(property_exchange_pt2, data) == 6);
+static_assert(alignof(property_exchange_pt2) == 1);
+static_assert(sizeof(property_exchange_pt2) == 7);
+static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
+
+}  // end namespace packed
 
 }  // end namespace midi2::ci
 
