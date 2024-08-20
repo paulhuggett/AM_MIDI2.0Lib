@@ -1435,7 +1435,7 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
   constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
 
-  auto const header = R"({"status":200})" sv;
+  auto const header = R"({"status":200})"sv;
 
   // clang-format off
   constexpr std::array ci_prolog {
