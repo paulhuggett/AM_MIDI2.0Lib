@@ -268,7 +268,8 @@ namespace packed {
 struct endpoint_info_reply_v1 {
   std::byte status;
   byte_array_2 data_length;
-  std::array<std::byte, 1> data;  // an array of size given by data_length
+  // Don't be tempted to change to std::array<>. MSVC's iterator checks will trip.
+  std::byte data[1];  ///< an array of size given by data_length
 };
 static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
@@ -346,7 +347,7 @@ struct ack_v1 {
   std::byte status_data;             ///< ACK Status Data
   byte_array_5 details;              ///< ACK details for each SubID Classification
   byte_array_2 message_length;       ///< Message Length (LSB firt)
-  std::array<std::byte, 1> message;  ///< Message text (array of size given by message_length)
+  std::byte message[1];              ///< Message text (array of size given by message_length)
 };
 static_assert(offsetof(ack_v1, original_id) == 0);
 static_assert(offsetof(ack_v1, status_code) == 1);
@@ -398,7 +399,7 @@ struct nak_v2 {
   std::byte status_data;             ///< ACK Status Data
   byte_array_5 details;              ///< ACK details for each SubID Classification
   byte_array_2 message_length;       ///< Message Length (LSB firt)
-  std::array<std::byte, 1> message;  ///< Message text (length given by message_length)
+  std::byte message[1];              ///< Message text (length given by message_length)
 };
 static_assert(offsetof(nak_v2, original_id) == 0);
 static_assert(offsetof(nak_v2, status_code) == 1);
@@ -454,7 +455,7 @@ namespace packed {
 
 struct profile_inquiry_reply_v1_pt1 {
   byte_array_2 num_enabled;         ///< Number of currently enabled profiles
-  std::array<byte_array_5, 1> ids;  ///< Profile ID of currently enabled profiles (array length given by num_enabled)
+  byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_enabled)
 };
 
 static_assert(offsetof(profile_inquiry_reply_v1_pt1, num_enabled) == 0);
@@ -465,7 +466,7 @@ static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt1>);
 
 struct profile_inquiry_reply_v1_pt2 {
   byte_array_2 num_disabled;        ///< Number of currently disabled profiles
-  std::array<byte_array_5, 1> ids;  ///< Profile ID of currently enabled profiles (array length given by num_disabled)
+  byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_disabled)
 };
 
 static_assert(offsetof(profile_inquiry_reply_v1_pt2, num_disabled) == 0);
@@ -612,7 +613,7 @@ struct profile_details_reply_v1 {
   byte_array_5 pid;          ///< Profile ID of profile
   std::byte target;          ///< Inquiry target
   byte_array_2 data_length;  ///< Inquiry target data length (LSB first)
-  std::array<std::byte, 1> data;  ///< Array length given by data_length
+  std::byte data[1];         ///< Array length given by data_length
 };
 
 static_assert(offsetof(profile_details_reply_v1, pid) == 0);
@@ -863,7 +864,7 @@ namespace packed {
 struct profile_specific_data_v1 {
   byte_array_5 pid;          ///< Profile ID
   byte_array_2 data_length;  ///< Length of following profile specific data (LSB first)
-  std::array<std::byte, 1> data;  ///< Profile specific data (array length given by data_length)
+  std::byte data[1];         ///< Profile specific data (array length given by data_length)
 };
 static_assert(offsetof(profile_specific_data_v1, pid) == 0);
 static_assert(offsetof(profile_specific_data_v1, data_length) == 5);
@@ -1008,7 +1009,7 @@ namespace packed {
 struct property_exchange_pt1 {
   std::byte request_id;
   byte_array_2 header_length;
-  std::array<std::byte, 1> header;
+  std::byte header[1];
 };
 static_assert(offsetof(property_exchange_pt1, request_id) == 0);
 static_assert(offsetof(property_exchange_pt1, header_length) == 1);
@@ -1021,7 +1022,7 @@ struct property_exchange_pt2 {
   byte_array_2 number_of_chunks;
   byte_array_2 chunk_number;
   byte_array_2 data_length;
-  std::array<std::byte, 1> data;
+  std::byte data[1];
 };
 static_assert(offsetof(property_exchange_pt2, number_of_chunks) == 0);
 static_assert(offsetof(property_exchange_pt2, chunk_number) == 2);
