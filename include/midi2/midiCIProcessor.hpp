@@ -87,6 +87,8 @@ template <typename T> concept property_exchange_backend = requires(T && v) {
 
   { v.get(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
   { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
+  { v.set(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
+  { v.set_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
 
 #if 0
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
@@ -163,6 +165,8 @@ public:
 
   virtual void get(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
   virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
+  virtual void set(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
+  virtual void set_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -659,7 +663,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::
     switch (midici_.ciType) {
     case MIDICI_PE_GET: pe_backend_.get(midici_, chunk, pe); break;
     case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, pe); break;
-    default: break;
+    case MIDICI_PE_SET: pe_backend_.set(midici_, chunk, pe); break;
+    case MIDICI_PE_SETREPLY: pe_backend_.set_reply(midici_, chunk, pe); break;
+    default: assert(false); break;
     }
     return;
   }
