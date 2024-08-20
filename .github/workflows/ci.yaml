@@ -37,7 +37,7 @@ jobs:
           # Ubuntu builds
           # ~~~~~~~~~~~~~
           - name: Ubuntu-22.04/gcc-11/Release
-            apt_install: ninja-build
+            apt_install: cmake ninja-build
             build_type: Release
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-11 -D CMAKE_C_COMPILER=gcc-11
             options:
@@ -46,7 +46,7 @@ jobs:
             package: TGZ
 
           - name: Ubuntu-22.04/gcc-13/Debug
-            apt_install: ninja-build
+            apt_install: cmake
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
@@ -56,7 +56,7 @@ jobs:
             package: TGZ
 
           - name: Ubuntu-22.04/gcc-13/RelWithDebug/Sanitizers
-            apt_install: ninja-build
+            apt_install: cmake
             build_type: RelWithDebug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
@@ -66,7 +66,7 @@ jobs:
             package: TGZ
 
           - name: Ubuntu-22.04/gcc-13/Release
-            apt_install: ninja-build
+            apt_install: cmake
             build_type: Release
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
