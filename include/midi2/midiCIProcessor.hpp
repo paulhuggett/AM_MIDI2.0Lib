@@ -91,18 +91,8 @@ template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.recvPESetReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPESubReply(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
   { v.recvPENotify(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
-  {
-    v.recvPEGetReply(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
-                     bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
-  } -> std::same_as<void>;
-  {
-    v.recvPESetInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
-                       bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
-  } -> std::same_as<void>;
-  {
-    v.recvPESubInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/,
-                       bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/)
-  } -> std::same_as<void>;
+  { v.recvPESetInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/, bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/) } -> std::same_as<void>;
+  { v.recvPESubInquiry(MIDICI{}, std::string{} /*requestDetails*/, std::span<std::byte>{} /*body*/, bool{} /*lastByteOfChunk*/, bool{} /*lastByteOfSet*/) } -> std::same_as<void>;
 #endif
 };
 
@@ -125,17 +115,8 @@ public:
 
   virtual void unknown_midici(MIDICI const &, std::byte s7) { (void)s7; }
 
-  // Property Exchange
-  virtual void recvPEGetInquiry(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPESetReply(MIDICI const &, ci::pe_chunk_info const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPESubReply(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPENotify(MIDICI const &, std::string const & /*requestDetails*/) { /* do nothing */ }
-  virtual void recvPESetInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
-  virtual void recvPESubInquiry(MIDICI const &, std::string const & /*requestDetails*/, std::span<std::byte> /*body*/,
-                                bool /*lastByteOfChunk*/, bool /*lastByteOfSet*/) { /* do nothing */ }
-
   // Process Inquiry
+  // TODO: move to their own block.
   virtual void recvPICapabilities(MIDICI const &) { /* do nothing */ }
   virtual void recvPICapabilitiesReply(MIDICI const &, std::byte /*supportedFeatures*/) { /* do nothing */ }
   virtual void recvPIMMReport(MIDICI const &, std::byte /*MDC*/, std::byte /*systemBitmap*/,
@@ -193,12 +174,11 @@ public:
       : callbacks_{callbacks}, profile_backend_{profile}, pe_backend_{pe_backend} {}
 
   void startSysex7(std::uint8_t group, std::byte deviceId);
-  void endSysex7();
+  void endSysex7() {}
 
   void processMIDICI(std::byte s7Byte);
 
 private:
-  static constexpr auto S7_BUFFERLEN = 36;
   static constexpr auto header_size = 13U;
 
   [[no_unique_address]] Callbacks callbacks_;
@@ -206,27 +186,9 @@ private:
   [[no_unique_address]] PEBackend pe_backend_;
 
   MIDICI midici_;
-  ci::pe_chunk_info chunk_;
-  std::uint16_t sysexPos_ = 0;
-
-  using reqId = std::tuple<std::uint32_t, std::byte>;  // muid-requestId
-  std::optional<reqId> _peReqIdx;
-
-  // in Discovery this is [sysexID1,sysexID2,sysexID3,famId1,famid2,modelId1,modelId2,ver1,ver2,ver3,ver4,...product Id]
-  // in Profiles this is  [pf1, pf1, pf3, pf4, pf5]
-  // in Protocols this is [pr1, pr2, pr3, pr4, pr5]
+  unsigned sysexPos_ = 0;
   std::array<std::byte, 256> buffer_;
 
-  // in Discovery this is [ciSupport, maxSysex, output path id]
-  // in Profile Inquiry Reply, this is [Enabled Profiles Length, Disabled Profile Length]
-  // in Profile On/Off/Enabled/Disabled, this is [numOfChannels]
-  // in PE this is [header length, Body Length]
-  std::uint32_t intTemp_[4]{};
-
-  // Property Exchange
-  std::map<reqId, std::string> peHeaderStr;
-
-  void cleanupRequest(reqId peReqIdx);
   void processPESysex(std::byte s7Byte);
   void processPISysex(std::byte s7Byte);
 
@@ -281,24 +243,11 @@ midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>,
                 std::reference_wrapper<PE>) -> midiCIProcessor<C &, P &, PE &>;
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::endSysex7() {
-  if (_peReqIdx) {
-    cleanupRequest(_peReqIdx);
-  }
-}
-
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::startSysex7(std::uint8_t group, std::byte deviceId) {
   sysexPos_ = 0;
-  buffer_[0] = std::byte{0x00};
-  midici_ = MIDICI();
+  midici_ = MIDICI{};
   midici_.deviceId = static_cast<std::uint8_t>(deviceId);
   midici_.umpGroup = group;
-}
-
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::cleanupRequest(reqId peReqIdx) {
-  peHeaderStr.erase(peReqIdx);
 }
 
 // gather
@@ -306,8 +255,8 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::cleanupRequest(reqId
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 bool midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::gather(std::byte const s7, std::size_t const size) {
   assert(size < buffer_.size() - header_size);
-  if (sysexPos_ < header_size || sysexPos_ > buffer_.size()) {
-    return false;
+  if (sysexPos_ < header_size || sysexPos_ - header_size >= buffer_.size()) {
+    return;
   }
   buffer_[sysexPos_ - header_size] = s7;
   return sysexPos_ == header_size + size - 1;
@@ -330,7 +279,7 @@ template <unaligned_copyable PackedType, std::size_t FixedSize, std::invocable<P
           std::invocable<PackedType> Handler>
 requires(FixedSize <= sizeof(PackedType)) void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::trailing_data(
     std::byte const s7, GetDataSize const get_data_size, Handler const handler) {
-  if (sysexPos_ < header_size) {
+  if (sysexPos_ < header_size || sysexPos_ - header_size >= buffer_.size()) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
@@ -439,7 +388,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::profile_inquiry(std:
 // ~~~~~~~~~~~~~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::profile_inquiry_reply(std::byte const s7) {
-  if (sysexPos_ < header_size) {
+  if (sysexPos_ < header_size || sysexPos_ - header_size >= buffer_.size()) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
@@ -638,7 +587,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processMIDICI(std::b
 
     case MIDICI_PE_CAPABILITY: this->pe_capabilities(s7Byte); break;
     case MIDICI_PE_CAPABILITYREPLY: this->pe_capabilities_reply(s7Byte); break;
-      // #ifndef M2_DISABLE_PE
+
     case MIDICI_PE_GET:              // Inquiry: Get Property Data
     case MIDICI_PE_GETREPLY:         // Reply To Get Property Data - Needs Work!
     case MIDICI_PE_SET:              // Inquiry: Set Property Data
@@ -648,7 +597,6 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processMIDICI(std::b
     case MIDICI_PE_NOTIFY:           // Notify
       this->processPESysex(s7Byte);
       break;
-      // #endif
 
       // #ifndef M2_DISABLE_PROCESSINQUIRY
     case MIDICI_PI_CAPABILITY:
@@ -667,7 +615,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processMIDICI(std::b
 
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::byte s7) {
-  if (sysexPos_ < header_size) {
+  if (sysexPos_ < header_size || sysexPos_ - header_size >= buffer_.size()) {
     return;
   }
   buffer_[sysexPos_ - header_size] = s7;
