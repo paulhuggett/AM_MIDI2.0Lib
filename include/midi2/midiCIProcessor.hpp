@@ -84,7 +84,7 @@ template <typename T> concept profile_backend = requires(T && v) {
 template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.capabilities(MIDICI{}, ci::pe_capabilities{}) } -> std::same_as<void>;
   { v.capabilities_reply(MIDICI{}, ci::pe_capabilities_reply{}) } -> std::same_as<void>;
-  { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, std::span<char const>{}, std::span<std::byte const>{}) } -> std::same_as<void>;
+  { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
 
 #if 0
   { v.recvPEGetInquiry(MIDICI{}, std::string{} /*details*/) } -> std::same_as<void>;
@@ -178,8 +178,8 @@ public:
   virtual void capabilities(MIDICI const &, ci::pe_capabilities const &) { /* do nothing */ }
   virtual void capabilities_reply(MIDICI const &, midi2::ci::pe_capabilities_reply const &) { /* do nothing */ }
 
-  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, std::span<char const>,
-                         std::span<std::byte const>) { /* do nothing */ }
+  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &,
+                         ci::property_exchange const &) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -698,14 +698,16 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::
   end += data_length * sizeof(pt2->data[0]);
   if (sysexPos_ == end) {
     ci::pe_chunk_info chunk;
-    chunk.requestId = static_cast<std::uint8_t>(pt1->request_id);
-    chunk.totalChunks = ci::packed::from_le7(pt2->number_of_chunks);
-    chunk.numChunk = ci::packed::from_le7(pt2->chunk_number);
+    chunk.number_of_chunks = ci::packed::from_le7(pt2->number_of_chunks);
+    chunk.chunk_number = ci::packed::from_le7(pt2->chunk_number);
 
-    auto const header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), hlength};
-    auto const data = std::span<std::byte const>{&pt2->data[0], data_length};
+    ci::property_exchange pe;
+    pe.request_id = static_cast<std::uint8_t>(pt1->request_id);
+    pe.header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), hlength};
+    pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
+
     switch (midici_.ciType) {
-    case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, header, data); break;
+    case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, pe); break;
     default: break;
     }
     return;

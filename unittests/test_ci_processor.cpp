@@ -54,9 +54,8 @@ std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
 
 std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci);
 std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci) {
-  return os << "{ requestId=" << static_cast<unsigned>(ci.requestId)
-            << ", totalChunks=" << static_cast<unsigned>(ci.totalChunks)
-            << ", numChunk=" << static_cast<unsigned>(ci.numChunk) << " }";
+  return os << "{ number_of_chunks=" << static_cast<unsigned>(ci.number_of_chunks)
+            << ", chunk_number=" << static_cast<unsigned>(ci.chunk_number) << " }";
 }
 
 std::ostream &operator<<(std::ostream &os, ci::discovery const &d);
@@ -138,8 +137,7 @@ public:
   MOCK_METHOD(void, capabilities, (MIDICI const &, midi2::ci::pe_capabilities const &), (override));
   MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::pe_capabilities_reply const &), (override));
 
-  MOCK_METHOD(void, get_reply,
-              (MIDICI const &, midi2::ci::pe_chunk_info const &, std::span<char const>, std::span<std::byte const>),
+  MOCK_METHOD(void, get_reply, (MIDICI const &, midi2::ci::pe_chunk_info const &, midi2::ci::property_exchange const &),
               (override));
 };
 
@@ -1198,8 +1196,8 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
   constexpr auto property_data_size = std::array{std::byte{76}, std::byte{0}};
 
-  auto const header = R"({"status":200})" sv;
-  auto const property_data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])" sv;
+  auto const header = R"({"status":200})"sv;
+  auto const data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])"sv;
 
   // clang-format off
   constexpr std::array ci_prolog {
@@ -1230,10 +1228,10 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   ASSERT_EQ(from_le7(chunk_number), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Property Length
-  ASSERT_EQ(from_le7(property_data_size), property_data.length());
+  ASSERT_EQ(from_le7(property_data_size), data.length());
   out = std::ranges::copy(property_data_size, out).out;
   // Property Data
-  std::ranges::copy(std::views::transform(property_data, as_byte), out);
+  std::ranges::copy(std::views::transform(data, as_byte), out);
 
   MIDICI midici;
   midici.umpGroup = group;
@@ -1244,14 +1242,8 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   midici.localMUID = from_le7(destination_muid);
 
   midi2::ci::pe_chunk_info chunk_info;
-  chunk_info.totalChunks = from_le7(total_chunks);
-  chunk_info.numChunk = from_le7(chunk_number);
-  chunk_info.requestId = static_cast<std::uint8_t>(request_id);
-
-  midi2::ci::pe_capabilities_reply caps;
-  caps.num_simultaneous = 2;
-  caps.major_version = 3;
-  caps.minor_version = 4;
+  chunk_info.number_of_chunks = from_le7(total_chunks);
+  chunk_info.chunk_number = from_le7(chunk_number);
 
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
@@ -1259,11 +1251,12 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
-  std::vector<std::byte> pd;
-  std::ranges::copy(std::views::transform(property_data, as_byte), std::back_inserter(pd));
-
   EXPECT_CALL(pe_mocks,
-              get_reply(midici, chunk_info, testing::ElementsAreArray(header), testing::ElementsAreArray(pd)));
+              get_reply(midici, chunk_info,
+                        AllOf(Field("request_id", &midi2::ci::property_exchange::request_id,
+                                    Eq(static_cast<std::uint8_t>(request_id))),
+                              Field("header", &midi2::ci::property_exchange::header, ElementsAreArray(header)),
+                              Field("data", &midi2::ci::property_exchange::data, ElementsAreArray(data)))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);

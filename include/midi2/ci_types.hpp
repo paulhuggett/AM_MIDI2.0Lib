@@ -42,14 +42,6 @@ struct MIDICI {
   std::uint32_t remoteMUID = 0;
   std::uint32_t localMUID = 0;
 };
-// This is all related to property exchange...
-struct pe_chunk_info {
-  bool operator==(pe_chunk_info const &) const = default;
-
-  std::uint16_t totalChunks = 0;
-  std::uint16_t numChunk = 0;
-  std::uint8_t requestId = 0xFF;
-};
 
 namespace packed {
 
@@ -1040,6 +1032,20 @@ static_assert(sizeof(property_exchange_pt2) == 7);
 static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 
 }  // end namespace packed
+
+// This is all related to property exchange...
+struct pe_chunk_info {
+  bool operator==(pe_chunk_info const &) const = default;
+
+  std::uint16_t number_of_chunks = 0;
+  std::uint16_t chunk_number = 0;
+};
+
+struct property_exchange {
+  std::uint8_t request_id = 0;
+  std::span<char const> header;
+  std::span<char const> data;
+};
 
 }  // end namespace midi2::ci
 
