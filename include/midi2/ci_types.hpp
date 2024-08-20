@@ -943,7 +943,7 @@ constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v1 const &oth
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
 constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v2 const &other) : pe_capabilities{other.v1} {
-  major_version{static_cast<std::uint8_t>(other.major_version)};
+  major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
 

@@ -84,6 +84,8 @@ template <typename T> concept profile_backend = requires(T && v) {
 template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.capabilities(MIDICI{}, ci::pe_capabilities{}) } -> std::same_as<void>;
   { v.capabilities_reply(MIDICI{}, ci::pe_capabilities_reply{}) } -> std::same_as<void>;
+
+  { v.get(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
   { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
 
 #if 0
@@ -159,8 +161,8 @@ public:
   virtual void capabilities(MIDICI const &, ci::pe_capabilities const &) { /* do nothing */ }
   virtual void capabilities_reply(MIDICI const &, midi2::ci::pe_capabilities_reply const &) { /* do nothing */ }
 
-  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &,
-                         ci::property_exchange const &) { /* do nothing */ }
+  virtual void get(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
+  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -655,6 +657,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::processPESysex(std::
     pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
 
     switch (midici_.ciType) {
+    case MIDICI_PE_GET: pe_backend_.get(midici_, chunk, pe); break;
     case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, pe); break;
     default: break;
     }
