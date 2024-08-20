@@ -256,7 +256,7 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
 bool midiCIProcessor<Callbacks, ProfileBackend, PEBackend>::gather(std::byte const s7, std::size_t const size) {
   assert(size < buffer_.size() - header_size);
   if (sysexPos_ < header_size || sysexPos_ - header_size >= buffer_.size()) {
-    return;
+    return false;
   }
   buffer_[sysexPos_ - header_size] = s7;
   return sysexPos_ == header_size + size - 1;
