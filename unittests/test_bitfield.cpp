@@ -3,6 +3,9 @@
 
 // Standard Library
 #include <bit>
+#include <cstdint>
+#include <limits>
+#include <type_traits>
 
 // Google Test
 #include <gtest/gtest.h>
