@@ -268,7 +268,7 @@ namespace packed {
 struct endpoint_info_reply_v1 {
   std::byte status;
   byte_array_2 data_length;
-  std::byte data[1];  // an array of size given by data_length
+  std::array<std::byte, 1> data;  // an array of size given by data_length
 };
 static_assert(offsetof(endpoint_info_reply_v1, status) == 0);
 static_assert(offsetof(endpoint_info_reply_v1, data_length) == 1);
@@ -341,12 +341,12 @@ constexpr invalidate_muid::invalidate_muid(packed::invalidate_muid_v1 const &oth
 namespace packed {
 
 struct ack_v1 {
-  std::byte original_id;        // Original Transaction Sub-ID#2 Classification
-  std::byte status_code;        // ACK Status Code
-  std::byte status_data;        // ACK Status Data
-  byte_array_5 details;         // ACK details for each SubID Classification
-  byte_array_2 message_length;  // Message Length (LSB firt)
-  std::byte message[1];         // Message text
+  std::byte original_id;             ///< Original Transaction Sub-ID#2 Classification
+  std::byte status_code;             ///< ACK Status Code
+  std::byte status_data;             ///< ACK Status Data
+  byte_array_5 details;              ///< ACK details for each SubID Classification
+  byte_array_2 message_length;       ///< Message Length (LSB firt)
+  std::array<std::byte, 1> message;  ///< Message text (array of size given by message_length)
 };
 static_assert(offsetof(ack_v1, original_id) == 0);
 static_assert(offsetof(ack_v1, status_code) == 1);
@@ -393,12 +393,12 @@ namespace packed {
 
 struct nak_v1 {};
 struct nak_v2 {
-  std::byte original_id;        // Original transaction sub-ID#2 classification
-  std::byte status_code;        // ACK Status Code
-  std::byte status_data;        // ACK Status Data
-  byte_array_5 details;         // ACK details for each SubID Classification
-  byte_array_2 message_length;  // Message Length (LSB firt)
-  std::byte message[1];         // Message text
+  std::byte original_id;             ///< Original transaction sub-ID#2 classification
+  std::byte status_code;             ///< ACK Status Code
+  std::byte status_data;             ///< ACK Status Data
+  byte_array_5 details;              ///< ACK details for each SubID Classification
+  byte_array_2 message_length;       ///< Message Length (LSB firt)
+  std::array<std::byte, 1> message;  ///< Message text (length given by message_length)
 };
 static_assert(offsetof(nak_v2, original_id) == 0);
 static_assert(offsetof(nak_v2, status_code) == 1);
@@ -453,8 +453,8 @@ constexpr nak::nak(packed::nak_v2 const &other)
 namespace packed {
 
 struct profile_inquiry_reply_v1_pt1 {
-  byte_array_2 num_enabled;  // Number of currently enabled profiles
-  byte_array_5 ids[1];       // Profile ID of currently enabled profiles
+  byte_array_2 num_enabled;         ///< Number of currently enabled profiles
+  std::array<byte_array_5, 1> ids;  ///< Profile ID of currently enabled profiles (array length given by num_enabled)
 };
 
 static_assert(offsetof(profile_inquiry_reply_v1_pt1, num_enabled) == 0);
@@ -464,8 +464,8 @@ static_assert(alignof(profile_inquiry_reply_v1_pt1) == 1);
 static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt1>);
 
 struct profile_inquiry_reply_v1_pt2 {
-  byte_array_2 num_disabled;  // Number of currently disabled profiles
-  byte_array_5 ids[1];        // Profile ID of currently disabled profiles
+  byte_array_2 num_disabled;        ///< Number of currently disabled profiles
+  std::array<byte_array_5, 1> ids;  ///< Profile ID of currently enabled profiles (array length given by num_disabled)
 };
 
 static_assert(offsetof(profile_inquiry_reply_v1_pt2, num_disabled) == 0);
@@ -612,7 +612,7 @@ struct profile_details_reply_v1 {
   byte_array_5 pid;          ///< Profile ID of profile
   std::byte target;          ///< Inquiry target
   byte_array_2 data_length;  ///< Inquiry target data length (LSB first)
-  std::byte data[1];
+  std::array<std::byte, 1> data;  ///< Array length given by data_length
 };
 
 static_assert(offsetof(profile_details_reply_v1, pid) == 0);
@@ -863,7 +863,7 @@ namespace packed {
 struct profile_specific_data_v1 {
   byte_array_5 pid;          ///< Profile ID
   byte_array_2 data_length;  ///< Length of following profile specific data (LSB first)
-  std::byte data[1];         ///< Profile specific data
+  std::array<std::byte, 1> data;  ///< Profile specific data (array length given by data_length)
 };
 static_assert(offsetof(profile_specific_data_v1, pid) == 0);
 static_assert(offsetof(profile_specific_data_v1, data_length) == 5);
@@ -943,7 +943,7 @@ constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v1 const &oth
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
 constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v2 const &other) : pe_capabilities{other.v1} {
-  major_version = static_cast<std::uint8_t>(other.major_version);
+  major_version{static_cast<std::uint8_t>(other.major_version)};
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
 
@@ -1008,7 +1008,7 @@ namespace packed {
 struct property_exchange_pt1 {
   std::byte request_id;
   byte_array_2 header_length;
-  std::byte header[1];
+  std::array<std::byte, 1> header;
 };
 static_assert(offsetof(property_exchange_pt1, request_id) == 0);
 static_assert(offsetof(property_exchange_pt1, header_length) == 1);
@@ -1021,7 +1021,7 @@ struct property_exchange_pt2 {
   byte_array_2 number_of_chunks;
   byte_array_2 chunk_number;
   byte_array_2 data_length;
-  std::byte data[1];
+  std::array<std::byte, 1> data;
 };
 static_assert(offsetof(property_exchange_pt2, number_of_chunks) == 0);
 static_assert(offsetof(property_exchange_pt2, chunk_number) == 2);
