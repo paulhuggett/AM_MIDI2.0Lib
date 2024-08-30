@@ -90,7 +90,8 @@ std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, ci::profile_disabled const &pd) {
+std::ostream &operator<<(std::ostream &os, ci::profile_configuration::disabled const &pds);
+std::ostream &operator<<(std::ostream &os, ci::profile_configuration::disabled const &pd) {
   os << "{ pid=";
   write_bytes(os, pd.pid);
   os << ", num_channels=" << pd.num_channels << " }";
@@ -110,8 +111,8 @@ using testing::Return;
 
 using midi2::MIDICI;
 using midi2::ci::byte_array_5;
+using midi2::ci::from_le7;
 using midi2::ci::pe_chunk_info;
-using midi2::ci::packed::from_le7;
 
 class mock_discovery_callbacks final : public midi2::ci_callbacks {
 public:
@@ -128,16 +129,19 @@ public:
 class mock_profile_callbacks final : public midi2::profile_callbacks {
 public:
   MOCK_METHOD(void, inquiry, (MIDICI const &), (override));
-  MOCK_METHOD(void, inquiry_reply, (MIDICI const &, midi2::ci::profile_inquiry_reply const &), (override));
-  MOCK_METHOD(void, added, (MIDICI const &, midi2::ci::profile_added const &), (override));
-  MOCK_METHOD(void, removed, (MIDICI const &, midi2::ci::profile_removed const &), (override));
-  MOCK_METHOD(void, details_inquiry, (MIDICI const &, midi2::ci::profile_details_inquiry const &), (override));
-  MOCK_METHOD(void, details_reply, (MIDICI const &, midi2::ci::profile_details_reply const &), (override));
-  MOCK_METHOD(void, on, (MIDICI const &, midi2::ci::profile_on const &), (override));
-  MOCK_METHOD(void, off, (MIDICI const &, midi2::ci::profile_off const &), (override));
-  MOCK_METHOD(void, enabled, (MIDICI const &, midi2::ci::profile_enabled const &), (override));
-  MOCK_METHOD(void, disabled, (MIDICI const &, midi2::ci::profile_disabled const &), (override));
-  MOCK_METHOD(void, specific_data, (MIDICI const &, midi2::ci::profile_specific_data const &), (override));
+  MOCK_METHOD(void, inquiry_reply, (MIDICI const &, midi2::ci::profile_configuration::inquiry_reply const &),
+              (override));
+  MOCK_METHOD(void, added, (MIDICI const &, midi2::ci::profile_configuration::added const &), (override));
+  MOCK_METHOD(void, removed, (MIDICI const &, midi2::ci::profile_configuration::removed const &), (override));
+  MOCK_METHOD(void, details, (MIDICI const &, midi2::ci::profile_configuration::details const &), (override));
+  MOCK_METHOD(void, details_reply, (MIDICI const &, midi2::ci::profile_configuration::details_reply const &),
+              (override));
+  MOCK_METHOD(void, on, (MIDICI const &, midi2::ci::profile_configuration::on const &), (override));
+  MOCK_METHOD(void, off, (MIDICI const &, midi2::ci::profile_configuration::off const &), (override));
+  MOCK_METHOD(void, enabled, (MIDICI const &, midi2::ci::profile_configuration::enabled const &), (override));
+  MOCK_METHOD(void, disabled, (MIDICI const &, midi2::ci::profile_configuration::disabled const &), (override));
+  MOCK_METHOD(void, specific_data, (MIDICI const &, midi2::ci::profile_configuration::specific_data const &),
+              (override));
 };
 
 using midi2::ci::pe_chunk_info;
@@ -157,7 +161,9 @@ public:
 class mock_process_inquiry_callbacks final : public midi2::process_inquiry_callbacks {
 public:
   MOCK_METHOD(void, capabilities, (MIDICI const &), (override));
-  MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::process_inquiry_capabilities_reply const &),
+  MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::process_inquiry::capabilities_reply const &),
+              (override));
+  MOCK_METHOD(void, midi_message_report, (MIDICI const &, midi2::ci::process_inquiry::midi_message_report const &),
               (override));
 };
 
@@ -205,10 +211,10 @@ TEST(CIProcessor, DiscoveryV1) {
   midici.localMUID = 0x0FFFFFFF;
 
   midi2::ci::discovery discovery;
-  discovery.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  discovery.manufacturer = midi2::ci::from_array(manufacturer);
   discovery.family = from_le7(family);
   discovery.model = from_le7(model);
-  discovery.version = midi2::ci::packed::from_array(version);
+  discovery.version = midi2::ci::from_array(version);
   discovery.capability = static_cast<std::uint8_t>(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
 
@@ -256,10 +262,10 @@ TEST(CIProcessor, DiscoveryV2) {
   midici.localMUID = 0x0FFFFFFF;
 
   midi2::ci::discovery discovery;
-  discovery.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  discovery.manufacturer = midi2::ci::from_array(manufacturer);
   discovery.family = from_le7(family);
   discovery.model = from_le7(model);
-  discovery.version = midi2::ci::packed::from_array(version);
+  discovery.version = midi2::ci::from_array(version);
   discovery.capability = static_cast<std::uint8_t>(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
   discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
@@ -310,10 +316,10 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   midici.localMUID = 0x0FFFFFFF;
 
   midi2::ci::discovery_reply reply;
-  reply.manufacturer = midi2::ci::packed::from_array(manufacturer);
+  reply.manufacturer = midi2::ci::from_array(manufacturer);
   reply.family = from_le7(family);
   reply.model = from_le7(model);
-  reply.version = midi2::ci::packed::from_array(version);
+  reply.version = midi2::ci::from_array(version);
   reply.capability = static_cast<std::uint8_t>(capability);
   reply.max_sysex_size = from_le7(max_sysex_size);
   reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
@@ -708,11 +714,10 @@ TEST(CIProcessor, ProfileInquiryReply) {
   mock_profile_callbacks profile_mocks;
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  using midi2::ci::profile_inquiry_reply;
-  EXPECT_CALL(
-      profile_mocks,
-      inquiry_reply(midici, AllOf(Field("enabled", &profile_inquiry_reply::enabled, ElementsAreArray(enabled)),
-                                  Field("disabled", &profile_inquiry_reply::disabled, ElementsAreArray(disabled)))))
+  using midi2::ci::profile_configuration::inquiry_reply;
+  EXPECT_CALL(profile_mocks,
+              inquiry_reply(midici, AllOf(Field("enabled", &inquiry_reply::enabled, ElementsAreArray(enabled)),
+                                          Field("disabled", &inquiry_reply::disabled, ElementsAreArray(disabled)))))
       .Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
@@ -754,7 +759,7 @@ TEST(CIProcessor, ProfileAdded) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_added added;
+  midi2::ci::profile_configuration::added added;
   added.pid = pid;
   EXPECT_CALL(profile_mocks, added(midici, added)).Times(1);
 
@@ -797,7 +802,7 @@ TEST(CIProcessor, ProfileRemoved) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_removed removed;
+  midi2::ci::profile_configuration::removed removed;
   removed.pid = pid;
   EXPECT_CALL(profile_mocks, removed(midici, removed)).Times(1);
 
@@ -842,11 +847,11 @@ TEST(CIProcessor, ProfileDetailsInquiry) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_details_inquiry inquiry;
+  midi2::ci::profile_configuration::details inquiry;
   inquiry.pid = pid;
   inquiry.target = 0x23;
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, details_inquiry(midici, inquiry)).Times(1);
+  EXPECT_CALL(profile_mocks, details(midici, inquiry)).Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
   processor.startSysex7(group, destination);
@@ -893,22 +898,18 @@ TEST(CIProcessor, ProfileDetailsReply) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  using midi2::ci::profile_details_reply;
-  
+  using midi2::ci::profile_configuration::details_reply;
+
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, details_reply(midici,
-                                           AllOf(Field("pid", &profile_details_reply::pid, Eq(pid)),
-                                                 Field("target", &profile_details_reply::target, Eq(0x23)),
-                                                 Field("data", &profile_details_reply::data, ElementsAreArray(data))
-                                                )
-                                          )
-             ).Times(1);
+  EXPECT_CALL(profile_mocks, details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
+                                                         Field("target", &details_reply::target, Eq(0x23)),
+                                                         Field("data", &details_reply::data, ElementsAreArray(data)))))
+      .Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
   processor.startSysex7(group, destination);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 TEST(CIProcessor, ProfileOn) {
@@ -946,7 +947,7 @@ TEST(CIProcessor, ProfileOn) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_on on;
+  midi2::ci::profile_configuration::on on;
   on.pid = pid;
   on.num_channels = from_le7(channels);
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
@@ -994,7 +995,7 @@ TEST(CIProcessor, ProfileOff) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_off off;
+  midi2::ci::profile_configuration::off off;
   off.pid = pid;
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks, off(midici, off)).Times(1);
@@ -1040,7 +1041,7 @@ TEST(CIProcessor, ProfileEnabled) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_enabled enabled;
+  midi2::ci::profile_configuration::enabled enabled;
   enabled.pid = pid;
   enabled.num_channels = from_le7(num_channels);
   EXPECT_CALL(profile_mocks, enabled(midici, enabled)).Times(1);
@@ -1086,7 +1087,7 @@ TEST(CIProcessor, ProfileDisabled) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  midi2::ci::profile_disabled disabled;
+  midi2::ci::profile_configuration::disabled disabled;
   disabled.pid = pid;
   disabled.num_channels = from_le7(num_channels);
   EXPECT_CALL(profile_mocks, disabled(midici, disabled)).Times(1);
@@ -1133,17 +1134,15 @@ TEST(CIProcessor, ProfileSpecificData) {
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
 
-  EXPECT_CALL(
-      profile_mocks,
-      specific_data(midici, AllOf(Field("pid", &midi2::ci::profile_specific_data::pid, Eq(pid)),
-                                  Field("data", &midi2::ci::profile_specific_data::data, ElementsAreArray(data)))))
+  using midi2::ci::profile_configuration::specific_data;
+  EXPECT_CALL(profile_mocks, specific_data(midici, AllOf(Field("pid", &specific_data::pid, Eq(pid)),
+                                                         Field("data", &specific_data::data, ElementsAreArray(data)))))
       .Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
   processor.startSysex7(group, destination);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 TEST(CIProcessor, PropertyExchangeCapabilities) {
@@ -1628,8 +1627,8 @@ TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::process_inquiry_capabilities_reply picr;
-  picr.features = features;
+  midi2::ci::process_inquiry::capabilities_reply reply;
+  reply.features = features;
 
   mock_discovery_callbacks discovery_mocks;
   mock_profile_callbacks profile_mocks;
@@ -1637,7 +1636,73 @@ TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
   mock_process_inquiry_callbacks pi_mocks;
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks, capabilities_reply(midici, picr)).Times(1);
+  EXPECT_CALL(pi_mocks, capabilities_reply(midici, reply)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
+                                   std::ref(pi_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, ProcessInquiryMidiMessageReport) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x01};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  // clang-format off
+  constexpr std::array message {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x42}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    std::byte{0x7F}, // message data control
+    std::byte{0b00000111}, // requested system messages
+    std::byte{0x00}, // reserved
+    std::byte{0b00111111}, // requested channel controller messages
+    std::byte{0b00011111}, // requested note data messages
+  };
+  // clang-format on
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PI_MM_REPORT;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::process_inquiry::midi_message_report reply;
+  reply.message_data_control = decltype(reply)::control::full;
+  // system messages
+  reply.mtc_quarter_frame = 1;
+  reply.song_position = 1;
+  reply.song_select = 1;
+  // channel controller messages
+  reply.pitchbend = 1;
+  reply.control_change = 1;
+  reply.rpn_registered_controller = 1;
+  reply.nrpn_assignable_controller = 1;
+  reply.program_change = 1;
+  reply.channel_pressure = 1;
+  // note data messages
+  reply.notes = 1;
+  reply.poly_pressure = 1;
+  reply.per_note_pitchbend = 1;
+  reply.registered_per_note_controller = 1;
+  reply.assignable_per_note_controller = 1;
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+  mock_process_inquiry_callbacks pi_mocks;
+
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks, midi_message_report(midici, reply)).Times(1);
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
                                    std::ref(pi_mocks)};

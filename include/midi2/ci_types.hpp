@@ -32,6 +32,32 @@ using byte_array_5 = std::array<std::byte, 5>;
 
 constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
 
+constexpr auto mask7b = std::byte{(1 << 7) - 1};
+
+constexpr std::uint32_t from_le7(byte_array_4 const &v) {
+  assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
+  return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
+         (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
+         (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
+         (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
+}
+constexpr std::uint16_t from_le7(byte_array_2 const &v) {
+  assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
+  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
+                                    (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
+}
+constexpr std::uint8_t from_le7(std::byte v) {
+  return static_cast<std::uint8_t>(v);
+}
+
+template <std::size_t Size>
+constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
+  std::array<std::uint8_t, Size> result;
+  std::transform(std::begin(other), std::end(other), std::begin(result),
+                 [](std::byte v) { return static_cast<std::uint8_t>(v); });
+  return result;
+}
+
 struct MIDICI {
   bool operator==(MIDICI const &) const = default;
 
@@ -65,36 +91,6 @@ static_assert(offsetof(header, destination_muid) == 9);
 static_assert(sizeof(header) == 13);
 static_assert(alignof(header) == 1);
 static_assert(std::is_trivially_copyable_v<header>);
-
-}  // end namespace packed
-
-namespace packed {
-
-constexpr auto mask7b = std::byte{(1 << 7) - 1};
-
-constexpr std::uint32_t from_le7(byte_array_4 const &v) {
-  assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
-  return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
-         (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
-         (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
-         (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
-}
-constexpr std::uint16_t from_le7(byte_array_2 const &v) {
-  assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
-  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
-                                    (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
-}
-constexpr std::uint8_t from_le7(std::byte v) {
-  return static_cast<std::uint8_t>(v);
-}
-
-template <std::size_t Size>
-constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
-  std::array<std::uint8_t, Size> result;
-  std::transform(std::begin(other), std::end(other), std::begin(result),
-                 [](std::byte v) { return static_cast<std::uint8_t>(v); });
-  return result;
-}
 
 }  // end namespace packed
 
@@ -160,15 +156,15 @@ struct discovery {
 };
 
 constexpr discovery::discovery(packed::discovery_v1 const &v1)
-    : manufacturer{packed::from_array(v1.manufacturer)},
-      family{packed::from_le7(v1.family)},
-      model{packed::from_le7(v1.model)},
-      version{packed::from_array(v1.version)},
-      capability{packed::from_le7(v1.capability)},
-      max_sysex_size{packed::from_le7(v1.max_sysex_size)} {
+    : manufacturer{from_array(v1.manufacturer)},
+      family{from_le7(v1.family)},
+      model{from_le7(v1.model)},
+      version{from_array(v1.version)},
+      capability{from_le7(v1.capability)},
+      max_sysex_size{from_le7(v1.max_sysex_size)} {
 }
 constexpr discovery::discovery(packed::discovery_v2 const &v2) : discovery(v2.v1) {
-  output_path_id = packed::from_le7(v2.output_path_id);
+  output_path_id = from_le7(v2.output_path_id);
 }
 
 //*     _ _                                            _       *
@@ -235,16 +231,16 @@ struct discovery_reply {
   std::uint8_t function_block = 0;
 };
 constexpr discovery_reply::discovery_reply(packed::discovery_reply_v1 const &v1)
-    : manufacturer{packed::from_array(v1.manufacturer)},
-      family{packed::from_le7(v1.family)},
-      model{packed::from_le7(v1.model)},
-      version{packed::from_array(v1.version)},
-      capability{packed::from_le7(v1.capability)},
-      max_sysex_size{packed::from_le7(v1.max_sysex_size)} {
+    : manufacturer{from_array(v1.manufacturer)},
+      family{from_le7(v1.family)},
+      model{from_le7(v1.model)},
+      version{from_array(v1.version)},
+      capability{from_le7(v1.capability)},
+      max_sysex_size{from_le7(v1.max_sysex_size)} {
 }
 constexpr discovery_reply::discovery_reply(packed::discovery_reply_v2 const &v2) : discovery_reply(v2.v1) {
-  output_path_id = packed::from_le7(v2.output_path_id);
-  function_block = packed::from_le7(v2.function_block);
+  output_path_id = from_le7(v2.output_path_id);
+  function_block = from_le7(v2.function_block);
 }
 
 //*              _           _     _     _       __      *
@@ -320,7 +316,7 @@ struct endpoint_info_reply {
 };
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
-    : status{packed::from_le7(other.status)}, information{std::begin(other.data), packed::from_le7(other.data_length)} {
+    : status{from_le7(other.status)}, information{std::begin(other.data), from_le7(other.data_length)} {
 }
 
 //*  _              _ _    _      _         __  __ _   _ ___ ___   *
@@ -356,7 +352,7 @@ struct invalidate_muid {
 };
 
 constexpr invalidate_muid::invalidate_muid(packed::invalidate_muid_v1 const &other)
-    : target_muid{packed::from_le7(other.target_muid)} {
+    : target_muid{from_le7(other.target_muid)} {
 }
 
 //*          _    *
@@ -403,11 +399,11 @@ struct ack {
 };
 
 constexpr ack::ack(packed::ack_v1 const &other)
-    : original_id{packed::from_le7(other.original_id)},
-      status_code{packed::from_le7(other.status_code)},
-      status_data{packed::from_le7(other.status_data)},
+    : original_id{from_le7(other.original_id)},
+      status_code{from_le7(other.status_code)},
+      status_data{from_le7(other.status_data)},
       details{other.details},
-      message{std::begin(other.message), packed::from_le7(other.message_length)} {
+      message{std::begin(other.message), from_le7(other.message_length)} {
 }
 
 //*            _    *
@@ -467,9 +463,10 @@ constexpr nak::nak(packed::nak_v2 const &other)
       status_code{static_cast<std::uint8_t>(other.status_code)},
       status_data{static_cast<std::uint8_t>(other.status_data)},
       details{other.details},
-      message{std::begin(other.message), packed::from_le7(other.message_length)} {
+      message{std::begin(other.message), from_le7(other.message_length)} {
 }
 
+namespace profile_configuration {
 //*                __ _ _       _                _                         _       *
 //*  _ __ _ _ ___ / _(_) |___  (_)_ _  __ _ _  _(_)_ _ _  _   _ _ ___ _ __| |_  _  *
 //* | '_ \ '_/ _ \  _| | / -_) | | ' \/ _` | || | | '_| || | | '_/ -_) '_ \ | || | *
@@ -478,49 +475,48 @@ constexpr nak::nak(packed::nak_v2 const &other)
 
 namespace packed {
 
-struct profile_inquiry_reply_v1_pt1 {
+struct inquiry_reply_v1_pt1 {
   byte_array_2 num_enabled;         ///< Number of currently enabled profiles
   byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_enabled)
 };
 
-static_assert(offsetof(profile_inquiry_reply_v1_pt1, num_enabled) == 0);
-static_assert(offsetof(profile_inquiry_reply_v1_pt1, ids) == 2);
-static_assert(sizeof(profile_inquiry_reply_v1_pt1) == 7);
-static_assert(alignof(profile_inquiry_reply_v1_pt1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt1>);
+static_assert(offsetof(inquiry_reply_v1_pt1, num_enabled) == 0);
+static_assert(offsetof(inquiry_reply_v1_pt1, ids) == 2);
+static_assert(sizeof(inquiry_reply_v1_pt1) == 7);
+static_assert(alignof(inquiry_reply_v1_pt1) == 1);
+static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt1>);
 
-struct profile_inquiry_reply_v1_pt2 {
+struct inquiry_reply_v1_pt2 {
   byte_array_2 num_disabled;        ///< Number of currently disabled profiles
   byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_disabled)
 };
 
-static_assert(offsetof(profile_inquiry_reply_v1_pt2, num_disabled) == 0);
-static_assert(offsetof(profile_inquiry_reply_v1_pt2, ids) == 2);
-static_assert(sizeof(profile_inquiry_reply_v1_pt2) == 7);
-static_assert(alignof(profile_inquiry_reply_v1_pt2) == 1);
-static_assert(std::is_trivially_copyable_v<profile_inquiry_reply_v1_pt2>);
+static_assert(offsetof(inquiry_reply_v1_pt2, num_disabled) == 0);
+static_assert(offsetof(inquiry_reply_v1_pt2, ids) == 2);
+static_assert(sizeof(inquiry_reply_v1_pt2) == 7);
+static_assert(alignof(inquiry_reply_v1_pt2) == 1);
+static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt2>);
 
 }  // end namespace packed
 
-struct profile_inquiry_reply {
-  constexpr profile_inquiry_reply() = default;
-  constexpr profile_inquiry_reply(profile_inquiry_reply const &) = default;
-  constexpr profile_inquiry_reply(profile_inquiry_reply &&) noexcept = default;
-  constexpr profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &,
-                                  packed::profile_inquiry_reply_v1_pt2 const &);
-  ~profile_inquiry_reply() noexcept = default;
+struct inquiry_reply {
+  constexpr inquiry_reply() = default;
+  constexpr inquiry_reply(inquiry_reply const &) = default;
+  constexpr inquiry_reply(inquiry_reply &&) noexcept = default;
+  constexpr inquiry_reply(packed::inquiry_reply_v1_pt1 const &, packed::inquiry_reply_v1_pt2 const &);
+  ~inquiry_reply() noexcept = default;
 
-  constexpr profile_inquiry_reply &operator=(profile_inquiry_reply const &) = default;
-  constexpr profile_inquiry_reply &operator=(profile_inquiry_reply &&) noexcept = default;
+  constexpr inquiry_reply &operator=(inquiry_reply const &) = default;
+  constexpr inquiry_reply &operator=(inquiry_reply &&) noexcept = default;
 
   std::span<byte_array_5 const> enabled{};
   std::span<byte_array_5 const> disabled{};
 };
 
-constexpr profile_inquiry_reply::profile_inquiry_reply(packed::profile_inquiry_reply_v1_pt1 const &v1_pt1,
-                                                       packed::profile_inquiry_reply_v1_pt2 const &v1_pt2)
-    : enabled{std::begin(v1_pt1.ids), packed::from_le7(v1_pt1.num_enabled)},
-      disabled{std::begin(v1_pt2.ids), packed::from_le7(v1_pt2.num_disabled)} {
+constexpr inquiry_reply::inquiry_reply(packed::inquiry_reply_v1_pt1 const &v1_pt1,
+                                       packed::inquiry_reply_v1_pt2 const &v1_pt2)
+    : enabled{std::begin(v1_pt1.ids), from_le7(v1_pt1.num_enabled)},
+      disabled{std::begin(v1_pt2.ids), from_le7(v1_pt2.num_disabled)} {
 }
 
 //*                __ _ _               _    _        _  *
@@ -530,32 +526,32 @@ constexpr profile_inquiry_reply::profile_inquiry_reply(packed::profile_inquiry_r
 //* |_|                                                  *
 namespace packed {
 
-struct profile_added_v1 {
+struct added_v1 {
   byte_array_5 pid;  // Profile ID of profile being added
 };
-static_assert(offsetof(profile_added_v1, pid) == 0);
-static_assert(sizeof(profile_added_v1) == 5);
-static_assert(alignof(profile_added_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_added_v1>);
+static_assert(offsetof(added_v1, pid) == 0);
+static_assert(sizeof(added_v1) == 5);
+static_assert(alignof(added_v1) == 1);
+static_assert(std::is_trivially_copyable_v<added_v1>);
 
 }  // end namespace packed
 
-struct profile_added {
-  constexpr profile_added() = default;
-  constexpr profile_added(profile_added const &) = default;
-  constexpr profile_added(profile_added &&) noexcept = default;
-  constexpr explicit profile_added(packed::profile_added_v1 const &);
-  ~profile_added() noexcept = default;
+struct added {
+  constexpr added() = default;
+  constexpr added(added const &) = default;
+  constexpr added(added &&) noexcept = default;
+  constexpr explicit added(packed::added_v1 const &);
+  ~added() noexcept = default;
 
-  constexpr profile_added &operator=(profile_added const &) = default;
-  constexpr profile_added &operator=(profile_added &&) noexcept = default;
+  constexpr added &operator=(added const &) = default;
+  constexpr added &operator=(added &&) noexcept = default;
 
-  constexpr bool operator==(profile_added const &) const = default;
+  constexpr bool operator==(added const &) const = default;
 
   byte_array_5 pid{};
 };
 
-constexpr profile_added::profile_added(packed::profile_added_v1 const &other) : pid{other.pid} {
+constexpr added::added(packed::added_v1 const &other) : pid{other.pid} {
 }
 
 //*                __ _ _                                    _  *
@@ -565,32 +561,32 @@ constexpr profile_added::profile_added(packed::profile_added_v1 const &other) : 
 //* |_|                                                         *
 namespace packed {
 
-struct profile_removed_v1 {
+struct removed_v1 {
   byte_array_5 pid;  // Profile ID of profile being removed
 };
-static_assert(offsetof(profile_removed_v1, pid) == 0);
-static_assert(sizeof(profile_removed_v1) == 5);
-static_assert(alignof(profile_removed_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_removed_v1>);
+static_assert(offsetof(removed_v1, pid) == 0);
+static_assert(sizeof(removed_v1) == 5);
+static_assert(alignof(removed_v1) == 1);
+static_assert(std::is_trivially_copyable_v<removed_v1>);
 
 }  // end namespace packed
 
-struct profile_removed {
-  constexpr profile_removed() = default;
-  constexpr profile_removed(profile_removed const &) = default;
-  constexpr profile_removed(profile_removed &&) noexcept = default;
-  constexpr explicit profile_removed(packed::profile_removed_v1 const &);
-  ~profile_removed() noexcept = default;
+struct removed {
+  constexpr removed() = default;
+  constexpr removed(removed const &) = default;
+  constexpr removed(removed &&) noexcept = default;
+  constexpr explicit removed(packed::removed_v1 const &);
+  ~removed() noexcept = default;
 
-  constexpr profile_removed &operator=(profile_removed const &) = default;
-  constexpr profile_removed &operator=(profile_removed &&) noexcept = default;
+  constexpr removed &operator=(removed const &) = default;
+  constexpr removed &operator=(removed &&) noexcept = default;
 
-  constexpr bool operator==(profile_removed const &) const = default;
+  constexpr bool operator==(removed const &) const = default;
 
   byte_array_5 pid{};
 };
 
-constexpr profile_removed::profile_removed(packed::profile_removed_v1 const &other) : pid{other.pid} {
+constexpr removed::removed(packed::removed_v1 const &other) : pid{other.pid} {
 }
 
 //*                __      _     _        _ _      _                _           *
@@ -600,76 +596,76 @@ constexpr profile_removed::profile_removed(packed::profile_removed_v1 const &oth
 //* |_|                                                     |_|           |__/  *
 namespace packed {
 
-struct profile_details_inquiry_v1 {
+struct details_v1 {
   byte_array_5 pid;  // Profile ID of profile
   std::byte target;
 };
-static_assert(offsetof(profile_details_inquiry_v1, pid) == 0);
-static_assert(offsetof(profile_details_inquiry_v1, target) == 5);
-static_assert(sizeof(profile_details_inquiry_v1) == 6);
-static_assert(alignof(profile_details_inquiry_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_details_inquiry_v1>);
+static_assert(offsetof(details_v1, pid) == 0);
+static_assert(offsetof(details_v1, target) == 5);
+static_assert(sizeof(details_v1) == 6);
+static_assert(alignof(details_v1) == 1);
+static_assert(std::is_trivially_copyable_v<details_v1>);
 
 }  // end namespace packed
 
-struct profile_details_inquiry {
-  constexpr profile_details_inquiry() = default;
-  constexpr profile_details_inquiry(profile_details_inquiry const &) = default;
-  constexpr profile_details_inquiry(profile_details_inquiry &&) noexcept = default;
-  constexpr explicit profile_details_inquiry(packed::profile_details_inquiry_v1 const &);
-  ~profile_details_inquiry() noexcept = default;
+struct details {
+  constexpr details() = default;
+  constexpr details(details const &) = default;
+  constexpr details(details &&) noexcept = default;
+  constexpr explicit details(packed::details_v1 const &);
+  ~details() noexcept = default;
 
-  constexpr profile_details_inquiry &operator=(profile_details_inquiry const &) = default;
-  constexpr profile_details_inquiry &operator=(profile_details_inquiry &&) noexcept = default;
+  constexpr details &operator=(details const &) = default;
+  constexpr details &operator=(details &&) noexcept = default;
 
-  constexpr bool operator==(profile_details_inquiry const &) const = default;
+  constexpr bool operator==(details const &) const = default;
 
   byte_array_5 pid{};
   std::uint8_t target = 0;
 };
 
-constexpr profile_details_inquiry::profile_details_inquiry(packed::profile_details_inquiry_v1 const &other)
+constexpr details::details(packed::details_v1 const &other)
     : pid{other.pid}, target{static_cast<std::uint8_t>(other.target)} {
 }
 
 namespace packed {
 
-struct profile_details_reply_v1 {
+struct details_reply_v1 {
   byte_array_5 pid;          ///< Profile ID of profile
   std::byte target;          ///< Inquiry target
   byte_array_2 data_length;  ///< Inquiry target data length (LSB first)
   std::byte data[1];         ///< Array length given by data_length
 };
 
-static_assert(offsetof(profile_details_reply_v1, pid) == 0);
-static_assert(offsetof(profile_details_reply_v1, target) == 5);
-static_assert(offsetof(profile_details_reply_v1, data_length) == 6);
-static_assert(offsetof(profile_details_reply_v1, data) == 8);
-static_assert(sizeof(profile_details_reply_v1) == 9);
-static_assert(alignof(profile_details_reply_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_details_reply_v1>);
+static_assert(offsetof(details_reply_v1, pid) == 0);
+static_assert(offsetof(details_reply_v1, target) == 5);
+static_assert(offsetof(details_reply_v1, data_length) == 6);
+static_assert(offsetof(details_reply_v1, data) == 8);
+static_assert(sizeof(details_reply_v1) == 9);
+static_assert(alignof(details_reply_v1) == 1);
+static_assert(std::is_trivially_copyable_v<details_reply_v1>);
 
 }  // end namespace packed
 
-struct profile_details_reply {
-  constexpr profile_details_reply() = default;
-  constexpr profile_details_reply(profile_details_reply const &) = default;
-  constexpr profile_details_reply(profile_details_reply &&) noexcept = default;
-  constexpr explicit profile_details_reply(packed::profile_details_reply_v1 const &);
-  ~profile_details_reply() noexcept = default;
+struct details_reply {
+  constexpr details_reply() = default;
+  constexpr details_reply(details_reply const &) = default;
+  constexpr details_reply(details_reply &&) noexcept = default;
+  constexpr explicit details_reply(packed::details_reply_v1 const &);
+  ~details_reply() noexcept = default;
 
-  constexpr profile_details_reply &operator=(profile_details_reply const &) = default;
-  constexpr profile_details_reply &operator=(profile_details_reply &&) noexcept = default;
+  constexpr details_reply &operator=(details_reply const &) = default;
+  constexpr details_reply &operator=(details_reply &&) noexcept = default;
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
   std::span<std::byte const> data{};
 };
 
-constexpr profile_details_reply::profile_details_reply(packed::profile_details_reply_v1 const &other)
+constexpr details_reply::details_reply(packed::details_reply_v1 const &other)
     : pid{other.pid},
       target{static_cast<std::uint8_t>(other.target)},
-      data{std::begin(other.data), packed::from_le7(other.data_length)} {
+      data{std::begin(other.data), from_le7(other.data_length)} {
 }
 
 //*                __ _ _                 *
@@ -679,49 +675,49 @@ constexpr profile_details_reply::profile_details_reply(packed::profile_details_r
 //* |_|                                   *
 namespace packed {
 
-struct profile_on_v1 {
+struct on_v1 {
   byte_array_5 pid;  // Profile ID of profile to be set to on (to be enabled)
 };
-static_assert(offsetof(profile_on_v1, pid) == 0);
-static_assert(sizeof(profile_on_v1) == 5);
-static_assert(alignof(profile_on_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_on_v1>);
+static_assert(offsetof(on_v1, pid) == 0);
+static_assert(sizeof(on_v1) == 5);
+static_assert(alignof(on_v1) == 1);
+static_assert(std::is_trivially_copyable_v<on_v1>);
 
-struct profile_on_v2 {
-  profile_on_v1 v1;
+struct on_v2 {
+  on_v1 v1;
   byte_array_2 num_channels;  // Number Channels Requested (LSB First) to assign to this profile when it is enabled
 };
-static_assert(offsetof(profile_on_v2, v1) == 0);
-static_assert(offsetof(profile_on_v2, num_channels) == 5);
-static_assert(sizeof(profile_on_v2) == 7);
-static_assert(alignof(profile_on_v2) == 1);
-static_assert(std::is_trivially_copyable_v<profile_on_v2>);
+static_assert(offsetof(on_v2, v1) == 0);
+static_assert(offsetof(on_v2, num_channels) == 5);
+static_assert(sizeof(on_v2) == 7);
+static_assert(alignof(on_v2) == 1);
+static_assert(std::is_trivially_copyable_v<on_v2>);
 
-static_assert(sizeof(profile_on_v1) <= sizeof(profile_on_v2));
+static_assert(sizeof(on_v1) <= sizeof(on_v2));
 
 }  // end namespace packed
 
-struct profile_on {
-  constexpr profile_on() = default;
-  constexpr profile_on(profile_on const &) = default;
-  constexpr profile_on(profile_on &&) noexcept = default;
-  constexpr explicit profile_on(packed::profile_on_v1 const &);
-  constexpr explicit profile_on(packed::profile_on_v2 const &);
-  ~profile_on() noexcept = default;
+struct on {
+  constexpr on() = default;
+  constexpr on(on const &) = default;
+  constexpr on(on &&) noexcept = default;
+  constexpr explicit on(packed::on_v1 const &);
+  constexpr explicit on(packed::on_v2 const &);
+  ~on() noexcept = default;
 
-  constexpr profile_on &operator=(profile_on const &) = default;
-  constexpr profile_on &operator=(profile_on &&) noexcept = default;
+  constexpr on &operator=(on const &) = default;
+  constexpr on &operator=(on &&) noexcept = default;
 
-  constexpr bool operator==(profile_on const &) const = default;
+  constexpr bool operator==(on const &) const = default;
 
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
 
-constexpr profile_on::profile_on(packed::profile_on_v1 const &other) : pid{other.pid} {
+constexpr on::on(packed::on_v1 const &other) : pid{other.pid} {
 }
-constexpr profile_on::profile_on(packed::profile_on_v2 const &other) : profile_on(other.v1) {
-  num_channels = packed::from_le7(other.num_channels);
+constexpr on::on(packed::on_v2 const &other) : on(other.v1) {
+  num_channels = from_le7(other.num_channels);
 }
 
 //*                __ _ _            __  __  *
@@ -731,48 +727,48 @@ constexpr profile_on::profile_on(packed::profile_on_v2 const &other) : profile_o
 //* |_|                                      *
 namespace packed {
 
-struct profile_off_v1 {
+struct off_v1 {
   byte_array_5 pid;  // Profile ID of Profile to be Set to On (to be Enabled)
 };
-static_assert(offsetof(profile_off_v1, pid) == 0);
-static_assert(sizeof(profile_off_v1) == 5);
-static_assert(alignof(profile_off_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_off_v1>);
+static_assert(offsetof(off_v1, pid) == 0);
+static_assert(sizeof(off_v1) == 5);
+static_assert(alignof(off_v1) == 1);
+static_assert(std::is_trivially_copyable_v<off_v1>);
 
-struct profile_off_v2 {
-  profile_off_v1 v1;
+struct off_v2 {
+  off_v1 v1;
   byte_array_2 reserved;
 };
-static_assert(offsetof(profile_off_v2, v1) == 0);
-static_assert(offsetof(profile_off_v2, reserved) == 5);
-static_assert(sizeof(profile_off_v2) == 7);
-static_assert(alignof(profile_off_v2) == 1);
-static_assert(std::is_trivially_copyable_v<profile_off_v2>);
+static_assert(offsetof(off_v2, v1) == 0);
+static_assert(offsetof(off_v2, reserved) == 5);
+static_assert(sizeof(off_v2) == 7);
+static_assert(alignof(off_v2) == 1);
+static_assert(std::is_trivially_copyable_v<off_v2>);
 
-static_assert(sizeof(profile_off_v1) <= sizeof(profile_off_v2));
+static_assert(sizeof(off_v1) <= sizeof(off_v2));
 
 }  // end namespace packed
 
-struct profile_off {
-  constexpr profile_off() = default;
-  constexpr profile_off(profile_off const &) = default;
-  constexpr profile_off(profile_off &&) noexcept = default;
-  constexpr explicit profile_off(packed::profile_off_v1 const &);
-  constexpr explicit profile_off(packed::profile_off_v2 const &);
-  ~profile_off() noexcept = default;
+struct off {
+  constexpr off() = default;
+  constexpr off(off const &) = default;
+  constexpr off(off &&) noexcept = default;
+  constexpr explicit off(packed::off_v1 const &);
+  constexpr explicit off(packed::off_v2 const &);
+  ~off() noexcept = default;
 
-  constexpr profile_off &operator=(profile_off const &) = default;
-  constexpr profile_off &operator=(profile_off &&) noexcept = default;
+  constexpr off &operator=(off const &) = default;
+  constexpr off &operator=(off &&) noexcept = default;
 
-  constexpr bool operator==(profile_off const &) const = default;
+  constexpr bool operator==(off const &) const = default;
 
   byte_array_5 pid{};
   // There's a 14 bit field in the specification that's "reserved"
 };
 
-constexpr profile_off::profile_off(packed::profile_off_v1 const &other) : pid{other.pid} {
+constexpr off::off(packed::off_v1 const &other) : pid{other.pid} {
 }
-constexpr profile_off::profile_off(packed::profile_off_v2 const &other) : profile_off(other.v1) {
+constexpr off::off(packed::off_v2 const &other) : off(other.v1) {
 }
 
 //*                __ _ _                     _    _        _  *
@@ -782,49 +778,49 @@ constexpr profile_off::profile_off(packed::profile_off_v2 const &other) : profil
 //* |_|                                                        *
 namespace packed {
 
-struct profile_enabled_v1 {
+struct enabled_v1 {
   byte_array_5 pid;  // Profile ID of Profile that is now enabled
 };
-static_assert(offsetof(profile_enabled_v1, pid) == 0);
-static_assert(sizeof(profile_enabled_v1) == 5);
-static_assert(alignof(profile_enabled_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_enabled_v1>);
+static_assert(offsetof(enabled_v1, pid) == 0);
+static_assert(sizeof(enabled_v1) == 5);
+static_assert(alignof(enabled_v1) == 1);
+static_assert(std::is_trivially_copyable_v<enabled_v1>);
 
-struct profile_enabled_v2 {
-  profile_enabled_v1 v1;
+struct enabled_v2 {
+  enabled_v1 v1;
   byte_array_2 num_channels;
 };
-static_assert(offsetof(profile_enabled_v2, v1) == 0);
-static_assert(offsetof(profile_enabled_v2, num_channels) == 5);
-static_assert(sizeof(profile_enabled_v2) == 7);
-static_assert(alignof(profile_enabled_v2) == 1);
-static_assert(std::is_trivially_copyable_v<profile_enabled_v2>);
+static_assert(offsetof(enabled_v2, v1) == 0);
+static_assert(offsetof(enabled_v2, num_channels) == 5);
+static_assert(sizeof(enabled_v2) == 7);
+static_assert(alignof(enabled_v2) == 1);
+static_assert(std::is_trivially_copyable_v<enabled_v2>);
 
-static_assert(sizeof(profile_enabled_v1) <= sizeof(profile_enabled_v2));
+static_assert(sizeof(enabled_v1) <= sizeof(enabled_v2));
 
 }  // end namespace packed
 
-struct profile_enabled {
-  constexpr profile_enabled() = default;
-  constexpr profile_enabled(profile_enabled const &) = default;
-  constexpr profile_enabled(profile_enabled &&) noexcept = default;
-  constexpr explicit profile_enabled(packed::profile_enabled_v1 const &);
-  constexpr explicit profile_enabled(packed::profile_enabled_v2 const &);
-  ~profile_enabled() noexcept = default;
+struct enabled {
+  constexpr enabled() = default;
+  constexpr enabled(enabled const &) = default;
+  constexpr enabled(enabled &&) noexcept = default;
+  constexpr explicit enabled(packed::enabled_v1 const &);
+  constexpr explicit enabled(packed::enabled_v2 const &);
+  ~enabled() noexcept = default;
 
-  constexpr profile_enabled &operator=(profile_enabled const &) = default;
-  constexpr profile_enabled &operator=(profile_enabled &&) noexcept = default;
+  constexpr enabled &operator=(enabled const &) = default;
+  constexpr enabled &operator=(enabled &&) noexcept = default;
 
-  constexpr bool operator==(profile_enabled const &) const = default;
+  constexpr bool operator==(enabled const &) const = default;
 
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
 
-constexpr profile_enabled::profile_enabled(packed::profile_enabled_v1 const &other) : pid{other.pid} {
+constexpr enabled::enabled(packed::enabled_v1 const &other) : pid{other.pid} {
 }
-constexpr profile_enabled::profile_enabled(packed::profile_enabled_v2 const &other) : profile_enabled(other.v1) {
-  num_channels = packed::from_le7(other.num_channels);
+constexpr enabled::enabled(packed::enabled_v2 const &other) : enabled(other.v1) {
+  num_channels = from_le7(other.num_channels);
 }
 
 //*                __ _ _          _ _          _    _        _  *
@@ -834,49 +830,49 @@ constexpr profile_enabled::profile_enabled(packed::profile_enabled_v2 const &oth
 //* |_|                                                          *
 namespace packed {
 
-struct profile_disabled_v1 {
+struct disabled_v1 {
   byte_array_5 pid;  // Profile ID of Profile that is now disabled
 };
-static_assert(offsetof(profile_disabled_v1, pid) == 0);
-static_assert(sizeof(profile_disabled_v1) == 5);
-static_assert(alignof(profile_disabled_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_disabled_v1>);
+static_assert(offsetof(disabled_v1, pid) == 0);
+static_assert(sizeof(disabled_v1) == 5);
+static_assert(alignof(disabled_v1) == 1);
+static_assert(std::is_trivially_copyable_v<disabled_v1>);
 
-struct profile_disabled_v2 {
-  profile_disabled_v1 v1;
+struct disabled_v2 {
+  disabled_v1 v1;
   byte_array_2 num_channels;
 };
-static_assert(offsetof(profile_disabled_v2, v1) == 0);
-static_assert(offsetof(profile_disabled_v2, num_channels) == 5);
-static_assert(sizeof(profile_disabled_v2) == 7);
-static_assert(alignof(profile_disabled_v2) == 1);
-static_assert(std::is_trivially_copyable_v<profile_disabled_v2>);
+static_assert(offsetof(disabled_v2, v1) == 0);
+static_assert(offsetof(disabled_v2, num_channels) == 5);
+static_assert(sizeof(disabled_v2) == 7);
+static_assert(alignof(disabled_v2) == 1);
+static_assert(std::is_trivially_copyable_v<disabled_v2>);
 
-static_assert(sizeof(profile_disabled_v1) <= sizeof(profile_disabled_v2));
+static_assert(sizeof(disabled_v1) <= sizeof(disabled_v2));
 
 }  // end namespace packed
 
-struct profile_disabled {
-  constexpr profile_disabled() = default;
-  constexpr profile_disabled(profile_disabled const &) = default;
-  constexpr profile_disabled(profile_disabled &&) noexcept = default;
-  constexpr explicit profile_disabled(packed::profile_disabled_v1 const &);
-  constexpr explicit profile_disabled(packed::profile_disabled_v2 const &);
-  ~profile_disabled() noexcept = default;
+struct disabled {
+  constexpr disabled() = default;
+  constexpr disabled(disabled const &) = default;
+  constexpr disabled(disabled &&) noexcept = default;
+  constexpr explicit disabled(packed::disabled_v1 const &);
+  constexpr explicit disabled(packed::disabled_v2 const &);
+  ~disabled() noexcept = default;
 
-  constexpr profile_disabled &operator=(profile_disabled const &) = default;
-  constexpr profile_disabled &operator=(profile_disabled &&) noexcept = default;
+  constexpr disabled &operator=(disabled const &) = default;
+  constexpr disabled &operator=(disabled &&) noexcept = default;
 
-  constexpr bool operator==(profile_disabled const &) const = default;
+  constexpr bool operator==(disabled const &) const = default;
 
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
 
-constexpr profile_disabled::profile_disabled(packed::profile_disabled_v1 const &other) : pid{other.pid} {
+constexpr disabled::disabled(packed::disabled_v1 const &other) : pid{other.pid} {
 }
-constexpr profile_disabled::profile_disabled(packed::profile_disabled_v2 const &other) : profile_disabled(other.v1) {
-  num_channels = packed::from_le7(other.num_channels);
+constexpr disabled::disabled(packed::disabled_v2 const &other) : disabled(other.v1) {
+  num_channels = from_le7(other.num_channels);
 }
 
 //*                __ _ _                       _  __ _         _      _         *
@@ -886,37 +882,39 @@ constexpr profile_disabled::profile_disabled(packed::profile_disabled_v2 const &
 //* |_|                           |_|                                            *
 namespace packed {
 
-struct profile_specific_data_v1 {
+struct specific_data_v1 {
   byte_array_5 pid;          ///< Profile ID
   byte_array_2 data_length;  ///< Length of following profile specific data (LSB first)
   std::byte data[1];         ///< Profile specific data (array length given by data_length)
 };
-static_assert(offsetof(profile_specific_data_v1, pid) == 0);
-static_assert(offsetof(profile_specific_data_v1, data_length) == 5);
-static_assert(offsetof(profile_specific_data_v1, data) == 7);
-static_assert(sizeof(profile_specific_data_v1) == 8);
-static_assert(alignof(profile_specific_data_v1) == 1);
-static_assert(std::is_trivially_copyable_v<profile_specific_data_v1>);
+static_assert(offsetof(specific_data_v1, pid) == 0);
+static_assert(offsetof(specific_data_v1, data_length) == 5);
+static_assert(offsetof(specific_data_v1, data) == 7);
+static_assert(sizeof(specific_data_v1) == 8);
+static_assert(alignof(specific_data_v1) == 1);
+static_assert(std::is_trivially_copyable_v<specific_data_v1>);
 
 }  // end namespace packed
 
-struct profile_specific_data {
-  constexpr profile_specific_data() = default;
-  constexpr profile_specific_data(profile_specific_data const &) = default;
-  constexpr profile_specific_data(profile_specific_data &&) noexcept = default;
-  constexpr explicit profile_specific_data(packed::profile_specific_data_v1 const &);
-  ~profile_specific_data() noexcept = default;
+struct specific_data {
+  constexpr specific_data() = default;
+  constexpr specific_data(specific_data const &) = default;
+  constexpr specific_data(specific_data &&) noexcept = default;
+  constexpr explicit specific_data(packed::specific_data_v1 const &);
+  ~specific_data() noexcept = default;
 
-  constexpr profile_specific_data &operator=(profile_specific_data const &) = default;
-  constexpr profile_specific_data &operator=(profile_specific_data &&) noexcept = default;
+  constexpr specific_data &operator=(specific_data const &) = default;
+  constexpr specific_data &operator=(specific_data &&) noexcept = default;
 
   byte_array_5 pid{};                 ///< Profile ID
   std::span<std::byte const> data{};  ///< Profile specific data
 };
 
-constexpr profile_specific_data::profile_specific_data(packed::profile_specific_data_v1 const &other)
-    : pid{other.pid}, data{std::begin(other.data), packed::from_le7(other.data_length)} {
+constexpr specific_data::specific_data(packed::specific_data_v1 const &other)
+    : pid{other.pid}, data{std::begin(other.data), from_le7(other.data_length)} {
 }
+
+}  // namespace profile_configuration
 
 //*                                 _    _ _ _ _   _         *
 //*  _ __  ___   __ __ _ _ __  __ _| |__(_) (_) |_(_)___ ___ *
@@ -1029,6 +1027,11 @@ constexpr pe_capabilities_reply::pe_capabilities_reply(packed::pe_capabilities_r
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
 
+//*                             _                     _                        *
+//*  _ __ _ _ ___ _ __  ___ _ _| |_ _  _   _____ ____| |_  __ _ _ _  __ _ ___  *
+//* | '_ \ '_/ _ \ '_ \/ -_) '_|  _| || | / -_) \ / _| ' \/ _` | ' \/ _` / -_) *
+//* | .__/_| \___/ .__/\___|_|  \__|\_, | \___/_\_\__|_||_\__,_|_||_\__, \___| *
+//* |_|          |_|                |__/                            |___/      *
 namespace packed {
 
 struct property_exchange_pt1 {
@@ -1073,31 +1076,170 @@ struct property_exchange {
   std::span<char const> data;
 };
 
+namespace process_inquiry {
+
 namespace packed {
 
-struct process_inquiry_capabilities_reply_v2 {
+struct capabilities_reply_v2 {
   std::byte features;
 };
 
-static_assert(offsetof(process_inquiry_capabilities_reply_v2, features) == 0);
-static_assert(alignof(process_inquiry_capabilities_reply_v2) == 1);
-static_assert(sizeof(process_inquiry_capabilities_reply_v2) == 1);
-static_assert(std::is_trivially_copyable_v<process_inquiry_capabilities_reply_v2>);
+static_assert(offsetof(capabilities_reply_v2, features) == 0);
+static_assert(alignof(capabilities_reply_v2) == 1);
+static_assert(sizeof(capabilities_reply_v2) == 1);
+static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 
 }  // end namespace packed
 
-struct process_inquiry_capabilities_reply {
-  process_inquiry_capabilities_reply() = default;
-  process_inquiry_capabilities_reply(process_inquiry_capabilities_reply const &) = default;
-  process_inquiry_capabilities_reply(process_inquiry_capabilities_reply &&) noexcept = default;
-  explicit process_inquiry_capabilities_reply(packed::process_inquiry_capabilities_reply_v2 const &v2)
-      : features{v2.features} {}
+struct capabilities_reply {
+  constexpr capabilities_reply() = default;
+  constexpr capabilities_reply(capabilities_reply const &) = default;
+  constexpr capabilities_reply(capabilities_reply &&) noexcept = default;
+  constexpr explicit capabilities_reply(packed::capabilities_reply_v2 const &v2) : features{v2.features} {}
 
-  bool operator==(process_inquiry_capabilities_reply const &) const = default;
+  bool operator==(capabilities_reply const &) const = default;
 
   std::byte features = std::byte{0};
 };
 
+//*        _    _ _                                                          _    *
+//*  _ __ (_)__| (_)  _ __  ___ ______ __ _ __ _ ___   _ _ ___ _ __  ___ _ _| |_  *
+//* | '  \| / _` | | | '  \/ -_|_-<_-</ _` / _` / -_) | '_/ -_) '_ \/ _ \ '_|  _| *
+//* |_|_|_|_\__,_|_| |_|_|_\___/__/__/\__,_\__, \___| |_| \___| .__/\___/_|  \__| *
+//*                                        |___/              |_|                 *
+namespace packed {
+
+struct midi_message_report_v2 {
+  std::byte message_data_control;
+  std::byte system_message_bitmap;
+  std::byte reserved;
+  std::byte channel_controller_bitmap;
+  std::byte note_data_messages_bitmap;
+};
+
+static_assert(offsetof(midi_message_report_v2, message_data_control) == 0);
+static_assert(offsetof(midi_message_report_v2, system_message_bitmap) == 1);
+static_assert(offsetof(midi_message_report_v2, reserved) == 2);
+static_assert(offsetof(midi_message_report_v2, channel_controller_bitmap) == 3);
+static_assert(offsetof(midi_message_report_v2, note_data_messages_bitmap) == 4);
+static_assert(sizeof(midi_message_report_v2) == 5);
+static_assert(alignof(midi_message_report_v2) == 1);
+static_assert(std::is_trivially_copyable_v<midi_message_report_v2>);
+
+}  // end namespace packed
+
+struct midi_message_report {
+  constexpr midi_message_report() = default;
+  constexpr midi_message_report(midi_message_report const &) = default;
+  constexpr midi_message_report(midi_message_report &&) noexcept = default;
+
+  constexpr explicit midi_message_report(packed::midi_message_report_v2 const &v2)
+      : message_data_control{static_cast<enum control>(v2.message_data_control)},
+        mtc_quarter_frame{static_cast<unsigned>(v2.system_message_bitmap & std::byte{0x01})},
+        song_position{static_cast<unsigned>((v2.system_message_bitmap >> 1) & std::byte{0x01})},
+        song_select{static_cast<unsigned>((v2.system_message_bitmap >> 2) & std::byte{0x01})},
+        pitchbend{static_cast<unsigned>(v2.channel_controller_bitmap & std::byte{0x01})},
+        control_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 1) & std::byte{0x01})},
+        rpn_registered_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 2) & std::byte{0x01})},
+        nrpn_assignable_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 3) & std::byte{0x01})},
+        program_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 4) & std::byte{0x01})},
+        channel_pressure{static_cast<unsigned>((v2.channel_controller_bitmap >> 5) & std::byte{0x01})},
+        notes{static_cast<unsigned>(v2.note_data_messages_bitmap & std::byte{0x01})},
+        poly_pressure{static_cast<unsigned>((v2.note_data_messages_bitmap >> 1) & std::byte{0x01})},
+        per_note_pitchbend{static_cast<unsigned>((v2.note_data_messages_bitmap >> 2) & std::byte{0x01})},
+        registered_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 3) & std::byte{0x01})},
+        assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {}
+
+  bool operator==(midi_message_report const &) const = default;
+
+  enum class control : std::uint8_t {
+    no_data = 0x00,
+    only_non_default = 0x01,
+    full = 0x7F,
+  };
+
+  control message_data_control = control::no_data;
+  // system messages
+  unsigned mtc_quarter_frame : 1 = 0;
+  unsigned song_position : 1 = 0;
+  unsigned song_select : 1 = 0;
+  // channel controller messages
+  unsigned pitchbend : 1 = 0;
+  unsigned control_change : 1 = 0;
+  unsigned rpn_registered_controller : 1 = 0;
+  unsigned nrpn_assignable_controller : 1 = 0;
+  unsigned program_change : 1 = 0;
+  unsigned channel_pressure : 1 = 0;
+  // note data messages
+  unsigned notes : 1 = 0;
+  unsigned poly_pressure : 1 = 0;
+  unsigned per_note_pitchbend : 1 = 0;
+  unsigned registered_per_note_controller : 1 = 0;
+  unsigned assignable_per_note_controller : 1 = 0;
+};
+
+namespace packed {
+
+struct midi_message_report_reply_v2 {
+  std::byte system_message_bitmap;
+  std::byte reserved;
+  std::byte channel_controller_bitmap;
+  std::byte note_data_messages_bitmap;
+};
+
+static_assert(offsetof(midi_message_report_reply_v2, system_message_bitmap) == 0);
+static_assert(offsetof(midi_message_report_reply_v2, reserved) == 1);
+static_assert(offsetof(midi_message_report_reply_v2, channel_controller_bitmap) == 2);
+static_assert(offsetof(midi_message_report_reply_v2, note_data_messages_bitmap) == 3);
+static_assert(sizeof(midi_message_report_reply_v2) == 4);
+static_assert(alignof(midi_message_report_reply_v2) == 1);
+static_assert(std::is_trivially_copyable_v<midi_message_report_reply_v2>);
+
+}  // end namespace packed
+
+struct midi_message_report_reply {
+  constexpr midi_message_report_reply() = default;
+  constexpr midi_message_report_reply(midi_message_report_reply const &) = default;
+  constexpr midi_message_report_reply(midi_message_report_reply &&) noexcept = default;
+
+  constexpr explicit midi_message_report_reply(packed::midi_message_report_reply_v2 const &v2)
+      : mtc_quarter_frame{static_cast<unsigned>(v2.system_message_bitmap & std::byte{0x01})},
+        song_position{static_cast<unsigned>((v2.system_message_bitmap >> 1) & std::byte{0x01})},
+        song_select{static_cast<unsigned>((v2.system_message_bitmap >> 2) & std::byte{0x01})},
+        pitchbend{static_cast<unsigned>(v2.channel_controller_bitmap & std::byte{0x01})},
+        control_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 1) & std::byte{0x01})},
+        rpn_registered_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 2) & std::byte{0x01})},
+        nrpn_assignable_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 3) & std::byte{0x01})},
+        program_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 4) & std::byte{0x01})},
+        channel_pressure{static_cast<unsigned>((v2.channel_controller_bitmap >> 5) & std::byte{0x01})},
+        notes{static_cast<unsigned>(v2.note_data_messages_bitmap & std::byte{0x01})},
+        poly_pressure{static_cast<unsigned>((v2.note_data_messages_bitmap >> 1) & std::byte{0x01})},
+        per_note_pitchbend{static_cast<unsigned>((v2.note_data_messages_bitmap >> 2) & std::byte{0x01})},
+        registered_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 3) & std::byte{0x01})},
+        assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {}
+
+  bool operator==(midi_message_report_reply const &) const = default;
+
+  // system messages
+  unsigned mtc_quarter_frame : 1 = 0;
+  unsigned song_position : 1 = 0;
+  unsigned song_select : 1 = 0;
+  // channel controller messages
+  unsigned pitchbend : 1 = 0;
+  unsigned control_change : 1 = 0;
+  unsigned rpn_registered_controller : 1 = 0;
+  unsigned nrpn_assignable_controller : 1 = 0;
+  unsigned program_change : 1 = 0;
+  unsigned channel_pressure : 1 = 0;
+  // note data messages
+  unsigned notes : 1 = 0;
+  unsigned poly_pressure : 1 = 0;
+  unsigned per_note_pitchbend : 1 = 0;
+  unsigned registered_per_note_controller : 1 = 0;
+  unsigned assignable_per_note_controller : 1 = 0;
+};
+
+}  // end namespace process_inquiry
 }  // end namespace midi2::ci
 
 #endif  // MIDI2_CI_TYPES_HPP
