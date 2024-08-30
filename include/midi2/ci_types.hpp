@@ -45,6 +45,31 @@ struct MIDICI {
 
 namespace packed {
 
+struct header {
+  std::byte sysex;
+  std::byte source;
+  std::byte sub_id_1;  // 0x0D
+  std::byte sub_id_2;
+  std::byte version;
+  byte_array_4 source_muid;
+  byte_array_4 destination_muid;
+};
+
+static_assert(offsetof(header, sysex) == 0);
+static_assert(offsetof(header, source) == 1);
+static_assert(offsetof(header, sub_id_1) == 2);
+static_assert(offsetof(header, sub_id_2) == 3);
+static_assert(offsetof(header, version) == 4);
+static_assert(offsetof(header, source_muid) == 5);
+static_assert(offsetof(header, destination_muid) == 9);
+static_assert(sizeof(header) == 13);
+static_assert(alignof(header) == 1);
+static_assert(std::is_trivially_copyable_v<header>);
+
+}  // end namespace packed
+
+namespace packed {
+
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 constexpr std::uint32_t from_le7(byte_array_4 const &v) {
@@ -655,7 +680,7 @@ constexpr profile_details_reply::profile_details_reply(packed::profile_details_r
 namespace packed {
 
 struct profile_on_v1 {
-  byte_array_5 pid;  // Profile ID of Profile to be Set to On (to be Enabled)
+  byte_array_5 pid;  // Profile ID of profile to be set to on (to be enabled)
 };
 static_assert(offsetof(profile_on_v1, pid) == 0);
 static_assert(sizeof(profile_on_v1) == 5);
@@ -664,7 +689,7 @@ static_assert(std::is_trivially_copyable_v<profile_on_v1>);
 
 struct profile_on_v2 {
   profile_on_v1 v1;
-  byte_array_2 num_channels;  // Number Channels Requested (LSB First) to assign to this Profile when it is enabled
+  byte_array_2 num_channels;  // Number Channels Requested (LSB First) to assign to this profile when it is enabled
 };
 static_assert(offsetof(profile_on_v2, v1) == 0);
 static_assert(offsetof(profile_on_v2, num_channels) == 5);
@@ -931,7 +956,7 @@ struct pe_capabilities {
   ~pe_capabilities() noexcept = default;
 
   pe_capabilities &operator=(pe_capabilities const &other) = default;
-  pe_capabilities &operator=(pe_capabilities &&other) = default;
+  pe_capabilities &operator=(pe_capabilities &&other) noexcept = default;
 
   bool operator==(pe_capabilities const &) const = default;
 
@@ -1046,6 +1071,31 @@ struct property_exchange {
   std::uint8_t request_id = 0;
   std::span<char const> header;
   std::span<char const> data;
+};
+
+namespace packed {
+
+struct process_inquiry_capabilities_reply_v2 {
+  std::byte features;
+};
+
+static_assert(offsetof(process_inquiry_capabilities_reply_v2, features) == 0);
+static_assert(alignof(process_inquiry_capabilities_reply_v2) == 1);
+static_assert(sizeof(process_inquiry_capabilities_reply_v2) == 1);
+static_assert(std::is_trivially_copyable_v<process_inquiry_capabilities_reply_v2>);
+
+}  // end namespace packed
+
+struct process_inquiry_capabilities_reply {
+  process_inquiry_capabilities_reply() = default;
+  process_inquiry_capabilities_reply(process_inquiry_capabilities_reply const &) = default;
+  process_inquiry_capabilities_reply(process_inquiry_capabilities_reply &&) noexcept = default;
+  explicit process_inquiry_capabilities_reply(packed::process_inquiry_capabilities_reply_v2 const &v2)
+      : features{v2.features} {}
+
+  bool operator==(process_inquiry_capabilities_reply const &) const = default;
+
+  std::byte features = std::byte{0};
 };
 
 }  // end namespace midi2::ci

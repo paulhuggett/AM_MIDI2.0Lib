@@ -86,6 +86,14 @@ std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
   write_bytes(os, nak.details);
   os << ", message=";
   write_bytes(os, nak.message);
+  os << " }";
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, ci::profile_disabled const &pd) {
+  os << "{ pid=";
+  write_bytes(os, pd.pid);
+  os << ", num_channels=" << pd.num_channels << " }";
   return os;
 }
 
@@ -144,6 +152,13 @@ public:
   MOCK_METHOD(void, get_reply, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
   MOCK_METHOD(void, set, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
   MOCK_METHOD(void, set_reply, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
+};
+
+class mock_process_inquiry_callbacks final : public midi2::process_inquiry_callbacks {
+public:
+  MOCK_METHOD(void, capabilities, (MIDICI const &), (override));
+  MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::process_inquiry_capabilities_reply const &),
+              (override));
 };
 
 constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
@@ -255,7 +270,7 @@ TEST(CIProcessor, DiscoveryV2) {
   std::for_each(std::begin(message), std::end(message), std::bind_front(&decltype(ci)::processMIDICI, &ci));
 }
 
-TEST(CIProcessor, DiscoveryReply) {
+TEST(CIProcessor, DiscoveryReplyV2) {
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
   constexpr auto model = std::array{std::byte{0x5B}, std::byte{0x4D}};
@@ -626,7 +641,7 @@ TEST(CIProcessor, ProfileInquiry) {
     sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
 
-    std::byte{0}, // stray extra byte
+    //std::byte{0}, // stray extra byte
   };
   // clang-format on
   MIDICI midici;
@@ -1037,6 +1052,51 @@ TEST(CIProcessor, ProfileEnabled) {
                 std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
+TEST(CIProcessor, ProfileDisabled) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto num_channels = std::array{std::byte{0x22}, std::byte{0x11}};
+
+  // clang-format off
+  constexpr std::array message{
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x25}, // Universal System Exclusive Sub-ID#2: Profile Disabled Report
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    num_channels[0], num_channels[1], // Number of channels
+
+    std::byte{0}, // stray extra byte
+  };
+  // clang-format on
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PROFILE_DISABLED;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(broadcast_muid);
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+
+  midi2::ci::profile_disabled disabled;
+  disabled.pid = pid;
+  disabled.num_channels = from_le7(num_channels);
+  EXPECT_CALL(profile_mocks, disabled(midici, disabled)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks)};
+  processor.startSysex7(group, destination);
+
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
 TEST(CIProcessor, ProfileSpecificData) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
@@ -1132,8 +1192,7 @@ TEST(CIProcessor, PropertyExchangeCapabilities) {
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
@@ -1182,8 +1241,7 @@ TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 using namespace std::string_view_literals;
@@ -1315,6 +1373,8 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   out = std::ranges::copy(property_data_size, out).out;
   // Property Data
   std::ranges::copy(std::views::transform(data, as_byte), out);
+
+  message.push_back(std::byte{0});  // Stray extra byte.
 
   MIDICI midici;
   midici.umpGroup = group;
@@ -1495,6 +1555,92 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
                               Field("data", &midi2::ci::property_exchange::data, IsEmpty()))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, ProcessInquiryCapabilities) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x7F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  // clang-format off
+  constexpr std::array message {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x40}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+  };
+  // clang-format on
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PI_CAPABILITY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+  mock_process_inquiry_callbacks pi_mocks;
+
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks, capabilities(midici)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
+                                   std::ref(pi_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x7F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto features = std::byte{0b0101010};
+
+  // clang-format off
+  constexpr std::array message {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x41}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    features
+  };
+  // clang-format on
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PI_CAPABILITYREPLY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::process_inquiry_capabilities_reply picr;
+  picr.features = features;
+
+  mock_discovery_callbacks discovery_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+  mock_process_inquiry_callbacks pi_mocks;
+
+  EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks, capabilities_reply(midici, picr)).Times(1);
+
+  midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
+                                   std::ref(pi_mocks)};
   processor.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
