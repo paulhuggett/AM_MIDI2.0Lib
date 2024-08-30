@@ -836,8 +836,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processMI
   case MIDICI_PI_MM_REPORT_END:
     this->processPISysex(s7Byte);
     break;
-    // #endif
-    //    default: callbacks_.unknown_midici(midici_); break;
+  default: callbacks_.unknown_midici(midici_); break;
   }
 }
 
