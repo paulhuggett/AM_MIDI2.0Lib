@@ -200,11 +200,11 @@ private:
   [[no_unique_address]] PEBackend pe_backend_;
   [[no_unique_address]] PIBackend process_inquiry_backend_;
 
-  using consumer = void (midiCIProcessor::*)();
+  using consumer_fn = void (midiCIProcessor::*)();
 
   std::size_t count_ = header_size;
   unsigned pos_ = 0;
-  consumer consumer_ = &midiCIProcessor::header;
+  consumer_fn consumer_ = &midiCIProcessor::header;
 
   MIDICI midici_;
   unsigned sysexPos_ = 0;
@@ -287,7 +287,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() 
     unsigned type;
     unsigned v1size;
     unsigned v2size;
-    consumer consumer;
+    consumer_fn consumer;
   };
 
   static std::array const messages = {
