@@ -96,6 +96,7 @@ template <typename T> concept process_inquiry_backend = requires(T && v) {
   { v.capabilities_reply(MIDICI{}, ci::process_inquiry::capabilities_reply{}) } -> std::same_as<void>;
   { v.midi_message_report(MIDICI{}, ci::process_inquiry::midi_message_report{}) } -> std::same_as<void>;
   { v.midi_message_report_reply(MIDICI{}, ci::process_inquiry::midi_message_report_reply{}) } -> std::same_as<void>;
+  { v.midi_message_report_end(MIDICI{}) } -> std::same_as<void>;
 };
 
 class ci_callbacks {
@@ -171,6 +172,7 @@ public:
   virtual void capabilities_reply(MIDICI const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
   virtual void midi_message_report(MIDICI const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
   virtual void midi_message_report_reply(MIDICI const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
+  virtual void midi_message_report_end(MIDICI const &) { /* do nothing */ }
 };
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
@@ -246,6 +248,7 @@ private:
   void process_inquiry_capabilities_reply();
   void process_inquiry_midi_message_report();
   void process_inquiry_midi_message_report_reply();
+  void process_inquiry_midi_message_report_end();
 };
 
 midiCIProcessor() -> midiCIProcessor<>;
@@ -342,7 +345,7 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() 
     message_dispatch_info{MIDICI_PI_MM_REPORT_REPLY, 0,
                           sizeof(ci::process_inquiry::packed::midi_message_report_reply_v2),
                           &midiCIProcessor::process_inquiry_midi_message_report_reply},
-    //  message_dispatch_info{ MIDICI_PI_MM_REPORT_END, sizeof (v1), sizeof(v2), &midiCIProcessor::processPISysex },
+    message_dispatch_info{MIDICI_PI_MM_REPORT_END, 0, 0, &midiCIProcessor::process_inquiry_midi_message_report_end},
 
     message_dispatch_info{MIDICI_DISCOVERY, sizeof(ci::packed::discovery_v1), sizeof(ci::packed::discovery_v2),
                           &midiCIProcessor::discovery},
@@ -811,6 +814,17 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
         midici_,
         ci::process_inquiry::midi_message_report_reply{
             *std::bit_cast<ci::process_inquiry::packed::midi_message_report_reply_v2 const *>(buffer_.data())});
+  }
+  consumer_ = &midiCIProcessor::discard;
+}
+
+// process inquiry midi message report end
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+          process_inquiry_backend PIBackend>
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report_end() {
+  if (midici_.ciVer > 1) {
+    process_inquiry_backend_.midi_message_report_end(midici_);
   }
   consumer_ = &midiCIProcessor::discard;
 }
