@@ -52,8 +52,8 @@ std::ostream &operator<<(std::ostream &os, MIDICI const &ci) {
             << ", localMUID=" << ci.localMUID << " }";
 }
 
-std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci);
-std::ostream &operator<<(std::ostream &os, pe_chunk_info const &ci) {
+std::ostream &operator<<(std::ostream &os, property_exchange::chunk_info const &ci);
+std::ostream &operator<<(std::ostream &os, property_exchange::chunk_info const &ci) {
   return os << "{ number_of_chunks=" << static_cast<unsigned>(ci.number_of_chunks)
             << ", chunk_number=" << static_cast<unsigned>(ci.chunk_number) << " }";
 }
@@ -112,7 +112,7 @@ using testing::Return;
 using midi2::MIDICI;
 using midi2::ci::byte_array_5;
 using midi2::ci::from_le7;
-using midi2::ci::pe_chunk_info;
+using midi2::ci::property_exchange::chunk_info;
 
 class mock_discovery_callbacks final : public midi2::ci_callbacks {
 public:
@@ -144,18 +144,18 @@ public:
               (override));
 };
 
-using midi2::ci::pe_chunk_info;
-using midi2::ci::property_exchange;
+using midi2::ci::property_exchange::property_exchange;
 
 class mock_property_exchange_callbacks final : public midi2::property_exchange_callbacks {
 public:
-  MOCK_METHOD(void, capabilities, (MIDICI const &, midi2::ci::pe_capabilities const &), (override));
-  MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::pe_capabilities_reply const &), (override));
+  MOCK_METHOD(void, capabilities, (MIDICI const &, midi2::ci::property_exchange::capabilities const &), (override));
+  MOCK_METHOD(void, capabilities_reply, (MIDICI const &, midi2::ci::property_exchange::capabilities_reply const &),
+              (override));
 
-  MOCK_METHOD(void, get, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
-  MOCK_METHOD(void, get_reply, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
-  MOCK_METHOD(void, set, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
-  MOCK_METHOD(void, set_reply, (MIDICI const &, pe_chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, get, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, get_reply, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, set, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, set_reply, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
 };
 
 class mock_process_inquiry_callbacks final : public midi2::process_inquiry_callbacks {
@@ -1176,7 +1176,7 @@ TEST(CIProcessor, PropertyExchangeCapabilities) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_capabilities caps;
+  midi2::ci::property_exchange::capabilities caps;
   caps.num_simultaneous = 2;
   caps.major_version = 3;
   caps.minor_version = 4;
@@ -1225,7 +1225,7 @@ TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_capabilities_reply caps;
+  midi2::ci::property_exchange::capabilities_reply caps;
   caps.num_simultaneous = 2;
   caps.major_version = 3;
   caps.minor_version = 4;
@@ -1300,7 +1300,7 @@ TEST(CIProcessor, PropertyExchangeGetPropertyData) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_chunk_info chunk_info;
+  midi2::ci::property_exchange::chunk_info chunk_info;
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
@@ -1312,10 +1312,9 @@ TEST(CIProcessor, PropertyExchangeGetPropertyData) {
 
   EXPECT_CALL(pe_mocks,
               get(midici, chunk_info,
-                        AllOf(Field("request_id", &midi2::ci::property_exchange::request_id,
-                                    Eq(static_cast<std::uint8_t>(request_id))),
-                              Field("header", &midi2::ci::property_exchange::header, ElementsAreArray(header)),
-                              Field("data", &midi2::ci::property_exchange::data, IsEmpty()))));
+                  AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                        Field("header", &property_exchange::header, ElementsAreArray(header)),
+                        Field("data", &property_exchange::data, IsEmpty()))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
@@ -1383,7 +1382,7 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_chunk_info chunk_info;
+  midi2::ci::property_exchange::chunk_info chunk_info;
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
@@ -1393,12 +1392,12 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
-  EXPECT_CALL(pe_mocks,
-              get_reply(midici, chunk_info,
-                        AllOf(Field("request_id", &midi2::ci::property_exchange::request_id,
-                                    Eq(static_cast<std::uint8_t>(request_id))),
-                              Field("header", &midi2::ci::property_exchange::header, ElementsAreArray(header)),
-                              Field("data", &midi2::ci::property_exchange::data, ElementsAreArray(data)))));
+  EXPECT_CALL(
+      pe_mocks,
+      get_reply(midici, chunk_info,
+                AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                      Field("header", &property_exchange::header, ElementsAreArray(header)),
+                      Field("data", &property_exchange::data, ElementsAreArray(data)))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
@@ -1460,7 +1459,7 @@ TEST(CIProcessor, PropertyExchangeSetPropertyData) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_chunk_info chunk_info;
+  midi2::ci::property_exchange::chunk_info chunk_info;
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
@@ -1470,11 +1469,11 @@ TEST(CIProcessor, PropertyExchangeSetPropertyData) {
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
-  EXPECT_CALL(pe_mocks, set(midici, chunk_info,
-                            AllOf(Field("request_id", &midi2::ci::property_exchange::request_id,
-                                        Eq(static_cast<std::uint8_t>(request_id))),
-                                  Field("header", &midi2::ci::property_exchange::header, ElementsAreArray(header)),
-                                  Field("data", &midi2::ci::property_exchange::data, IsEmpty()))));
+  EXPECT_CALL(pe_mocks,
+              set(midici, chunk_info,
+                  AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                        Field("header", &property_exchange::header, ElementsAreArray(header)),
+                        Field("data", &property_exchange::data, IsEmpty()))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
@@ -1536,7 +1535,7 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  midi2::ci::pe_chunk_info chunk_info;
+  midi2::ci::property_exchange::chunk_info chunk_info;
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
@@ -1546,12 +1545,12 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
 
   EXPECT_CALL(discovery_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
-  EXPECT_CALL(pe_mocks,
-              set_reply(midici, chunk_info,
-                        AllOf(Field("request_id", &midi2::ci::property_exchange::request_id,
-                                    Eq(static_cast<std::uint8_t>(request_id))),
-                              Field("header", &midi2::ci::property_exchange::header, ElementsAreArray(header)),
-                              Field("data", &midi2::ci::property_exchange::data, IsEmpty()))));
+  EXPECT_CALL(
+      pe_mocks,
+      set_reply(midici, chunk_info,
+                AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                      Field("header", &property_exchange::header, ElementsAreArray(header)),
+                      Field("data", &property_exchange::data, IsEmpty()))));
 
   midi2::midiCIProcessor processor{std::ref(discovery_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);

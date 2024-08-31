@@ -82,13 +82,13 @@ template <typename T> concept profile_backend = requires(T && v) {
 };
 
 template <typename T> concept property_exchange_backend = requires(T && v) {
-  { v.capabilities(MIDICI{}, ci::pe_capabilities{}) } -> std::same_as<void>;
-  { v.capabilities_reply(MIDICI{}, ci::pe_capabilities_reply{}) } -> std::same_as<void>;
+  { v.capabilities(MIDICI{}, ci::property_exchange::capabilities{}) } -> std::same_as<void>;
+  { v.capabilities_reply(MIDICI{}, ci::property_exchange::capabilities_reply{}) } -> std::same_as<void>;
 
-  { v.get(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
-  { v.get_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
-  { v.set(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
-  { v.set_reply(MIDICI{}, ci::pe_chunk_info{}, ci::property_exchange{}) } -> std::same_as<void>;
+  { v.get(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
+  { v.get_reply(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
+  { v.set(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
+  { v.set_reply(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
 };
 
 template <typename T> concept process_inquiry_backend = requires(T && v) {
@@ -148,13 +148,13 @@ public:
   property_exchange_callbacks &operator=(property_exchange_callbacks const &) = default;
   property_exchange_callbacks &operator=(property_exchange_callbacks &&) noexcept = default;
 
-  virtual void capabilities(MIDICI const &, ci::pe_capabilities const &) { /* do nothing */ }
-  virtual void capabilities_reply(MIDICI const &, midi2::ci::pe_capabilities_reply const &) { /* do nothing */ }
+  virtual void capabilities(MIDICI const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
+  virtual void capabilities_reply(MIDICI const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
 
-  virtual void get(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
-  virtual void get_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
-  virtual void set(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
-  virtual void set_reply(MIDICI const &, midi2::ci::pe_chunk_info const &, ci::property_exchange const &) { /* do nothing */ }
+  virtual void get(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
+  virtual void get_reply(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
+  virtual void set(MIDICI const &, midi2::ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
+  virtual void set_reply(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
 };
 
 class process_inquiry_callbacks {
@@ -318,18 +318,18 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() 
                           offsetof(ci::profile_configuration::packed::specific_data_v1, data),
                           &midiCIProcessor::profile_specific_data},
 
-    message_dispatch_info{MIDICI_PE_CAPABILITY, sizeof(ci::packed::pe_capabilities_v1),
-                          sizeof(ci::packed::pe_capabilities_v2), &midiCIProcessor::pe_capabilities},
-    message_dispatch_info{MIDICI_PE_CAPABILITYREPLY, sizeof(ci::packed::pe_capabilities_reply_v1),
-                          sizeof(ci::packed::pe_capabilities_reply_v2), &midiCIProcessor::pe_capabilities_reply},
-    message_dispatch_info{MIDICI_PE_GET, offsetof(ci::packed::property_exchange_pt1, header),
-                          offsetof(ci::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
-    message_dispatch_info{MIDICI_PE_GETREPLY, offsetof(ci::packed::property_exchange_pt1, header),
-                          offsetof(ci::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
-    message_dispatch_info{MIDICI_PE_SET, offsetof(ci::packed::property_exchange_pt1, header),
-                          offsetof(ci::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
-    message_dispatch_info{MIDICI_PE_SETREPLY, offsetof(ci::packed::property_exchange_pt1, header),
-                          offsetof(ci::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+    message_dispatch_info{MIDICI_PE_CAPABILITY, sizeof(ci::property_exchange::packed::capabilities_v1),
+                          sizeof(ci::property_exchange::packed::capabilities_v2), &midiCIProcessor::pe_capabilities},
+    message_dispatch_info{MIDICI_PE_CAPABILITYREPLY, sizeof(ci::property_exchange::packed::capabilities_reply_v1),
+                          sizeof(ci::property_exchange::packed::capabilities_reply_v2), &midiCIProcessor::pe_capabilities_reply},
+    message_dispatch_info{MIDICI_PE_GET, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+                          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+    message_dispatch_info{MIDICI_PE_GETREPLY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+                          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+    message_dispatch_info{MIDICI_PE_SET, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+                          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+    message_dispatch_info{MIDICI_PE_SETREPLY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+                          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
     // message_dispatch_info{ MIDICI_PE_SUB,  },
     // message_dispatch_info{ MIDICI_PE_SUBREPLY, },
     // message_dispatch_info{ MIDICI_PE_NOTIFY, },
@@ -688,12 +688,12 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabilities() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    pe_backend_.capabilities(midici_, ci::pe_capabilities{*v});
+    pe_backend_.capabilities(midici_, ci::property_exchange::capabilities{*v});
   };
   if (midici_.ciVer == 1) {
-    handler(std::bit_cast<ci::packed::pe_capabilities_v1 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::property_exchange::packed::capabilities_v1 const *>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::packed::pe_capabilities_v2 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::property_exchange::packed::capabilities_v2 const *>(buffer_.data()));
   }
   consumer_ = &midiCIProcessor::discard;
 }
@@ -705,12 +705,12 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabilities_reply() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    pe_backend_.capabilities_reply(midici_, ci::pe_capabilities_reply{*v});
+    pe_backend_.capabilities_reply(midici_, ci::property_exchange::capabilities_reply{*v});
   };
   if (midici_.ciVer == 1) {
-    handler(std::bit_cast<ci::packed::pe_capabilities_reply_v1 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v1 const *>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::packed::pe_capabilities_reply_v2 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v2 const *>(buffer_.data()));
   }
   consumer_ = &midiCIProcessor::discard;
 }
@@ -720,21 +720,23 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabi
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_exchange() {
-  auto size = offsetof(ci::packed::property_exchange_pt1, header);
-  auto const *const pt1 = std::bit_cast<ci::packed::property_exchange_pt1 const *>(buffer_.data());
+  using ci::property_exchange::packed::property_exchange_pt1;
+  using ci::property_exchange::packed::property_exchange_pt2;
+  auto size = offsetof(property_exchange_pt1, header);
+  auto const *const pt1 = std::bit_cast<property_exchange_pt1 const *>(buffer_.data());
   auto const header_length = ci::from_le7(pt1->header_length);
   if (pos_ == size && header_length > 0) {
     count_ = header_length * sizeof(pt1->header[0]);
     return;
   }
   size += header_length;
-  constexpr auto pt2_size = offsetof(ci::packed::property_exchange_pt2, data);
+  constexpr auto pt2_size = offsetof(property_exchange_pt2, data);
   if (pos_ == size) {
     count_ = pt2_size;
     return;
   }
 
-  auto const *const pt2 = std::bit_cast<ci::packed::property_exchange_pt2 const *>(buffer_.data() + size);
+  auto const *const pt2 = std::bit_cast<property_exchange_pt2 const *>(buffer_.data() + size);
   size += pt2_size;
   auto const data_length = ci::from_le7(pt2->data_length);
   if (pos_ == size && data_length > 0) {
@@ -742,11 +744,11 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_
     return;
   }
 
-  ci::pe_chunk_info chunk;
+  ci::property_exchange::chunk_info chunk;
   chunk.number_of_chunks = ci::from_le7(pt2->number_of_chunks);
   chunk.chunk_number = ci::from_le7(pt2->chunk_number);
 
-  ci::property_exchange pe;
+  ci::property_exchange::property_exchange pe;
   pe.request_id = static_cast<std::uint8_t>(pt1->request_id);
   pe.header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
   pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};

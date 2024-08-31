@@ -916,6 +916,8 @@ constexpr specific_data::specific_data(packed::specific_data_v1 const &other)
 
 }  // namespace profile_configuration
 
+namespace property_exchange {
+
 //*                                 _    _ _ _ _   _         *
 //*  _ __  ___   __ __ _ _ __  __ _| |__(_) (_) |_(_)___ ___ *
 //* | '_ \/ -_) / _/ _` | '_ \/ _` | '_ \ | | |  _| / -_|_-< *
@@ -923,50 +925,50 @@ constexpr specific_data::specific_data(packed::specific_data_v1 const &other)
 //* |_|                 |_|                                  *
 namespace packed {
 
-struct pe_capabilities_v1 {
+struct capabilities_v1 {
   std::byte num_simultaneous;
 };
-static_assert(offsetof(pe_capabilities_v1, num_simultaneous) == 0);
-static_assert(sizeof(pe_capabilities_v1) == 1);
-static_assert(alignof(pe_capabilities_v1) == 1);
-static_assert(std::is_trivially_copyable_v<pe_capabilities_v1>);
+static_assert(offsetof(capabilities_v1, num_simultaneous) == 0);
+static_assert(sizeof(capabilities_v1) == 1);
+static_assert(alignof(capabilities_v1) == 1);
+static_assert(std::is_trivially_copyable_v<capabilities_v1>);
 
-struct pe_capabilities_v2 {
-  pe_capabilities_v1 v1;
+struct capabilities_v2 {
+  capabilities_v1 v1;
   std::byte major_version;
   std::byte minor_version;
 };
-static_assert(offsetof(pe_capabilities_v2, v1) == 0);
-static_assert(offsetof(pe_capabilities_v2, major_version) == 1);
-static_assert(offsetof(pe_capabilities_v2, minor_version) == 2);
-static_assert(sizeof(pe_capabilities_v2) == 3);
-static_assert(alignof(pe_capabilities_v2) == 1);
-static_assert(std::is_trivially_copyable_v<pe_capabilities_v2>);
+static_assert(offsetof(capabilities_v2, v1) == 0);
+static_assert(offsetof(capabilities_v2, major_version) == 1);
+static_assert(offsetof(capabilities_v2, minor_version) == 2);
+static_assert(sizeof(capabilities_v2) == 3);
+static_assert(alignof(capabilities_v2) == 1);
+static_assert(std::is_trivially_copyable_v<capabilities_v2>);
 
 }  // end namespace packed
 
-struct pe_capabilities {
-  constexpr pe_capabilities() = default;
-  constexpr pe_capabilities(pe_capabilities const &) = default;
-  constexpr pe_capabilities(pe_capabilities &&) noexcept = default;
-  constexpr explicit pe_capabilities(packed::pe_capabilities_v1 const &other);
-  constexpr explicit pe_capabilities(packed::pe_capabilities_v2 const &other);
-  ~pe_capabilities() noexcept = default;
+struct capabilities {
+  constexpr capabilities() = default;
+  constexpr capabilities(capabilities const &) = default;
+  constexpr capabilities(capabilities &&) noexcept = default;
+  constexpr explicit capabilities(packed::capabilities_v1 const &other);
+  constexpr explicit capabilities(packed::capabilities_v2 const &other);
+  ~capabilities() noexcept = default;
 
-  pe_capabilities &operator=(pe_capabilities const &other) = default;
-  pe_capabilities &operator=(pe_capabilities &&other) noexcept = default;
+  capabilities &operator=(capabilities const &other) = default;
+  capabilities &operator=(capabilities &&other) noexcept = default;
 
-  bool operator==(pe_capabilities const &) const = default;
+  bool operator==(capabilities const &) const = default;
 
   std::uint8_t num_simultaneous = 0;
   std::uint8_t major_version = 0;
   std::uint8_t minor_version = 0;
 };
 
-constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v1 const &other)
+constexpr capabilities::capabilities(packed::capabilities_v1 const &other)
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
-constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v2 const &other) : pe_capabilities{other.v1} {
+constexpr capabilities::capabilities(packed::capabilities_v2 const &other) : capabilities{other.v1} {
   major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
@@ -978,51 +980,51 @@ constexpr pe_capabilities::pe_capabilities(packed::pe_capabilities_v2 const &oth
 //* |_|                 |_|                                          |_|     |__/  *
 namespace packed {
 
-struct pe_capabilities_reply_v1 {
+struct capabilities_reply_v1 {
   std::byte num_simultaneous;
 };
-static_assert(offsetof(pe_capabilities_reply_v1, num_simultaneous) == 0);
-static_assert(sizeof(pe_capabilities_reply_v1) == 1);
-static_assert(alignof(pe_capabilities_reply_v1) == 1);
-static_assert(std::is_trivially_copyable_v<pe_capabilities_reply_v1>);
+static_assert(offsetof(capabilities_reply_v1, num_simultaneous) == 0);
+static_assert(sizeof(capabilities_reply_v1) == 1);
+static_assert(alignof(capabilities_reply_v1) == 1);
+static_assert(std::is_trivially_copyable_v<capabilities_reply_v1>);
 
-struct pe_capabilities_reply_v2 {
-  pe_capabilities_reply_v1 v1;
+struct capabilities_reply_v2 {
+  capabilities_reply_v1 v1;
   std::byte major_version;
   std::byte minor_version;
 };
-static_assert(offsetof(pe_capabilities_reply_v2, v1) == 0);
-static_assert(offsetof(pe_capabilities_reply_v2, major_version) == 1);
-static_assert(offsetof(pe_capabilities_reply_v2, minor_version) == 2);
-static_assert(sizeof(pe_capabilities_reply_v2) == 3);
-static_assert(alignof(pe_capabilities_reply_v2) == 1);
-static_assert(std::is_trivially_copyable_v<pe_capabilities_reply_v2>);
+static_assert(offsetof(capabilities_reply_v2, v1) == 0);
+static_assert(offsetof(capabilities_reply_v2, major_version) == 1);
+static_assert(offsetof(capabilities_reply_v2, minor_version) == 2);
+static_assert(sizeof(capabilities_reply_v2) == 3);
+static_assert(alignof(capabilities_reply_v2) == 1);
+static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 
 }  // end namespace packed
 
-struct pe_capabilities_reply {
-  constexpr pe_capabilities_reply() = default;
-  constexpr pe_capabilities_reply(pe_capabilities_reply const &) = default;
-  constexpr pe_capabilities_reply(pe_capabilities_reply &&) noexcept = default;
-  constexpr explicit pe_capabilities_reply(packed::pe_capabilities_reply_v1 const &other);
-  constexpr explicit pe_capabilities_reply(packed::pe_capabilities_reply_v2 const &other);
-  ~pe_capabilities_reply() noexcept = default;
+struct capabilities_reply {
+  constexpr capabilities_reply() = default;
+  constexpr capabilities_reply(capabilities_reply const &) = default;
+  constexpr capabilities_reply(capabilities_reply &&) noexcept = default;
+  constexpr explicit capabilities_reply(packed::capabilities_reply_v1 const &other);
+  constexpr explicit capabilities_reply(packed::capabilities_reply_v2 const &other);
+  ~capabilities_reply() noexcept = default;
 
-  pe_capabilities_reply &operator=(pe_capabilities_reply const &other) = default;
-  pe_capabilities_reply &operator=(pe_capabilities_reply &&other) = default;
+  capabilities_reply &operator=(capabilities_reply const &other) = default;
+  capabilities_reply &operator=(capabilities_reply &&other) = default;
 
-  bool operator==(pe_capabilities_reply const &) const = default;
+  bool operator==(capabilities_reply const &) const = default;
 
   std::uint8_t num_simultaneous = 0;
   std::uint8_t major_version = 0;
   std::uint8_t minor_version = 0;
 };
 
-constexpr pe_capabilities_reply::pe_capabilities_reply(packed::pe_capabilities_reply_v1 const &other)
+constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v1 const &other)
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
-constexpr pe_capabilities_reply::pe_capabilities_reply(packed::pe_capabilities_reply_v2 const &other)
-    : pe_capabilities_reply{other.v1} {
+constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v2 const &other)
+    : capabilities_reply{other.v1} {
   major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
 }
@@ -1063,8 +1065,8 @@ static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 }  // end namespace packed
 
 // This is all related to property exchange...
-struct pe_chunk_info {
-  bool operator==(pe_chunk_info const &) const = default;
+struct chunk_info {
+  bool operator==(chunk_info const &) const = default;
 
   std::uint16_t number_of_chunks = 0;
   std::uint16_t chunk_number = 0;
@@ -1075,6 +1077,8 @@ struct property_exchange {
   std::span<char const> header;
   std::span<char const> data;
 };
+
+}  // end namespace property_exchange
 
 namespace process_inquiry {
 
