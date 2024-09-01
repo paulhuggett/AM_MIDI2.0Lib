@@ -65,6 +65,7 @@ template <typename T> concept discovery_backend = requires(T && v) {
   { v.nak(MIDICI{}, ci::nak{}) } -> std::same_as<void>;
 
   { v.unknown_midici(MIDICI{}) } -> std::same_as<void>;
+  { v.buffer_overflow() } -> std::same_as<void>;
 };
 
 template <typename T> concept profile_backend = requires(T && v) {
@@ -99,12 +100,12 @@ template <typename T> concept process_inquiry_backend = requires(T && v) {
   { v.midi_message_report_end(MIDICI{}) } -> std::same_as<void>;
 };
 
-class ci_callbacks {
+class management_callbacks {
 public:
-  ci_callbacks() = default;
-  ci_callbacks(ci_callbacks const &) = default;
-  ci_callbacks(ci_callbacks &&) noexcept = default;
-  virtual ~ci_callbacks() noexcept = default;
+  management_callbacks() = default;
+  management_callbacks(management_callbacks const &) = default;
+  management_callbacks(management_callbacks &&) noexcept = default;
+  virtual ~management_callbacks() noexcept = default;
 
   virtual bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
 
@@ -117,6 +118,7 @@ public:
   virtual void nak(MIDICI const &, ci::nak const &) { /* do nothing */ }
 
   virtual void unknown_midici(MIDICI const &) { /* do nothing */ }
+  virtual void buffer_overflow() { /* do nothing */ }
 };
 
 class profile_callbacks {
@@ -177,7 +179,7 @@ public:
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
-template <discovery_backend Callbacks = ci_callbacks, profile_backend ProfileBackend = profile_callbacks,
+template <discovery_backend Callbacks = management_callbacks, profile_backend ProfileBackend = profile_callbacks,
           property_exchange_backend PEBackend = property_exchange_callbacks,
           process_inquiry_backend PIBackend = process_inquiry_callbacks>
 class midiCIProcessor {
@@ -195,7 +197,7 @@ public:
   void processMIDICI(std::byte s7Byte);
 
 private:
-  static constexpr auto header_size = 13U;
+  static constexpr auto header_size = sizeof(ci::packed::header);
 
   [[no_unique_address]] Callbacks callbacks_;
   [[no_unique_address]] ProfileBackend profile_backend_;
@@ -209,12 +211,11 @@ private:
   consumer_fn consumer_ = &midiCIProcessor::header;
 
   MIDICI midici_;
-  unsigned sysexPos_ = 0;
-  std::array<std::byte, 256> buffer_;
+  std::array<std::byte, 512> buffer_;
 
-  void processPISysex(std::byte s7Byte);
+  void discard() { pos_ = 0; }
+  void overflow();
 
-  void discard() { /* do nothing */ }
   void header();
   // "Management" messages
   void discovery();
@@ -273,7 +274,6 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
           process_inquiry_backend PIBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::startSysex7(std::uint8_t group,
                                                                                    std::byte deviceId) {
-  sysexPos_ = 0;
   midici_ = MIDICI{};
   midici_.deviceId = static_cast<std::uint8_t>(deviceId);
   midici_.umpGroup = group;
@@ -287,9 +287,9 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
           process_inquiry_backend PIBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() {
   struct message_dispatch_info {
-    unsigned type;
-    unsigned v1size;
-    unsigned v2size;
+    std::uint8_t type;
+    std::uint8_t v1size;
+    std::uint8_t v2size;
     consumer_fn consumer;
   };
 
@@ -675,8 +675,7 @@ template <discovery_backend Callbacks, profile_backend ProfileBackend, property_
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_specific_data() {
   using type = ci::profile_configuration::packed::specific_data_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
-  auto const data_length = ci::from_le7(reply->data_length);
-  if (pos_ == offsetof(type, data) && data_length > 0) {
+  if (auto const data_length = ci::from_le7(reply->data_length); pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
     return;
   }
@@ -763,7 +762,6 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_
   case MIDICI_PE_SETREPLY: pe_backend_.set_reply(midici_, chunk, pe); break;
   default: assert(false); break;
   }
-
   consumer_ = &midiCIProcessor::discard;
 }
 
@@ -829,73 +827,31 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
   consumer_ = &midiCIProcessor::discard;
 }
 
+template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+          process_inquiry_backend PIBackend>
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::overflow() {
+  count_ = 0;
+  pos_ = 0;
+  callbacks_.buffer_overflow();
+  consumer_ = &midiCIProcessor::discard;
+}
+
 // processMIDICI
 // ~~~~~~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte s7Byte) {
-  assert((s7Byte & std::byte{0b10000000}) == std::byte{0});
+void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte const s7) {
+  assert((s7 & std::byte{0b10000000}) == std::byte{0});
   if (count_ > 0) {
-    buffer_[pos_++] = s7Byte;
+    if (pos_ >= buffer_.size()) {
+      this->overflow();
+      return;
+    }
+    buffer_[pos_++] = s7;
     --count_;
   }
   if (count_ == 0) {
     (this->*consumer_)();
-  }
-  return;
-
-  // Just for reference ATM...
-  // break up each Process based on ciType
-  switch (midici_.ciType) {
-  case MIDICI_PI_MM_REPORT:
-  case MIDICI_PI_MM_REPORT_REPLY:
-  case MIDICI_PI_MM_REPORT_END:
-    this->processPISysex(s7Byte);
-    break;
-  default: callbacks_.unknown_midici(midici_); break;
-  }
-}
-
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processPISysex(std::byte s7Byte) {
-  if (midici_.ciVer == 1) {
-    return;
-  }
-
-  switch (midici_.ciType) {
-  case MIDICI_PI_MM_REPORT_END:
-    if (sysexPos_ == 12) {
-      // callbacks_.recvPIMMReportEnd(midici_);
-    }
-    break;
-  case MIDICI_PI_MM_REPORT:
-    if (sysexPos_ == 13) {  // MDC
-      buffer_[0] = s7Byte;
-    }
-    if (sysexPos_ == 14) {  // Bitmap of requested System Message Types
-      buffer_[1] = s7Byte;
-    }
-    if (sysexPos_ == 16) {  // Bitmap of requested Channel Controller Message Types
-      buffer_[2] = s7Byte;
-    }
-    if (sysexPos_ == 17) {
-      // callbacks_.recvPIMMReport(midici_, buffer_[0], buffer_[1], buffer_[2], s7Byte);
-    }
-    break;
-
-  case MIDICI_PI_MM_REPORT_REPLY:
-    if (sysexPos_ == 13) {  // Bitmap of requested System Message Types
-      buffer_[0] = s7Byte;
-    }
-    if (sysexPos_ == 15) {  // Bitmap of requested Channel Controller Message Types
-      buffer_[1] = s7Byte;
-    }
-    if (sysexPos_ == 16) {
-      // callbacks_.recvPIMMReportReply(midici_, buffer_[0], buffer_[1], s7Byte);
-    }
-    break;
-  default: break;
   }
 }
 
