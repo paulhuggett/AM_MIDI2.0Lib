@@ -80,7 +80,7 @@ jobs:
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
             generator: Ninja
-            options:
+            options: -D MIDI2_SANITIZE=Yes
             os: ubuntu-22.04
             package: TGZ
 
@@ -100,7 +100,7 @@ jobs:
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
             generator: Ninja
-            options:
+            options: -D MIDI2_SANITIZE=Yes
             os: ubuntu-22.04
             package: TGZ
 
