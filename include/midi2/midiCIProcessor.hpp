@@ -827,6 +827,8 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
   consumer_ = &midiCIProcessor::discard;
 }
 
+// overflow
+// ~~~~~~~~
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::overflow() {
@@ -841,7 +843,6 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::overflow(
 template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
 void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte const s7) {
-  assert((s7 & std::byte{0b10000000}) == std::byte{0});
   if (count_ > 0) {
     if (pos_ >= buffer_.size()) {
       this->overflow();
