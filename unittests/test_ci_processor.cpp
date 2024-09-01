@@ -1809,11 +1809,13 @@ TEST(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
 }
 
 // This test simply gets midiCIProcessor to consume a random buffer.
-void NeverCrashes(std::vector<std::byte> &message) {
+void NeverCrashes(std::vector<std::byte> const &message) {
   // Ensure the top bit is clear.
-  std::ranges::transform(message, message.begin(), [](std::byte v) { return v & std::byte{0x7F}; });
+  std::vector<std::byte> message2;
+  message2.reserve(message.size());
+  std::ranges::transform(message, std::back_inserter(message2), [](std::byte v) { return v & std::byte{0x7F}; });
   midi2::midiCIProcessor processor;
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message2, std::bind_front(&decltype(processor)::processMIDICI, &processor));
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
@@ -1821,8 +1823,7 @@ void NeverCrashes(std::vector<std::byte> &message) {
 FUZZ_TEST(CIProcessor, NeverCrashes);
 #endif
 TEST(CIProcessor, EmptyFuzz) {
-  std::vector<std::byte> empty;
-  NeverCrashes(empty);
+  NeverCrashes({});
 }
 
 }  // end anonymous namespace
