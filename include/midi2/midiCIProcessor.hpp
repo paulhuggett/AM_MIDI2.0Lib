@@ -466,7 +466,6 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::nak() {
   using v2_type = ci::packed::nak_v2;
 
   auto const handler = [this](unaligned_copyable auto const &reply) {
-    assert(pos_ >= sizeof(reply));
     callbacks_.nak(midici_, ci::nak{reply});
     consumer_ = &midiCIProcessor::discard;
   };
