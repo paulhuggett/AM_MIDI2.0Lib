@@ -74,8 +74,7 @@ public:
   template <std::output_iterator<output_type> OutputIterator>
   constexpr OutputIterator end_cp (OutputIterator dest) {
     char32_t out32 = 0;
-    auto * const out_pos = src_to_32_.end_cp(&out32);
-    if (out_pos != &out32)  {
+    if (auto* const out_pos = src_to_32_.end_cp(&out32); out_pos != &out32) {
       dest = convert_from_32 (out32, dest);
     }
     return dest;
