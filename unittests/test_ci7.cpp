@@ -145,7 +145,6 @@ TYPED_TEST(CI7Text, ThresholdBetweenASCIIAndEscapes) {
 TYPED_TEST(CI7Text, Utf16SurrogatePairs) {
   constexpr auto linear_bs_syllable_b015_mo = char32_t{0x10017};
   constexpr auto linear_bs_syllable_b030_mi = char32_t{0x1001B};
-  transcoder<TypeParam> t;
   // A pair of characters from the Linear B script which must be encoded as UTF-16 surrogate pairs.
   std::u32string const str32 { linear_bs_syllable_b015_mo, linear_bs_syllable_b030_mi, };
   EXPECT_EQ(this->convert (str32), R"(\uD800\uDC17\uD800\uDC1B)");
