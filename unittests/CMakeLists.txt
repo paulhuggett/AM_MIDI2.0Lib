@@ -1,5 +1,6 @@
 add_executable (m2unittests
   test_bitfield.cpp
+  test_ci7.cpp
   test_ci_processor.cpp
   test_ci_types.cpp
   test_fifo.cpp

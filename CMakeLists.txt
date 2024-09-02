@@ -12,10 +12,13 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(setup_target)
 
+add_subdirectory (icubaby)
+
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/bitfield.hpp"
   "${INCLUDE_DIR}/midi2/bytestreamToUMP.hpp"
+  "${INCLUDE_DIR}/midi2/ci7text.hpp"
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
   "${INCLUDE_DIR}/midi2/fifo.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
@@ -41,6 +44,7 @@ target_include_directories(midi2 PUBLIC
     $<BUILD_INTERFACE:${INCLUDE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(midi2 PUBLIC icubaby)
 
 set(MIDI2_EXPORT_NAME midi2-config)
 install(TARGETS midi2
