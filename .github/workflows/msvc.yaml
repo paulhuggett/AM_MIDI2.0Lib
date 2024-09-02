@@ -54,7 +54,7 @@ jobs:
           buildConfiguration: Release
           # Ruleset file that will determine what checks will be run
           ruleset: NativeRecommendedRules.ruleset
-          ignoredTargetPath: ./googletest
+          ignoredTargetPaths: ./googletest
 
       # Upload SARIF file to GitHub Code Scanning Alerts
       - name: Upload SARIF to GitHub
