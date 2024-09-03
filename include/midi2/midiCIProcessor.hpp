@@ -53,7 +53,7 @@ using MIDICI = ci::MIDICI;
 using profile_span = std::span<std::byte, 5>;
 constexpr auto bytes = std::span<std::byte>{};
 
-template <typename T> concept discovery_backend = requires(T && v) {
+template <typename T> concept management_backend = requires(T && v) {
   { v.check_muid(std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
 
   { v.discovery(MIDICI{}, ci::discovery{}) } -> std::same_as<void>;
@@ -107,6 +107,9 @@ public:
   management_callbacks(management_callbacks &&) noexcept = default;
   virtual ~management_callbacks() noexcept = default;
 
+  management_callbacks &operator=(management_callbacks const &) = default;
+  management_callbacks &operator=(management_callbacks &&) noexcept = default;
+
   virtual bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
 
   virtual void discovery(MIDICI const &, ci::discovery const &) { /* do nothing */ }
@@ -127,6 +130,9 @@ public:
   profile_callbacks(profile_callbacks const &) = default;
   profile_callbacks(profile_callbacks &&) noexcept = default;
   virtual ~profile_callbacks() noexcept = default;
+
+  profile_callbacks &operator=(profile_callbacks const &) = default;
+  profile_callbacks &operator=(profile_callbacks &&) noexcept = default;
 
   virtual void inquiry(MIDICI const &) { /* do nothing */ }
   virtual void inquiry_reply(MIDICI const &, ci::profile_configuration::inquiry_reply const &) { /* do nothing */ }
@@ -179,16 +185,18 @@ public:
 
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
-template <discovery_backend Callbacks = management_callbacks, profile_backend ProfileBackend = profile_callbacks,
+template <management_backend ManagementBackend = management_callbacks,
+          profile_backend ProfileBackend = profile_callbacks,
           property_exchange_backend PEBackend = property_exchange_callbacks,
           process_inquiry_backend PIBackend = process_inquiry_callbacks>
 class midiCIProcessor {
 public:
-  explicit midiCIProcessor(Callbacks callbacks = Callbacks{}, ProfileBackend profile = ProfileBackend{},
-                           PEBackend pe_backend = PEBackend{}, PIBackend pi_backend = PIBackend{})
-      : callbacks_{callbacks},
+  explicit midiCIProcessor(ManagementBackend management = ManagementBackend{},
+                           ProfileBackend profile = ProfileBackend{}, PEBackend pe_backend = PEBackend{},
+                           PIBackend pi_backend = PIBackend{})
+      : management_backend_{management},
         profile_backend_{profile},
-        pe_backend_{pe_backend},
+        property_exchange_backend_{pe_backend},
         process_inquiry_backend_{pi_backend} {}
 
   void startSysex7(std::uint8_t group, std::byte deviceId);
@@ -199,9 +207,9 @@ public:
 private:
   static constexpr auto header_size = sizeof(ci::packed::header);
 
-  [[no_unique_address]] Callbacks callbacks_;
+  [[no_unique_address]] ManagementBackend management_backend_;
   [[no_unique_address]] ProfileBackend profile_backend_;
-  [[no_unique_address]] PEBackend pe_backend_;
+  [[no_unique_address]] PEBackend property_exchange_backend_;
   [[no_unique_address]] PIBackend process_inquiry_backend_;
 
   using consumer_fn = void (midiCIProcessor::*)();
@@ -213,7 +221,7 @@ private:
   MIDICI midici_;
   std::array<std::byte, 512> buffer_;
 
-  void discard() { pos_ = 0; }
+  void discard();
   void overflow();
 
   void header();
@@ -253,27 +261,27 @@ private:
 };
 
 midiCIProcessor() -> midiCIProcessor<>;
-template <discovery_backend C> midiCIProcessor(C) -> midiCIProcessor<C>;
-template <discovery_backend C> midiCIProcessor(std::reference_wrapper<C>) -> midiCIProcessor<C &>;
-template <discovery_backend C, profile_backend P> midiCIProcessor(C, P) -> midiCIProcessor<C, P>;
-template <discovery_backend C, profile_backend P, property_exchange_backend PE>
+template <management_backend C> midiCIProcessor(C) -> midiCIProcessor<C>;
+template <management_backend C> midiCIProcessor(std::reference_wrapper<C>) -> midiCIProcessor<C &>;
+template <management_backend C, profile_backend P> midiCIProcessor(C, P) -> midiCIProcessor<C, P>;
+template <management_backend C, profile_backend P, property_exchange_backend PE>
 midiCIProcessor(C, P, PE) -> midiCIProcessor<C, P, PE>;
-template <discovery_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
+template <management_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
 midiCIProcessor(C, P, PE, PI) -> midiCIProcessor<C, P, PE, PI>;
 
-template <discovery_backend C, profile_backend P>
+template <management_backend C, profile_backend P>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>) -> midiCIProcessor<C &, P &>;
-template <discovery_backend C, profile_backend P, property_exchange_backend PE>
+template <management_backend C, profile_backend P, property_exchange_backend PE>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>,
                 std::reference_wrapper<PE>) -> midiCIProcessor<C &, P &, PE &>;
-template <discovery_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
+template <management_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>, std::reference_wrapper<PE>,
                 std::reference_wrapper<PI>) -> midiCIProcessor<C &, P &, PE &, PI &>;
 
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::startSysex7(std::uint8_t group,
-                                                                                   std::byte deviceId) {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::startSysex7(std::uint8_t group,
+                                                                                           std::byte deviceId) {
   midici_ = MIDICI{};
   midici_.deviceId = static_cast<std::uint8_t>(deviceId);
   midici_.umpGroup = group;
@@ -283,9 +291,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::startSyse
   consumer_ = &midiCIProcessor::header;
 }
 
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::header() {
   struct message_dispatch_info {
     std::uint8_t type;
     std::uint8_t v1size;
@@ -372,14 +380,15 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() 
   auto const last = std::end(messages);
   auto const pred = [](message_dispatch_info const &a, message_dispatch_info const &b) { return a.type < b.type; };
   assert(std::is_sorted(first, last, pred));
-  auto const pos = std::lower_bound(first, last, message_dispatch_info{midici_.ciType, 0, 0, nullptr}, pred);
-  if (pos == last || pos->type != midici_.ciType) {
+  if (auto const pos = std::lower_bound(first, last, message_dispatch_info{midici_.ciType, 0, 0, nullptr}, pred);
+      pos == last || pos->type != midici_.ciType) {
     // An unknown message type.
     consumer_ = &midiCIProcessor::discard;
     count_ = 0;
 
-    callbacks_.unknown_midici(midici_);
-  } else if (midici_.localMUID != M2_CI_BROADCAST && !callbacks_.check_muid(midici_.umpGroup, midici_.localMUID)) {
+    management_backend_.unknown_midici(midici_);
+  } else if (midici_.localMUID != M2_CI_BROADCAST &&
+             !management_backend_.check_muid(midici_.umpGroup, midici_.localMUID)) {
     // The message wasn't intended for us.
     consumer_ = &midiCIProcessor::discard;
     count_ = 0;
@@ -396,12 +405,12 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::header() 
 
 // discovery
 // ~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::discovery() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discovery() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    callbacks_.discovery(midici_, ci::discovery{*v});
+    management_backend_.discovery(midici_, ci::discovery{*v});
   };
   using namespace ci::packed;
   if (midici_.ciVer == 1) {
@@ -414,12 +423,12 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::discovery
 
 // discovery reply
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::discovery_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discovery_reply() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    callbacks_.discovery_reply(midici_, ci::discovery_reply{*v});
+    management_backend_.discovery_reply(midici_, ci::discovery_reply{*v});
   };
   if (midici_.ciVer == 1) {
     handler(std::bit_cast<ci::packed::discovery_reply_v1 const *>(buffer_.data()));
@@ -431,19 +440,19 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::discovery
 
 // invalidate muid
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::invalidate_muid() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::invalidate_muid() {
   using type = ci::packed::invalidate_muid_v1;
-  callbacks_.invalidate_muid(midici_, ci::invalidate_muid{*std::bit_cast<type const *>(buffer_.data())});
+  management_backend_.invalidate_muid(midici_, ci::invalidate_muid{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &midiCIProcessor::discard;
 }
 
 // ack
 // ~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::ack() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::ack() {
   using type = ci::packed::ack_v1;
   auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
   auto const message_length = ci::from_le7(ptr->message_length);
@@ -453,20 +462,20 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::ack() {
     return;
   }
   assert(pos_ == offsetof(type, message) + message_length);
-  callbacks_.ack(midici_, ci::ack{*ptr});
+  management_backend_.ack(midici_, ci::ack{*ptr});
   consumer_ = &midiCIProcessor::discard;
 }
 
 // nak
 // ~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::nak() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::nak() {
   using v1_type = ci::packed::nak_v1;
   using v2_type = ci::packed::nak_v2;
 
   auto const handler = [this](unaligned_copyable auto const &reply) {
-    callbacks_.nak(midici_, ci::nak{reply});
+    management_backend_.nak(midici_, ci::nak{reply});
     consumer_ = &midiCIProcessor::discard;
   };
   if (midici_.ciVer == 1) {
@@ -487,20 +496,20 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::nak() {
 
 // endpoint info
 // ~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::endpoint_info() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::endpoint_info() {
   using type = ci::packed::endpoint_info_v1;
   assert(pos_ == sizeof(type));
-  callbacks_.endpoint_info(midici_, ci::endpoint_info{*std::bit_cast<type const *>(buffer_.data())});
+  management_backend_.endpoint_info(midici_, ci::endpoint_info{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &midiCIProcessor::discard;
 }
 
 // endpoint info reply
 // ~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::endpoint_info_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::endpoint_info_reply() {
   using type = ci::packed::endpoint_info_reply_v1;
   auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
   auto const data_length = ci::from_le7(ptr->data_length);
@@ -510,24 +519,24 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::endpoint_
     return;
   }
   assert(pos_ == offsetof(type, data) + data_length);
-  callbacks_.endpoint_info_reply(midici_, ci::endpoint_info_reply{*ptr});
+  management_backend_.endpoint_info_reply(midici_, ci::endpoint_info_reply{*ptr});
   consumer_ = &midiCIProcessor::discard;
 }
 
 // profile inquiry
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_inquiry() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_inquiry() {
   profile_backend_.inquiry(midici_);
   consumer_ = &midiCIProcessor::discard;
 }
 
 // profile inquiry reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_inquiry_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_inquiry_reply() {
   using pt1_type = ci::profile_configuration::packed::inquiry_reply_v1_pt1;
   using pt2_type = ci::profile_configuration::packed::inquiry_reply_v1_pt2;
   auto const *const pt1 = std::bit_cast<pt1_type const *>(buffer_.data());
@@ -552,9 +561,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_i
 
 // profile added
 // ~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_added() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_added() {
   using type = ci::profile_configuration::packed::added_v1;
   assert(pos_ == sizeof(type));
   profile_backend_.added(midici_, ci::profile_configuration::added{*std::bit_cast<type const *>(buffer_.data())});
@@ -563,9 +572,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_a
 
 // profile removed
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_removed() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_removed() {
   using type = ci::profile_configuration::packed::removed_v1;
   assert(pos_ == sizeof(type));
   profile_backend_.removed(midici_, ci::profile_configuration::removed{*std::bit_cast<type const *>(buffer_.data())});
@@ -574,9 +583,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_r
 
 // profile details inquiry
 // ~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_details() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_details() {
   using type = ci::profile_configuration::packed::details_v1;
   assert(pos_ == sizeof(type));
   profile_backend_.details(midici_, ci::profile_configuration::details{*std::bit_cast<type const *>(buffer_.data())});
@@ -585,9 +594,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_d
 
 // profile details reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_details_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_details_reply() {
   using type = ci::profile_configuration::packed::details_reply_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
   auto const data_length = ci::from_le7(reply->data_length);
@@ -601,9 +610,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_d
 
 // profile on
 // ~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_on() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_on() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
     profile_backend_.on(midici_, ci::profile_configuration::on{*v});
@@ -618,9 +627,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_o
 
 // profile off
 // ~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_off() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_off() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
     profile_backend_.off(midici_, ci::profile_configuration::off{*v});
@@ -635,9 +644,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_o
 
 // profile enabled
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_enabled() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_enabled() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
     profile_backend_.enabled(midici_, ci::profile_configuration::enabled{*v});
@@ -652,9 +661,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_e
 
 // profile disabled
 // ~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_disabled() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_disabled() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
     profile_backend_.disabled(midici_, ci::profile_configuration::disabled{*v});
@@ -669,9 +678,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_d
 
 // profile specific data
 // ~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_specific_data() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_specific_data() {
   using type = ci::profile_configuration::packed::specific_data_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
   if (auto const data_length = ci::from_le7(reply->data_length); pos_ == offsetof(type, data) && data_length > 0) {
@@ -684,12 +693,12 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::profile_s
 
 // pe capabilities
 // ~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabilities() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_capabilities() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    pe_backend_.capabilities(midici_, ci::property_exchange::capabilities{*v});
+    property_exchange_backend_.capabilities(midici_, ci::property_exchange::capabilities{*v});
   };
   if (midici_.ciVer == 1) {
     handler(std::bit_cast<ci::property_exchange::packed::capabilities_v1 const *>(buffer_.data()));
@@ -701,12 +710,12 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabi
 
 // pe capabilities reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabilities_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_capabilities_reply() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    pe_backend_.capabilities_reply(midici_, ci::property_exchange::capabilities_reply{*v});
+    property_exchange_backend_.capabilities_reply(midici_, ci::property_exchange::capabilities_reply{*v});
   };
   if (midici_.ciVer == 1) {
     handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v1 const *>(buffer_.data()));
@@ -718,9 +727,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::pe_capabi
 
 // property exchange
 // ~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_exchange() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::property_exchange() {
   using ci::property_exchange::packed::property_exchange_pt1;
   using ci::property_exchange::packed::property_exchange_pt2;
   auto size = offsetof(property_exchange_pt1, header);
@@ -755,10 +764,10 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_
   pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
 
   switch (midici_.ciType) {
-  case MIDICI_PE_GET: pe_backend_.get(midici_, chunk, pe); break;
-  case MIDICI_PE_GETREPLY: pe_backend_.get_reply(midici_, chunk, pe); break;
-  case MIDICI_PE_SET: pe_backend_.set(midici_, chunk, pe); break;
-  case MIDICI_PE_SETREPLY: pe_backend_.set_reply(midici_, chunk, pe); break;
+  case MIDICI_PE_GET: property_exchange_backend_.get(midici_, chunk, pe); break;
+  case MIDICI_PE_GETREPLY: property_exchange_backend_.get_reply(midici_, chunk, pe); break;
+  case MIDICI_PE_SET: property_exchange_backend_.set(midici_, chunk, pe); break;
+  case MIDICI_PE_SETREPLY: property_exchange_backend_.set_reply(midici_, chunk, pe); break;
   default: assert(false); break;
   }
   consumer_ = &midiCIProcessor::discard;
@@ -766,9 +775,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::property_
 
 // process inquiry capabilities
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities() {
   if (midici_.ciVer > 1) {
     process_inquiry_backend_.capabilities(midici_);
   }
@@ -777,9 +786,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
 
 // process inquiry capabilities reply
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities_reply() {
   if (midici_.ciVer > 1) {
     process_inquiry_backend_.capabilities_reply(
         midici_, ci::process_inquiry::capabilities_reply{
@@ -790,9 +799,9 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
 
 // process inquiry midi message report
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report() {
   if (midici_.ciVer > 1) {
     process_inquiry_backend_.midi_message_report(
         midici_, ci::process_inquiry::midi_message_report{
@@ -803,9 +812,10 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
 
 // process inquiry midi message report reply
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report_reply() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend,
+                     PIBackend>::process_inquiry_midi_message_report_reply() {
   if (midici_.ciVer > 1) {
     process_inquiry_backend_.midi_message_report_reply(
         midici_,
@@ -817,31 +827,41 @@ void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_i
 
 // process inquiry midi message report end
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report_end() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend,
+                     PIBackend>::process_inquiry_midi_message_report_end() {
   if (midici_.ciVer > 1) {
     process_inquiry_backend_.midi_message_report_end(midici_);
   }
   consumer_ = &midiCIProcessor::discard;
 }
 
+// discard
+// ~~~~~~~
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+          process_inquiry_backend PIBackend>
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discard() {
+  pos_ = 0;
+  count_ = buffer_.size();
+}
+
 // overflow
 // ~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::overflow() {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::overflow() {
   count_ = 0;
   pos_ = 0;
-  callbacks_.buffer_overflow();
+  management_backend_.buffer_overflow();
   consumer_ = &midiCIProcessor::discard;
 }
 
 // processMIDICI
 // ~~~~~~~~~~~~~
-template <discovery_backend Callbacks, profile_backend ProfileBackend, property_exchange_backend PEBackend,
+template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
           process_inquiry_backend PIBackend>
-void midiCIProcessor<Callbacks, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte const s7) {
+void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte const s7) {
   if (count_ > 0) {
     if (pos_ >= buffer_.size()) {
       this->overflow();
