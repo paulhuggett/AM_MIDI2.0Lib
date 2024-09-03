@@ -91,3 +91,11 @@ else ()
   endif()
 endif (MIDI2_FUZZTEST)
 
+
+foreach (target gtest gmock gmock_main gtest_main)
+  if (TARGET ${target})
+    target_compile_features(${target} PUBLIC cxx_std_20)
+    target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
+  endif()
+endforeach()
+
