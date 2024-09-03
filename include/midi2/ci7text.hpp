@@ -56,8 +56,10 @@ public:
   template <std::output_iterator<output_type> OutputIterator>
   OutputIterator operator() (input_type code_unit, OutputIterator dest) noexcept {
     static_assert (icubaby::longest_sequence_v<char32_t> == 1);
-    std::array<char32_t, 2> out32;
+    std::array<char32_t, 2> out32{};
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const first = std::begin (out32);
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const last = src_to_32_(code_unit, first);
     std::for_each (first, last, [&dest] (char32_t c) {
       dest = convert_from_32 (c, dest);
