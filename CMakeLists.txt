@@ -95,7 +95,7 @@ endif (MIDI2_FUZZTEST)
 foreach (target gtest gmock gmock_main gtest_main)
   if (TARGET ${target})
       target_compile_options (${target} PRIVATE
-        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-deprecated-declarations>
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-deprecated-declarations -Wno-covered-switch-default>
       )
       target_compile_features(${target} PUBLIC cxx_std_20)
     target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
