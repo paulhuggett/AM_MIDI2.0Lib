@@ -35,9 +35,9 @@ OutputIterator convert_from_32 (char32_t code_unit, OutputIterator dest) {
   return dest;
 }
 
+template <typename InputEncoding, typename OutputEncoding> class transcoder {};
 
-template <icubaby::unicode_char_type InputEncoding>
-class transcoder {
+template <icubaby::unicode_char_type InputEncoding> class transcoder<InputEncoding, char> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = InputEncoding;
@@ -98,7 +98,7 @@ private:
   icubaby::transcoder<input_type, char32_t> src_to_32_;
 };
 
-template <typename OutputEncoding> class transcoder2 {
+template <icubaby::unicode_char_type OutputEncoding> class transcoder<char, OutputEncoding> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = char;

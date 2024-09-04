@@ -73,7 +73,7 @@ protected:
     return output;
   }
 
-  transcoder<T> t_;
+  transcoder<T, char> t_;
 };
 
 using OutputCharTypes = testing::Types<char32_t, char16_t, char8_t>;
@@ -82,12 +82,8 @@ TYPED_TEST_SUITE(CI7TextEncode, OutputCharTypes, OutputTypeNames);
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextEncode, SimpleASCII) {
-  std::u32string const str32 {
-    static_cast<char32_t> ('H'),
-    static_cast<char32_t> ('e'),
-    static_cast<char32_t> ('l'),
-    static_cast<char32_t> ('l'),
-    static_cast<char32_t> ('o'),
+  std::u32string const str32{
+      'H', 'e', 'l', 'l', 'o',
   };
   EXPECT_EQ(this->convert (str32), "Hello");
   EXPECT_FALSE(this->t_.partial());
@@ -97,12 +93,8 @@ TYPED_TEST(CI7TextEncode, SimpleASCII) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextEncode, BeatNote) {
   constexpr auto eighth_note = char32_t{0x266A};
-  std::u32string const str32 {
-    static_cast<char32_t> ('B'),
-    static_cast<char32_t> ('e'),
-    static_cast<char32_t> ('a'),
-    static_cast<char32_t> ('t'),
-    static_cast<char32_t> (eighth_note),
+  std::u32string const str32{
+      'B', 'e', 'a', 't', eighth_note,
   };
   EXPECT_EQ(this->convert (str32), "Beat\\u266A");
 }
@@ -133,11 +125,7 @@ TYPED_TEST(CI7TextEncode, Only5BytesLeft) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextEncode, Backslash) {
-  std::u32string const str32 {
-    static_cast<char32_t> ('a'),
-    static_cast<char32_t> ('\\'),
-    static_cast<char32_t> ('b'),
-  };
+  std::u32string const str32 {'a', '\\', 'b',};
   EXPECT_EQ(this->convert (str32), R"(a\\b)");
 }
 
@@ -158,7 +146,7 @@ TYPED_TEST(CI7TextEncode, Utf16SurrogatePairs) {
 
 template <typename T> class CI7TextDecode : public testing::Test {
 protected:
-  std::basic_string<T> convert(transcoder2<T>& t2, std::string_view input) {
+  std::basic_string<T> convert(transcoder<char, T>& t2, std::string_view input) {
     std::basic_string<T> output;
     auto dest = std::back_inserter(output);
     for (auto const c : input) {
@@ -179,7 +167,7 @@ protected:
 TYPED_TEST_SUITE(CI7TextDecode, OutputCharTypes, OutputTypeNames);
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, Empty) {
-  transcoder2<char32_t> t2;
+  transcoder<char, TypeParam> t2;
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
 }
@@ -187,14 +175,10 @@ TYPED_TEST(CI7TextDecode, Empty) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, Hello) {
   auto const expected = this->expected(std::u32string{
-      static_cast<char32_t>('H'),
-      static_cast<char32_t>('e'),
-      static_cast<char32_t>('l'),
-      static_cast<char32_t>('l'),
-      static_cast<char32_t>('o'),
+      'H', 'e', 'l', 'l', 'o',
   });
-  transcoder2<TypeParam> t2;
-  auto const output = this->convert(t2, "Hello" sv);
+  transcoder<char, TypeParam> t2;
+  auto const output = this->convert(t2, "Hello"sv);
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
   EXPECT_EQ(output, expected);
@@ -202,12 +186,8 @@ TYPED_TEST(CI7TextDecode, Hello) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, BackslashEscape) {
-  auto const expected = this->expected(std::u32string{
-      static_cast<char32_t>('a'),
-      static_cast<char32_t>('\\'),
-      static_cast<char32_t>('b'),
-  });
-  transcoder2<TypeParam> t2;
+  auto const expected = this->expected(std::u32string{'a', '\\', 'b',});
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(a\\b)"sv);
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
@@ -218,13 +198,9 @@ TYPED_TEST(CI7TextDecode, BackslashEscape) {
 TYPED_TEST(CI7TextDecode, BeatNote) {
   constexpr auto eighth_note = char32_t{0x266A};
   auto const expected = this->expected(std::u32string{
-      static_cast<char32_t>('B'),
-      static_cast<char32_t>('e'),
-      static_cast<char32_t>('a'),
-      static_cast<char32_t>('t'),
-      static_cast<char32_t>(eighth_note),
+      'B', 'e', 'a', 't', eighth_note,
   });
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u266A"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -252,7 +228,7 @@ TYPED_TEST(CI7TextDecode, Only5BytesLeft) {
       katakana_letter_i,
       katakana_letter_to,
   });
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(\u6B8B\u308A\u308F\u305A\u304B5\u30D0\u30A4\u30C8)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -262,16 +238,9 @@ TYPED_TEST(CI7TextDecode, Only5BytesLeft) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, PartialHexMidString) {
   auto const expected = this->expected(std::u32string{
-      static_cast<char32_t>('B'),
-      static_cast<char32_t>('e'),
-      static_cast<char32_t>('a'),
-      static_cast<char32_t>('t'),
-      static_cast<char32_t>('N'),
-      static_cast<char32_t>('o'),
-      static_cast<char32_t>('t'),
-      static_cast<char32_t>('e'),
+      'B', 'e', 'a', 't', 'N', 'o', 't', 'e',
   });
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u26 Note"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -280,13 +249,8 @@ TYPED_TEST(CI7TextDecode, PartialHexMidString) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, PartialHexAtEndOfString) {
-  auto const expected = this->expected(std::u32string{
-      static_cast<char32_t>('B'),
-      static_cast<char32_t>('e'),
-      static_cast<char32_t>('a'),
-      static_cast<char32_t>('t'),
-  });
-  transcoder2<TypeParam> t2;
+  auto const expected = this->expected(std::u32string{'B', 'e', 'a', 't',});
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u26"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -301,7 +265,7 @@ TYPED_TEST(CI7TextDecode, Utf16SurrogatePairs) {
       linear_bs_syllable_b015_mo,
       linear_bs_syllable_b030_mi,
   });
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(\uD800\uDC17\uD800\uDC1B)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -311,7 +275,7 @@ TYPED_TEST(CI7TextDecode, Utf16SurrogatePairs) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char});
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -321,7 +285,7 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, '\n'});
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800\n)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -331,7 +295,7 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByNormal) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, 'B'});
-  transcoder2<TypeParam> t2;
+  transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800B)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
