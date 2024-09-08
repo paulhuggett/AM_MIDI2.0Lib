@@ -163,6 +163,10 @@ public:
   MOCK_METHOD(void, get_reply, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
   MOCK_METHOD(void, set, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
   MOCK_METHOD(void, set_reply, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+
+  MOCK_METHOD(void, subscription, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, subscription_reply, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
+  MOCK_METHOD(void, notify, (MIDICI const &, chunk_info const &, property_exchange const &), (override));
 };
 
 class mock_process_inquiry_callbacks final : public midi2::process_inquiry_callbacks {
@@ -1610,6 +1614,236 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
                 AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                       Field("header", &property_exchange::header, ElementsAreArray(header)),
                       Field("data", &property_exchange::data, IsEmpty()))));
+
+  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, PropertyExchangeSubscription) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request_id = std::byte{1};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+
+  auto const header = R"({"status":200})"sv;
+
+  // clang-format off
+  constexpr std::array ci_prolog {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x38}, // Universal System Exclusive Sub-ID#2: Subscription
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request_id,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  std::vector<std::byte> message;
+  // The standard MIDI CI header
+  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  out = std::ranges::copy(header_size, out).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(property_data_size), 0);
+  out = std::ranges::copy(property_data_size, out).out;
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PE_SUB;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::chunk_info chunk_info;
+  chunk_info.number_of_chunks = from_le7(total_chunks);
+  chunk_info.chunk_number = from_le7(chunk_number);
+
+  mock_management_callbacks management_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+
+  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+
+  EXPECT_CALL(
+      pe_mocks,
+      subscription(midici, chunk_info,
+                   AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                         Field("header", &property_exchange::header, ElementsAreArray(header)),
+                         Field("data", &property_exchange::data, IsEmpty()))));
+
+  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, PropertyExchangeSubscriptionReply) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request_id = std::byte{1};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+
+  auto const header = R"({"status":200})"sv;
+
+  // clang-format off
+  constexpr std::array ci_prolog {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x39}, // Universal System Exclusive Sub-ID#2: Subscription Reply
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request_id,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  std::vector<std::byte> message;
+  // The standard MIDI CI header
+  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  out = std::ranges::copy(header_size, out).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(property_data_size), 0);
+  out = std::ranges::copy(property_data_size, out).out;
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PE_SUBREPLY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::chunk_info chunk_info;
+  chunk_info.number_of_chunks = from_le7(total_chunks);
+  chunk_info.chunk_number = from_le7(chunk_number);
+
+  mock_management_callbacks management_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+
+  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+
+  EXPECT_CALL(pe_mocks, subscription_reply(midici, chunk_info,
+                                           AllOf(Field("request_id", &property_exchange::request_id,
+                                                       Eq(static_cast<std::uint8_t>(request_id))),
+                                                 Field("header", &property_exchange::header, ElementsAreArray(header)),
+                                                 Field("data", &property_exchange::data, IsEmpty()))));
+
+  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
+  processor.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+}
+
+TEST(CIProcessor, PropertyExchangeNotify) {
+  constexpr auto group = std::uint8_t{0x01};
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request_id = std::byte{1};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+
+  auto const header = R"({"status":200})"sv;
+
+  // clang-format off
+  constexpr std::array ci_prolog {
+    std::byte{0x7E}, // Universal System Exclusive
+    destination, // Destination
+    std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x3F}, // Universal System Exclusive Sub-ID#2: Notify
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request_id,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  std::vector<std::byte> message;
+  // The standard MIDI CI header
+  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  out = std::ranges::copy(header_size, out).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(property_data_size), 0);
+  out = std::ranges::copy(property_data_size, out).out;
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.deviceId = static_cast<std::uint8_t>(destination);
+  midici.ciType = midi2::MIDICI_PE_NOTIFY;
+  midici.ciVer = 2;
+  midici.remoteMUID = from_le7(sender_muid);
+  midici.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::chunk_info chunk_info;
+  chunk_info.number_of_chunks = from_le7(total_chunks);
+  chunk_info.chunk_number = from_le7(chunk_number);
+
+  mock_management_callbacks management_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+
+  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+
+  EXPECT_CALL(
+      pe_mocks,
+      notify(midici, chunk_info,
+             AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
+                   Field("header", &property_exchange::header, ElementsAreArray(header)),
+                   Field("data", &property_exchange::data, IsEmpty()))));
 
   midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
   processor.startSysex7(group, destination);
