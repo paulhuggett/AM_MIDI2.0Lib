@@ -18,36 +18,30 @@
 namespace {
 
 struct raw_and_encoded {
-  std::vector<std::uint8_t> raw;
-  std::vector<std::uint8_t> encoded;
+  std::vector<std::byte> raw;
+  std::vector<std::byte> encoded;
 };
 
 class Mcoded7 : public testing::TestWithParam<raw_and_encoded> {
 public:
   /// Takes a vector of bytes and returns the mcoded7 encoded equivalent vector.
-  static std::vector<std::uint8_t> encode(
-      std::vector<std::uint8_t> const& input) {
+  static std::vector<std::byte> encode(std::vector<std::byte> const& input) {
     midi2::mcoded7::encoder encoder;
-    std::vector<std::uint8_t> output;
+    std::vector<std::byte> output;
     auto out = std::back_inserter(output);
     std::for_each(std::begin(input), std::end(input),
-                  [&encoder, &out](std::uint8_t const b) {
-                    out = encoder.parse_byte(b, out);
-                  });
+                  [&encoder, &out](std::byte const b) { out = encoder.parse_byte(b, out); });
     encoder.flush(out);
     return output;
   }
 
   /// Decodes a vector of mcoded7 bytes.
-  static std::vector<std::uint8_t> decode(
-      std::vector<std::uint8_t> const& input) {
+  static std::vector<std::byte> decode(std::vector<std::byte> const& input) {
     midi2::mcoded7::decoder decoder;
-    std::vector<std::uint8_t> output;
+    std::vector<std::byte> output;
     auto out = std::back_inserter(output);
     std::for_each(std::begin(input), std::end(input),
-                  [&decoder, &out](std::uint8_t const b) {
-                    out = decoder.parse_byte(b, out);
-                  });
+                  [&decoder, &out](std::byte const b) { out = decoder.parse_byte(b, out); });
     decoder.flush(out);
     return output;
   }
@@ -71,23 +65,23 @@ namespace {
 // A small collection of test vectors.
 raw_and_encoded const empty;
 raw_and_encoded const four{
-    std::vector<std::uint8_t>{0b00010010, 0b00110100, 0b01010110, 0b01111000},
-    std::vector<std::uint8_t>{0b00000000,  // MSBs
-                              0b00010010, 0b00110100, 0b01010110, 0b01111000}};
+    std::vector{std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110}, std::byte{0b01111000}},
+    std::vector{std::byte{0b00000000},  // MSBs
+                std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110}, std::byte{0b01111000}}};
 raw_and_encoded const seven{
-    std::vector<std::uint8_t>{0b00010010, 0b00110100, 0b01010110, 0b01111000,
-                              0b10011010, 0b10111100, 0b11011110},
-    std::vector<std::uint8_t>{0b00000111,  // MSBs
-                              0b00010010, 0b00110100, 0b01010110, 0b01111000,
-                              0b00011010, 0b00111100, 0b01011110}};
+    std::vector{std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110}, std::byte{0b01111000},
+                std::byte{0b10011010}, std::byte{0b10111100}, std::byte{0b11011110}},
+    std::vector{std::byte{0b00000111},  // MSBs
+                std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110}, std::byte{0b01111000},
+                std::byte{0b00011010}, std::byte{0b00111100}, std::byte{0b01011110}}};
 raw_and_encoded const eight{
-    std::vector<std::uint8_t>{0b00010010, 0b00110100, 0b01010110, 0b01111000,
-                              0b10011010, 0b10111100, 0b11011110, 0b11110000},
-    std::vector<std::uint8_t>{// block #1
-                              0b00000111, 0b00010010, 0b00110100, 0b01010110,
-                              0b01111000, 0b00011010, 0b00111100, 0b01011110,
-                              // block #2
-                              0b01000000, 0b01110000}};
+    std::vector{std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110}, std::byte{0b01111000},
+                std::byte{0b10011010}, std::byte{0b10111100}, std::byte{0b11011110}, std::byte{0b11110000}},
+    std::vector{// block #1
+                std::byte{0b00000111}, std::byte{0b00010010}, std::byte{0b00110100}, std::byte{0b01010110},
+                std::byte{0b01111000}, std::byte{0b00011010}, std::byte{0b00111100}, std::byte{0b01011110},
+                // block #2
+                std::byte{0b01000000}, std::byte{0b01110000}}};
 
 }  // end anonymous namespace
 
@@ -97,7 +91,7 @@ INSTANTIATE_TEST_SUITE_P(Mcoded7, Mcoded7,
 
 namespace {
 
-void Mcoded7RoundTrip(std::vector<std::uint8_t> const& input) {
+void Mcoded7RoundTrip(std::vector<std::byte> const& input) {
   auto const encoded = Mcoded7::encode(input);
   auto const decoded = Mcoded7::decode(encoded);
   EXPECT_THAT(decoded, testing::ContainerEq(input));
@@ -111,17 +105,17 @@ FUZZ_TEST(Mcoded7, Mcoded7RoundTrip);
 #endif
 // NOLINTNEXTLINE
 TEST(Mcoded7, EmptyRoundTrip) {
-  Mcoded7RoundTrip(std::vector<std::uint8_t>{});
+  Mcoded7RoundTrip(std::vector<std::byte>{});
 }
 
 // NOLINTNEXTLINE
 TEST(Mcoded7, GoodInput) {
   midi2::mcoded7::decoder decoder;
-  std::array<std::uint8_t, 1> output{};
+  std::array<std::byte, 1> output{};
   auto* out = output.data();
-  out = decoder.parse_byte(0b00000000, out);
+  out = decoder.parse_byte(std::byte{0b00000000}, out);
   EXPECT_TRUE(decoder.good());
-  out = decoder.parse_byte(0b00010010, out);
+  out = decoder.parse_byte(std::byte{0b00010010}, out);
   EXPECT_TRUE(decoder.good());
   EXPECT_EQ(out, output.data() + 1);
 }
@@ -129,14 +123,14 @@ TEST(Mcoded7, GoodInput) {
 // NOLINTNEXTLINE
 TEST(Mcoded7, BadInput) {
   midi2::mcoded7::decoder decoder;
-  std::array<std::uint8_t, 2> output{};
+  std::array<std::byte, 2> output{};
   auto* out = output.data();
-  out = decoder.parse_byte(0b00000000, out);
+  out = decoder.parse_byte(std::byte{0b00000000}, out);
   EXPECT_TRUE(decoder.good());
-  out = decoder.parse_byte(0b10010010, out);
+  out = decoder.parse_byte(std::byte{0b10010010}, out);
   EXPECT_FALSE(decoder.good())
       << "Most significant bit was set: state should be bad";
-  out = decoder.parse_byte(0b00010010, out);
+  out = decoder.parse_byte(std::byte{0b00010010}, out);
   EXPECT_FALSE(decoder.good()) << "Expected the 'good' state to be sticky";
   EXPECT_EQ(out, output.data() + 2);
 }
