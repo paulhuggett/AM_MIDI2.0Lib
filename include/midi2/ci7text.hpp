@@ -7,37 +7,7 @@
 
 #include "icubaby/icubaby.hpp"
 
-template <std::output_iterator<char> OutputIterator>
-OutputIterator convert_from_32 (char32_t code_unit, OutputIterator dest) {
-  if (code_unit < (1U << 7)) {
-    if (code_unit == '\\') {
-      *(dest++) = '\\';
-    }
-    *(dest++) = static_cast<char> (code_unit);
-    return dest;
-  }
-
-  std::array<char16_t, 2> out16;
-  auto const first = out16.begin();
-  auto const last = icubaby::t32_16{}(code_unit, first);
-  auto const to_hex = [] (unsigned const v) {
-    return static_cast<char>(v + ((v < 10) ? '0' : 'A' - 10));
-  };
-  std::for_each (first, last, [&dest,&to_hex] (char16_t const c) {
-    *(dest++) = '\\';
-    *(dest++) = 'u';
-    *(dest++) = to_hex((static_cast<std::uint16_t> (c) >> 12) & 0x0F);
-    *(dest++) = to_hex((static_cast<std::uint16_t> (c) >> 8) & 0x0F);
-    *(dest++) = to_hex((static_cast<std::uint16_t> (c) >> 4) & 0x0F);
-    *(dest++) = to_hex(static_cast<std::uint16_t> (c) & 0x0F);
-  });
-
-  return dest;
-}
-
-template <typename InputEncoding, typename OutputEncoding> class transcoder {};
-
-template <icubaby::unicode_char_type InputEncoding> class transcoder<InputEncoding, char> {
+template <icubaby::unicode_char_type InputEncoding> class icubaby::transcoder<InputEncoding, char> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = InputEncoding;
@@ -61,9 +31,7 @@ public:
     auto const first = std::begin (out32);
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const last = src_to_32_(code_unit, first);
-    std::for_each (first, last, [&dest] (char32_t c) {
-      dest = convert_from_32 (c, dest);
-    });
+    std::for_each(first, last, [this, &dest](char32_t c) { dest = this->convert_from_32(c, dest); });
     return dest;
   }
 
@@ -77,7 +45,7 @@ public:
   constexpr OutputIterator end_cp (OutputIterator dest) {
     char32_t out32 = 0;
     if (auto* const out_pos = src_to_32_.end_cp(&out32); out_pos != &out32) {
-      dest = convert_from_32 (out32, dest);
+      dest = this->convert_from_32(out32, dest);
     }
     return dest;
   }
@@ -96,9 +64,34 @@ public:
 
 private:
   icubaby::transcoder<input_type, char32_t> src_to_32_;
+
+  template <std::output_iterator<char> OutputIterator>
+  OutputIterator convert_from_32(char32_t code_unit, OutputIterator dest) {
+    if (code_unit < (1U << 7)) {
+      if (code_unit == '\\') {
+        *(dest++) = '\\';
+      }
+      *(dest++) = static_cast<char>(code_unit);
+      return dest;
+    }
+
+    std::array<char16_t, 2> out16;
+    auto const first = out16.begin();
+    auto const last = icubaby::t32_16{}(code_unit, first);
+    auto const to_hex = [](unsigned const v) { return static_cast<char>(v + ((v < 10) ? '0' : 'A' - 10)); };
+    std::for_each(first, last, [&dest, &to_hex](char16_t const c) {
+      *(dest++) = '\\';
+      *(dest++) = 'u';
+      *(dest++) = to_hex((static_cast<std::uint16_t>(c) >> 12) & 0x0F);
+      *(dest++) = to_hex((static_cast<std::uint16_t>(c) >> 8) & 0x0F);
+      *(dest++) = to_hex((static_cast<std::uint16_t>(c) >> 4) & 0x0F);
+      *(dest++) = to_hex(static_cast<std::uint16_t>(c) & 0x0F);
+    });
+    return dest;
+  }
 };
 
-template <icubaby::unicode_char_type OutputEncoding> class transcoder<char, OutputEncoding> {
+template <icubaby::unicode_char_type OutputEncoding> class icubaby::transcoder<char, OutputEncoding> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = char;
@@ -235,3 +228,7 @@ private:
     return true;
   }
 };
+
+namespace midi2 {
+using icubaby::transcoder;
+}

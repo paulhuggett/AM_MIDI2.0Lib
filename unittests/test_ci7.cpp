@@ -4,12 +4,18 @@
 //
 //  Created by Paul Bowen-Huggett on 01/09/2024.
 //
-
+// DUT
 #include "midi2/ci7text.hpp"
 
+// Standard library
 #include <string>
 
+// Google Test/Mock/FuzzTest
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+#include <fuzztest/fuzztest.h>
+#endif
 
 using namespace std::string_view_literals;
 
@@ -24,7 +30,7 @@ template <> inline std::string GetTypeName<char8_t> () {
 }
 
 }  // end namespace testing::internal
-#endif
+#endif  // defined(__cpp_char8_t) && defined(__cpp_lib_char8_t)
 
 [[noreturn, maybe_unused]] inline void unreachable () {
   // Uses compiler specific extensions if possible. Even if no extension is used, undefined behavior is still raised by
@@ -35,9 +41,12 @@ template <> inline std::string GetTypeName<char8_t> () {
   __assume (false);
 #endif
 }
+
 /// A type that is always false. Used to improve the failure mesages from
 /// static_assert().
 template <typename... T> [[maybe_unused]] constexpr bool always_false = false;
+
+namespace {
 
 class OutputTypeNames {
 public:
@@ -56,8 +65,6 @@ public:
   }
 };
 
-using OutputTypes = testing::Types<icubaby::char8, char16_t, char32_t>;
-
 template <icubaby::unicode_char_type T> class CI7TextEncode : public testing::Test {
 protected:
   std::string convert (std::u32string const & in32) {
@@ -73,10 +80,11 @@ protected:
     return output;
   }
 
-  transcoder<T, char> t_;
+  midi2::transcoder<T, char> t_;
 };
 
 using OutputCharTypes = testing::Types<char32_t, char16_t, char8_t>;
+
 // NOLINTNEXTLINE
 TYPED_TEST_SUITE(CI7TextEncode, OutputCharTypes, OutputTypeNames);
 
@@ -146,7 +154,7 @@ TYPED_TEST(CI7TextEncode, Utf16SurrogatePairs) {
 
 template <typename T> class CI7TextDecode : public testing::Test {
 protected:
-  std::basic_string<T> convert(transcoder<char, T>& t2, std::string_view input) {
+  std::basic_string<T> convert(midi2::transcoder<char, T>& t2, std::string_view input) {
     std::basic_string<T> output;
     auto dest = std::back_inserter(output);
     for (auto const c : input) {
@@ -167,7 +175,7 @@ protected:
 TYPED_TEST_SUITE(CI7TextDecode, OutputCharTypes, OutputTypeNames);
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, Empty) {
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
 }
@@ -177,7 +185,7 @@ TYPED_TEST(CI7TextDecode, Hello) {
   auto const expected = this->expected(std::u32string{
       'H', 'e', 'l', 'l', 'o',
   });
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Hello"sv);
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
@@ -187,7 +195,7 @@ TYPED_TEST(CI7TextDecode, Hello) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, BackslashEscape) {
   auto const expected = this->expected(std::u32string{'a', '\\', 'b',});
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(a\\b)"sv);
   EXPECT_TRUE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
@@ -200,7 +208,7 @@ TYPED_TEST(CI7TextDecode, BeatNote) {
   auto const expected = this->expected(std::u32string{
       'B', 'e', 'a', 't', eighth_note,
   });
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u266A"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -228,7 +236,7 @@ TYPED_TEST(CI7TextDecode, Only5BytesLeft) {
       katakana_letter_i,
       katakana_letter_to,
   });
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(\u6B8B\u308A\u308F\u305A\u304B5\u30D0\u30A4\u30C8)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -240,7 +248,7 @@ TYPED_TEST(CI7TextDecode, PartialHexMidString) {
   auto const expected = this->expected(std::u32string{
       'B', 'e', 'a', 't', 'N', 'o', 't', 'e',
   });
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u26 Note"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -250,7 +258,7 @@ TYPED_TEST(CI7TextDecode, PartialHexMidString) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, PartialHexAtEndOfString) {
   auto const expected = this->expected(std::u32string{'B', 'e', 'a', 't',});
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, "Beat\\u26"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -265,7 +273,7 @@ TYPED_TEST(CI7TextDecode, Utf16SurrogatePairs) {
       linear_bs_syllable_b015_mo,
       linear_bs_syllable_b030_mi,
   });
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(\uD800\uDC17\uD800\uDC1B)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_TRUE(t2.well_formed());
@@ -275,7 +283,7 @@ TYPED_TEST(CI7TextDecode, Utf16SurrogatePairs) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char});
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -285,7 +293,7 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, '\n'});
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800\n)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
@@ -295,9 +303,44 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByNormal) {
   auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, 'B'});
-  transcoder<char, TypeParam> t2;
+  midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800B)"sv);
   EXPECT_EQ(output, expected);
   EXPECT_FALSE(t2.well_formed());
   EXPECT_FALSE(t2.partial());
 }
+
+template <typename OutputEncoding, typename InputEncoding>
+std::vector<OutputEncoding> convert(std::vector<InputEncoding> const& input) {
+  midi2::transcoder<InputEncoding, OutputEncoding> t2;
+
+  std::vector<OutputEncoding> output;
+  auto dest = std::back_inserter(output);
+  for (auto const c : input) {
+    dest = t2(c, dest);
+  }
+  t2.end_cp(dest);
+  return output;
+}
+
+void RoundTrip(std::vector<char32_t> const& input) {
+  std::vector<char32_t> sanitized_input;
+  sanitized_input.reserve(input.size());
+  std::ranges::copy_if(input, std::back_inserter(sanitized_input),
+                       [](char32_t cp) { return cp <= icubaby::max_code_point && !icubaby::is_surrogate(cp); });
+
+  auto const intermediate = convert<char>(sanitized_input);
+  auto const output = convert<char32_t>(intermediate);
+  EXPECT_THAT(output, testing::ContainerEq(sanitized_input));
+}
+
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+// NOLINTNEXTLINE
+FUZZ_TEST(CI7RoundTrip, RoundTrip);
+#endif
+// NOLINTNEXTLINE
+TEST(CI7RoundTrip, Empty) {
+  RoundTrip(std::vector<char32_t>{});
+}
+
+}  // end anonymous namespace
