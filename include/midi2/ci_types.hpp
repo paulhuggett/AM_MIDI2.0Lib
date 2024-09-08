@@ -22,6 +22,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include "midi2/utils.hpp"
+
 namespace midi2::ci {
 
 using byte_array_1 = std::array<std::byte, 1>;
@@ -63,7 +65,7 @@ struct MIDICI {
 
   std::uint8_t umpGroup = 0xFF;
   std::uint8_t deviceId = 0xFF;
-  std::uint8_t ciType = 0xFF;
+  ci_message ciType;
   std::uint8_t ciVer = 1;
   std::uint32_t remoteMUID = 0;
   std::uint32_t localMUID = 0;

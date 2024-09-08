@@ -306,93 +306,95 @@ template <management_backend ManagementBackend, profile_backend ProfileBackend, 
           process_inquiry_backend PIBackend>
 void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::header() {
   struct message_dispatch_info {
-    std::uint8_t type;
+    ci_message type;
     std::uint8_t v1size;
     std::uint8_t v2size;
     consumer_fn consumer;
   };
 
   static std::array const messages = {
-      message_dispatch_info{MIDICI_PROFILE_INQUIRY, 0, 0, &midiCIProcessor::profile_inquiry},
-      message_dispatch_info{MIDICI_PROFILE_INQUIRYREPLY,
+      message_dispatch_info{ci_message::profile_inquiry, 0, 0, &midiCIProcessor::profile_inquiry},
+      message_dispatch_info{ci_message::profile_inquiry_reply,
                             offsetof(ci::profile_configuration::packed::inquiry_reply_v1_pt1, ids),
                             offsetof(ci::profile_configuration::packed::inquiry_reply_v1_pt1, ids),
                             &midiCIProcessor::profile_inquiry_reply},
-      message_dispatch_info{MIDICI_PROFILE_SETON, sizeof(ci::profile_configuration::packed::on_v1),
+      message_dispatch_info{ci_message::profile_set_on, sizeof(ci::profile_configuration::packed::on_v1),
                             sizeof(ci::profile_configuration::packed::on_v2), &midiCIProcessor::profile_on},
-      message_dispatch_info{MIDICI_PROFILE_SETOFF, sizeof(ci::profile_configuration::packed::off_v1),
+      message_dispatch_info{ci_message::profile_set_off, sizeof(ci::profile_configuration::packed::off_v1),
                             sizeof(ci::profile_configuration::packed::off_v2), &midiCIProcessor::profile_off},
-      message_dispatch_info{MIDICI_PROFILE_ENABLED, sizeof(ci::profile_configuration::packed::enabled_v1),
+      message_dispatch_info{ci_message::profile_enabled, sizeof(ci::profile_configuration::packed::enabled_v1),
                             sizeof(ci::profile_configuration::packed::enabled_v2), &midiCIProcessor::profile_enabled},
-      message_dispatch_info{MIDICI_PROFILE_DISABLED, sizeof(ci::profile_configuration::packed::disabled_v1),
+      message_dispatch_info{ci_message::profile_disabled, sizeof(ci::profile_configuration::packed::disabled_v1),
                             sizeof(ci::profile_configuration::packed::disabled_v2), &midiCIProcessor::profile_disabled},
-      message_dispatch_info{MIDICI_PROFILE_ADDED, sizeof(ci::profile_configuration::packed::added_v1),
+      message_dispatch_info{ci_message::profile_added, sizeof(ci::profile_configuration::packed::added_v1),
                             sizeof(ci::profile_configuration::packed::added_v1), &midiCIProcessor::profile_added},
-      message_dispatch_info{MIDICI_PROFILE_REMOVED, sizeof(ci::profile_configuration::packed::removed_v1),
+      message_dispatch_info{ci_message::profile_removed, sizeof(ci::profile_configuration::packed::removed_v1),
                             sizeof(ci::profile_configuration::packed::removed_v1), &midiCIProcessor::profile_removed},
-      message_dispatch_info{MIDICI_PROFILE_DETAILS_INQUIRY, sizeof(ci::profile_configuration::packed::details_v1),
+      message_dispatch_info{ci_message::profile_details_inquiry, sizeof(ci::profile_configuration::packed::details_v1),
                             sizeof(ci::profile_configuration::packed::details_v1), &midiCIProcessor::profile_details},
       message_dispatch_info{
-          MIDICI_PROFILE_DETAILS_REPLY, offsetof(ci::profile_configuration::packed::details_reply_v1, data),
+          ci_message::profile_details_reply, offsetof(ci::profile_configuration::packed::details_reply_v1, data),
           offsetof(ci::profile_configuration::packed::details_reply_v1, data), &midiCIProcessor::profile_details_reply},
       message_dispatch_info{
-          MIDICI_PROFILE_SPECIFIC_DATA, offsetof(ci::profile_configuration::packed::specific_data_v1, data),
+          ci_message::profile_specific_data, offsetof(ci::profile_configuration::packed::specific_data_v1, data),
           offsetof(ci::profile_configuration::packed::specific_data_v1, data), &midiCIProcessor::profile_specific_data},
 
-      message_dispatch_info{MIDICI_PE_CAPABILITY, sizeof(ci::property_exchange::packed::capabilities_v1),
+      message_dispatch_info{ci_message::pe_capability, sizeof(ci::property_exchange::packed::capabilities_v1),
                             sizeof(ci::property_exchange::packed::capabilities_v2), &midiCIProcessor::pe_capabilities},
-      message_dispatch_info{MIDICI_PE_CAPABILITYREPLY, sizeof(ci::property_exchange::packed::capabilities_reply_v1),
-                            sizeof(ci::property_exchange::packed::capabilities_reply_v2),
-                            &midiCIProcessor::pe_capabilities_reply},
-      message_dispatch_info{MIDICI_PE_GET, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+      message_dispatch_info{
+          ci_message::pe_capability_reply, sizeof(ci::property_exchange::packed::capabilities_reply_v1),
+          sizeof(ci::property_exchange::packed::capabilities_reply_v2), &midiCIProcessor::pe_capabilities_reply},
+      message_dispatch_info{ci_message::pe_get, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_GETREPLY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+      message_dispatch_info{
+          ci_message::pe_get_reply, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+      message_dispatch_info{ci_message::pe_set, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_SET, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+      message_dispatch_info{
+          ci_message::pe_set_reply, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+      message_dispatch_info{ci_message::pe_sub, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
                             &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_SETREPLY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_SUB, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_SUBREPLY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            &midiCIProcessor::property_exchange},
-      message_dispatch_info{MIDICI_PE_NOTIFY, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
-                            &midiCIProcessor::property_exchange},
+      message_dispatch_info{
+          ci_message::pe_sub_reply, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
+      message_dispatch_info{
+          ci_message::pe_notify, offsetof(ci::property_exchange::packed::property_exchange_pt1, header),
+          offsetof(ci::property_exchange::packed::property_exchange_pt1, header), &midiCIProcessor::property_exchange},
 
-      message_dispatch_info{MIDICI_PI_CAPABILITY, 0, 0, &midiCIProcessor::process_inquiry_capabilities},
-      message_dispatch_info{MIDICI_PI_CAPABILITYREPLY, 0, sizeof(ci::process_inquiry::packed::capabilities_reply_v2),
+      message_dispatch_info{ci_message::pi_capability, 0, 0, &midiCIProcessor::process_inquiry_capabilities},
+      message_dispatch_info{ci_message::pi_capability_reply, 0,
+                            sizeof(ci::process_inquiry::packed::capabilities_reply_v2),
                             &midiCIProcessor::process_inquiry_capabilities_reply},
-      message_dispatch_info{MIDICI_PI_MM_REPORT, 0, sizeof(ci::process_inquiry::packed::midi_message_report_v2),
+      message_dispatch_info{ci_message::pi_mm_report, 0, sizeof(ci::process_inquiry::packed::midi_message_report_v2),
                             &midiCIProcessor::process_inquiry_midi_message_report},
-      message_dispatch_info{MIDICI_PI_MM_REPORT_REPLY, 0,
+      message_dispatch_info{ci_message::pi_mm_report_reply, 0,
                             sizeof(ci::process_inquiry::packed::midi_message_report_reply_v2),
                             &midiCIProcessor::process_inquiry_midi_message_report_reply},
-      message_dispatch_info{MIDICI_PI_MM_REPORT_END, 0, 0, &midiCIProcessor::process_inquiry_midi_message_report_end},
+      message_dispatch_info{ci_message::pi_mm_report_end, 0, 0,
+                            &midiCIProcessor::process_inquiry_midi_message_report_end},
 
-      message_dispatch_info{MIDICI_DISCOVERY, sizeof(ci::packed::discovery_v1), sizeof(ci::packed::discovery_v2),
+      message_dispatch_info{ci_message::discovery, sizeof(ci::packed::discovery_v1), sizeof(ci::packed::discovery_v2),
                             &midiCIProcessor::discovery},
-      message_dispatch_info{MIDICI_DISCOVERY_REPLY, sizeof(ci::packed::discovery_reply_v1),
+      message_dispatch_info{ci_message::discovery_reply, sizeof(ci::packed::discovery_reply_v1),
                             sizeof(ci::packed::discovery_reply_v2), &midiCIProcessor::discovery_reply},
-      message_dispatch_info{MIDICI_ENDPOINTINFO, sizeof(ci::packed::endpoint_info_v1),
+      message_dispatch_info{ci_message::endpoint_info, sizeof(ci::packed::endpoint_info_v1),
                             sizeof(ci::packed::endpoint_info_v1), &midiCIProcessor::endpoint_info},
-      message_dispatch_info{MIDICI_ENDPOINTINFO_REPLY, offsetof(ci::packed::endpoint_info_reply_v1, data),
+      message_dispatch_info{ci_message::endpoint_info_reply, offsetof(ci::packed::endpoint_info_reply_v1, data),
                             offsetof(ci::packed::endpoint_info_reply_v1, data), &midiCIProcessor::endpoint_info_reply},
-      message_dispatch_info{MIDICI_ACK, offsetof(ci::packed::ack_v1, message), offsetof(ci::packed::ack_v1, message),
-                            &midiCIProcessor::ack},
-      message_dispatch_info{MIDICI_INVALIDATEMUID, sizeof(ci::packed::invalidate_muid_v1),
+      message_dispatch_info{ci_message::ack, offsetof(ci::packed::ack_v1, message),
+                            offsetof(ci::packed::ack_v1, message), &midiCIProcessor::ack},
+      message_dispatch_info{ci_message::invalidate_muid, sizeof(ci::packed::invalidate_muid_v1),
                             sizeof(ci::packed::invalidate_muid_v1), &midiCIProcessor::invalidate_muid},
-      message_dispatch_info{MIDICI_NAK, sizeof(ci::packed::nak_v1), offsetof(ci::packed::nak_v2, message),
+      message_dispatch_info{ci_message::nak, sizeof(ci::packed::nak_v1), offsetof(ci::packed::nak_v2, message),
                             &midiCIProcessor::nak},
   };
   auto const *const h = std::bit_cast<ci::packed::header const *>(buffer_.data());
-  midici_.ciType = static_cast<std::uint8_t>(h->sub_id_2);
+  midici_.ciType = static_cast<ci_message>(h->sub_id_2);
   midici_.ciVer = static_cast<std::uint8_t>(h->version);
   midici_.remoteMUID = ci::from_le7(h->source_muid);
   midici_.localMUID = ci::from_le7(h->destination_muid);
@@ -784,14 +786,15 @@ void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::p
   pe.header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
   pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
 
+  using enum ci_message;
   switch (midici_.ciType) {
-  case MIDICI_PE_GET: property_exchange_backend_.get(midici_, chunk, pe); break;
-  case MIDICI_PE_GETREPLY: property_exchange_backend_.get_reply(midici_, chunk, pe); break;
-  case MIDICI_PE_SET: property_exchange_backend_.set(midici_, chunk, pe); break;
-  case MIDICI_PE_SETREPLY: property_exchange_backend_.set_reply(midici_, chunk, pe); break;
-  case MIDICI_PE_SUB: property_exchange_backend_.subscription(midici_, chunk, pe); break;
-  case MIDICI_PE_SUBREPLY: property_exchange_backend_.subscription_reply(midici_, chunk, pe); break;
-  case MIDICI_PE_NOTIFY: property_exchange_backend_.notify(midici_, chunk, pe); break;
+  case pe_get: property_exchange_backend_.get(midici_, chunk, pe); break;
+  case pe_get_reply: property_exchange_backend_.get_reply(midici_, chunk, pe); break;
+  case pe_set: property_exchange_backend_.set(midici_, chunk, pe); break;
+  case pe_set_reply: property_exchange_backend_.set_reply(midici_, chunk, pe); break;
+  case pe_sub: property_exchange_backend_.subscription(midici_, chunk, pe); break;
+  case pe_sub_reply: property_exchange_backend_.subscription_reply(midici_, chunk, pe); break;
+  case pe_notify: property_exchange_backend_.notify(midici_, chunk, pe); break;
   default: assert(false); break;
   }
   consumer_ = &midiCIProcessor::discard;

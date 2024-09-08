@@ -217,7 +217,7 @@ TEST(CIProcessor, DiscoveryV1) {
   MIDICI midici;
   midici.umpGroup = 0xFF;
   midici.deviceId = 0xFF;
-  midici.ciType = midi2::MIDICI_DISCOVERY;
+  midici.ciType = midi2::ci_message::discovery;
   midici.ciVer = 1;
   midici.remoteMUID = 0;
   midici.localMUID = 0x0FFFFFFF;
@@ -268,7 +268,7 @@ TEST(CIProcessor, DiscoveryV2) {
   MIDICI midici;
   midici.umpGroup = 0xFF;
   midici.deviceId = 0xFF;
-  midici.ciType = midi2::MIDICI_DISCOVERY;
+  midici.ciType = midi2::ci_message::discovery;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
   midici.localMUID = 0x0FFFFFFF;
@@ -328,7 +328,7 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   MIDICI midici;
   midici.umpGroup = 0xFF;
   midici.deviceId = 0xFF;
-  midici.ciType = midi2::MIDICI_DISCOVERY_REPLY;
+  midici.ciType = midi2::ci_message::discovery_reply;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
   midici.localMUID = 0x0FFFFFFF;
@@ -372,7 +372,7 @@ TEST(CIProcessor, EndpointInfo) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = 0x7F;
-  midici.ciType = midi2::MIDICI_ENDPOINTINFO;
+  midici.ciType = midi2::ci_message::endpoint_info;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -427,7 +427,7 @@ TEST(CIProcessor, EndpointInfoReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(device_id);
-  midici.ciType = midi2::MIDICI_ENDPOINTINFO_REPLY;
+  midici.ciType = midi2::ci_message::endpoint_info_reply;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -469,7 +469,7 @@ TEST(CIProcessor, InvalidateMuid) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(device_id);
-  midici.ciType = midi2::MIDICI_INVALIDATEMUID;
+  midici.ciType = midi2::ci_message::invalidate_muid;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -522,7 +522,7 @@ TEST(CIProcessor, Ack) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(device_id);
-  midici.ciType = midi2::MIDICI_ACK;
+  midici.ciType = midi2::ci_message::ack;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -613,7 +613,7 @@ TEST(CIProcessor, NakV1) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(device_id);
-  midici.ciType = midi2::MIDICI_NAK;
+  midici.ciType = midi2::ci_message::nak;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -670,7 +670,7 @@ TEST(CIProcessor, NakV2) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(device_id);
-  midici.ciType = midi2::MIDICI_NAK;
+  midici.ciType = midi2::ci_message::nak;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -716,7 +716,7 @@ TEST(CIProcessor, ProfileInquiry) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_INQUIRY;
+  midici.ciType = midi2::ci_message::profile_inquiry;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -768,7 +768,7 @@ TEST(CIProcessor, ProfileInquiryReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_INQUIRYREPLY;
+  midici.ciType = midi2::ci_message::profile_inquiry_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
@@ -814,7 +814,7 @@ TEST(CIProcessor, ProfileAdded) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_ADDED;
+  midici.ciType = midi2::ci_message::profile_added;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
@@ -857,7 +857,7 @@ TEST(CIProcessor, ProfileRemoved) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_REMOVED;
+  midici.ciType = midi2::ci_message::profile_removed;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
@@ -902,7 +902,7 @@ TEST(CIProcessor, ProfileDetailsInquiry) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_DETAILS_INQUIRY;
+  midici.ciType = midi2::ci_message::profile_details_inquiry;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -953,7 +953,7 @@ TEST(CIProcessor, ProfileDetailsReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_DETAILS_REPLY;
+  midici.ciType = midi2::ci_message::profile_details_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1002,7 +1002,7 @@ TEST(CIProcessor, ProfileOn) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_SETON;
+  midici.ciType = midi2::ci_message::profile_set_on;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1050,7 +1050,7 @@ TEST(CIProcessor, ProfileOff) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_SETOFF;
+  midici.ciType = midi2::ci_message::profile_set_off;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1096,7 +1096,7 @@ TEST(CIProcessor, ProfileEnabled) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_ENABLED;
+  midici.ciType = midi2::ci_message::profile_enabled;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
@@ -1142,7 +1142,7 @@ TEST(CIProcessor, ProfileDisabled) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_DISABLED;
+  midici.ciType = midi2::ci_message::profile_disabled;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
@@ -1189,7 +1189,7 @@ TEST(CIProcessor, ProfileSpecificData) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PROFILE_SPECIFIC_DATA;
+  midici.ciType = midi2::ci_message::profile_specific_data;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
@@ -1234,7 +1234,7 @@ TEST(CIProcessor, PropertyExchangeCapabilities) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_CAPABILITY;
+  midici.ciType = midi2::ci_message::pe_capability;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1283,7 +1283,7 @@ TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_CAPABILITYREPLY;
+  midici.ciType = midi2::ci_message::pe_capability_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1358,7 +1358,7 @@ TEST(CIProcessor, PropertyExchangeGetPropertyData) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_GET;
+  midici.ciType = midi2::ci_message::pe_get;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1440,7 +1440,7 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_GETREPLY;
+  midici.ciType = midi2::ci_message::pe_get_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1517,7 +1517,7 @@ TEST(CIProcessor, PropertyExchangeSetPropertyData) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_SET;
+  midici.ciType = midi2::ci_message::pe_set;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1593,7 +1593,7 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_SETREPLY;
+  midici.ciType = midi2::ci_message::pe_set_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1670,7 +1670,7 @@ TEST(CIProcessor, PropertyExchangeSubscription) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_SUB;
+  midici.ciType = midi2::ci_message::pe_sub;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1747,7 +1747,7 @@ TEST(CIProcessor, PropertyExchangeSubscriptionReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_SUBREPLY;
+  midici.ciType = midi2::ci_message::pe_sub_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1823,7 +1823,7 @@ TEST(CIProcessor, PropertyExchangeNotify) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PE_NOTIFY;
+  midici.ciType = midi2::ci_message::pe_notify;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1871,7 +1871,7 @@ TEST(CIProcessor, ProcessInquiryCapabilities) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PI_CAPABILITY;
+  midici.ciType = midi2::ci_message::pi_capability;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1914,7 +1914,7 @@ TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PI_CAPABILITYREPLY;
+  midici.ciType = midi2::ci_message::pi_capability_reply;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -1963,7 +1963,7 @@ TEST(CIProcessor, ProcessInquiryMidiMessageReport) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PI_MM_REPORT;
+  midici.ciType = midi2::ci_message::pi_mm_report;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
@@ -2023,7 +2023,7 @@ TEST(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.deviceId = static_cast<std::uint8_t>(destination);
-  midici.ciType = midi2::MIDICI_PI_MM_REPORT_END;
+  midici.ciType = midi2::ci_message::pi_mm_report_end;
   midici.ciVer = 2;
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);

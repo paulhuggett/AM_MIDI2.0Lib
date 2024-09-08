@@ -56,25 +56,22 @@ void concatSysexArray(uint8_t *sysex, uint16_t *start, uint8_t const *add,
   }
 }
 
-void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, uint8_t ciType,
-                    uint8_t ciVer, uint32_t localMUID, uint32_t remoteMUID) {
+void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, ci_message ciType, uint8_t ciVer, uint32_t localMUID,
+                    uint32_t remoteMUID) {
   sysexHeader[0] = S7UNIVERSAL_NRT;
   sysexHeader[1] = deviceId;
   sysexHeader[2] = S7MIDICI;
-  sysexHeader[3] = ciType;
+  sysexHeader[3] = static_cast<std::uint8_t>(ciType);
   sysexHeader[4] = ciVer;
   uint16_t length = 5;
   setBytesFromNumbers(sysexHeader, localMUID, &length, 4);
   setBytesFromNumbers(sysexHeader, remoteMUID, &length, 4);
 }
 
-uint16_t sendDiscovery(uint8_t *sysex, uint8_t midiCIVer, uint8_t ciType,
-                       uint32_t srcMUID, uint32_t destMUID,
-                       std::array<uint8_t, 3> manuId,
-                       std::array<uint8_t, 2> familyId,
-                       std::array<uint8_t, 2> modelId,
-                       std::array<uint8_t, 4> version, uint8_t ciSupport,
-                       uint32_t sysExMax, uint8_t outputPathId, uint8_t fbIdx) {
+uint16_t sendDiscovery(uint8_t *sysex, uint8_t midiCIVer, ci_message ciType, uint32_t srcMUID, uint32_t destMUID,
+                       std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
+                       std::array<uint8_t, 4> version, uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId,
+                       uint8_t fbIdx) {
   createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, manuId.data(), 3);
@@ -90,7 +87,7 @@ uint16_t sendDiscovery(uint8_t *sysex, uint8_t midiCIVer, uint8_t ciType,
   }
   sysex[length++] = outputPathId;
 
-  if (ciType == MIDICI_DISCOVERY) {
+  if (ciType == ci_message::discovery) {
     return length;
   } else {
     sysex[length++] = fbIdx;
@@ -98,11 +95,9 @@ uint16_t sendDiscovery(uint8_t *sysex, uint8_t midiCIVer, uint8_t ciType,
   }
 }
 
-uint16_t sendACKNAK(uint8_t *sysex, uint8_t midiCIVer, uint8_t ciType,
-                    uint32_t srcMUID, uint32_t destMUID, uint8_t destination,
-                    uint8_t originalSubId, uint8_t statusCode,
-                    uint8_t statusData, uint8_t *ackNakDetails,
-                    uint16_t messageLength, uint8_t *ackNakMessage) {
+uint16_t sendACKNAK(uint8_t *sysex, uint8_t midiCIVer, ci_message ciType, uint32_t srcMUID, uint32_t destMUID,
+                    uint8_t destination, uint8_t originalSubId, uint8_t statusCode, uint8_t statusData,
+                    uint8_t *ackNakDetails, uint16_t messageLength, uint8_t *ackNakMessage) {
   createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
 
   uint16_t length = 13;
@@ -120,12 +115,10 @@ uint16_t sendACKNAK(uint8_t *sysex, uint8_t midiCIVer, uint8_t ciType,
   return length;
 }
 
-uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                        uint32_t destMUID, uint8_t requestId,
-                        uint16_t headerLen, uint8_t *header,
-                        uint16_t numberOfChunks, uint16_t numberOfThisChunk,
-                        uint16_t bodyLength, uint8_t *body, uint8_t ciType) {
-  createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
+uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
+                        uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
+                        uint16_t bodyLength, uint8_t *body, ci_message ciType) {
+  createCIHeader(sysex, 0x7f, ciType, midiCIVer, srcMUID, destMUID);
   sysex[13] = requestId;
   uint16_t length = 14;
   setBytesFromNumbers(sysex, headerLen, &length, 2);
@@ -137,23 +130,20 @@ uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
   return length;
 }
 
-uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                            uint32_t destMUID, uint8_t destination,
-                            std::array<uint8_t, 5> profile,
-                            uint8_t numberOfChannels, uint8_t ciType) {
+uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t destination,
+                            std::array<uint8_t, 5> profile, uint8_t numberOfChannels, ci_message ciType) {
   createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
-  if (midiCIVer == 1 || ciType == MIDICI_PROFILE_ADDED || ciType == MIDICI_PROFILE_REMOVED) {
+  if (midiCIVer == 1 || ciType == ci_message::profile_added || ciType == ci_message::profile_removed) {
     return length;
   }
   setBytesFromNumbers(sysex, numberOfChannels, &length, 2);
   return length;
 }
 
-uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                          uint32_t destMUID, uint8_t requestId,
-                          uint16_t headerLen, uint8_t *header, uint8_t ciType) {
+uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
+                          uint16_t headerLen, uint8_t *header, ci_message ciType) {
   createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
   sysex[13] = requestId;
   uint16_t length = 14;
@@ -174,9 +164,8 @@ uint16_t CIMessage::sendDiscoveryRequest(
     std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
     std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version,
     uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId) {
-  return sendDiscovery(sysex, midiCIVer, MIDICI_DISCOVERY, srcMUID,
-                       M2_CI_BROADCAST, manuId, familyId, modelId, version,
-                       ciSupport, sysExMax, outputPathId, 0);
+  return sendDiscovery(sysex, midiCIVer, ci_message::discovery, srcMUID, M2_CI_BROADCAST, manuId, familyId, modelId,
+                       version, ciSupport, sysExMax, outputPathId, 0);
 }
 
 uint16_t CIMessage::sendDiscoveryReply(
@@ -184,8 +173,8 @@ uint16_t CIMessage::sendDiscoveryReply(
     std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
     std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version,
     uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId, uint8_t fbIdx) {
-  return sendDiscovery(sysex, midiCIVer, MIDICI_DISCOVERY_REPLY, srcMUID, destMUID, manuId, familyId, modelId, version,
-                       ciSupport, sysExMax, outputPathId, fbIdx);
+  return sendDiscovery(sysex, midiCIVer, ci_message::discovery_reply, srcMUID, destMUID, manuId, familyId, modelId,
+                       version, ciSupport, sysExMax, outputPathId, fbIdx);
 }
 
 uint16_t CIMessage::sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer,
@@ -193,8 +182,7 @@ uint16_t CIMessage::sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer,
                                             uint8_t status) {
   if (midiCIVer < 2)
     return 0;
-  createCIHeader(sysex, 0x7F, MIDICI_ENDPOINTINFO, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::endpoint_info, midiCIVer, srcMUID, destMUID);
   sysex[13] = status;
   return 14;
 }
@@ -205,8 +193,7 @@ uint16_t CIMessage::sendEndpointInfoReply(uint8_t *sysex, uint8_t midiCIVer,
                                           uint8_t *infoData) {
   if (midiCIVer < 2)
     return 0;
-  createCIHeader(sysex, 0x7F, MIDICI_ENDPOINTINFO_REPLY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::endpoint_info_reply, midiCIVer, srcMUID, destMUID);
   sysex[13] = status;
   uint16_t length = 14;
   setBytesFromNumbers(sysex, infoLength, &length, 2);
@@ -219,9 +206,8 @@ uint16_t CIMessage::sendACK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
                             uint8_t originalSubId, uint8_t statusCode,
                             uint8_t statusData, uint8_t *ackNakDetails,
                             uint16_t messageLength, uint8_t *ackNakMessage) {
-  return sendACKNAK(sysex, midiCIVer, MIDICI_ACK, srcMUID, destMUID,
-                    destination, originalSubId, statusCode, statusData,
-                    ackNakDetails, messageLength, ackNakMessage);
+  return sendACKNAK(sysex, midiCIVer, ci_message::ack, srcMUID, destMUID, destination, originalSubId, statusCode,
+                    statusData, ackNakDetails, messageLength, ackNakMessage);
 }
 
 uint16_t CIMessage::sendNAK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
@@ -229,16 +215,14 @@ uint16_t CIMessage::sendNAK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
                             uint8_t originalSubId, uint8_t statusCode,
                             uint8_t statusData, uint8_t *ackNakDetails,
                             uint16_t messageLength, uint8_t *ackNakMessage) {
-  return sendACKNAK(sysex, midiCIVer, MIDICI_NAK, srcMUID, destMUID,
-                    destination, originalSubId, statusCode, statusData,
-                    ackNakDetails, messageLength, ackNakMessage);
+  return sendACKNAK(sysex, midiCIVer, ci_message::nak, srcMUID, destMUID, destination, originalSubId, statusCode,
+                    statusData, ackNakDetails, messageLength, ackNakMessage);
 }
 
 uint16_t CIMessage::sendInvalidateMUID(uint8_t *sysex, uint8_t midiCIVer,
                                        uint32_t srcMUID,
                                        uint32_t terminateMuid) {
-  createCIHeader(sysex, 0x7F, MIDICI_INVALIDATEMUID, midiCIVer, srcMUID,
-                 M2_CI_BROADCAST);
+  createCIHeader(sysex, 0x7F, ci_message::invalidate_muid, midiCIVer, srcMUID, M2_CI_BROADCAST);
   setBytesFromNumbers(sysex, terminateMuid, nullptr, 4);
   return 17;
 }
@@ -248,8 +232,7 @@ uint16_t CIMessage::sendInvalidateMUID(uint8_t *sysex, uint8_t midiCIVer,
 uint16_t CIMessage::sendProfileListRequest(uint8_t *sysex, uint8_t midiCIVer,
                                            uint32_t srcMUID, uint32_t destMUID,
                                            uint8_t destination) {
-  createCIHeader(sysex, destination, MIDICI_PROFILE_INQUIRY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, destination, ci_message::profile_inquiry, midiCIVer, srcMUID, destMUID);
   return 13;
 }
 
@@ -257,8 +240,7 @@ uint16_t CIMessage::sendProfileListResponse(
     uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID,
     uint8_t destination, uint8_t profilesEnabledLen, uint8_t *profilesEnabled,
     uint8_t profilesDisabledLen, uint8_t *profilesDisabled) {
-  createCIHeader(sysex, destination, MIDICI_PROFILE_INQUIRYREPLY, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::profile_inquiry_reply, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   setBytesFromNumbers(sysex, profilesEnabledLen, &length, 2);
   concatSysexArray(sysex, &length, profilesEnabled, profilesEnabledLen * 5);
@@ -271,14 +253,14 @@ uint16_t CIMessage::sendProfileAdd(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t destination,
                                    std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, MIDICI_PROFILE_ADDED);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, ci_message::profile_added);
 }
 
 uint16_t CIMessage::sendProfileRemove(uint8_t *sysex, uint8_t midiCIVer,
                                       uint32_t srcMUID, uint32_t destMUID,
                                       uint8_t destination,
                                       std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, MIDICI_PROFILE_REMOVED);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, ci_message::profile_removed);
 }
 
 uint16_t CIMessage::sendProfileOn(uint8_t *sysex, uint8_t midiCIVer,
@@ -286,16 +268,15 @@ uint16_t CIMessage::sendProfileOn(uint8_t *sysex, uint8_t midiCIVer,
                                   uint8_t destination,
                                   std::array<uint8_t, 5> profile,
                                   uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, numberOfChannels, MIDICI_PROFILE_SETON);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
+                            ci_message::profile_set_on);
 }
 
 uint16_t CIMessage::sendProfileOff(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t destination,
                                    std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, 0, MIDICI_PROFILE_SETOFF);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, ci_message::profile_set_off);
 }
 
 uint16_t CIMessage::sendProfileEnabled(uint8_t *sysex, uint8_t midiCIVer,
@@ -303,8 +284,8 @@ uint16_t CIMessage::sendProfileEnabled(uint8_t *sysex, uint8_t midiCIVer,
                                        uint8_t destination,
                                        std::array<uint8_t, 5> profile,
                                        uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, numberOfChannels, MIDICI_PROFILE_ENABLED);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
+                            ci_message::profile_enabled);
 }
 
 uint16_t CIMessage::sendProfileDisabled(uint8_t *sysex, uint8_t midiCIVer,
@@ -312,8 +293,8 @@ uint16_t CIMessage::sendProfileDisabled(uint8_t *sysex, uint8_t midiCIVer,
                                         uint8_t destination,
                                         std::array<uint8_t, 5> profile,
                                         uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination,
-                            profile, numberOfChannels, MIDICI_PROFILE_DISABLED);
+  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
+                            ci_message::profile_disabled);
 }
 
 uint16_t CIMessage::sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer,
@@ -321,8 +302,7 @@ uint16_t CIMessage::sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer,
                                             uint8_t destination,
                                             std::array<uint8_t, 5> profile,
                                             uint16_t datalen, uint8_t *data) {
-  createCIHeader(sysex, destination, MIDICI_PROFILE_SPECIFIC_DATA, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::profile_specific_data, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
   setBytesFromNumbers(sysex, datalen, &length, 4);
@@ -338,8 +318,7 @@ uint16_t CIMessage::sendProfileDetailsInquiry(uint8_t *sysex, uint8_t midiCIVer,
                                               uint8_t InquiryTarget) {
   if (midiCIVer < 2)
     return 0;
-  createCIHeader(sysex, destination, MIDICI_PROFILE_DETAILS_INQUIRY, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::profile_details_inquiry, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
   sysex[length++] = InquiryTarget;
@@ -354,8 +333,7 @@ uint16_t CIMessage::sendProfileDetailsReply(uint8_t *sysex, uint8_t midiCIVer,
                                             uint16_t datalen, uint8_t *data) {
   if (midiCIVer < 2)
     return 0;
-  createCIHeader(sysex, destination, MIDICI_PROFILE_DETAILS_REPLY, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::profile_details_reply, midiCIVer, srcMUID, destMUID);
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
   sysex[length++] = InquiryTarget;
@@ -370,8 +348,7 @@ uint16_t CIMessage::sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer,
                                             uint32_t srcMUID, uint32_t destMUID,
                                             uint8_t numSimulRequests,
                                             uint8_t majVer, uint8_t minVer) {
-  createCIHeader(sysex, 0x7F, MIDICI_PE_CAPABILITY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::pe_capability, midiCIVer, srcMUID, destMUID);
   sysex[13] = numSimulRequests;
   if (midiCIVer == 1) {
     return 14;
@@ -385,8 +362,7 @@ uint16_t CIMessage::sendPECapabilityReply(uint8_t *sysex, uint8_t midiCIVer,
                                           uint32_t srcMUID, uint32_t destMUID,
                                           uint8_t numSimulRequests,
                                           uint8_t majVer, uint8_t minVer) {
-  createCIHeader(sysex, 0x7F, MIDICI_PE_CAPABILITYREPLY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::pe_capability_reply, midiCIVer, srcMUID, destMUID);
   sysex[13] = numSimulRequests;
   if (midiCIVer == 1) {
     return 14;
@@ -402,9 +378,8 @@ uint16_t CIMessage::sendPESub(uint8_t *sysex, uint8_t midiCIVer,
                               uint8_t *header, uint16_t numberOfChunks,
                               uint16_t numberOfThisChunk, uint16_t bodyLength,
                               uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                        headerLen, header, numberOfChunks, numberOfThisChunk,
-                        bodyLength, body, MIDICI_PE_SUB);
+  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
+                        numberOfThisChunk, bodyLength, body, ci_message::pe_sub);
 }
 
 uint16_t CIMessage::sendPESet(uint8_t *sysex, uint8_t midiCIVer,
@@ -413,9 +388,8 @@ uint16_t CIMessage::sendPESet(uint8_t *sysex, uint8_t midiCIVer,
                               uint8_t *header, uint16_t numberOfChunks,
                               uint16_t numberOfThisChunk, uint16_t bodyLength,
                               uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                        headerLen, header, numberOfChunks, numberOfThisChunk,
-                        bodyLength, body, MIDICI_PE_SET);
+  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
+                        numberOfThisChunk, bodyLength, body, ci_message::pe_set);
 }
 
 uint16_t CIMessage::sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer,
@@ -424,41 +398,36 @@ uint16_t CIMessage::sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer,
                                    uint8_t *header, uint16_t numberOfChunks,
                                    uint16_t numberOfThisChunk,
                                    uint16_t bodyLength, uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                        headerLen, header, numberOfChunks, numberOfThisChunk,
-                        bodyLength, body, MIDICI_PE_GETREPLY);
+  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
+                        numberOfThisChunk, bodyLength, body, ci_message::pe_get_reply);
 }
 
 uint16_t CIMessage::sendPEGet(uint8_t *sysex, uint8_t midiCIVer,
                               uint32_t srcMUID, uint32_t destMUID,
                               uint8_t requestId, uint16_t headerLen,
                               uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                          headerLen, header, MIDICI_PE_GET);
+  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_get);
 }
 
 uint16_t CIMessage::sendPESubReply(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t requestId, uint16_t headerLen,
                                    uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                          headerLen, header, MIDICI_PE_SUBREPLY);
+  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_sub_reply);
 }
 
 uint16_t CIMessage::sendPENotify(uint8_t *sysex, uint8_t midiCIVer,
                                  uint32_t srcMUID, uint32_t destMUID,
                                  uint8_t requestId, uint16_t headerLen,
                                  uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                          headerLen, header, MIDICI_PE_NOTIFY);
+  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_notify);
 }
 
 uint16_t CIMessage::sendPESetReply(uint8_t *sysex, uint8_t midiCIVer,
                                    uint32_t srcMUID, uint32_t destMUID,
                                    uint8_t requestId, uint16_t headerLen,
                                    uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId,
-                          headerLen, header, MIDICI_PE_SETREPLY);
+  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_set_reply);
 }
 
 // Process Inquiry
@@ -467,16 +436,14 @@ uint16_t CIMessage::sendPICapabilityRequest(uint8_t *sysex, uint8_t midiCIVer,
                                             uint32_t destMUID) {
   if (midiCIVer == 1)
     return 0;
-  createCIHeader(sysex, 0x7F, MIDICI_PI_CAPABILITY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::pi_capability, midiCIVer, srcMUID, destMUID);
   return 13;
 }
 
 uint16_t CIMessage::sendPICapabilityReply(uint8_t *sysex, uint8_t midiCIVer,
                                           uint32_t srcMUID, uint32_t destMUID,
                                           uint8_t supportedFeatures) {
-  createCIHeader(sysex, 0x7F, MIDICI_PI_CAPABILITYREPLY, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, 0x7F, ci_message::pi_capability_reply, midiCIVer, srcMUID, destMUID);
   sysex[13] = supportedFeatures;
   return 14;
 }
@@ -486,8 +453,7 @@ uint16_t CIMessage::sendPIMMReport(uint8_t *sysex, uint8_t midiCIVer,
                                    uint8_t destination, uint8_t MDC,
                                    uint8_t systemBitmap, uint8_t chanContBitmap,
                                    uint8_t chanNoteBitmap) {
-  createCIHeader(sysex, destination, MIDICI_PI_MM_REPORT, midiCIVer, srcMUID,
-                 destMUID);
+  createCIHeader(sysex, destination, ci_message::pi_mm_report, midiCIVer, srcMUID, destMUID);
   sysex[13] = MDC;
   sysex[14] = systemBitmap;
   sysex[15] = 0;
@@ -502,8 +468,7 @@ uint16_t CIMessage::sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer,
                                         uint8_t systemBitmap,
                                         uint8_t chanContBitmap,
                                         uint8_t chanNoteBitmap) {
-  createCIHeader(sysex, destination, MIDICI_PI_MM_REPORT_REPLY, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::pi_mm_report_reply, midiCIVer, srcMUID, destMUID);
   sysex[13] = systemBitmap;
   sysex[14] = 0;
   sysex[15] = chanContBitmap;
@@ -514,8 +479,7 @@ uint16_t CIMessage::sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer,
 uint16_t CIMessage::sendPIMMReportEnd(uint8_t *sysex, uint8_t midiCIVer,
                                       uint32_t srcMUID, uint32_t destMUID,
                                       uint8_t destination) {
-  createCIHeader(sysex, destination, MIDICI_PI_MM_REPORT_END, midiCIVer,
-                 srcMUID, destMUID);
+  createCIHeader(sysex, destination, ci_message::pi_mm_report_end, midiCIVer, srcMUID, destMUID);
   return 13;
 }
 

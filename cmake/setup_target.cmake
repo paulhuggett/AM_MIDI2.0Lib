@@ -50,6 +50,7 @@ function (setup_target target)
     -Wno-packed
     -Wno-padded
     -Wno-switch-default
+    -Wno-switch-enum
     -Wno-weak-vtables
   )
   # Some clang warning switches are not available in all versions of the compiler.

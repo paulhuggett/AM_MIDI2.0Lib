@@ -384,8 +384,7 @@ TEST(UMPProcessor, FunctionBlockInfo) {
   midi2::types::function_block_info_w1 word1{};
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;
-  word1.status =
-      static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_NEGOTIATION_REPLY);
+  word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_negotiation_reply);
   word1.a = active;
   word1.block_number = function_block_num;
   word1.reserv = 0U;
@@ -418,18 +417,15 @@ TEST(UMPProcessor, FunctionBlockName) {
   MockCallbacks callbacks;
   EXPECT_CALL(
       callbacks,
-      functionBlockName(
-          UMPDataMatches(
-              midi2::umpCommon{
-                  group, midi2::ump_message_type::midi_endpoint,
-                  static_cast<std::uint8_t>(midi2::MIDICI_PROTOCOL_SET)},
-              stream_id, format, std::begin(payload), std::end(payload)),
-          function_block_num));
+      functionBlockName(UMPDataMatches(midi2::umpCommon{group, midi2::ump_message_type::midi_endpoint,
+                                                        static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
+                                       stream_id, format, std::begin(payload), std::end(payload)),
+                        function_block_num));
 
   midi2::types::function_block_name_w1 word1{};
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
   word1.format = 0U;  // "complete UMP"
-  word1.status = static_cast<std::uint32_t>(midi2::MIDICI_PROTOCOL_SET);
+  word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_set);
   word1.block_number = function_block_num;
   word1.name = 'n';
 
