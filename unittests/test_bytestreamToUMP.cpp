@@ -128,14 +128,12 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
   std::array const input{std::uint8_t{midi2::status::note_on | channel},
                          note_number, velocity, note_number, std::uint8_t{0}};
 
-  auto const m0 =
-      std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) |
-                    (ump_note_on << 20) | (std::uint32_t{note_number} << 8)};
-  auto const m1 = std::uint32_t{(midi2::scaleUp(velocity, 7, 16) << 16)};
-  auto const m2 =
-      std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) |
-                    (ump_note_off << 20) | (std::uint32_t{note_number} << 8)};
-  auto const m3 = std::uint32_t{(midi2::scaleUp(0x40, 7, 16) << 16)};
+  constexpr auto m0 = std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) | (ump_note_on << 20) |
+                                    (std::uint32_t{note_number} << 8)};
+  constexpr auto m1 = std::uint32_t{(midi2::scaleUp(velocity, 7, 16) << 16)};
+  constexpr auto m2 = std::uint32_t{(message_type << 28) | (group << 24) | (channel << 16) | (ump_note_off << 20) |
+                                    (std::uint32_t{note_number} << 8)};
+  constexpr auto m3 = std::uint32_t{(midi2::scaleUp(0x40, 7, 16) << 16)};
   std::array const expected{m0, m1, m2, m3};
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
