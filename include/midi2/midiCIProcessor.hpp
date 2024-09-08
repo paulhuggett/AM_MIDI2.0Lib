@@ -230,7 +230,7 @@ private:
   consumer_fn consumer_ = &midiCIProcessor::header;
 
   MIDICI midici_;
-  std::array<std::byte, 512> buffer_;
+  std::array<std::byte, 512> buffer_{};
 
   void discard();
   void overflow();
