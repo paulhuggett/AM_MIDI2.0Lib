@@ -158,7 +158,7 @@ OutputIterator decoder::parse_byte(std::byte const value, OutputIterator out) {
     // Assemble the output byte from ths input value and its most-significant
     // bit stored in msbs_.
     auto msbs = static_cast<std::byte>(msbs_);
-    *(out++) = value | (((msbs >> pos_) & std::byte{0x01}) << 7U);
+    *(out++) = value | (((msbs >> static_cast<unsigned>(pos_)) & std::byte{0x01}) << 7U);
   }
   // Decrement pos. If pos is 0 on entry, it will wrap back to msbs_byte_pos_.
   --pos_;
