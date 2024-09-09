@@ -68,33 +68,6 @@ void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, ci_message ciType, u
   setBytesFromNumbers(sysexHeader, remoteMUID, &length, 4);
 }
 
-uint16_t sendDiscovery(uint8_t *sysex, uint8_t midiCIVer, ci_message ciType, uint32_t srcMUID, uint32_t destMUID,
-                       std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
-                       std::array<uint8_t, 4> version, uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId,
-                       uint8_t fbIdx) {
-  createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, manuId.data(), 3);
-  concatSysexArray(sysex, &length, familyId.data(), 2);
-  concatSysexArray(sysex, &length, modelId.data(), 2);
-  concatSysexArray(sysex, &length, version.data(), 4);
-
-  // Capabilities
-  sysex[length++] = ciSupport;
-  setBytesFromNumbers(sysex, sysExMax, &length, 4);
-  if (midiCIVer < 2) {
-    return length;
-  }
-  sysex[length++] = outputPathId;
-
-  if (ciType == ci_message::discovery) {
-    return length;
-  } else {
-    sysex[length++] = fbIdx;
-    return length;
-  }
-}
-
 uint16_t sendACKNAK(uint8_t *sysex, uint8_t midiCIVer, ci_message ciType, uint32_t srcMUID, uint32_t destMUID,
                     uint8_t destination, uint8_t originalSubId, uint8_t statusCode, uint8_t statusData,
                     uint8_t *ackNakDetails, uint16_t messageLength, uint8_t *ackNakMessage) {
@@ -158,24 +131,6 @@ uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, u
 }  // end anonymous namespace
 
 namespace midi2 {
-
-uint16_t CIMessage::sendDiscoveryRequest(
-    uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-    std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
-    std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version,
-    uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId) {
-  return sendDiscovery(sysex, midiCIVer, ci_message::discovery, srcMUID, M2_CI_BROADCAST, manuId, familyId, modelId,
-                       version, ciSupport, sysExMax, outputPathId, 0);
-}
-
-uint16_t CIMessage::sendDiscoveryReply(
-    uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID,
-    std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
-    std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version,
-    uint8_t ciSupport, uint32_t sysExMax, uint8_t outputPathId, uint8_t fbIdx) {
-  return sendDiscovery(sysex, midiCIVer, ci_message::discovery_reply, srcMUID, destMUID, manuId, familyId, modelId,
-                       version, ciSupport, sysExMax, outputPathId, fbIdx);
-}
 
 uint16_t CIMessage::sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer,
                                             uint32_t srcMUID, uint32_t destMUID,

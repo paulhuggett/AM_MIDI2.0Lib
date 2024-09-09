@@ -31,10 +31,54 @@
 #include <array>
 #include <cstdint>
 
+#include "midi2/ci_types.hpp"
 #include "midi2/utils.hpp"
+
+namespace midi2::ci {
+
+namespace details {
+
+template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O safe_copy(O first, S last, T const &t) {
+  auto first2 = first;
+  std::ranges::advance(first2, sizeof(T), last);
+  if (first2 == last) {
+    return first2;
+  }
+  auto const *const ptr = std::bit_cast<std::byte const *>(&t);
+  return std::ranges::copy(ptr, ptr + sizeof(T), first).out;
+}
+
+}  // end namespace details
+
+template <typename T> struct type_to_packed {
+  // using v1 = ;
+  // using v2 = ;
+};
+
+template <> struct type_to_packed<discovery> {
+  using v1 = packed::discovery_v1;
+  using v2 = packed::discovery_v2;
+};
+template <> struct type_to_packed<discovery_reply> {
+  using v1 = packed::discovery_reply_v1;
+  using v2 = packed::discovery_reply_v2;
+};
+
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, typename T>
+constexpr O create_message(O first, S last, MIDICI const &midici, T const &t) {
+  first = details::safe_copy(first, last, static_cast<packed::header>(midici));
+  if (midici.ciVer == 1) {
+    return details::safe_copy(first, last, static_cast<type_to_packed<T>::v1>(t));
+  }
+  return details::safe_copy(first, last, static_cast<type_to_packed<T>::v2>(t));
+}
+
+}  // end namespace midi2::ci
 
 namespace midi2::CIMessage {
 
+#if 0
 uint16_t sendDiscoveryRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, std::array<uint8_t, 3> manuId,
                               std::array<uint8_t, 2> familyId, std::array<uint8_t, 2> modelId,
                               std::array<uint8_t, 4> version, uint8_t ciSupport, uint32_t sysExMax,
@@ -44,6 +88,7 @@ uint16_t sendDiscoveryReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
                             std::array<uint8_t, 3> manuId, std::array<uint8_t, 2> familyId,
                             std::array<uint8_t, 2> modelId, std::array<uint8_t, 4> version, uint8_t ciSupport,
                             uint32_t sysExMax, uint8_t outputPathId, uint8_t fbIdx);
+#endif
 
 uint16_t sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
                                  uint8_t status);

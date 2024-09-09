@@ -208,7 +208,7 @@ enum : std::uint8_t {
   MIDICI_PE_MCODED7ZLIB = 3,
 };
 
-constexpr auto M2_CI_BROADCAST = std::uint32_t{0xFFFFFFF};
+constexpr auto M2_CI_BROADCAST = std::uint32_t{0x0FFFFFFF};
 
 enum : std::uint32_t {
   UMP_VER_MAJOR = 1,

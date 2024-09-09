@@ -1,5 +1,6 @@
 // DUT
 #include "midi2/ci_types.hpp"
+#include "midi2/midiCIMessageCreate.hpp"
 #include "midi2/midiCIProcessor.hpp"
 #include "midi2/utils.hpp"
 
@@ -188,6 +189,7 @@ TEST(CIProcessor, Empty) {
 }
 
 TEST(CIProcessor, DiscoveryV1) {
+  constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
   constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
@@ -198,7 +200,7 @@ TEST(CIProcessor, DiscoveryV1) {
   // clang-format off
   std::array const message{
     std::byte{0x7E}, // Universal System Exclusive
-    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    device_id, // Device ID: 0x7F = to MIDI Port
     std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x70}, // Universal System Exclusive Sub-ID#2: Discovery
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
@@ -216,11 +218,11 @@ TEST(CIProcessor, DiscoveryV1) {
   // clang-format on
   MIDICI midici;
   midici.umpGroup = 0xFF;
-  midici.deviceId = 0xFF;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
   midici.ciType = midi2::ci_message::discovery;
   midici.ciVer = 1;
   midici.remoteMUID = 0;
-  midici.localMUID = 0x0FFFFFFF;
+  midici.localMUID = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
@@ -230,13 +232,26 @@ TEST(CIProcessor, DiscoveryV1) {
   discovery.capability = static_cast<std::uint8_t>(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, discovery(midici, discovery)).Times(1);
-  midi2::midiCIProcessor ci{std::ref(mocks)};
-  std::for_each(std::begin(message), std::end(message), std::bind_front(&decltype(ci)::processMIDICI, &ci));
+  mock_management_callbacks management_mocks;
+  mock_profile_callbacks profile_mocks;
+  mock_property_exchange_callbacks pe_mocks;
+  mock_process_inquiry_callbacks pi_mocks;
+
+  EXPECT_CALL(management_mocks, discovery(midici, discovery)).Times(1);
+  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
+                                   std::ref(pi_mocks)};
+  processor.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+
+  // Test create_message()
+  std::vector<std::byte> v{std::size_t{256}};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, discovery);
+  v.resize(std::distance(v.begin(), last));
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST(CIProcessor, DiscoveryV2) {
+  constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
   constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
@@ -248,7 +263,7 @@ TEST(CIProcessor, DiscoveryV2) {
   // clang-format off
   std::array const message{
     std::byte{0x7E}, // Universal System Exclusive
-    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    device_id, // Device ID: 0x7F = to MIDI Port
     std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x70}, // Universal System Exclusive Sub-ID#2: Discovery
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
@@ -267,11 +282,11 @@ TEST(CIProcessor, DiscoveryV2) {
   // clang-format on
   MIDICI midici;
   midici.umpGroup = 0xFF;
-  midici.deviceId = 0xFF;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
   midici.ciType = midi2::ci_message::discovery;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
-  midici.localMUID = 0x0FFFFFFF;
+  midici.localMUID = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
@@ -289,12 +304,20 @@ TEST(CIProcessor, DiscoveryV2) {
 
   EXPECT_CALL(management_mocks, discovery(midici, discovery)).Times(1);
 
-  midi2::midiCIProcessor ci{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                            std::ref(pi_mocks)};
-  std::ranges::for_each(message, std::bind_front(&decltype(ci)::processMIDICI, &ci));
+  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
+                                   std::ref(pi_mocks)};
+  processor.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+
+  // Test create_message()
+  std::vector<std::byte> v{std::size_t{256}};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, discovery);
+  v.resize(std::distance(v.begin(), last));
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST(CIProcessor, DiscoveryReplyV2) {
+  constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
   constexpr auto model = std::array{std::byte{0x5B}, std::byte{0x4D}};
@@ -307,7 +330,7 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   // clang-format off
   std::array const message{
     std::byte{0x7E}, // Universal System Exclusive
-    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    device_id, // Device ID: 0x7F = to MIDI Port
     std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x71}, // Universal System Exclusive Sub-ID#2: Reply to Discovery
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
@@ -327,11 +350,11 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   // clang-format on
   MIDICI midici;
   midici.umpGroup = 0xFF;
-  midici.deviceId = 0xFF;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
   midici.ciType = midi2::ci_message::discovery_reply;
   midici.ciVer = 2;
   midici.remoteMUID = 0;
-  midici.localMUID = 0x0FFFFFFF;
+  midici.localMUID = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery_reply reply;
   reply.manufacturer = midi2::ci::from_array(manufacturer);
@@ -345,8 +368,15 @@ TEST(CIProcessor, DiscoveryReplyV2) {
 
   mock_management_callbacks mocks;
   EXPECT_CALL(mocks, discovery_reply(midici, reply)).Times(1);
-  midi2::midiCIProcessor ci{std::ref(mocks)};
-  std::for_each(std::begin(message), std::end(message), std::bind_front(&decltype(ci)::processMIDICI, &ci));
+  midi2::midiCIProcessor processor{std::ref(mocks)};
+  processor.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+
+  // Test create_message()
+  std::vector<std::byte> v{std::size_t{256}};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, reply);
+  v.resize(std::distance(v.begin(), last));
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST(CIProcessor, EndpointInfo) {

@@ -52,6 +52,16 @@ constexpr std::uint8_t from_le7(std::byte v) {
   return static_cast<std::uint8_t>(v);
 }
 
+constexpr byte_array_4 to_le7(std::uint32_t const v) {
+  assert(v < (std::uint32_t{1} << 28));
+  return {static_cast<std::byte>(v >> (7 * 0)) & mask7b, static_cast<std::byte>(v >> (7 * 1)) & mask7b,
+          static_cast<std::byte>(v >> (7 * 2)) & mask7b, static_cast<std::byte>(v >> (7 * 3)) & mask7b};
+}
+constexpr byte_array_2 to_le7(std::uint16_t const v) {
+  assert(v < (std::uint16_t{1} << 14));
+  return {static_cast<std::byte>(v >> (7 * 0)) & mask7b, static_cast<std::byte>(v >> (7 * 1)) & mask7b};
+}
+
 template <std::size_t Size>
 constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
   std::array<std::uint8_t, Size> result;
@@ -60,16 +70,13 @@ constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> 
   return result;
 }
 
-struct MIDICI {
-  bool operator==(MIDICI const &) const = default;
-
-  std::uint8_t umpGroup = 0xFF;
-  std::uint8_t deviceId = 0xFF;
-  ci_message ciType;
-  std::uint8_t ciVer = 1;
-  std::uint32_t remoteMUID = 0;
-  std::uint32_t localMUID = 0;
-};
+template <std::size_t Size>
+constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) {
+  std::array<std::byte, Size> result;
+  std::transform(std::begin(other), std::end(other), std::begin(result),
+                 [](std::uint8_t v) { return static_cast<std::byte>(v); });
+  return result;
+}
 
 namespace packed {
 
@@ -95,6 +102,29 @@ static_assert(alignof(header) == 1);
 static_assert(std::is_trivially_copyable_v<header>);
 
 }  // end namespace packed
+
+struct MIDICI {
+  bool operator==(MIDICI const &) const = default;
+
+  explicit constexpr operator packed::header() const;
+
+  std::uint8_t umpGroup = 0xFF;
+  std::uint8_t deviceId = 0xFF;
+  ci_message ciType = static_cast<ci_message>(0x00);
+  std::uint8_t ciVer = 1;
+  std::uint32_t remoteMUID = 0;
+  std::uint32_t localMUID = 0;
+};
+
+constexpr MIDICI::operator packed::header() const {
+  return packed::header{std::byte{0x7E},
+                        static_cast<std::byte>(deviceId),
+                        std::byte{0x0D},
+                        static_cast<std::byte>(ciType),
+                        static_cast<std::byte>(ciVer),
+                        ci::to_le7(remoteMUID),
+                        ci::to_le7(localMUID)};
+}
 
 //*     _ _                              *
 //*  __| (_)___ __ _____ _____ _ _ _  _  *
@@ -148,6 +178,9 @@ struct discovery {
 
   bool operator==(discovery const &) const = default;
 
+  explicit constexpr operator packed::discovery_v1() const;
+  explicit constexpr operator packed::discovery_v2() const;
+
   std::array<std::uint8_t, 3> manufacturer{};
   std::uint16_t family = 0;
   std::uint16_t model = 0;
@@ -167,6 +200,14 @@ constexpr discovery::discovery(packed::discovery_v1 const &v1)
 }
 constexpr discovery::discovery(packed::discovery_v2 const &v2) : discovery(v2.v1) {
   output_path_id = from_le7(v2.output_path_id);
+}
+
+constexpr discovery::operator packed::discovery_v1() const {
+  return {to_array(manufacturer), to_le7(family), to_le7(model), to_array(version), static_cast<std::byte>(capability),
+          to_le7(max_sysex_size)};
+}
+constexpr discovery::operator packed::discovery_v2() const {
+  return {static_cast<packed::discovery_v1>(*this), static_cast<std::byte>(output_path_id)};
 }
 
 //*     _ _                                            _       *
@@ -223,6 +264,9 @@ struct discovery_reply {
 
   bool operator==(discovery_reply const &) const = default;
 
+  explicit constexpr operator packed::discovery_reply_v1() const;
+  explicit constexpr operator packed::discovery_reply_v2() const;
+
   std::array<std::uint8_t, 3> manufacturer{};
   std::uint16_t family = 0;
   std::uint16_t model = 0;
@@ -243,6 +287,16 @@ constexpr discovery_reply::discovery_reply(packed::discovery_reply_v1 const &v1)
 constexpr discovery_reply::discovery_reply(packed::discovery_reply_v2 const &v2) : discovery_reply(v2.v1) {
   output_path_id = from_le7(v2.output_path_id);
   function_block = from_le7(v2.function_block);
+}
+
+constexpr discovery_reply::operator packed::discovery_reply_v1() const {
+  return packed::discovery_reply_v1{
+      to_array(manufacturer), to_le7(family), to_le7(model), to_array(version), static_cast<std::byte>(capability),
+      to_le7(max_sysex_size)};
+}
+constexpr discovery_reply::operator packed::discovery_reply_v2() const {
+  return {static_cast<packed::discovery_reply_v1>(*this), static_cast<std::byte>(output_path_id),
+          static_cast<std::byte>(function_block)};
 }
 
 //*              _           _     _     _       __      *
