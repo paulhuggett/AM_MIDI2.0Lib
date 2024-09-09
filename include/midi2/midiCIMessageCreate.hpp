@@ -46,8 +46,7 @@ constexpr O safe_copy(O first, S last, T const &t) {
   if (first2 == last) {
     return first2;
   }
-  auto const *const ptr = std::bit_cast<std::byte const *>(&t);
-  return std::ranges::copy(ptr, ptr + sizeof(T), first).out;
+  return std::ranges::copy(std::bit_cast<std::byte const *>(&t), std::bit_cast<std::byte const *>(&t + 1), first).out;
 }
 
 }  // end namespace details
