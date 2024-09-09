@@ -42,8 +42,8 @@ public:
   void UMPStreamParse(uint32_t UMP);
 
 private:
-  ump_message_type mType;
-  std::uint32_t ump64word1;
+  ump_message_type mType = ump_message_type::utility;
+  std::uint32_t ump64word1 = 0;
   std::uint8_t UMPPos = 0;
   fifo<std::uint32_t, 4> output_;
 };
