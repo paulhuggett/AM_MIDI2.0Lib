@@ -182,13 +182,28 @@ public:
 
 constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
 
-TEST(CIProcessor, Empty) {
+class CIProcessor : public testing::Test {
+public:
+  CIProcessor()
+      : processor_{std::ref(management_mocks_), std::ref(profile_mocks_), std::ref(pe_mocks_), std::ref(pi_mocks_)} {}
+
+protected:
+  mock_management_callbacks management_mocks_;
+  mock_profile_callbacks profile_mocks_;
+  mock_property_exchange_callbacks pe_mocks_;
+  mock_process_inquiry_callbacks pi_mocks_;
+  midi2::midiCIProcessor<mock_management_callbacks &, mock_profile_callbacks &, mock_property_exchange_callbacks &,
+                         mock_process_inquiry_callbacks &>
+      processor_;
+};
+
+TEST_F(CIProcessor, Empty) {
   mock_management_callbacks mocks;
   midi2::midiCIProcessor ci{std::ref(mocks)};
   ci.processMIDICI(std::byte{0});
 }
 
-TEST(CIProcessor, DiscoveryV1) {
+TEST_F(CIProcessor, DiscoveryV1) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
@@ -232,16 +247,9 @@ TEST(CIProcessor, DiscoveryV1) {
   discovery.capability = static_cast<std::uint8_t>(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
-
-  EXPECT_CALL(management_mocks, discovery(midici, discovery)).Times(1);
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(0xFF, device_id);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  EXPECT_CALL(management_mocks_, discovery(midici, discovery)).Times(1);
+  processor_.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
@@ -252,7 +260,7 @@ TEST(CIProcessor, DiscoveryV1) {
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
-TEST(CIProcessor, DiscoveryV2) {
+TEST_F(CIProcessor, DiscoveryV2) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
@@ -299,17 +307,9 @@ TEST(CIProcessor, DiscoveryV2) {
   discovery.max_sysex_size = from_le7(max_sysex_size);
   discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
-
-  EXPECT_CALL(management_mocks, discovery(midici, discovery)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(0xFF, device_id);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  EXPECT_CALL(management_mocks_, discovery(midici, discovery)).Times(1);
+  processor_.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
@@ -320,7 +320,7 @@ TEST(CIProcessor, DiscoveryV2) {
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
-TEST(CIProcessor, DiscoveryReplyV2) {
+TEST_F(CIProcessor, DiscoveryReplyV2) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
   constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
@@ -370,11 +370,9 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
   reply.function_block = static_cast<std::uint8_t>(function_block);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, discovery_reply(midici, reply)).Times(1);
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(0xFF, device_id);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  EXPECT_CALL(management_mocks_, discovery_reply(midici, reply)).Times(1);
+  processor_.startSysex7(0xFF, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
@@ -385,7 +383,8 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
-TEST(CIProcessor, EndpointInfo) {
+TEST_F(CIProcessor, EndpointInfo) {
+  constexpr auto device_id = std::byte{0x7F};
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto status = std::uint8_t{0b0101010};
   constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -394,7 +393,7 @@ TEST(CIProcessor, EndpointInfo) {
   // clang-format off
   std::array const message{
     std::byte{0x7E}, // Universal System Exclusive
-    std::byte{0x7F}, // Device ID: 0x7F = to MIDI Port
+    device_id, // Device ID: 0x7F = to MIDI Port
     std::byte{0x0D}, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x72}, // Universal System Exclusive Sub-ID#2: Endpoint Information
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
@@ -407,7 +406,7 @@ TEST(CIProcessor, EndpointInfo) {
   // clang-format on
   MIDICI midici;
   midici.umpGroup = group;
-  midici.deviceId = 0x7F;
+  midici.deviceId = static_cast<std::uint8_t>(device_id);
   midici.ciType = midi2::ci_message::endpoint_info;
   midici.ciVer = 1;
   midici.remoteMUID = from_le7(sender_muid);
@@ -416,14 +415,18 @@ TEST(CIProcessor, EndpointInfo) {
   midi2::ci::endpoint_info endpoint_info;
   endpoint_info.status = status;
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(mocks, endpoint_info(midici, endpoint_info)).Times(1);
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, message[1]);
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, endpoint_info(midici, endpoint_info)).Times(1);
+  processor_.startSysex7(group, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  // Test create_message()
+  std::vector<std::byte> v{std::size_t{256}};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, endpoint_info);
+  auto const dist = std::distance(v.begin(), last);
+  ASSERT_GE(dist, 0);
+  v.resize(static_cast<std::size_t>(dist));
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 auto EndpointInfoReplyMatches(std::byte status, std::span<std::byte const> info) {
@@ -431,7 +434,7 @@ auto EndpointInfoReplyMatches(std::byte status, std::span<std::byte const> info)
                Field("information", &midi2::ci::endpoint_info_reply::information, ElementsAreArray(info)));
 };
 
-TEST(CIProcessor, EndpointInfoReply) {
+TEST_F(CIProcessor, EndpointInfoReply) {
   constexpr auto group = std::uint8_t{0x71};
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto status = std::byte{0b0101010};
@@ -468,20 +471,18 @@ TEST(CIProcessor, EndpointInfoReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(mocks, endpoint_info_reply(
-                         midici, EndpointInfoReplyMatches(
-                                     status, std::span<std::byte const>{information.begin(), information.size()})))
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(
+      management_mocks_,
+      endpoint_info_reply(midici, EndpointInfoReplyMatches(
+                                      status, std::span<std::byte const>{information.begin(), information.size()})))
       .Times(1);
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, device_id);
+  processor_.startSysex7(group, device_id);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, InvalidateMuid) {
+TEST_F(CIProcessor, InvalidateMuid) {
   constexpr auto group = std::uint8_t{0x71};
   constexpr auto device_id = std::byte{0x7F};
   constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -510,19 +511,18 @@ TEST(CIProcessor, InvalidateMuid) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   midi2::ci::invalidate_muid invalidate_muid;
   invalidate_muid.target_muid = from_le7(target_muid);
-  EXPECT_CALL(mocks, invalidate_muid(midici, invalidate_muid)).Times(1);
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, device_id);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, invalidate_muid(midici, invalidate_muid)).Times(1);
+
+  processor_.startSysex7(group, device_id);
+
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, Ack) {
+TEST_F(CIProcessor, Ack) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -563,10 +563,9 @@ TEST(CIProcessor, Ack) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(
-      mocks,
+      management_mocks_,
       ack(midici,
           AllOf(Field("original_id", &midi2::ci::ack::original_id, Eq(static_cast<std::uint8_t>(original_id))),
                 Field("status_code", &midi2::ci::ack::status_code, Eq(static_cast<std::uint8_t>(ack_status_code))),
@@ -575,14 +574,11 @@ TEST(CIProcessor, Ack) {
                 Field("message", &midi2::ci::ack::message, ElementsAreArray(text)))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, device_id);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, AckMessageTooLong) {
+TEST_F(CIProcessor, AckMessageTooLong) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -613,21 +609,14 @@ TEST(CIProcessor, AckMessageTooLong) {
   message.insert(std::end(message), from_le7(text_length), std::byte{0});
   // clang-format on
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, buffer_overflow()).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(management_mocks, buffer_overflow()).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(group, device_id);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, NakV1) {
+TEST_F(CIProcessor, NakV1) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -654,23 +643,19 @@ TEST(CIProcessor, NakV1) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks mocks;
-
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(mocks, nak(midici, AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
-                                       Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
-                                       Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
-                                       Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
-                                       Field("message", &midi2::ci::nak::message, IsEmpty()))))
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, nak(midici, AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
+                                                   Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
+                                                   Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
+                                                   Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
+                                                   Field("message", &midi2::ci::nak::message, IsEmpty()))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, device_id);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, device_id);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
-TEST(CIProcessor, NakV2) {
+
+TEST_F(CIProcessor, NakV2) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -711,10 +696,9 @@ TEST(CIProcessor, NakV2) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks mocks;
-  EXPECT_CALL(mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(
-      mocks,
+      management_mocks_,
       nak(midici,
           AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(static_cast<std::uint8_t>(original_id))),
                 Field("status_code", &midi2::ci::nak::status_code, Eq(static_cast<std::uint8_t>(nak_status_code))),
@@ -723,14 +707,12 @@ TEST(CIProcessor, NakV2) {
                 Field("message", &midi2::ci::nak::message, ElementsAreArray(text)))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(mocks)};
-  processor.startSysex7(group, device_id);
+  processor_.startSysex7(group, device_id);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileInquiry) {
+TEST_F(CIProcessor, ProfileInquiry) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -757,20 +739,14 @@ TEST(CIProcessor, ProfileInquiry) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks_, inquiry(midici)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, inquiry(midici)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileInquiryReply) {
+TEST_F(CIProcessor, ProfileInquiryReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -809,24 +785,18 @@ TEST(CIProcessor, ProfileInquiryReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(receiver_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   using midi2::ci::profile_configuration::inquiry_reply;
-  EXPECT_CALL(profile_mocks,
+  EXPECT_CALL(profile_mocks_,
               inquiry_reply(midici, AllOf(Field("enabled", &inquiry_reply::enabled, ElementsAreArray(enabled)),
                                           Field("disabled", &inquiry_reply::disabled, ElementsAreArray(disabled)))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileAdded) {
+TEST_F(CIProcessor, ProfileAdded) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -855,21 +825,15 @@ TEST(CIProcessor, ProfileAdded) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::added added;
   added.pid = pid;
-  EXPECT_CALL(profile_mocks, added(midici, added)).Times(1);
+  EXPECT_CALL(profile_mocks_, added(midici, added)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileRemoved) {
+TEST_F(CIProcessor, ProfileRemoved) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -898,21 +862,16 @@ TEST(CIProcessor, ProfileRemoved) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::removed removed;
   removed.pid = pid;
-  EXPECT_CALL(profile_mocks, removed(midici, removed)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
+  EXPECT_CALL(profile_mocks_, removed(midici, removed)).Times(1);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileDetailsInquiry) {
+TEST_F(CIProcessor, ProfileDetailsInquiry) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -943,23 +902,18 @@ TEST(CIProcessor, ProfileDetailsInquiry) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::details inquiry;
   inquiry.pid = pid;
   inquiry.target = 0x23;
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, details(midici, inquiry)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks_, details(midici, inquiry)).Times(1);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileDetailsReply) {
+TEST_F(CIProcessor, ProfileDetailsReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -994,24 +948,19 @@ TEST(CIProcessor, ProfileDetailsReply) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
-                                                         Field("target", &details_reply::target, Eq(0x23)),
-                                                         Field("data", &details_reply::data, ElementsAreArray(data)))))
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks_, details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
+                                                          Field("target", &details_reply::target, Eq(0x23)),
+                                                          Field("data", &details_reply::data, ElementsAreArray(data)))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileOn) {
+TEST_F(CIProcessor, ProfileOn) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1043,23 +992,17 @@ TEST(CIProcessor, ProfileOn) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::on on;
   on.pid = pid;
   on.num_channels = from_le7(channels);
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, on(midici, on)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks_, on(midici, on)).Times(1);
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileOff) {
+TEST_F(CIProcessor, ProfileOff) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1091,22 +1034,17 @@ TEST(CIProcessor, ProfileOff) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::off off;
   off.pid = pid;
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks, off(midici, off)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(profile_mocks_, off(midici, off)).Times(1);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileEnabled) {
+TEST_F(CIProcessor, ProfileEnabled) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1137,22 +1075,17 @@ TEST(CIProcessor, ProfileEnabled) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::enabled enabled;
   enabled.pid = pid;
   enabled.num_channels = from_le7(num_channels);
-  EXPECT_CALL(profile_mocks, enabled(midici, enabled)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
+  EXPECT_CALL(profile_mocks_, enabled(midici, enabled)).Times(1);
 
-  std::for_each(std::begin(message), std::end(message),
-                std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileDisabled) {
+TEST_F(CIProcessor, ProfileDisabled) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1183,21 +1116,17 @@ TEST(CIProcessor, ProfileDisabled) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   midi2::ci::profile_configuration::disabled disabled;
   disabled.pid = pid;
   disabled.num_channels = from_le7(num_channels);
-  EXPECT_CALL(profile_mocks, disabled(midici, disabled)).Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
+  EXPECT_CALL(profile_mocks_, disabled(midici, disabled)).Times(1);
 
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProfileSpecificData) {
+TEST_F(CIProcessor, ProfileSpecificData) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1230,21 +1159,16 @@ TEST(CIProcessor, ProfileSpecificData) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(broadcast_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-
   using midi2::ci::profile_configuration::specific_data;
-  EXPECT_CALL(profile_mocks, specific_data(midici, AllOf(Field("pid", &specific_data::pid, Eq(pid)),
-                                                         Field("data", &specific_data::data, ElementsAreArray(data)))))
+  EXPECT_CALL(profile_mocks_, specific_data(midici, AllOf(Field("pid", &specific_data::pid, Eq(pid)),
+                                                          Field("data", &specific_data::data, ElementsAreArray(data)))))
       .Times(1);
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeCapabilities) {
+TEST_F(CIProcessor, PropertyExchangeCapabilities) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1280,20 +1204,14 @@ TEST(CIProcessor, PropertyExchangeCapabilities) {
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_, capabilities(midici, caps)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks, capabilities(midici, caps)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
+TEST_F(CIProcessor, PropertyExchangeCapabilitiesReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1329,22 +1247,16 @@ TEST(CIProcessor, PropertyExchangeCapabilitiesReply) {
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_, capabilities_reply(midici, caps)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks, capabilities_reply(midici, caps)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
 using namespace std::string_view_literals;
 
-TEST(CIProcessor, PropertyExchangeGetPropertyData) {
+TEST_F(CIProcessor, PropertyExchangeGetPropertyData) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1403,25 +1315,18 @@ TEST(CIProcessor, PropertyExchangeGetPropertyData) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-
-  EXPECT_CALL(pe_mocks,
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_,
               get(midici, chunk_info,
                   AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                         Field("header", &property_exchange::header, ElementsAreArray(header)),
                         Field("data", &property_exchange::data, IsEmpty()))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-
-TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
+TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1485,25 +1390,20 @@ TEST(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
   EXPECT_CALL(
-      pe_mocks,
+      pe_mocks_,
       get_reply(midici, chunk_info,
                 AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                       Field("header", &property_exchange::header, ElementsAreArray(header)),
                       Field("data", &property_exchange::data, ElementsAreArray(data)))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeSetPropertyData) {
+TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1562,24 +1462,18 @@ TEST(CIProcessor, PropertyExchangeSetPropertyData) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-
-  EXPECT_CALL(pe_mocks,
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_,
               set(midici, chunk_info,
                   AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                         Field("header", &property_exchange::header, ElementsAreArray(header)),
                         Field("data", &property_exchange::data, IsEmpty()))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
+TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1638,25 +1532,20 @@ TEST(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
 
   EXPECT_CALL(
-      pe_mocks,
+      pe_mocks_,
       set_reply(midici, chunk_info,
                 AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                       Field("header", &property_exchange::header, ElementsAreArray(header)),
                       Field("data", &property_exchange::data, IsEmpty()))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeSubscription) {
+TEST_F(CIProcessor, PropertyExchangeSubscription) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1715,25 +1604,19 @@ TEST(CIProcessor, PropertyExchangeSubscription) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(
-      pe_mocks,
+      pe_mocks_,
       subscription(midici, chunk_info,
                    AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                          Field("header", &property_exchange::header, ElementsAreArray(header)),
                          Field("data", &property_exchange::data, IsEmpty()))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeSubscriptionReply) {
+TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1792,24 +1675,18 @@ TEST(CIProcessor, PropertyExchangeSubscriptionReply) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_, subscription_reply(midici, chunk_info,
+                                            AllOf(Field("request_id", &property_exchange::request_id,
+                                                        Eq(static_cast<std::uint8_t>(request_id))),
+                                                  Field("header", &property_exchange::header, ElementsAreArray(header)),
+                                                  Field("data", &property_exchange::data, IsEmpty()))));
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-
-  EXPECT_CALL(pe_mocks, subscription_reply(midici, chunk_info,
-                                           AllOf(Field("request_id", &property_exchange::request_id,
-                                                       Eq(static_cast<std::uint8_t>(request_id))),
-                                                 Field("header", &property_exchange::header, ElementsAreArray(header)),
-                                                 Field("data", &property_exchange::data, IsEmpty()))));
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, PropertyExchangeNotify) {
+TEST_F(CIProcessor, PropertyExchangeNotify) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1868,25 +1745,19 @@ TEST(CIProcessor, PropertyExchangeNotify) {
   chunk_info.number_of_chunks = from_le7(total_chunks);
   chunk_info.chunk_number = from_le7(chunk_number);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
   EXPECT_CALL(
-      pe_mocks,
+      pe_mocks_,
       notify(midici, chunk_info,
              AllOf(Field("request_id", &property_exchange::request_id, Eq(static_cast<std::uint8_t>(request_id))),
                    Field("header", &property_exchange::header, ElementsAreArray(header)),
                    Field("data", &property_exchange::data, IsEmpty()))));
 
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProcessInquiryCapabilities) {
+TEST_F(CIProcessor, ProcessInquiryCapabilities) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1912,21 +1783,14 @@ TEST(CIProcessor, ProcessInquiryCapabilities) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, capabilities(midici)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks, capabilities(midici)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
+TEST_F(CIProcessor, ProcessInquiryCapabilitiesReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -1958,21 +1822,14 @@ TEST(CIProcessor, ProcessInquiryCapabilitiesReply) {
   midi2::ci::process_inquiry::capabilities_reply reply;
   reply.features = features;
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, capabilities_reply(midici, reply)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks, capabilities_reply(midici, reply)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProcessInquiryMidiMessageReport) {
+TEST_F(CIProcessor, ProcessInquiryMidiMessageReport) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -2024,21 +1881,14 @@ TEST(CIProcessor, ProcessInquiryMidiMessageReport) {
   reply.registered_per_note_controller = 1;
   reply.assignable_per_note_controller = 1;
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, midi_message_report(midici, reply)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks, midi_message_report(midici, reply)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
-TEST(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
+TEST_F(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
   constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
@@ -2064,18 +1914,11 @@ TEST(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
   midici.remoteMUID = from_le7(sender_muid);
   midici.localMUID = from_le7(destination_muid);
 
-  mock_management_callbacks management_mocks;
-  mock_profile_callbacks profile_mocks;
-  mock_property_exchange_callbacks pe_mocks;
-  mock_process_inquiry_callbacks pi_mocks;
+  EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, midi_message_report_end(midici)).Times(1);
 
-  EXPECT_CALL(management_mocks, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks, midi_message_report_end(midici)).Times(1);
-
-  midi2::midiCIProcessor processor{std::ref(management_mocks), std::ref(profile_mocks), std::ref(pe_mocks),
-                                   std::ref(pi_mocks)};
-  processor.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor)::processMIDICI, &processor));
+  processor_.startSysex7(group, destination);
+  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
 }
 
 // This test simply gets midiCIProcessor to consume a random buffer.
@@ -2092,7 +1935,7 @@ void NeverCrashes(std::vector<std::byte> const &message) {
 // NOLINTNEXTLINE
 FUZZ_TEST(CIProcessor, NeverCrashes);
 #endif
-TEST(CIProcessor, EmptyFuzz) {
+TEST_F(CIProcessor, EmptyFuzz) {
   NeverCrashes({});
 }
 
