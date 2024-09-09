@@ -429,11 +429,6 @@ TEST_F(CIProcessor, EndpointInfo) {
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
-auto EndpointInfoReplyMatches(std::byte status, std::span<std::byte const> info) {
-  return AllOf(Field("status", &midi2::ci::endpoint_info_reply::status, Eq(status)),
-               Field("information", &midi2::ci::endpoint_info_reply::information, ElementsAreArray(info)));
-};
-
 TEST_F(CIProcessor, EndpointInfoReply) {
   constexpr auto group = std::uint8_t{0x71};
   constexpr auto device_id = std::byte{0x7F};
@@ -472,14 +467,25 @@ TEST_F(CIProcessor, EndpointInfoReply) {
   midici.localMUID = from_le7(receiver_muid);
 
   EXPECT_CALL(management_mocks_, check_muid(group, midici.localMUID)).WillRepeatedly(Return(true));
-  EXPECT_CALL(
-      management_mocks_,
-      endpoint_info_reply(midici, EndpointInfoReplyMatches(
-                                      status, std::span<std::byte const>{information.begin(), information.size()})))
+  EXPECT_CALL(management_mocks_,
+              endpoint_info_reply(midici, AllOf(Field("status", &midi2::ci::endpoint_info_reply::status, Eq(status)),
+                                                Field("information", &midi2::ci::endpoint_info_reply::information,
+                                                      ElementsAreArray(information)))))
       .Times(1);
-  processor_.startSysex7(group, device_id);
 
+  processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+
+  // Test create_message()
+  constexpr auto expected_size = std::size_t{message.size() - 1};
+  std::vector<std::byte> v{expected_size + 1};
+  midi2::ci::endpoint_info_reply reply;
+  reply.status = status;
+  reply.information = std::span{information};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, reply);
+  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
+  v.resize(expected_size);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, InvalidateMuid) {
@@ -518,8 +524,15 @@ TEST_F(CIProcessor, InvalidateMuid) {
   EXPECT_CALL(management_mocks_, invalidate_muid(midici, invalidate_muid)).Times(1);
 
   processor_.startSysex7(group, device_id);
-
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+
+  // Test create_message()
+  std::vector<std::byte> v{std::size_t{256}};
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, invalidate_muid);
+  auto const dist = std::distance(v.begin(), last);
+  ASSERT_GE(dist, 0);
+  v.resize(static_cast<std::size_t>(dist));
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, Ack) {
@@ -545,7 +558,7 @@ TEST_F(CIProcessor, Ack) {
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
     sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
-    original_id, // Originl transaciton sub-ID#2 classification
+    original_id, // Original transaction sub-ID#2 classification
     ack_status_code, // ACK Status Code
     ack_status_data, // ACK Status Data
     ack_details[0], ack_details[1], ack_details[2], ack_details[3], ack_details[4],
@@ -576,6 +589,21 @@ TEST_F(CIProcessor, Ack) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+
+  // Test create_message()
+  constexpr auto expected_size = std::size_t{message.size() - 1};
+  std::vector<std::byte> v{expected_size + 1};
+  midi2::ci::ack ack;
+  ack.original_id = static_cast<std::uint8_t>(original_id);
+  ack.status_code = static_cast<std::uint8_t>(ack_status_code);
+  ack.status_data = static_cast<std::uint8_t>(ack_status_data);
+  ack.details = ack_details;
+  ack.message = std::span{text};
+
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, ack);
+  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
+  v.resize(expected_size);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, AckMessageTooLong) {
@@ -653,6 +681,15 @@ TEST_F(CIProcessor, NakV1) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+
+  // Test create_message()
+  constexpr auto expected_size = std::size_t{message.size() - 1};
+  std::vector<std::byte> v{expected_size + 1};
+  midi2::ci::nak nak;
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, nak);
+  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
+  v.resize(expected_size);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, NakV2) {
@@ -708,8 +745,22 @@ TEST_F(CIProcessor, NakV2) {
       .Times(1);
 
   processor_.startSysex7(group, device_id);
-
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+
+  // Test create_message()
+  constexpr auto expected_size = std::size_t{message.size() - 1};
+  std::vector<std::byte> v{expected_size + 1};
+  midi2::ci::nak nak;
+  nak.original_id = static_cast<std::uint8_t>(original_id);
+  nak.status_code = static_cast<std::uint8_t>(nak_status_code);
+  nak.status_data = static_cast<std::uint8_t>(nak_status_data);
+  nak.details = nak_details;
+  nak.message = std::span{text};
+
+  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, nak);
+  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
+  v.resize(expected_size);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileInquiry) {

@@ -61,6 +61,10 @@ constexpr byte_array_2 to_le7(std::uint16_t const v) {
   assert(v < (std::uint16_t{1} << 14));
   return {static_cast<std::byte>(v >> (7 * 0)) & mask7b, static_cast<std::byte>(v >> (7 * 1)) & mask7b};
 }
+constexpr std::byte to_le7(std::uint8_t v) {
+  assert(v < (std::uint8_t{1} << 7));
+  return static_cast<std::byte>(v);
+}
 
 template <std::size_t Size>
 constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
@@ -207,7 +211,7 @@ constexpr discovery::operator packed::discovery_v1() const {
           to_le7(max_sysex_size)};
 }
 constexpr discovery::operator packed::discovery_v2() const {
-  return {static_cast<packed::discovery_v1>(*this), static_cast<std::byte>(output_path_id)};
+  return {static_cast<packed::discovery_v1>(*this), to_le7(output_path_id)};
 }
 
 //*     _ _                                            _       *
@@ -373,12 +377,18 @@ struct endpoint_info_reply {
   constexpr endpoint_info_reply &operator=(endpoint_info_reply const &) = default;
   constexpr endpoint_info_reply &operator=(endpoint_info_reply &&) noexcept = default;
 
+  explicit constexpr operator packed::endpoint_info_reply_v1() const;
+
   std::byte status{};
   std::span<std::byte const> information{};
 };
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
     : status{from_le7(other.status)}, information{std::begin(other.data), from_le7(other.data_length)} {
+}
+
+constexpr endpoint_info_reply::operator packed::endpoint_info_reply_v1() const {
+  return {status, to_le7(static_cast<std::uint16_t>(information.size())), {std::byte{0}}};
 }
 
 //*  _              _ _    _      _         __  __ _   _ ___ ___   *
@@ -410,11 +420,17 @@ struct invalidate_muid {
 
   constexpr bool operator==(invalidate_muid const &) const = default;
 
+  explicit constexpr operator packed::invalidate_muid_v1() const;
+
   std::uint32_t target_muid = 0;
 };
 
 constexpr invalidate_muid::invalidate_muid(packed::invalidate_muid_v1 const &other)
     : target_muid{from_le7(other.target_muid)} {
+}
+
+constexpr invalidate_muid::operator packed::invalidate_muid_v1() const {
+  return {to_le7(target_muid)};
 }
 
 //*          _    *
@@ -453,6 +469,8 @@ struct ack {
   constexpr ack &operator=(ack const &) = default;
   constexpr ack &operator=(ack &&) noexcept = default;
 
+  explicit constexpr operator packed::ack_v1() const;
+
   std::uint8_t original_id = 0;
   std::uint8_t status_code = 0;
   std::uint8_t status_data = 0;
@@ -466,6 +484,15 @@ constexpr ack::ack(packed::ack_v1 const &other)
       status_data{from_le7(other.status_data)},
       details{other.details},
       message{std::begin(other.message), from_le7(other.message_length)} {
+}
+
+constexpr ack::operator packed::ack_v1() const {
+  return {to_le7(original_id),
+          to_le7(status_code),
+          to_le7(status_data),
+          details,
+          to_le7(static_cast<std::uint16_t>(message.size())),
+          {std::byte{0}}};
 }
 
 //*            _    *
@@ -511,6 +538,9 @@ struct nak {
 
   constexpr bool operator==(nak const &) const;
 
+  explicit constexpr operator packed::nak_v1() const;
+  explicit constexpr operator packed::nak_v2() const;
+
   std::uint8_t original_id = 0;  // Original transaction sub-ID#2 classification
   std::uint8_t status_code = 0;  // NAK Status Code
   std::uint8_t status_data = 0;  // NAK Status Data
@@ -526,6 +556,18 @@ constexpr nak::nak(packed::nak_v2 const &other)
       status_data{static_cast<std::uint8_t>(other.status_data)},
       details{other.details},
       message{std::begin(other.message), from_le7(other.message_length)} {
+}
+
+constexpr nak::operator packed::nak_v1() const {
+  return {};
+}
+constexpr nak::operator packed::nak_v2() const {
+  return {to_le7(original_id),
+          to_le7(status_code),
+          to_le7(status_data),
+          details,
+          to_le7(static_cast<std::uint16_t>(message.size())),
+          {std::byte{0}}};
 }
 
 namespace profile_configuration {

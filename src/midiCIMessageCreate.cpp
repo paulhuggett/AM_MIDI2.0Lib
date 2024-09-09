@@ -68,26 +68,6 @@ void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, ci_message ciType, u
   setBytesFromNumbers(sysexHeader, remoteMUID, &length, 4);
 }
 
-uint16_t sendACKNAK(uint8_t *sysex, uint8_t midiCIVer, ci_message ciType, uint32_t srcMUID, uint32_t destMUID,
-                    uint8_t destination, uint8_t originalSubId, uint8_t statusCode, uint8_t statusData,
-                    uint8_t *ackNakDetails, uint16_t messageLength, uint8_t *ackNakMessage) {
-  createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
-
-  uint16_t length = 13;
-  if (midiCIVer < 2) {
-    return length;
-  }
-
-  sysex[length++] = originalSubId;
-  sysex[length++] = statusCode;
-  sysex[length++] = statusData;
-
-  concatSysexArray(sysex, &length, ackNakDetails, 5);
-  setBytesFromNumbers(sysex, messageLength, &length, 2);
-  concatSysexArray(sysex, &length, ackNakMessage, messageLength);
-  return length;
-}
-
 uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
                         uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
                         uint16_t bodyLength, uint8_t *body, ci_message ciType) {
@@ -131,56 +111,6 @@ uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, u
 }  // end anonymous namespace
 
 namespace midi2 {
-
-uint16_t CIMessage::sendEndpointInfoRequest(uint8_t *sysex, uint8_t midiCIVer,
-                                            uint32_t srcMUID, uint32_t destMUID,
-                                            uint8_t status) {
-  if (midiCIVer < 2)
-    return 0;
-  createCIHeader(sysex, 0x7F, ci_message::endpoint_info, midiCIVer, srcMUID, destMUID);
-  sysex[13] = status;
-  return 14;
-}
-
-uint16_t CIMessage::sendEndpointInfoReply(uint8_t *sysex, uint8_t midiCIVer,
-                                          uint32_t srcMUID, uint32_t destMUID,
-                                          uint8_t status, uint16_t infoLength,
-                                          uint8_t *infoData) {
-  if (midiCIVer < 2)
-    return 0;
-  createCIHeader(sysex, 0x7F, ci_message::endpoint_info_reply, midiCIVer, srcMUID, destMUID);
-  sysex[13] = status;
-  uint16_t length = 14;
-  setBytesFromNumbers(sysex, infoLength, &length, 2);
-  concatSysexArray(sysex, &length, infoData, infoLength);
-  return length;
-}
-
-uint16_t CIMessage::sendACK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                            uint32_t destMUID, uint8_t destination,
-                            uint8_t originalSubId, uint8_t statusCode,
-                            uint8_t statusData, uint8_t *ackNakDetails,
-                            uint16_t messageLength, uint8_t *ackNakMessage) {
-  return sendACKNAK(sysex, midiCIVer, ci_message::ack, srcMUID, destMUID, destination, originalSubId, statusCode,
-                    statusData, ackNakDetails, messageLength, ackNakMessage);
-}
-
-uint16_t CIMessage::sendNAK(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID,
-                            uint32_t destMUID, uint8_t destination,
-                            uint8_t originalSubId, uint8_t statusCode,
-                            uint8_t statusData, uint8_t *ackNakDetails,
-                            uint16_t messageLength, uint8_t *ackNakMessage) {
-  return sendACKNAK(sysex, midiCIVer, ci_message::nak, srcMUID, destMUID, destination, originalSubId, statusCode,
-                    statusData, ackNakDetails, messageLength, ackNakMessage);
-}
-
-uint16_t CIMessage::sendInvalidateMUID(uint8_t *sysex, uint8_t midiCIVer,
-                                       uint32_t srcMUID,
-                                       uint32_t terminateMuid) {
-  createCIHeader(sysex, 0x7F, ci_message::invalidate_muid, midiCIVer, srcMUID, M2_CI_BROADCAST);
-  setBytesFromNumbers(sysex, terminateMuid, nullptr, 4);
-  return 17;
-}
 
 // Profiles
 
