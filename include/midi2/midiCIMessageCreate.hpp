@@ -39,6 +39,7 @@ namespace midi2::ci {
 namespace details {
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+  requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
 constexpr O safe_copy(O first, S last, T const &t) {
   auto first2 = first;
   std::ranges::advance(first2, sizeof(T), last);
@@ -64,11 +65,15 @@ template <> struct type_to_packed<discovery_reply> {
   using v1 = packed::discovery_reply_v1;
   using v2 = packed::discovery_reply_v2;
 };
+template <> struct type_to_packed<endpoint_info> {
+  using v1 = packed::endpoint_info_v1;
+  using v2 = packed::endpoint_info_v1;
+};
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, typename T>
-constexpr O create_message(O first, S last, MIDICI const &midici, T const &t) {
-  first = details::safe_copy(first, last, static_cast<packed::header>(midici));
-  if (midici.ciVer == 1) {
+constexpr O create_message(O first, S last, MIDICI const &header, T const &t) {
+  first = details::safe_copy(first, last, static_cast<packed::header>(header));
+  if (header.ciVer == 1) {
     return details::safe_copy(first, last, static_cast<type_to_packed<T>::v1>(t));
   }
   return details::safe_copy(first, last, static_cast<type_to_packed<T>::v2>(t));

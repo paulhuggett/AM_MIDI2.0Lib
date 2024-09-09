@@ -328,11 +328,17 @@ struct endpoint_info {
 
   bool operator==(endpoint_info const &) const = default;
 
+  explicit constexpr operator packed::endpoint_info_v1() const;
+
   std::uint8_t status = 0;
 };
 
 constexpr endpoint_info::endpoint_info(packed::endpoint_info_v1 const &other)
     : status{static_cast<std::uint8_t>(other.status)} {
+}
+
+constexpr endpoint_info::operator packed::endpoint_info_v1() const {
+  return {static_cast<std::byte>(status)};
 }
 
 //*              _           _     _     _       __                    _       *
