@@ -1933,9 +1933,9 @@ void NeverCrashes(std::vector<std::byte> const &message) {
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
-FUZZ_TEST(CIProcessor, NeverCrashes);
+FUZZ_TEST(CIProcessorFuzz, NeverCrashes);
 #endif
-TEST_F(CIProcessor, EmptyFuzz) {
+TEST(CIProcessorFuzz, Empty) {
   NeverCrashes({});
 }
 
