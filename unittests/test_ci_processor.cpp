@@ -246,7 +246,9 @@ TEST(CIProcessor, DiscoveryV1) {
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
   auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, discovery);
-  v.resize(std::distance(v.begin(), last));
+  auto const dist = std::distance(v.begin(), last);
+  ASSERT_GE(dist, 0);
+  v.resize(static_cast<std::size_t>(dist));
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -312,7 +314,9 @@ TEST(CIProcessor, DiscoveryV2) {
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
   auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, discovery);
-  v.resize(std::distance(v.begin(), last));
+  auto const dist = std::distance(v.begin(), last);
+  ASSERT_GE(dist, 0);
+  v.resize(static_cast<std::size_t>(dist));
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -375,7 +379,9 @@ TEST(CIProcessor, DiscoveryReplyV2) {
   // Test create_message()
   std::vector<std::byte> v{std::size_t{256}};
   auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici, reply);
-  v.resize(std::distance(v.begin(), last));
+  auto const dist = std::distance(v.begin(), last);
+  ASSERT_GE(dist, 0);
+  v.resize(static_cast<std::size_t>(dist));
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
