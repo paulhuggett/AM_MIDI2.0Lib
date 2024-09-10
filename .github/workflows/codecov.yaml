@@ -46,7 +46,11 @@ jobs:
         run: cmake --build "$BUILD_DIR"
 
       - name: Run the Test Binaries
-        run: ctest --test-dir "$BUILD_DIR" --verbose
+        run: |
+          ctest                      \
+            --test-dir "$BUILD_DIR"  \
+            --output-junit junit.xml \
+            --verbose
 
       - name: Collect the Coverage
         run: |
@@ -61,3 +65,10 @@ jobs:
         uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
