@@ -22,6 +22,11 @@
 
 namespace {
 
+template <typename T> struct trivial_sentinel {
+  constexpr bool operator==(T) const { return false; }
+  friend constexpr bool operator==(T, trivial_sentinel) { return false; }
+};
+
 std::ostream &write_bytes(std::ostream &os, std::span<std::uint8_t const> const &arr) {
   os << '[';
   auto const *separator = "";
@@ -198,9 +203,7 @@ protected:
 };
 
 TEST_F(CIProcessor, Empty) {
-  mock_management_callbacks mocks;
-  midi2::midiCIProcessor ci{std::ref(mocks)};
-  ci.processMIDICI(std::byte{0});
+  processor_.processMIDICI(std::byte{0});
 }
 
 TEST_F(CIProcessor, DiscoveryV1) {
@@ -250,13 +253,12 @@ TEST_F(CIProcessor, DiscoveryV1) {
   EXPECT_CALL(management_mocks_, discovery(midici, discovery)).Times(1);
   processor_.startSysex7(0xFF, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  std::vector<std::byte> v{std::size_t{256}};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, discovery);
-  auto const dist = std::distance(v.begin(), last);
-  ASSERT_GE(dist, 0);
-  v.resize(static_cast<std::size_t>(dist));
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, discovery);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -308,15 +310,15 @@ TEST_F(CIProcessor, DiscoveryV2) {
   discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
 
   EXPECT_CALL(management_mocks_, discovery(midici, discovery)).Times(1);
+
   processor_.startSysex7(0xFF, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  std::vector<std::byte> v{std::size_t{256}};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, discovery);
-  auto const dist = std::distance(v.begin(), last);
-  ASSERT_GE(dist, 0);
-  v.resize(static_cast<std::size_t>(dist));
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, discovery);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -371,15 +373,15 @@ TEST_F(CIProcessor, DiscoveryReplyV2) {
   reply.function_block = static_cast<std::uint8_t>(function_block);
 
   EXPECT_CALL(management_mocks_, discovery_reply(midici, reply)).Times(1);
+
   processor_.startSysex7(0xFF, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  std::vector<std::byte> v{std::size_t{256}};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, reply);
-  auto const dist = std::distance(v.begin(), last);
-  ASSERT_GE(dist, 0);
-  v.resize(static_cast<std::size_t>(dist));
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, reply);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -417,15 +419,15 @@ TEST_F(CIProcessor, EndpointInfo) {
 
   EXPECT_CALL(management_mocks_, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(management_mocks_, endpoint_info(midici, endpoint_info)).Times(1);
+
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  std::vector<std::byte> v{std::size_t{256}};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, endpoint_info);
-  auto const dist = std::distance(v.begin(), last);
-  ASSERT_GE(dist, 0);
-  v.resize(static_cast<std::size_t>(dist));
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, endpoint_info);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -475,16 +477,16 @@ TEST_F(CIProcessor, EndpointInfoReply) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
   midi2::ci::endpoint_info_reply reply;
   reply.status = status;
   reply.information = std::span{information};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, reply);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, reply);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -525,13 +527,12 @@ TEST_F(CIProcessor, InvalidateMuid) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  std::vector<std::byte> v{std::size_t{256}};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, invalidate_muid);
-  auto const dist = std::distance(v.begin(), last);
-  ASSERT_GE(dist, 0);
-  v.resize(static_cast<std::size_t>(dist));
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, invalidate_muid);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -589,10 +590,9 @@ TEST_F(CIProcessor, Ack) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
   midi2::ci::ack ack;
   ack.original_id = static_cast<std::uint8_t>(original_id);
   ack.status_code = static_cast<std::uint8_t>(ack_status_code);
@@ -600,9 +600,9 @@ TEST_F(CIProcessor, Ack) {
   ack.details = ack_details;
   ack.message = std::span{text};
 
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, ack);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, ack);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -642,6 +642,7 @@ TEST_F(CIProcessor, AckMessageTooLong) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, NakV1) {
@@ -681,14 +682,13 @@ TEST_F(CIProcessor, NakV1) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
+  std::vector<std::byte> v;
   midi2::ci::nak nak;
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, nak);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, nak);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -746,10 +746,9 @@ TEST_F(CIProcessor, NakV2) {
 
   processor_.startSysex7(group, device_id);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
   midi2::ci::nak nak;
   nak.original_id = static_cast<std::uint8_t>(original_id);
   nak.status_code = static_cast<std::uint8_t>(nak_status_code);
@@ -757,9 +756,9 @@ TEST_F(CIProcessor, NakV2) {
   nak.details = nak_details;
   nak.message = std::span{text};
 
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, nak);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, nak);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -795,6 +794,7 @@ TEST_F(CIProcessor, ProfileInquiry) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, ProfileInquiryReply) {
@@ -845,6 +845,14 @@ TEST_F(CIProcessor, ProfileInquiryReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+  // Test create_message()
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params,
+                            inquiry_reply{std::span{enabled}, std::span{disabled}});
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileAdded) {
@@ -882,13 +890,12 @@ TEST_F(CIProcessor, ProfileAdded) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, added);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, added);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -928,13 +935,12 @@ TEST_F(CIProcessor, ProfileRemoved) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, removed);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, removed);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -978,13 +984,12 @@ TEST_F(CIProcessor, ProfileDetailsInquiry) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 
   // Test create_message()
-  constexpr auto expected_size = std::size_t{message.size() - 1};
-  std::vector<std::byte> v{expected_size + 1};
-  auto last = midi2::ci::create_message(std::begin(v), std::end(v), midici.params, inquiry);
-  EXPECT_EQ(std::distance(v.begin(), last), expected_size);
-  v.resize(expected_size);
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, inquiry);
   EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
@@ -995,6 +1000,7 @@ TEST_F(CIProcessor, ProfileDetailsReply) {
   constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto target = std::byte{0x23};
   constexpr auto data_length = std::array{std::byte{0x05}, std::byte{0x00}};
   constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
 
@@ -1008,7 +1014,7 @@ TEST_F(CIProcessor, ProfileDetailsReply) {
     sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
     destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
-    std::byte{0x23}, // Inquiry target
+    target, // Inquiry target
     data_length[0], data_length[1], // Inquiry target data length (LSB first)
     data[0], data[1], data[2], data[3], data[4],
 
@@ -1026,13 +1032,22 @@ TEST_F(CIProcessor, ProfileDetailsReply) {
   using midi2::ci::profile_configuration::details_reply;
 
   EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(profile_mocks_, details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
-                                                          Field("target", &details_reply::target, Eq(0x23)),
-                                                          Field("data", &details_reply::data, ElementsAreArray(data)))))
+  EXPECT_CALL(
+      profile_mocks_,
+      details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
+                                  Field("target", &details_reply::target, Eq(static_cast<std::uint8_t>(target))),
+                                  Field("data", &details_reply::data, ElementsAreArray(data)))))
       .Times(1);
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+  // Test create_message()
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, details_reply{pid, static_cast<std::uint8_t>(target), std::span{data}});
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileOn) {
@@ -1067,14 +1082,19 @@ TEST_F(CIProcessor, ProfileOn) {
   midici.params.remoteMUID = from_le7(sender_muid);
   midici.params.localMUID = from_le7(destination_muid);
 
-  midi2::ci::profile_configuration::on on;
-  on.pid = pid;
-  on.num_channels = from_le7(channels);
-
+  midi2::ci::profile_configuration::on const on {pid, from_le7(channels)};
   EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, on(midici, on)).Times(1);
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+
+  // Test create_message()
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, on);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileOff) {
@@ -1109,14 +1129,21 @@ TEST_F(CIProcessor, ProfileOff) {
   midici.params.remoteMUID = from_le7(sender_muid);
   midici.params.localMUID = from_le7(destination_muid);
 
-  midi2::ci::profile_configuration::off off;
-  off.pid = pid;
+  midi2::ci::profile_configuration::off const off{pid};
 
   EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, off(midici, off)).Times(1);
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+
+  // Test create_message()
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, off);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileEnabled) {
@@ -1158,6 +1185,12 @@ TEST_F(CIProcessor, ProfileEnabled) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, enabled);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileDisabled) {
@@ -1199,6 +1232,13 @@ TEST_F(CIProcessor, ProfileDisabled) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
+
+
+  std::vector<std::byte> v;
+  auto out_it = std::back_inserter(v);
+  midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, midici.params, disabled);
+  EXPECT_THAT(v, testing::ElementsAreArray(std::begin(message), std::end(message) - 1));
 }
 
 TEST_F(CIProcessor, ProfileSpecificData) {
@@ -1241,6 +1281,7 @@ TEST_F(CIProcessor, ProfileSpecificData) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeCapabilities) {
@@ -1284,6 +1325,7 @@ TEST_F(CIProcessor, PropertyExchangeCapabilities) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeCapabilitiesReply) {
@@ -1327,6 +1369,7 @@ TEST_F(CIProcessor, PropertyExchangeCapabilitiesReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 using namespace std::string_view_literals;
@@ -1399,6 +1442,7 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyData) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
@@ -1476,6 +1520,7 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
@@ -1546,6 +1591,7 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
@@ -1618,6 +1664,7 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeSubscription) {
@@ -1689,6 +1736,7 @@ TEST_F(CIProcessor, PropertyExchangeSubscription) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
@@ -1759,6 +1807,7 @@ TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, PropertyExchangeNotify) {
@@ -1830,6 +1879,7 @@ TEST_F(CIProcessor, PropertyExchangeNotify) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, ProcessInquiryCapabilities) {
@@ -1863,6 +1913,7 @@ TEST_F(CIProcessor, ProcessInquiryCapabilities) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, ProcessInquiryCapabilitiesReply) {
@@ -1902,6 +1953,7 @@ TEST_F(CIProcessor, ProcessInquiryCapabilitiesReply) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, ProcessInquiryMidiMessageReport) {
@@ -1961,6 +2013,7 @@ TEST_F(CIProcessor, ProcessInquiryMidiMessageReport) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 TEST_F(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
@@ -1994,6 +2047,7 @@ TEST_F(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
 
   processor_.startSysex7(group, destination);
   std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
+  processor_.endSysex7();
 }
 
 // This test simply gets midiCIProcessor to consume a random buffer.

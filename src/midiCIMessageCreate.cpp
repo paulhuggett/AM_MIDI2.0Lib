@@ -79,18 +79,6 @@ uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uin
   return length;
 }
 
-uint16_t sendProfileMessage(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t destination,
-                            std::array<uint8_t, 5> profile, uint8_t numberOfChannels, ci_message ciType) {
-  createCIHeader(sysex, destination, ciType, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, profile.data(), 5);
-  if (midiCIVer == 1 || ciType == ci_message::profile_added || ciType == ci_message::profile_removed) {
-    return length;
-  }
-  setBytesFromNumbers(sysex, numberOfChannels, &length, 2);
-  return length;
-}
-
 uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
                           uint16_t headerLen, uint8_t *header, ci_message ciType) {
   createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
@@ -130,40 +118,6 @@ uint16_t CIMessage::sendProfileListResponse(
   return length;
 }
 
-uint16_t CIMessage::sendProfileOn(uint8_t *sysex, uint8_t midiCIVer,
-                                  uint32_t srcMUID, uint32_t destMUID,
-                                  uint8_t destination,
-                                  std::array<uint8_t, 5> profile,
-                                  uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
-                            ci_message::profile_set_on);
-}
-
-uint16_t CIMessage::sendProfileOff(uint8_t *sysex, uint8_t midiCIVer,
-                                   uint32_t srcMUID, uint32_t destMUID,
-                                   uint8_t destination,
-                                   std::array<uint8_t, 5> profile) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, 0, ci_message::profile_set_off);
-}
-
-uint16_t CIMessage::sendProfileEnabled(uint8_t *sysex, uint8_t midiCIVer,
-                                       uint32_t srcMUID, uint32_t destMUID,
-                                       uint8_t destination,
-                                       std::array<uint8_t, 5> profile,
-                                       uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
-                            ci_message::profile_enabled);
-}
-
-uint16_t CIMessage::sendProfileDisabled(uint8_t *sysex, uint8_t midiCIVer,
-                                        uint32_t srcMUID, uint32_t destMUID,
-                                        uint8_t destination,
-                                        std::array<uint8_t, 5> profile,
-                                        uint8_t numberOfChannels) {
-  return sendProfileMessage(sysex, midiCIVer, srcMUID, destMUID, destination, profile, numberOfChannels,
-                            ci_message::profile_disabled);
-}
-
 uint16_t CIMessage::sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer,
                                             uint32_t srcMUID, uint32_t destMUID,
                                             uint8_t destination,
@@ -173,38 +127,6 @@ uint16_t CIMessage::sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer,
   uint16_t length = 13;
   concatSysexArray(sysex, &length, profile.data(), 5);
   setBytesFromNumbers(sysex, datalen, &length, 4);
-  concatSysexArray(sysex, &length, data, datalen);
-  return length;
-}
-
-uint16_t CIMessage::sendProfileDetailsInquiry(uint8_t *sysex, uint8_t midiCIVer,
-                                              uint32_t srcMUID,
-                                              uint32_t destMUID,
-                                              uint8_t destination,
-                                              std::array<uint8_t, 5> profile,
-                                              uint8_t InquiryTarget) {
-  if (midiCIVer < 2)
-    return 0;
-  createCIHeader(sysex, destination, ci_message::profile_details, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, profile.data(), 5);
-  sysex[length++] = InquiryTarget;
-  return length;
-}
-
-uint16_t CIMessage::sendProfileDetailsReply(uint8_t *sysex, uint8_t midiCIVer,
-                                            uint32_t srcMUID, uint32_t destMUID,
-                                            uint8_t destination,
-                                            std::array<uint8_t, 5> profile,
-                                            uint8_t InquiryTarget,
-                                            uint16_t datalen, uint8_t *data) {
-  if (midiCIVer < 2)
-    return 0;
-  createCIHeader(sysex, destination, ci_message::profile_details_reply, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, profile.data(), 5);
-  sysex[length++] = InquiryTarget;
-  setBytesFromNumbers(sysex, datalen, &length, 2);
   concatSysexArray(sysex, &length, data, datalen);
   return length;
 }

@@ -93,6 +93,37 @@ template <> struct type_to_packed<profile_configuration::details> {
   using v1 = profile_configuration::packed::details_v1;
   using v2 = profile_configuration::packed::details_v1;
 };
+template <> struct type_to_packed<profile_configuration::details_reply> {
+  static constexpr auto id = ci_message::profile_details_reply;
+  using v1 = profile_configuration::packed::details_reply_v1;
+  using v2 = profile_configuration::packed::details_reply_v1;
+};
+template <> struct type_to_packed<profile_configuration::inquiry_reply> {
+  static constexpr auto id = ci_message::profile_inquiry_reply;
+  // using v1 = profile_configuration::packed::details_reply_v1;
+  // using v2 = profile_configuration::packed::details_reply_v1;
+};
+template <> struct type_to_packed<profile_configuration::on> {
+  static constexpr auto id = ci_message::profile_set_on;
+  using v1 = profile_configuration::packed::on_v1;
+  using v2 = profile_configuration::packed::on_v2;
+};
+template <> struct type_to_packed<profile_configuration::off> {
+  static constexpr auto id = ci_message::profile_set_off;
+  using v1 = profile_configuration::packed::off_v1;
+  using v2 = profile_configuration::packed::off_v2;
+};
+
+template <> struct type_to_packed<profile_configuration::enabled> {
+  static constexpr auto id = ci_message::profile_enabled;
+  using v1 = profile_configuration::packed::enabled_v1;
+  using v2 = profile_configuration::packed::enabled_v2;
+};
+template <> struct type_to_packed<profile_configuration::disabled> {
+  static constexpr auto id = ci_message::profile_disabled;
+  using v1 = profile_configuration::packed::disabled_v1;
+  using v2 = profile_configuration::packed::disabled_v2;
+};
 
 namespace details {
 
@@ -107,9 +138,10 @@ constexpr O safe_copy(O first, S last, T const &t) {
   return std::ranges::copy(std::bit_cast<std::byte const *>(&t), std::bit_cast<std::byte const *>(&t + 1), first).out;
 }
 
-template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+template <typename ElementType, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+  requires(std::is_trivially_copyable_v<ElementType> && alignof(ElementType) == 1)
 constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, std::size_t const size,
-                                   std::span<std::byte const> const span) {
+                                   std::span<ElementType const> const span) {
   auto first2 = first;
   std::ranges::advance(first2, static_cast<std::iter_difference_t<decltype(first)>>(size + span.size_bytes()), last);
   if (first2 == last) {
@@ -117,7 +149,9 @@ constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, 
   }
 
   first = std::ranges::copy(ptr, ptr + size, first).out;
-  return std::ranges::copy(span, first).out;
+  return std::ranges::copy(std::span<std::byte const>{std::bit_cast<std::byte const *>(span.data()), span.size_bytes()},
+                           first)
+      .out;
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -176,6 +210,37 @@ constexpr O create_message(O first, S last, struct params const &params, struct 
                                          offsetof(packed::nak_v2, message), nak.message);
 }
 
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params,
+                           profile_configuration::details_reply const &reply) {
+  using profile_configuration::packed::details_reply_v1;
+  first = details::write_header(first, last, params, type_to_packed<profile_configuration::details_reply>::id);
+  auto const v1 = static_cast<details_reply_v1>(reply);
+  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
+  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
+                                         offsetof(details_reply_v1, data), reply.data);
+}
+
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params,
+                           profile_configuration::inquiry_reply const &reply) {
+  using profile_configuration::packed::inquiry_reply_v1_pt1;
+  using profile_configuration::packed::inquiry_reply_v1_pt2;
+
+  first = details::write_header(first, last, params, type_to_packed<profile_configuration::inquiry_reply>::id);
+
+  auto const part1 = static_cast<inquiry_reply_v1_pt1>(reply);
+  static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
+  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part1),
+                                          offsetof(inquiry_reply_v1_pt1, ids), reply.enabled);
+
+  auto const part2 = static_cast<inquiry_reply_v1_pt2>(reply);
+  static_assert(std::is_trivially_copyable_v<decltype(part2)> && alignof(decltype(part2)) == 1);
+  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part2),
+                                          offsetof(inquiry_reply_v1_pt2, ids), reply.disabled);
+  return first;
+}
+
 }  // end namespace midi2::ci
 
 namespace midi2::CIMessage {
@@ -187,27 +252,8 @@ uint16_t sendProfileListResponse(uint8_t *sysex, uint8_t midiCIVer, uint32_t src
                                  uint8_t destination, uint8_t profilesEnabledLen, uint8_t *profilesEnabled,
                                  uint8_t profilesDisabledLen, uint8_t *profilesDisabled);
 
-uint16_t sendProfileOn(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination,
-                       std::array<uint8_t, 5> profile, uint8_t numberOfChannels);
-
-uint16_t sendProfileOff(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination,
-                        std::array<uint8_t, 5> profile);
-
-uint16_t sendProfileEnabled(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination,
-                            std::array<uint8_t, 5> profile, uint8_t numberOfChannels);
-
-uint16_t sendProfileDisabled(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                             uint8_t destination, std::array<uint8_t, 5> profile, uint8_t numberOfChannels);
-
 uint16_t sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
                                  uint8_t destination, std::array<uint8_t, 5> profile, uint16_t datalen, uint8_t *data);
-
-uint16_t sendProfileDetailsInquiry(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                   uint8_t destination, std::array<uint8_t, 5> profile, uint8_t InquiryTarget);
-
-uint16_t sendProfileDetailsReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                 uint8_t destination, std::array<uint8_t, 5> profile, uint8_t InquiryTarget,
-                                 uint16_t datalen, uint8_t *data);
 
 uint16_t sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
                                  uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);

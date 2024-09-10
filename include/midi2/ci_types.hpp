@@ -613,11 +613,16 @@ struct inquiry_reply {
   constexpr inquiry_reply() = default;
   constexpr inquiry_reply(inquiry_reply const &) = default;
   constexpr inquiry_reply(inquiry_reply &&) noexcept = default;
+  constexpr inquiry_reply(std::span<byte_array_5 const> enabled_, std::span<byte_array_5 const> disabled_)
+      : enabled{enabled_}, disabled{disabled_} {}
   constexpr inquiry_reply(packed::inquiry_reply_v1_pt1 const &, packed::inquiry_reply_v1_pt2 const &);
   ~inquiry_reply() noexcept = default;
 
   constexpr inquiry_reply &operator=(inquiry_reply const &) = default;
   constexpr inquiry_reply &operator=(inquiry_reply &&) noexcept = default;
+
+  explicit constexpr operator packed::inquiry_reply_v1_pt1() const;
+  explicit constexpr operator packed::inquiry_reply_v1_pt2() const;
 
   std::span<byte_array_5 const> enabled{};
   std::span<byte_array_5 const> disabled{};
@@ -627,6 +632,13 @@ constexpr inquiry_reply::inquiry_reply(packed::inquiry_reply_v1_pt1 const &v1_pt
                                        packed::inquiry_reply_v1_pt2 const &v1_pt2)
     : enabled{std::begin(v1_pt1.ids), from_le7(v1_pt1.num_enabled)},
       disabled{std::begin(v1_pt2.ids), from_le7(v1_pt2.num_disabled)} {
+}
+
+constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt1() const {
+  return {to_le7(static_cast<std::uint16_t>(enabled.size())), {byte_array_5{}}};
+}
+constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt2() const {
+  return {to_le7(static_cast<std::uint16_t>(disabled.size())), {byte_array_5{}}};
 }
 
 //*                __ _ _               _    _        _  *
@@ -775,6 +787,7 @@ static_assert(std::is_trivially_copyable_v<details_reply_v1>);
 
 struct details_reply {
   constexpr details_reply() = default;
+  constexpr details_reply(byte_array_5 const &pid_, std::uint8_t target_, std::span<std::byte const> data_) : pid{pid_}, target{target_}, data{data_} {}
   constexpr details_reply(details_reply const &) = default;
   constexpr details_reply(details_reply &&) noexcept = default;
   constexpr explicit details_reply(packed::details_reply_v1 const &);
@@ -782,6 +795,8 @@ struct details_reply {
 
   constexpr details_reply &operator=(details_reply const &) = default;
   constexpr details_reply &operator=(details_reply &&) noexcept = default;
+
+  explicit constexpr operator packed::details_reply_v1() const;
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
@@ -792,6 +807,15 @@ constexpr details_reply::details_reply(packed::details_reply_v1 const &other)
     : pid{other.pid},
       target{static_cast<std::uint8_t>(other.target)},
       data{std::begin(other.data), from_le7(other.data_length)} {
+}
+
+constexpr details_reply::operator packed::details_reply_v1() const {
+  return {
+      pid,
+      static_cast<std::byte>(target),
+      to_le7(static_cast<std::uint16_t>(data.size_bytes())),  ///< Inquiry target data length (LSB first)
+      {std::byte{0}},
+  };
 }
 
 //*                __ _ _                 *
@@ -825,6 +849,7 @@ static_assert(sizeof(on_v1) <= sizeof(on_v2));
 
 struct on {
   constexpr on() = default;
+  constexpr on(byte_array_5 const &pid_, std::uint16_t num_channels_) : pid{pid_}, num_channels{num_channels_} {}
   constexpr on(on const &) = default;
   constexpr on(on &&) noexcept = default;
   constexpr explicit on(packed::on_v1 const &);
@@ -836,6 +861,9 @@ struct on {
 
   constexpr bool operator==(on const &) const = default;
 
+  explicit constexpr operator packed::on_v1() const;
+  explicit constexpr operator packed::on_v2() const;
+
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
@@ -844,6 +872,12 @@ constexpr on::on(packed::on_v1 const &other) : pid{other.pid} {
 }
 constexpr on::on(packed::on_v2 const &other) : on(other.v1) {
   num_channels = from_le7(other.num_channels);
+}
+constexpr on::operator packed::on_v1() const {
+  return {pid};
+}
+constexpr on::operator packed::on_v2() const {
+  return {static_cast<packed::on_v1>(*this), to_le7(num_channels)};
 }
 
 //*                __ _ _            __  __  *
@@ -877,6 +911,7 @@ static_assert(sizeof(off_v1) <= sizeof(off_v2));
 
 struct off {
   constexpr off() = default;
+  explicit constexpr off(byte_array_5 const & pid_) : pid{pid_}{}
   constexpr off(off const &) = default;
   constexpr off(off &&) noexcept = default;
   constexpr explicit off(packed::off_v1 const &);
@@ -888,6 +923,9 @@ struct off {
 
   constexpr bool operator==(off const &) const = default;
 
+  explicit constexpr operator packed::off_v1() const;
+  explicit constexpr operator packed::off_v2() const;
+
   byte_array_5 pid{};
   // There's a 14 bit field in the specification that's "reserved"
 };
@@ -895,6 +933,12 @@ struct off {
 constexpr off::off(packed::off_v1 const &other) : pid{other.pid} {
 }
 constexpr off::off(packed::off_v2 const &other) : off(other.v1) {
+}
+constexpr off::operator packed::off_v1() const {
+  return {pid};
+}
+constexpr off::operator packed::off_v2() const {
+  return {static_cast<packed::off_v1>(*this), byte_array_2{}};
 }
 
 //*                __ _ _                     _    _        _  *
@@ -939,6 +983,9 @@ struct enabled {
 
   constexpr bool operator==(enabled const &) const = default;
 
+  explicit constexpr operator packed::enabled_v1() const;
+  explicit constexpr operator packed::enabled_v2() const;
+
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
@@ -948,6 +995,13 @@ constexpr enabled::enabled(packed::enabled_v1 const &other) : pid{other.pid} {
 constexpr enabled::enabled(packed::enabled_v2 const &other) : enabled(other.v1) {
   num_channels = from_le7(other.num_channels);
 }
+constexpr enabled::operator packed::enabled_v1() const {
+  return {pid};
+}
+constexpr enabled::operator packed::enabled_v2() const {
+  return {static_cast<packed::enabled_v1>(*this), to_le7(num_channels)};
+}
+
 
 //*                __ _ _          _ _          _    _        _  *
 //*  _ __ _ _ ___ / _(_) |___   __| (_)___ __ _| |__| |___ __| | *
@@ -991,6 +1045,9 @@ struct disabled {
 
   constexpr bool operator==(disabled const &) const = default;
 
+  explicit constexpr operator packed::disabled_v1() const;
+  explicit constexpr operator packed::disabled_v2() const;
+
   byte_array_5 pid{};
   std::uint16_t num_channels = 0;
 };
@@ -999,6 +1056,12 @@ constexpr disabled::disabled(packed::disabled_v1 const &other) : pid{other.pid} 
 }
 constexpr disabled::disabled(packed::disabled_v2 const &other) : disabled(other.v1) {
   num_channels = from_le7(other.num_channels);
+}
+constexpr disabled::operator packed::disabled_v1() const {
+  return {pid};
+}
+constexpr disabled::operator packed::disabled_v2() const {
+  return {static_cast<packed::disabled_v1>(*this), to_le7(num_channels)};
 }
 
 //*                __ _ _                       _  __ _         _      _         *
