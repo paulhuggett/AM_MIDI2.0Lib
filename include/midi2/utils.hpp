@@ -61,6 +61,11 @@ enum status : std::uint8_t {
   activesense = 0xFE,
   systemreset = 0xFF,
 };
+
+constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
+// constexpr auto S7UNIVERSAL_RT = 0x7F;
+constexpr auto S7MIDICI = std::byte{0x0D};
+
 // Status codes added in MIDI 2.
 enum midi2status : std::uint8_t {
   pernote_manage = 0xF0,
@@ -142,7 +147,7 @@ enum class ci_message : std::uint8_t {
   profile_disabled = 0x25,
   profile_added = 0x26,
   profile_removed = 0x27,
-  profile_details_inquiry = 0x28,
+  profile_details = 0x28,
   profile_details_reply = 0x29,
   profile_specific_data = 0x2F,
 

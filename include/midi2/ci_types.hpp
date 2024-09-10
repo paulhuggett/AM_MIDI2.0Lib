@@ -107,28 +107,34 @@ static_assert(std::is_trivially_copyable_v<header>);
 
 }  // end namespace packed
 
-struct MIDICI {
-  bool operator==(MIDICI const &) const = default;
+struct params {
+  bool operator==(params const &) const = default;
 
   explicit constexpr operator packed::header() const;
 
-  std::uint8_t umpGroup = 0xFF;
   std::uint8_t deviceId = 0xFF;
-  ci_message ciType = static_cast<ci_message>(0x00);
   std::uint8_t ciVer = 1;
   std::uint32_t remoteMUID = 0;
   std::uint32_t localMUID = 0;
 };
 
-constexpr MIDICI::operator packed::header() const {
-  return packed::header{std::byte{0x7E},
+constexpr params::operator packed::header() const {
+  return packed::header{S7UNIVERSAL_NRT,
                         static_cast<std::byte>(deviceId),
-                        std::byte{0x0D},
-                        static_cast<std::byte>(ciType),
+                        S7MIDICI,
+                        std::byte{0},  // message type
                         static_cast<std::byte>(ciVer),
                         ci::to_le7(remoteMUID),
                         ci::to_le7(localMUID)};
 }
+
+struct MIDICI {
+  bool operator==(MIDICI const &) const = default;
+
+  std::uint8_t umpGroup = 0xFF;
+  ci_message ciType = static_cast<ci_message>(0x00);
+  struct params params;
+};
 
 //*     _ _                              *
 //*  __| (_)___ __ _____ _____ _ _ _  _  *
@@ -652,10 +658,16 @@ struct added {
 
   constexpr bool operator==(added const &) const = default;
 
+  explicit constexpr operator packed::added_v1() const;
+
   byte_array_5 pid{};
 };
 
 constexpr added::added(packed::added_v1 const &other) : pid{other.pid} {
+}
+
+constexpr added::operator packed::added_v1() const {
+  return {pid};
 }
 
 //*                __ _ _                                    _  *
@@ -687,10 +699,15 @@ struct removed {
 
   constexpr bool operator==(removed const &) const = default;
 
+  explicit constexpr operator packed::removed_v1() const;
+
   byte_array_5 pid{};
 };
 
 constexpr removed::removed(packed::removed_v1 const &other) : pid{other.pid} {
+}
+constexpr removed::operator packed::removed_v1() const {
+  return {pid};
 }
 
 //*                __      _     _        _ _      _                _           *
@@ -724,12 +741,17 @@ struct details {
 
   constexpr bool operator==(details const &) const = default;
 
+  explicit constexpr operator packed::details_v1() const;
+
   byte_array_5 pid{};
   std::uint8_t target = 0;
 };
 
 constexpr details::details(packed::details_v1 const &other)
     : pid{other.pid}, target{static_cast<std::uint8_t>(other.target)} {
+}
+constexpr details::operator packed::details_v1() const {
+  return {pid, to_le7(target)};
 }
 
 namespace packed {
