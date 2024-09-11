@@ -36,11 +36,9 @@
 
 namespace midi2::ci {
 
-template <typename T> struct type_to_packed {
-  // static constexpr ci_message id = ;
-  //  using v1 = ;
-  //  using v2 = ;
-};
+namespace details {
+
+template <typename T> struct type_to_packed {};
 
 struct empty {};
 template <> struct type_to_packed<discovery> {
@@ -60,8 +58,6 @@ template <> struct type_to_packed<endpoint_info> {
 };
 template <> struct type_to_packed<endpoint_info_reply> {
   static constexpr auto id = ci_message::endpoint_info_reply;
-  // using v1 = packed::endpoint_info_v1;
-  // using v2 = packed::endpoint_info_v1;
 };
 template <> struct type_to_packed<invalidate_muid> {
   static constexpr auto id = ci_message::invalidate_muid;
@@ -70,8 +66,6 @@ template <> struct type_to_packed<invalidate_muid> {
 };
 template <> struct type_to_packed<ack> {
   static constexpr auto id = ci_message::ack;
-  // using v1 =
-  // using v2 =
 };
 template <> struct type_to_packed<nak> {
   static constexpr auto id = ci_message::nak;
@@ -98,10 +92,13 @@ template <> struct type_to_packed<profile_configuration::details_reply> {
   using v1 = profile_configuration::packed::details_reply_v1;
   using v2 = profile_configuration::packed::details_reply_v1;
 };
+template <> struct type_to_packed<profile_configuration::inquiry> {
+  static constexpr auto id = ci_message::profile_inquiry;
+  using v1 = empty;
+  using v2 = empty;
+};
 template <> struct type_to_packed<profile_configuration::inquiry_reply> {
   static constexpr auto id = ci_message::profile_inquiry_reply;
-  // using v1 = profile_configuration::packed::details_reply_v1;
-  // using v2 = profile_configuration::packed::details_reply_v1;
 };
 template <> struct type_to_packed<profile_configuration::on> {
   static constexpr auto id = ci_message::profile_set_on;
@@ -124,8 +121,21 @@ template <> struct type_to_packed<profile_configuration::disabled> {
   using v1 = profile_configuration::packed::disabled_v1;
   using v2 = profile_configuration::packed::disabled_v2;
 };
-
-namespace details {
+template <> struct type_to_packed<profile_configuration::specific_data> {
+  static constexpr auto id = ci_message::profile_specific_data;
+  using v1 = profile_configuration::packed::specific_data_v1;
+  using v2 = profile_configuration::packed::specific_data_v1;
+};
+template <> struct type_to_packed<property_exchange::capabilities> {
+  static constexpr auto id = ci_message::pe_capability;
+  using v1 = property_exchange::packed::capabilities_v1;
+  using v2 = property_exchange::packed::capabilities_v2;
+};
+template <> struct type_to_packed<property_exchange::capabilities_reply> {
+  static constexpr auto id = ci_message::pe_capability_reply;
+  using v1 = property_exchange::packed::capabilities_reply_v1;
+  using v2 = property_exchange::packed::capabilities_reply_v2;
+};
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
   requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
@@ -165,16 +175,16 @@ constexpr O write_header(O first, S const last, struct params const &params, ci_
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params, T const &t) {
-  first = details::write_header(first, last, params, type_to_packed<T>::id);
-  using v1_type = type_to_packed<T>::v1;
-  using v2_type = type_to_packed<T>::v2;
+  first = details::write_header(first, last, params, details::type_to_packed<T>::id);
+  using v1_type = details::type_to_packed<T>::v1;
+  using v2_type = details::type_to_packed<T>::v2;
   if (params.ciVer == 1) {
-    if constexpr (!std::is_same_v<v1_type, empty>) {
+    if constexpr (!std::is_same_v<v1_type, details::empty>) {
       first = details::safe_copy(first, last, static_cast<v1_type>(t));
     }
     return first;
   }
-  if constexpr (!std::is_same_v<v2_type, empty>) {
+  if constexpr (!std::is_same_v<v2_type, details::empty>) {
     first = details::safe_copy(first, last, static_cast<v2_type>(t));
   }
   return first;
@@ -182,7 +192,7 @@ constexpr O create_message(O first, S const last, struct params const &params, T
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params, endpoint_info_reply const &reply) {
-  first = details::write_header(first, last, params, type_to_packed<endpoint_info_reply>::id);
+  first = details::write_header(first, last, params, details::type_to_packed<endpoint_info_reply>::id);
   auto const v1 = static_cast<packed::endpoint_info_reply_v1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -191,7 +201,7 @@ constexpr O create_message(O first, S const last, struct params const &params, e
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params, struct ack const &ack) {
-  first = details::write_header(first, last, params, type_to_packed<struct ack>::id);
+  first = details::write_header(first, last, params, details::type_to_packed<struct ack>::id);
   auto const v1 = static_cast<packed::ack_v1>(ack);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -200,7 +210,7 @@ constexpr O create_message(O first, S const last, struct params const &params, s
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S last, struct params const &params, struct nak const &nak) {
-  first = details::write_header(first, last, params, type_to_packed<struct nak>::id);
+  first = details::write_header(first, last, params, details::type_to_packed<struct nak>::id);
   if (params.ciVer == 1) {
     return first;
   }
@@ -214,7 +224,7 @@ template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params,
                            profile_configuration::details_reply const &reply) {
   using profile_configuration::packed::details_reply_v1;
-  first = details::write_header(first, last, params, type_to_packed<profile_configuration::details_reply>::id);
+  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::details_reply>::id);
   auto const v1 = static_cast<details_reply_v1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -227,7 +237,7 @@ constexpr O create_message(O first, S const last, struct params const &params,
   using profile_configuration::packed::inquiry_reply_v1_pt1;
   using profile_configuration::packed::inquiry_reply_v1_pt2;
 
-  first = details::write_header(first, last, params, type_to_packed<profile_configuration::inquiry_reply>::id);
+  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::inquiry_reply>::id);
 
   auto const part1 = static_cast<inquiry_reply_v1_pt1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
@@ -241,61 +251,35 @@ constexpr O create_message(O first, S const last, struct params const &params,
   return first;
 }
 
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params,
+                           profile_configuration::specific_data const &sd) {
+  using profile_configuration::packed::specific_data_v1;
+  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::specific_data>::id);
+  auto const v1 = static_cast<specific_data_v1>(sd);
+  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
+  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
+                                         offsetof(specific_data_v1, data), sd.data);
+}
+
 }  // end namespace midi2::ci
 
 namespace midi2::CIMessage {
 
-uint16_t sendProfileListRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                uint8_t destination);
-
-uint16_t sendProfileListResponse(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                 uint8_t destination, uint8_t profilesEnabledLen, uint8_t *profilesEnabled,
-                                 uint8_t profilesDisabledLen, uint8_t *profilesDisabled);
-
-uint16_t sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                 uint8_t destination, std::array<uint8_t, 5> profile, uint16_t datalen, uint8_t *data);
-
-uint16_t sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                                 uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
-
-uint16_t sendPECapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                               uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
-
-uint16_t sendPEGet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                   uint16_t headerLen, uint8_t *header);
-
-uint16_t sendPESet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                   uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
-                   uint16_t bodyLength, uint8_t *body);
-
-uint16_t sendPESub(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                   uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
-                   uint16_t bodyLength, uint8_t *body);
-
-uint16_t sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                        uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
-                        uint16_t bodyLength, uint8_t *body);
-
-uint16_t sendPESubReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                        uint16_t headerLen, uint8_t *header);
-
-uint16_t sendPENotify(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                      uint16_t headerLen, uint8_t *header);
-
-uint16_t sendPESetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId,
-                        uint16_t headerLen, uint8_t *header);
+uint16_t sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
+uint16_t sendPECapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
+uint16_t sendPEGet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
+uint16_t sendPESet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
+uint16_t sendPESub(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
+uint16_t sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
+uint16_t sendPESubReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
+uint16_t sendPENotify(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
+uint16_t sendPESetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
 
 uint16_t sendPICapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid);
-
-uint16_t sendPICapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                               uint8_t supportedFeatures);
-
-uint16_t sendPIMMReport(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination,
-                        uint8_t MDC, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
-
-uint16_t sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid,
-                             uint8_t destination, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
-
+uint16_t sendPICapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t supportedFeatures);
+uint16_t sendPIMMReport(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination, uint8_t MDC, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
+uint16_t sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
 uint16_t sendPIMMReportEnd(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination);
 
 }  // end namespace midi2::CIMessage

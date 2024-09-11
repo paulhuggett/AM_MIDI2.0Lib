@@ -96,41 +96,6 @@ uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, u
 
 namespace midi2 {
 
-// Profiles
-
-uint16_t CIMessage::sendProfileListRequest(uint8_t *sysex, uint8_t midiCIVer,
-                                           uint32_t srcMUID, uint32_t destMUID,
-                                           uint8_t destination) {
-  createCIHeader(sysex, destination, ci_message::profile_inquiry, midiCIVer, srcMUID, destMUID);
-  return 13;
-}
-
-uint16_t CIMessage::sendProfileListResponse(
-    uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID,
-    uint8_t destination, uint8_t profilesEnabledLen, uint8_t *profilesEnabled,
-    uint8_t profilesDisabledLen, uint8_t *profilesDisabled) {
-  createCIHeader(sysex, destination, ci_message::profile_inquiry_reply, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  setBytesFromNumbers(sysex, profilesEnabledLen, &length, 2);
-  concatSysexArray(sysex, &length, profilesEnabled, profilesEnabledLen * 5);
-  setBytesFromNumbers(sysex, profilesDisabledLen, &length, 2);
-  concatSysexArray(sysex, &length, profilesDisabled, profilesDisabledLen * 5);
-  return length;
-}
-
-uint16_t CIMessage::sendProfileSpecificData(uint8_t *sysex, uint8_t midiCIVer,
-                                            uint32_t srcMUID, uint32_t destMUID,
-                                            uint8_t destination,
-                                            std::array<uint8_t, 5> profile,
-                                            uint16_t datalen, uint8_t *data) {
-  createCIHeader(sysex, destination, ci_message::profile_specific_data, midiCIVer, srcMUID, destMUID);
-  uint16_t length = 13;
-  concatSysexArray(sysex, &length, profile.data(), 5);
-  setBytesFromNumbers(sysex, datalen, &length, 4);
-  concatSysexArray(sysex, &length, data, datalen);
-  return length;
-}
-
 // Property Exchange
 
 uint16_t CIMessage::sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer,

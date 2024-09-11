@@ -211,7 +211,6 @@ constexpr discovery::discovery(packed::discovery_v1 const &v1)
 constexpr discovery::discovery(packed::discovery_v2 const &v2) : discovery(v2.v1) {
   output_path_id = from_le7(v2.output_path_id);
 }
-
 constexpr discovery::operator packed::discovery_v1() const {
   return {to_array(manufacturer), to_le7(family), to_le7(model), to_array(version), static_cast<std::byte>(capability),
           to_le7(max_sysex_size)};
@@ -577,6 +576,14 @@ constexpr nak::operator packed::nak_v2() const {
 }
 
 namespace profile_configuration {
+
+//*                __ _ _       _                _           *
+//*  _ __ _ _ ___ / _(_) |___  (_)_ _  __ _ _  _(_)_ _ _  _  *
+//* | '_ \ '_/ _ \  _| | / -_) | | ' \/ _` | || | | '_| || | *
+//* | .__/_| \___/_| |_|_\___| |_|_||_\__, |\_,_|_|_|  \_, | *
+//* |_|                                  |_|           |__/  *
+struct inquiry {};
+
 //*                __ _ _       _                _                         _       *
 //*  _ __ _ _ ___ / _(_) |___  (_)_ _  __ _ _  _(_)_ _ _  _   _ _ ___ _ __| |_  _  *
 //* | '_ \ '_/ _ \  _| | / -_) | | ' \/ _` | || | | '_| || | | '_/ -_) '_ \ | || | *
@@ -1087,6 +1094,7 @@ static_assert(std::is_trivially_copyable_v<specific_data_v1>);
 
 struct specific_data {
   constexpr specific_data() = default;
+  constexpr specific_data(byte_array_5 const &pid_, std::span<std::byte const> data_) : pid{pid_}, data{data_} {}
   constexpr specific_data(specific_data const &) = default;
   constexpr specific_data(specific_data &&) noexcept = default;
   constexpr explicit specific_data(packed::specific_data_v1 const &);
@@ -1095,12 +1103,17 @@ struct specific_data {
   constexpr specific_data &operator=(specific_data const &) = default;
   constexpr specific_data &operator=(specific_data &&) noexcept = default;
 
+  explicit constexpr operator packed::specific_data_v1() const;
+
   byte_array_5 pid{};                 ///< Profile ID
   std::span<std::byte const> data{};  ///< Profile specific data
 };
 
 constexpr specific_data::specific_data(packed::specific_data_v1 const &other)
     : pid{other.pid}, data{std::begin(other.data), from_le7(other.data_length)} {
+}
+constexpr specific_data::operator packed::specific_data_v1() const {
+  return {pid, to_le7(static_cast<std::uint16_t>(data.size_bytes())), {std::byte{0}}};
 }
 
 }  // namespace profile_configuration
@@ -1138,6 +1151,7 @@ static_assert(std::is_trivially_copyable_v<capabilities_v2>);
 
 struct capabilities {
   constexpr capabilities() = default;
+  constexpr capabilities(std::uint8_t ns, std::uint8_t major, std::uint8_t minor);
   constexpr capabilities(capabilities const &) = default;
   constexpr capabilities(capabilities &&) noexcept = default;
   constexpr explicit capabilities(packed::capabilities_v1 const &other);
@@ -1149,17 +1163,30 @@ struct capabilities {
 
   bool operator==(capabilities const &) const = default;
 
+  explicit constexpr operator packed::capabilities_v1() const;
+  explicit constexpr operator packed::capabilities_v2() const;
+
   std::uint8_t num_simultaneous = 0;
   std::uint8_t major_version = 0;
   std::uint8_t minor_version = 0;
 };
 
+constexpr capabilities::capabilities(std::uint8_t ns, std::uint8_t major, std::uint8_t minor)
+    : num_simultaneous{ns}, major_version{major}, minor_version{minor} {
+}
 constexpr capabilities::capabilities(packed::capabilities_v1 const &other)
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
 constexpr capabilities::capabilities(packed::capabilities_v2 const &other) : capabilities{other.v1} {
   major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
+}
+constexpr capabilities::operator packed::capabilities_v1() const {
+  return {static_cast<std::byte>(num_simultaneous)};
+}
+constexpr capabilities::operator packed::capabilities_v2() const {
+  return {static_cast<packed::capabilities_v1>(*this), static_cast<std::byte>(major_version),
+          static_cast<std::byte>(minor_version)};
 }
 
 //*                                 _    _ _ _ _   _                       _       *
@@ -1193,6 +1220,7 @@ static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 
 struct capabilities_reply {
   constexpr capabilities_reply() = default;
+  constexpr capabilities_reply(std::uint8_t ns, std::uint8_t major, std::uint8_t minor);
   constexpr capabilities_reply(capabilities_reply const &) = default;
   constexpr capabilities_reply(capabilities_reply &&) noexcept = default;
   constexpr explicit capabilities_reply(packed::capabilities_reply_v1 const &other);
@@ -1204,11 +1232,17 @@ struct capabilities_reply {
 
   bool operator==(capabilities_reply const &) const = default;
 
+  explicit constexpr operator packed::capabilities_reply_v1() const;
+  explicit constexpr operator packed::capabilities_reply_v2() const;
+
   std::uint8_t num_simultaneous = 0;
   std::uint8_t major_version = 0;
   std::uint8_t minor_version = 0;
 };
 
+constexpr capabilities_reply::capabilities_reply(std::uint8_t ns, std::uint8_t major, std::uint8_t minor)
+    : num_simultaneous{ns}, major_version{major}, minor_version{minor} {
+}
 constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v1 const &other)
     : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
 }
@@ -1216,6 +1250,13 @@ constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v2 c
     : capabilities_reply{other.v1} {
   major_version = static_cast<std::uint8_t>(other.major_version);
   minor_version = static_cast<std::uint8_t>(other.minor_version);
+}
+constexpr capabilities_reply::operator packed::capabilities_reply_v1() const {
+  return {static_cast<std::byte>(num_simultaneous)};
+}
+constexpr capabilities_reply::operator packed::capabilities_reply_v2() const {
+  return {static_cast<packed::capabilities_reply_v1>(*this), static_cast<std::byte>(major_version),
+          static_cast<std::byte>(minor_version)};
 }
 
 //*                             _                     _                        *
