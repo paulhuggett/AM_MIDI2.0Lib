@@ -32,8 +32,12 @@ using midi2::ci::byte_array_5;
 using midi2::ci::from_le7;
 
 class CICreateMessage : public testing::Test {
-public:
-  static constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
+protected:
+  static constexpr auto broadcast_muid_ =
+      std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
+  static constexpr auto sender_muid_ = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  static constexpr auto destination_muid_ =
+      std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   template <typename T> struct trivial_sentinel {
     constexpr bool operator==(T) const { return false; }
@@ -193,7 +197,6 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
 TEST_F(CICreateMessage, EndpointInfo) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto status = std::uint8_t{0b0101010};
-  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   // clang-format off
@@ -203,7 +206,7 @@ TEST_F(CICreateMessage, EndpointInfo) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x72}, // Universal System Exclusive Sub-ID#2: Endpoint Information
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     std::byte{status}, // Status
   };
@@ -212,7 +215,7 @@ TEST_F(CICreateMessage, EndpointInfo) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::endpoint_info endpoint_info;
@@ -224,7 +227,6 @@ TEST_F(CICreateMessage, EndpointInfo) {
 TEST_F(CICreateMessage, EndpointInfoReply) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto status = std::byte{0b0101010};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
   constexpr auto length = std::array{std::byte{0x08}, std::byte{0x00}};
   constexpr auto information = std::array{
@@ -240,7 +242,7 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x73}, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     status, // Status
     length[0], length[1], // Length of following data (LSB first)
@@ -252,7 +254,7 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   // Test create_message()
@@ -265,7 +267,6 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
 
 TEST_F(CICreateMessage, InvalidateMuid) {
   constexpr auto device_id = std::byte{0x7F};
-  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
   constexpr std::array const target_muid{std::byte{0x21}, std::byte{0x43}, std::byte{0x75}, std::byte{0x71}};
 
@@ -276,7 +277,7 @@ TEST_F(CICreateMessage, InvalidateMuid) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     midi2::S7UNIVERSAL_NRT, // Universal System Exclusive Sub-ID#2: Invalidate MUID
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     target_muid[0], target_muid[1], target_muid[2], target_muid[3], // Target MUID (the MUID to invalidate) (LSB first)
   };
@@ -285,7 +286,7 @@ TEST_F(CICreateMessage, InvalidateMuid) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::invalidate_muid invalidate_muid;
@@ -296,7 +297,6 @@ TEST_F(CICreateMessage, InvalidateMuid) {
 
 TEST_F(CICreateMessage, Ack) {
   constexpr auto device_id = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   constexpr auto original_id = std::byte{0x34};
@@ -315,7 +315,7 @@ TEST_F(CICreateMessage, Ack) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x7D}, // Universal System Exclusive Sub-ID#2: MIDI-CI ACK
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     original_id, // Original transaction sub-ID#2 classification
     ack_status_code, // ACK Status Code
@@ -329,7 +329,7 @@ TEST_F(CICreateMessage, Ack) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::ack ack;
@@ -344,7 +344,6 @@ TEST_F(CICreateMessage, Ack) {
 
 TEST_F(CICreateMessage, NakV1) {
   constexpr auto device_id = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   // clang-format off
@@ -354,7 +353,7 @@ TEST_F(CICreateMessage, NakV1) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
     std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
   };
   // clang-format on
@@ -362,14 +361,13 @@ TEST_F(CICreateMessage, NakV1) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
   EXPECT_THAT(make_message(params, midi2::ci::nak{}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, NakV2) {
   constexpr auto device_id = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   constexpr auto original_id = std::byte{0x34};
@@ -387,7 +385,7 @@ TEST_F(CICreateMessage, NakV2) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     original_id, // Originl transaciton sub-ID#2 classification
     nak_status_code, // NAK Status Code
@@ -401,7 +399,7 @@ TEST_F(CICreateMessage, NakV2) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(device_id);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   // Test create_message()
@@ -417,7 +415,6 @@ TEST_F(CICreateMessage, NakV2) {
 
 TEST_F(CICreateMessage, ProfileInquiry) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   // clang-format off
@@ -427,7 +424,7 @@ TEST_F(CICreateMessage, ProfileInquiry) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x20}, // Universal System Exclusive Sub-ID#2: Profile Inquiry
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
   };
   // clang-format on
@@ -435,7 +432,7 @@ TEST_F(CICreateMessage, ProfileInquiry) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry{}), testing::ElementsAreArray(expected));
@@ -443,7 +440,6 @@ TEST_F(CICreateMessage, ProfileInquiry) {
 
 TEST_F(CICreateMessage, ProfileInquiryReply) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   constexpr auto enabled = std::array<byte_array_5, 2>{
@@ -460,7 +456,7 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x21}, // Universal System Exclusive Sub-ID#2: Profile Inquiry Reply
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     std::byte{2}, std::byte{0},
     enabled[0][0], enabled[0][1], enabled[0][2], enabled[0][3], enabled[0][4],
@@ -473,7 +469,7 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
+  params.remoteMUID = from_le7(sender_muid_);
   params.localMUID = from_le7(receiver_muid);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
@@ -482,7 +478,6 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
 
 TEST_F(CICreateMessage, ProfileAdded) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
@@ -493,8 +488,8 @@ TEST_F(CICreateMessage, ProfileAdded) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x26}, // Universal System Exclusive Sub-ID#2: Profile Added Report
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being added
   };
   // clang-format on
@@ -502,8 +497,8 @@ TEST_F(CICreateMessage, ProfileAdded) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(broadcast_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::added added;
   added.pid = pid;
@@ -513,7 +508,6 @@ TEST_F(CICreateMessage, ProfileAdded) {
 
 TEST_F(CICreateMessage, ProfileRemoved) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
@@ -524,8 +518,8 @@ TEST_F(CICreateMessage, ProfileRemoved) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x27}, // Universal System Exclusive Sub-ID#2: Profile Removed Report
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being removed
   };
   // clang-format on
@@ -533,8 +527,8 @@ TEST_F(CICreateMessage, ProfileRemoved) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(broadcast_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::removed removed;
   removed.pid = pid;
@@ -544,8 +538,6 @@ TEST_F(CICreateMessage, ProfileRemoved) {
 
 TEST_F(CICreateMessage, ProfileDetails) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
@@ -556,8 +548,8 @@ TEST_F(CICreateMessage, ProfileDetails) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x28}, // Universal System Exclusive Sub-ID#2: Profile Details Inquiry
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     std::byte{0x23}, // Inquiry target
   };
@@ -566,8 +558,8 @@ TEST_F(CICreateMessage, ProfileDetails) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::profile_configuration::details details;
   details.pid = pid;
@@ -578,8 +570,6 @@ TEST_F(CICreateMessage, ProfileDetails) {
 
 TEST_F(CICreateMessage, ProfileDetailsReply) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto target = std::byte{0x23};
@@ -593,8 +583,8 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x29}, // Universal System Exclusive Sub-ID#2: Profile Details Reply
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     target, // Inquiry target
     data_length[0], data_length[1], // Inquiry target data length (LSB first)
@@ -605,8 +595,8 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   using midi2::ci::profile_configuration::details_reply;
 
@@ -616,8 +606,6 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
 
 TEST_F(CICreateMessage, ProfileOn) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto channels = std::array{std::byte{0x23}, std::byte{0x00}};
@@ -629,8 +617,8 @@ TEST_F(CICreateMessage, ProfileOn) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x22}, // Universal System Exclusive Sub-ID#2: Set Profile On
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     channels[0], channels[1], // Number of channels
   };
@@ -639,8 +627,8 @@ TEST_F(CICreateMessage, ProfileOn) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
               testing::ElementsAreArray(expected));
@@ -648,8 +636,6 @@ TEST_F(CICreateMessage, ProfileOn) {
 
 TEST_F(CICreateMessage, ProfileOff) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto reserved = std::array{std::byte{0x00}, std::byte{0x00}};
@@ -661,8 +647,8 @@ TEST_F(CICreateMessage, ProfileOff) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x23}, // Universal System Exclusive Sub-ID#2: Set Profile Off
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     reserved[0], reserved[1],
   };
@@ -670,14 +656,13 @@ TEST_F(CICreateMessage, ProfileOff) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileEnabled) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto num_channels = std::array{std::byte{0x22}, std::byte{0x11}};
@@ -689,8 +674,8 @@ TEST_F(CICreateMessage, ProfileEnabled) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x24}, // Universal System Exclusive Sub-ID#2: Profile Enabled Report
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     num_channels[0], num_channels[1], // Number of channels
   };
@@ -698,8 +683,8 @@ TEST_F(CICreateMessage, ProfileEnabled) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(broadcast_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::enabled enabled;
   enabled.pid = pid;
@@ -712,8 +697,6 @@ using namespace std::string_view_literals;
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -732,8 +715,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x34}, // Universal System Exclusive Sub-ID#2: Inquiry: Get Property Data
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     request,
   };
   // clang-format on
@@ -756,8 +739,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::get get;
   get.chunk.number_of_chunks = from_le7(total_chunks);
@@ -770,8 +753,6 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -790,8 +771,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x35}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -815,8 +796,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::get_reply get_reply;
   get_reply.chunk.number_of_chunks = from_le7(total_chunks);
@@ -830,8 +811,6 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -851,8 +830,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x36}, // Universal System Exclusive Sub-ID#2: Inquiry: Set Property Data
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -876,8 +855,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::set set;
   set.chunk.number_of_chunks = from_le7(total_chunks);
@@ -890,8 +869,6 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -909,8 +886,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x37}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Set Property Data
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -935,8 +912,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::set_reply set_reply;
   set_reply.chunk.number_of_chunks = from_le7(total_chunks);
@@ -949,8 +926,6 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
 TEST_F(CICreateMessage, PropertyExchangeSubscription) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -969,8 +944,8 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x38}, // Universal System Exclusive Sub-ID#2: Subscription
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -994,8 +969,8 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::subscription subscription;
   subscription.chunk.number_of_chunks = from_le7(total_chunks);
@@ -1010,8 +985,6 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
 TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -1031,8 +1004,8 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x39}, // Universal System Exclusive Sub-ID#2: Subscription Reply
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -1057,8 +1030,8 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::subscription_reply subscription_reply;
   subscription_reply.chunk.number_of_chunks = from_le7(total_chunks);
@@ -1073,8 +1046,6 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
 TEST_F(CICreateMessage, PropertyExchangeNotify) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   constexpr auto request = std::byte{1};
 
@@ -1094,8 +1065,8 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x3F}, // Universal System Exclusive Sub-ID#2: Notify
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     request,
   };
@@ -1118,8 +1089,8 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::notify notify;
   notify.chunk.number_of_chunks = from_le7(total_chunks);
@@ -1134,8 +1105,6 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
 TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   // clang-format off
   constexpr std::array expected {
@@ -1144,16 +1113,16 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x40}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
   };
   // clang-format on
 
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities{}), testing::ElementsAreArray(expected));
 }
@@ -1161,8 +1130,6 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
 TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto features = std::byte{0b0101010};
 
   // clang-format off
@@ -1172,8 +1139,8 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x41}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     features
   };
@@ -1182,8 +1149,8 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities_reply{features}),
               testing::ElementsAreArray(expected));
@@ -1192,8 +1159,6 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   // clang-format off
   constexpr std::array expected {
@@ -1202,8 +1167,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x42}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     std::byte{0x7F}, // message data control
     std::byte{0b00000111}, // requested system messages
@@ -1216,8 +1181,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::process_inquiry::midi_message_report report;
   report.message_data_control = decltype(report)::control::full;
@@ -1245,8 +1210,6 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   // clang-format off
   constexpr std::array expected {
@@ -1255,8 +1218,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x43}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report Reply
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
     std::byte{0b00000101}, // requested system messages
     std::byte{0x00}, // reserved
@@ -1268,8 +1231,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   midi2::ci::process_inquiry::midi_message_report_reply reply;
   // system messages
@@ -1296,8 +1259,6 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
   // clang-format off
   constexpr std::array expected {
@@ -1306,16 +1267,16 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
     midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
     std::byte{0x44}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report End
     std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
+    destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
   };
   // clang-format on
 
   midi2::ci::params params;
   params.deviceId = static_cast<std::uint8_t>(destination);
   params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid);
-  params.localMUID = from_le7(destination_muid);
+  params.remoteMUID = from_le7(sender_muid_);
+  params.localMUID = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::midi_message_report_end{}),
               testing::ElementsAreArray(expected));
