@@ -1,9 +1,10 @@
+//===-- ci create message------------------------------------------------------*- C++ -*-===//
 //
-//  test_ci_create_message.cpp
-//  m2unittests
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 11/09/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
 // DUT
 #include "midi2/ci_types.hpp"

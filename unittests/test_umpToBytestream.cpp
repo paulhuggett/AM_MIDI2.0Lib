@@ -1,11 +1,22 @@
-#include <gmock/gmock.h>
+//===-- UMP to bytestream -----------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
 
+// DUT
+#include "midi2/umpToBytestream.hpp"
+
+// Standard library
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <vector>
 
-#include "midi2/umpToBytestream.hpp"
+// Google test
+#include <gmock/gmock.h>
 
 namespace {
 

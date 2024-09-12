@@ -1,3 +1,11 @@
+//===-- ump bytestream round trip ---------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 // DUT includes
 #include "midi2/bytestreamToUMP.hpp"
 #include "midi2/umpToBytestream.hpp"
