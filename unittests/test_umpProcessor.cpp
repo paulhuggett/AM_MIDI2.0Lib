@@ -507,6 +507,33 @@ TEST(UMPProcessor, SetChordName) {
   p.processUMP(std::bit_cast<std::uint32_t>(word4));
 }
 
+TEST(UMPProcessor, Sysex7) {
+  std::array data{std::uint8_t{1}, std::uint8_t{2}, std::uint8_t{3}, std::uint8_t{4}, std::uint8_t{5}};
+
+  midi2::types::sysex7_w1 word1;
+  word1.mt = 3;
+  word1.group = 1;
+  word1.status = 0;           // complete sysex in one message
+  word1.number_of_bytes = 5;  // 0..6
+  word1.data0 = data[0];
+  word1.data1 = data[1];
+
+  MockCallbacks callbacks;
+  midi2::ump_data mess;
+  mess.common.group = 1;
+  mess.common.messageType = midi2::ump_message_type::sysex7;
+  mess.streamId = 0;
+  mess.form = 0;
+  mess.data = data;
+
+  EXPECT_CALL(callbacks,
+              send_out_sysex(UMPDataMatches(mess.common, mess.streamId, mess.form, std::begin(data), std::end(data))));
+
+  midi2::umpProcessor p{std::ref(callbacks)};
+  p.processUMP(std::bit_cast<std::uint32_t>(word1));
+  p.processUMP(pack(data[2], data[3], data[4], 0));
+}
+
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
   midi2::umpProcessor p;
   std::for_each(std::begin(in), std::end(in),
@@ -525,54 +552,22 @@ TEST(UMPProcessor, Empty) {
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 template <midi2::ump_message_type> struct message_size {};
-template <>
-struct message_size<midi2::ump_message_type::utility>
-    : std::integral_constant<unsigned, 1> {};
-template <>
-struct message_size<midi2::ump_message_type::system>
-    : std::integral_constant<unsigned, 1> {};
-template <>
-struct message_size<midi2::ump_message_type::m1cvm>
-    : std::integral_constant<unsigned, 1> {};
-template <>
-struct message_size<midi2::ump_message_type::sysex7>
-    : std::integral_constant<unsigned, 2> {};
-template <>
-struct message_size<midi2::ump_message_type::m2cvm>
-    : std::integral_constant<unsigned, 2> {};
-template <>
-struct message_size<midi2::ump_message_type::data>
-    : std::integral_constant<unsigned, 4> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved32_06>
-    : std::integral_constant<unsigned, 1> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved32_07>
-    : std::integral_constant<unsigned, 1> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved64_08>
-    : std::integral_constant<unsigned, 2> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved64_09>
-    : std::integral_constant<unsigned, 2> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved64_0A>
-    : std::integral_constant<unsigned, 2> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved96_0B>
-    : std::integral_constant<unsigned, 3> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved96_0C>
-    : std::integral_constant<unsigned, 3> {};
-template <>
-struct message_size<midi2::ump_message_type::flex_data>
-    : std::integral_constant<unsigned, 4> {};
-template <>
-struct message_size<midi2::ump_message_type::reserved128_0E>
-    : std::integral_constant<unsigned, 4> {};
-template <>
-struct message_size<midi2::ump_message_type::midi_endpoint>
-    : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::sysex7> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::data> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<midi2::ump_message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::midi_endpoint> : std::integral_constant<unsigned, 4> {};
 
 template <midi2::ump_message_type MessageType>
 void process_message(std::span<std::uint32_t> message) {
