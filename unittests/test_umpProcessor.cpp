@@ -510,7 +510,7 @@ TEST(UMPProcessor, SetChordName) {
 TEST(UMPProcessor, Sysex7) {
   std::array data{std::uint8_t{1}, std::uint8_t{2}, std::uint8_t{3}, std::uint8_t{4}, std::uint8_t{5}};
 
-  midi2::types::sysex7_w1 word1;
+  midi2::types::sysex7_w1 word1{};
   word1.mt = 3;
   word1.group = 1;
   word1.status = 0;           // complete sysex in one message
