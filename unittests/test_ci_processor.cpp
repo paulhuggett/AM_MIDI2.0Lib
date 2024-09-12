@@ -918,20 +918,20 @@ TEST_F(CIProcessor, PropertyExchangeSubscription) {
   midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::subscription;
-  struct subscription subscription;
-  subscription.chunk.number_of_chunks = 1;
-  subscription.chunk.chunk_number = 1;
-  subscription.request = std::uint8_t{17};
-  subscription.header = header;
-  subscription.data = data;
+  subscription sub;
+  sub.chunk.number_of_chunks = 1;
+  sub.chunk.chunk_number = 1;
+  sub.request = std::uint8_t{17};
+  sub.header = header;
+  sub.data = data;
 
   EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks_, subscription(midici, AllOf(Field("chunk", &subscription::chunk, Eq(subscription.chunk)),
-                                                    Field("request", &subscription::request, Eq(subscription.request)),
+  EXPECT_CALL(pe_mocks_, subscription(midici, AllOf(Field("chunk", &subscription::chunk, Eq(sub.chunk)),
+                                                    Field("request", &subscription::request, Eq(sub.request)),
                                                     Field("header", &subscription::header, ElementsAreArray(header)),
                                                     Field("data", &subscription::data, ElementsAreArray(data)))));
 
-  this->process_midi_ci(midici, subscription);
+  this->process_midi_ci(midici, sub);
 }
 
 TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
@@ -949,22 +949,22 @@ TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
   midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::subscription_reply;
-  struct midi2::ci::property_exchange::subscription_reply subscription_reply;
-  subscription_reply.chunk.number_of_chunks = 1;
-  subscription_reply.chunk.chunk_number = 1;
-  subscription_reply.request = std::uint8_t{17};
-  subscription_reply.header = header;
-  subscription_reply.data = data;
+  subscription_reply sub_reply;
+  sub_reply.chunk.number_of_chunks = 1;
+  sub_reply.chunk.chunk_number = 1;
+  sub_reply.request = std::uint8_t{17};
+  sub_reply.header = header;
+  sub_reply.data = data;
 
   EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(
       pe_mocks_,
-      subscription_reply(midici, AllOf(Field("chunk", &subscription_reply::chunk, Eq(subscription_reply.chunk)),
-                                       Field("request", &subscription_reply::request, Eq(subscription_reply.request)),
+      subscription_reply(midici, AllOf(Field("chunk", &subscription_reply::chunk, Eq(sub_reply.chunk)),
+                                               Field("request", &subscription_reply::request, Eq(sub_reply.request)),
                                        Field("header", &subscription_reply::header, ElementsAreArray(header)),
                                        Field("data", &subscription_reply::data, ElementsAreArray(data)))));
 
-  this->process_midi_ci(midici, subscription_reply);
+  this->process_midi_ci(midici, sub_reply);
 }
 
 TEST_F(CIProcessor, PropertyExchangeNotify) {
@@ -982,20 +982,20 @@ TEST_F(CIProcessor, PropertyExchangeNotify) {
   midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::notify;
-  struct midi2::ci::property_exchange::notify notify;
-  notify.chunk.number_of_chunks = 1;
-  notify.chunk.chunk_number = 1;
-  notify.request = static_cast<std::uint8_t>(request);
-  notify.header = header;
-  notify.data = data;
+  notify note;
+  note.chunk.number_of_chunks = 1;
+  note.chunk.chunk_number = 1;
+  note.request = static_cast<std::uint8_t>(request);
+  note.header = header;
+  note.data = data;
 
   EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks_, notify(midici, AllOf(Field("chunk", &notify::chunk, Eq(notify.chunk)),
-                                              Field("request", &notify::request, Eq(notify.request)),
+  EXPECT_CALL(pe_mocks_, notify(midici, AllOf(Field("chunk", &notify::chunk, Eq(note.chunk)),
+                                              Field("request", &notify::request, Eq(note.request)),
                                               Field("header", &notify::header, ElementsAreArray(header)),
                                               Field("data", &notify::data, ElementsAreArray(data)))));
 
-  this->process_midi_ci(midici, notify);
+  this->process_midi_ci(midici, note);
 }
 
 TEST_F(CIProcessor, ProcessInquiryCapabilities) {
