@@ -924,11 +924,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscription) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-
   constexpr auto request = std::byte{1};
-
   constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
   constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
   constexpr auto header_size = std::array{std::byte{46}, std::byte{0}};
@@ -983,19 +980,14 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-
   constexpr auto request = std::byte{1};
-
   constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
   constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
-
   constexpr auto header = R"({"status":200,"subscribeId":"sub138047"})"sv;
   constexpr auto data = ""sv;
-
   constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.length()));
+  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
 
   // clang-format off
   std::vector<std::byte> expected {
@@ -1044,17 +1036,12 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeNotify) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-
   constexpr auto request = std::byte{1};
-
   constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
   constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-
   constexpr auto header = R"({"status":144})"sv;
   constexpr auto data = "data"sv;
-
   constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.size()));
   constexpr auto data_size = midi2::ci::to_le7(static_cast<std::uint16_t>(data.size()));
 
@@ -1103,7 +1090,6 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
 
   // clang-format off
@@ -1128,7 +1114,6 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
   constexpr auto features = std::byte{0b0101010};
 
@@ -1157,7 +1142,6 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
 
   // clang-format off
@@ -1208,7 +1192,6 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
 
   // clang-format off
@@ -1257,7 +1240,6 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
-  constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x01};
 
   // clang-format off
