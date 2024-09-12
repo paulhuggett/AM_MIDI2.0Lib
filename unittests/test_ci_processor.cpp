@@ -179,6 +179,8 @@ public:
               (override));
   MOCK_METHOD(void, midi_message_report, (MIDICI const &, midi2::ci::process_inquiry::midi_message_report const &),
               (override));
+  MOCK_METHOD(void, midi_message_report_reply, (MIDICI const &, midi2::ci::process_inquiry::midi_message_report_reply const &),
+              (override));
   MOCK_METHOD(void, midi_message_report_end, (MIDICI const &), (override));
 };
 
@@ -197,6 +199,11 @@ protected:
   midi2::midiCIProcessor<mock_management_callbacks &, mock_profile_callbacks &, mock_property_exchange_callbacks &,
                          mock_process_inquiry_callbacks &>
       processor_;
+
+  static constexpr auto sender_muid_ =
+      from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  static constexpr auto destination_muid_ =
+      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   template <typename Content>
   static std::vector<std::byte> make_message(midi2::ci::params const &params, Content const &content) {
@@ -300,7 +307,6 @@ TEST_F(CIProcessor, EndpointInfo) {
   constexpr auto device_id = std::byte{0x7F};
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto status = std::uint8_t{0b0101010};
-  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   MIDICI midici;
@@ -308,7 +314,7 @@ TEST_F(CIProcessor, EndpointInfo) {
   midici.ciType = midi2::ci_message::endpoint_info;
   midici.params.deviceId = static_cast<std::uint8_t>(device_id);
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = from_le7(sender_muid);
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::endpoint_info endpoint_info;
@@ -335,7 +341,7 @@ TEST_F(CIProcessor, EndpointInfoReply) {
   midici.ciType = midi2::ci_message::endpoint_info_reply;
   midici.params.deviceId = std::uint8_t{0x7F};
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   midi2::ci::endpoint_info_reply reply;
@@ -355,7 +361,6 @@ TEST_F(CIProcessor, EndpointInfoReply) {
 TEST_F(CIProcessor, InvalidateMuid) {
   constexpr auto group = std::uint8_t{0x71};
   constexpr auto device_id = std::byte{0x7F};
-  constexpr std::array const sender_muid{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
   constexpr std::array const target_muid{std::byte{0x21}, std::byte{0x43}, std::byte{0x75}, std::byte{0x71}};
 
@@ -364,7 +369,7 @@ TEST_F(CIProcessor, InvalidateMuid) {
   midici.ciType = midi2::ci_message::invalidate_muid;
   midici.params.deviceId = static_cast<std::uint8_t>(device_id);
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = from_le7(sender_muid);
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::invalidate_muid invalidate_muid;
@@ -378,7 +383,6 @@ TEST_F(CIProcessor, InvalidateMuid) {
 
 TEST_F(CIProcessor, Ack) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto sender_muid = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
   constexpr auto receiver_muid =
       from_le7(std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}});
 
@@ -394,7 +398,7 @@ TEST_F(CIProcessor, Ack) {
   midici.ciType = midi2::ci_message::ack;
   midici.params.deviceId = std::uint8_t{0x7F};
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = sender_muid;
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   midi2::ci::ack ack;
@@ -430,7 +434,7 @@ TEST_F(CIProcessor, AckMessageTooLong) {
   midici.ciType = midi2::ci_message::ack;
   midici.params.deviceId = std::uint8_t{0x7F};
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   midi2::ci::ack ack;
@@ -449,7 +453,6 @@ TEST_F(CIProcessor, AckMessageTooLong) {
 TEST_F(CIProcessor, NakV1) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
-  constexpr auto sender_muid = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
   constexpr auto receiver_muid =
       from_le7(std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}});
 
@@ -458,7 +461,7 @@ TEST_F(CIProcessor, NakV1) {
   midici.ciType = midi2::ci_message::nak;
   midici.params.deviceId = static_cast<std::uint8_t>(device_id);
   midici.params.ciVer = 1;
-  midici.params.remoteMUID = sender_muid;
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   midi2::ci::nak nak;
@@ -477,7 +480,6 @@ TEST_F(CIProcessor, NakV1) {
 TEST_F(CIProcessor, NakV2) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto device_id = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
   constexpr auto original_id = std::uint8_t{0x34};
@@ -492,7 +494,7 @@ TEST_F(CIProcessor, NakV2) {
   midici.ciType = midi2::ci_message::nak;
   midici.params.deviceId = static_cast<std::uint8_t>(device_id);
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(receiver_muid);
 
   midi2::ci::nak nak;
@@ -524,7 +526,7 @@ TEST_F(CIProcessor, ProfileInquiry) {
   midici.ciType = midi2::ci_message::profile_inquiry;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   EXPECT_CALL(management_mocks_, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
@@ -551,7 +553,7 @@ TEST_F(CIProcessor, ProfileInquiryReply) {
   midici.ciType = midi2::ci_message::profile_inquiry_reply;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = receiver_muid;
 
   EXPECT_CALL(management_mocks_, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
@@ -570,7 +572,7 @@ TEST_F(CIProcessor, ProfileAdded) {
   midici.ciType = midi2::ci_message::profile_added;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(broadcast_muid);
 
   midi2::ci::profile_configuration::added added;
@@ -587,7 +589,7 @@ TEST_F(CIProcessor, ProfileRemoved) {
   midici.ciType = midi2::ci_message::profile_removed;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(broadcast_muid);
 
   midi2::ci::profile_configuration::removed removed;
@@ -600,22 +602,20 @@ TEST_F(CIProcessor, ProfileRemoved) {
 
 TEST_F(CIProcessor, ProfileDetails) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::profile_details;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   midi2::ci::profile_configuration::details details;
   details.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   details.target = 0x23;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, details(midici, details)).Times(1);
 
   this->process_midi_ci(midici, details);
@@ -623,8 +623,6 @@ TEST_F(CIProcessor, ProfileDetails) {
 
 TEST_F(CIProcessor, ProfileDetailsReply) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto target = std::uint8_t{0x23};
@@ -635,12 +633,12 @@ TEST_F(CIProcessor, ProfileDetailsReply) {
   midici.ciType = midi2::ci_message::profile_details_reply;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
                                                           Field("target", &details_reply::target, Eq(target)),
                                                           Field("data", &details_reply::data, ElementsAreArray(data)))))
@@ -651,22 +649,20 @@ TEST_F(CIProcessor, ProfileDetailsReply) {
 
 TEST_F(CIProcessor, ProfileOn) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::profile_set_on;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   constexpr midi2::ci::profile_configuration::on on{
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
       std::uint16_t{23}};
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, on(midici, on)).Times(1);
 
   this->process_midi_ci(midici, on);
@@ -674,21 +670,19 @@ TEST_F(CIProcessor, ProfileOn) {
 
 TEST_F(CIProcessor, ProfileOff) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::profile_set_off;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   constexpr midi2::ci::profile_configuration::off off{
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}}};
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(profile_mocks_, off(midici, off)).Times(1);
 
   this->process_midi_ci(midici, off);
@@ -700,7 +694,7 @@ TEST_F(CIProcessor, ProfileEnabled) {
   midici.ciType = midi2::ci_message::profile_enabled;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(broadcast_muid);
 
   midi2::ci::profile_configuration::enabled enabled;
@@ -718,7 +712,7 @@ TEST_F(CIProcessor, ProfileDisabled) {
   midici.ciType = midi2::ci_message::profile_disabled;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(broadcast_muid);
 
   midi2::ci::profile_configuration::disabled disabled;
@@ -732,8 +726,6 @@ TEST_F(CIProcessor, ProfileDisabled) {
 
 TEST_F(CIProcessor, ProfileSpecificData) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
   constexpr auto pid =
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
@@ -742,9 +734,9 @@ TEST_F(CIProcessor, ProfileSpecificData) {
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::profile_specific_data;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
+  midici.params.remoteMUID = sender_muid_;
   midici.params.localMUID = from_le7(broadcast_muid);
 
   using midi2::ci::profile_configuration::specific_data;
@@ -757,24 +749,20 @@ TEST_F(CIProcessor, ProfileSpecificData) {
 
 TEST_F(CIProcessor, PropertyExchangeCapabilities) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto sender_muid = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
-
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_capability;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = sender_muid;
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   midi2::ci::property_exchange::capabilities caps;
   caps.num_simultaneous = 2;
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_, capabilities(midici, caps)).Times(1);
 
   this->process_midi_ci(midici, caps);
@@ -782,23 +770,21 @@ TEST_F(CIProcessor, PropertyExchangeCapabilities) {
 
 TEST_F(CIProcessor, PropertyExchangeCapabilitiesReply) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_capability_reply;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   midi2::ci::property_exchange::capabilities_reply caps;
   caps.num_simultaneous = 2;
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_, capabilities_reply(midici, caps)).Times(1);
 
   this->process_midi_ci(midici, caps);
@@ -808,16 +794,14 @@ using namespace std::string_view_literals;
 
 TEST_F(CIProcessor, PropertyExchangeGetPropertyData) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_get;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::get;
   using chunk_info = midi2::ci::property_exchange::property_exchange::chunk_info;
@@ -827,7 +811,7 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyData) {
   g.request = std::uint8_t{1};
   g.header = R"({"status":200})"sv;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_, get(midici, AllOf(Field("chunk", &get::chunk, Eq(g.chunk)),
                                            Field("request", &get::request, Eq(g.request)),
                                            Field("header", &get::header, ElementsAreArray(g.header)))));
@@ -837,16 +821,14 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyData) {
 
 TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_get_reply;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using get_reply = midi2::ci::property_exchange::get_reply;
   get_reply gr;
@@ -856,7 +838,7 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
   gr.header = R"({"status":200})"sv;
   gr.data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])"sv;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_, get_reply(midici, AllOf(Field("chunk", &get_reply::chunk, Eq(gr.chunk)),
                                                  Field("request", &get_reply::request, Eq(gr.request)),
                                                  Field("header", &get_reply::header, ElementsAreArray(gr.header)),
@@ -867,16 +849,14 @@ TEST_F(CIProcessor, PropertyExchangeGetPropertyDataReply) {
 
 TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_set;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::set;
   set spd;
@@ -886,7 +866,7 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
   spd.header = R"({"resource":"X-ProgramEdit","resId":"abcd"})"sv;
   spd.data = R"({"name":"Violin 2","lfoSpeed":10,"lfoWaveform":"sine"})"sv;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_, set(midici, AllOf(Field("chunk", &set::chunk, Eq(spd.chunk)),
                                            Field("request", &set::request, Eq(spd.request)),
                                            Field("header", &set::header, ElementsAreArray(spd.header)),
@@ -897,16 +877,14 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyData) {
 
 TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination_muid =
-      from_le7(std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}});
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_set_reply;
   midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
-  midici.params.localMUID = destination_muid;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::set_reply;
   set_reply spd_reply;
@@ -915,8 +893,7 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
   spd_reply.request = 2;
   spd_reply.header = R"({"status":200})"sv;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid)).WillRepeatedly(Return(true));
-
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pe_mocks_,
               set_reply(midici, AllOf(Field("chunk", &set_reply::chunk, Eq(spd_reply.chunk)),
                                       Field("request", &set_reply::request, Eq(spd_reply.request)),
@@ -928,389 +905,226 @@ TEST_F(CIProcessor, PropertyExchangeSetPropertyDataReply) {
 TEST_F(CIProcessor, PropertyExchangeSubscription) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
-  constexpr auto request = std::byte{1};
-
-  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
-
-  auto const header = R"({"status":200})"sv;
-
-  // clang-format off
-  constexpr std::array ci_prolog {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x38}, // Universal System Exclusive Sub-ID#2: Subscription
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-
-    request,
-  };
-  // clang-format on
-
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
-  std::vector<std::byte> message;
-  // The standard MIDI CI header
-  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
-  // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
-  out = std::ranges::copy(header_size, out).out;
-  // Header Body
-  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
-  // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
-  out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
-  out = std::ranges::copy(chunk_number, out).out;
-  // Property Length
-  ASSERT_EQ(from_le7(property_data_size), 0);
-  out = std::ranges::copy(property_data_size, out).out;
+  auto const header = R"({"command":"full","subscribeId":"sub32847623"})"sv;
+  auto const data = "multichannel"sv;
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_sub;
   midici.params.deviceId = static_cast<std::uint8_t>(destination);
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
-
-  midi2::ci::property_exchange::property_exchange::chunk_info chunk;
-  chunk.number_of_chunks = from_le7(total_chunks);
-  chunk.chunk_number = from_le7(chunk_number);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::subscription;
+  struct subscription subscription;
+  subscription.chunk.number_of_chunks = 1;
+  subscription.chunk.chunk_number = 1;
+  subscription.request = std::uint8_t{17};
+  subscription.header = header;
+  subscription.data = data;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(
-      pe_mocks_,
-      subscription(midici, AllOf(Field("chunk", &subscription::chunk, Eq(chunk)),
-                                 Field("request", &subscription::request, Eq(static_cast<std::uint8_t>(request))),
-                                 Field("header", &subscription::header, ElementsAreArray(header)))));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_, subscription(midici, AllOf(Field("chunk", &subscription::chunk, Eq(subscription.chunk)),
+                                                    Field("request", &subscription::request, Eq(subscription.request)),
+                                                    Field("header", &subscription::header, ElementsAreArray(header)),
+                                                    Field("data", &subscription::data, ElementsAreArray(data)))));
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, subscription);
 }
 
 TEST_F(CIProcessor, PropertyExchangeSubscriptionReply) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
-  constexpr auto request = std::byte{1};
-
-  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
-
-  auto const header = R"({"status":200})"sv;
-
-  // clang-format off
-  constexpr std::array ci_prolog {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x39}, // Universal System Exclusive Sub-ID#2: Subscription Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-
-    request,
-  };
-  // clang-format on
-
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
-  std::vector<std::byte> message;
-  // The standard MIDI CI header
-  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
-  // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
-  out = std::ranges::copy(header_size, out).out;
-  // Header Body
-  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
-  // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
-  out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
-  out = std::ranges::copy(chunk_number, out).out;
-  // Property Length
-  ASSERT_EQ(from_le7(property_data_size), 0);
-  out = std::ranges::copy(property_data_size, out).out;
+  constexpr auto header = R"({"status":200})"sv;
+  constexpr auto data = "data"sv;
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_sub_reply;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
-
-  midi2::ci::property_exchange::property_exchange::chunk_info chunk;
-  chunk.number_of_chunks = from_le7(total_chunks);
-  chunk.chunk_number = from_le7(chunk_number);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::subscription_reply;
+  struct midi2::ci::property_exchange::subscription_reply subscription_reply;
+  subscription_reply.chunk.number_of_chunks = 1;
+  subscription_reply.chunk.chunk_number = 1;
+  subscription_reply.request = std::uint8_t{17};
+  subscription_reply.header = header;
+  subscription_reply.data = data;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks_,
-              subscription_reply(
-                  midici, AllOf(Field("chunk", &subscription_reply::chunk, Eq(chunk)),
-                                Field("request", &subscription_reply::request, Eq(static_cast<std::uint8_t>(request))),
-                                Field("header", &subscription_reply::header, ElementsAreArray(header)),
-                                Field("data", &subscription_reply::data, IsEmpty()))));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(
+      pe_mocks_,
+      subscription_reply(midici, AllOf(Field("chunk", &subscription_reply::chunk, Eq(subscription_reply.chunk)),
+                                       Field("request", &subscription_reply::request, Eq(subscription_reply.request)),
+                                       Field("header", &subscription_reply::header, ElementsAreArray(header)),
+                                       Field("data", &subscription_reply::data, ElementsAreArray(data)))));
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, subscription_reply);
 }
 
 TEST_F(CIProcessor, PropertyExchangeNotify) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
-
   constexpr auto request = std::byte{1};
-
-  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
-
-  auto const header = R"({"status":200})"sv;
-
-  // clang-format off
-  constexpr std::array ci_prolog {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x3F}, // Universal System Exclusive Sub-ID#2: Notify
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-
-    request,
-  };
-  // clang-format on
-
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
-  std::vector<std::byte> message;
-  // The standard MIDI CI header
-  auto out = std::ranges::copy(ci_prolog, std::back_inserter(message)).out;
-  // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
-  out = std::ranges::copy(header_size, out).out;
-  // Header Body
-  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
-  // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
-  out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
-  out = std::ranges::copy(chunk_number, out).out;
-  // Property Length
-  ASSERT_EQ(from_le7(property_data_size), 0);
-  out = std::ranges::copy(property_data_size, out).out;
+  constexpr auto header = R"({"status":144})"sv;
+  constexpr auto data = "data"sv;
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pe_notify;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x0F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
-
-  midi2::ci::property_exchange::property_exchange::chunk_info chunk;
-  chunk.number_of_chunks = from_le7(total_chunks);
-  chunk.chunk_number = from_le7(chunk_number);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   using midi2::ci::property_exchange::notify;
+  struct midi2::ci::property_exchange::notify notify;
+  notify.chunk.number_of_chunks = 1;
+  notify.chunk.chunk_number = 1;
+  notify.request = static_cast<std::uint8_t>(request);
+  notify.header = header;
+  notify.data = data;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(pe_mocks_,
-              notify(midici, AllOf(Field("chunk", &notify::chunk, Eq(chunk)),
-                                   Field("request", &notify::request, Eq(static_cast<std::uint8_t>(request))),
-                                   Field("header", &notify::header, ElementsAreArray(header)),
-                                   Field("data", &notify::data, IsEmpty()))));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pe_mocks_, notify(midici, AllOf(Field("chunk", &notify::chunk, Eq(notify.chunk)),
+                                              Field("request", &notify::request, Eq(notify.request)),
+                                              Field("header", &notify::header, ElementsAreArray(header)),
+                                              Field("data", &notify::data, ElementsAreArray(data)))));
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, notify);
 }
 
 TEST_F(CIProcessor, ProcessInquiryCapabilities) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
-
-  // clang-format off
-  constexpr std::array message {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x40}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-  };
-  // clang-format on
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pi_capability;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x7F};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pi_mocks_, capabilities(midici)).Times(1);
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, midi2::ci::process_inquiry::capabilities{});
 }
 
 TEST_F(CIProcessor, ProcessInquiryCapabilitiesReply) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto destination = std::byte{0x7F};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
   constexpr auto features = std::byte{0b0101010};
-
-  // clang-format off
-  constexpr std::array message {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x41}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-
-    features
-  };
-  // clang-format on
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pi_capability_reply;
   midici.params.deviceId = static_cast<std::uint8_t>(destination);
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
   midi2::ci::process_inquiry::capabilities_reply reply;
   reply.features = features;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pi_mocks_, capabilities_reply(midici, reply)).Times(1);
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, reply);
 }
 
 TEST_F(CIProcessor, ProcessInquiryMidiMessageReport) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x01};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
-
-  // clang-format off
-  constexpr std::array message {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x42}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-
-    std::byte{0x7F}, // message data control
-    std::byte{0b00000111}, // requested system messages
-    std::byte{0x00}, // reserved
-    std::byte{0b00111111}, // requested channel controller messages
-    std::byte{0b00011111}, // requested note data messages
-  };
-  // clang-format on
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pi_mm_report;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x01};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
-  midi2::ci::process_inquiry::midi_message_report reply;
-  reply.message_data_control = decltype(reply)::control::full;
+  midi2::ci::process_inquiry::midi_message_report report;
+  report.message_data_control = decltype(report)::control::full;
+  // system messages
+  report.mtc_quarter_frame = 1;
+  report.song_position = 0;
+  report.song_select = 1;
+  // channel controller messages
+  report.pitchbend = 1;
+  report.control_change = 0;
+  report.rpn_registered_controller = 1;
+  report.nrpn_assignable_controller = 0;
+  report.program_change = 1;
+  report.channel_pressure = 0;
+  // note data messages
+  report.notes = 1;
+  report.poly_pressure = 0;
+  report.per_note_pitchbend = 1;
+  report.registered_per_note_controller = 0;
+  report.assignable_per_note_controller = 1;
+
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, midi_message_report(midici, report)).Times(1);
+
+  this->process_midi_ci(midici, report);
+}
+
+TEST_F(CIProcessor, ProcessInquiryMidiMessageReportReply) {
+  constexpr auto group = std::uint8_t{0x01};
+
+  MIDICI midici;
+  midici.umpGroup = group;
+  midici.ciType = midi2::ci_message::pi_mm_report_reply;
+  midici.params.deviceId = std::uint8_t{0x01};
+  midici.params.ciVer = 2;
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
+
+  midi2::ci::process_inquiry::midi_message_report_reply reply;
   // system messages
   reply.mtc_quarter_frame = 1;
-  reply.song_position = 1;
+  reply.song_position = 0;
   reply.song_select = 1;
   // channel controller messages
   reply.pitchbend = 1;
-  reply.control_change = 1;
+  reply.control_change = 0;
   reply.rpn_registered_controller = 1;
-  reply.nrpn_assignable_controller = 1;
+  reply.nrpn_assignable_controller = 0;
   reply.program_change = 1;
-  reply.channel_pressure = 1;
+  reply.channel_pressure = 0;
   // note data messages
   reply.notes = 1;
-  reply.poly_pressure = 1;
+  reply.poly_pressure = 0;
   reply.per_note_pitchbend = 1;
-  reply.registered_per_note_controller = 1;
+  reply.registered_per_note_controller = 0;
   reply.assignable_per_note_controller = 1;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(pi_mocks_, midi_message_report(midici, reply)).Times(1);
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(pi_mocks_, midi_message_report_reply(midici, reply)).Times(1);
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, reply);
 }
 
 TEST_F(CIProcessor, ProcessInquiryMidiMessageReportEnd) {
   constexpr auto group = std::uint8_t{0x01};
-  constexpr auto destination = std::byte{0x01};
-  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
-
-  // clang-format off
-  constexpr std::array message {
-    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
-    destination, // Destination
-    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x44}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report End
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
-    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
-  };
-  // clang-format on
 
   MIDICI midici;
   midici.umpGroup = group;
   midici.ciType = midi2::ci_message::pi_mm_report_end;
-  midici.params.deviceId = static_cast<std::uint8_t>(destination);
+  midici.params.deviceId = std::uint8_t{0x01};
   midici.params.ciVer = 2;
-  midici.params.remoteMUID = from_le7(sender_muid);
-  midici.params.localMUID = from_le7(destination_muid);
+  midici.params.remoteMUID = sender_muid_;
+  midici.params.localMUID = destination_muid_;
 
-  EXPECT_CALL(management_mocks_, check_muid(group, from_le7(destination_muid))).WillRepeatedly(Return(true));
+  EXPECT_CALL(management_mocks_, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(pi_mocks_, midi_message_report_end(midici)).Times(1);
 
-  processor_.startSysex7(group, destination);
-  std::ranges::for_each(message, std::bind_front(&decltype(processor_)::processMIDICI, &processor_));
-  processor_.endSysex7();
+  this->process_midi_ci(midici, midi2::ci::process_inquiry::midi_message_report_end{});
 }
 
 // This test simply gets midiCIProcessor to consume a random buffer.

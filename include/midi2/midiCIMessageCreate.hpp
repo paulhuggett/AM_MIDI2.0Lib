@@ -41,6 +41,7 @@ namespace details {
 template <typename T> struct type_to_packed {};
 
 struct empty {};
+struct not_available {};
 template <> struct type_to_packed<discovery> {
   static constexpr auto id = ci_message::discovery;
   using v1 = packed::discovery_v1;
@@ -110,7 +111,6 @@ template <> struct type_to_packed<profile_configuration::off> {
   using v1 = profile_configuration::packed::off_v1;
   using v2 = profile_configuration::packed::off_v2;
 };
-
 template <> struct type_to_packed<profile_configuration::enabled> {
   static constexpr auto id = ci_message::profile_enabled;
   using v1 = profile_configuration::packed::enabled_v1;
@@ -136,41 +136,52 @@ template <> struct type_to_packed<property_exchange::capabilities_reply> {
   using v1 = property_exchange::packed::capabilities_reply_v1;
   using v2 = property_exchange::packed::capabilities_reply_v2;
 };
-
 template <> struct type_to_packed<property_exchange::get> {
   static constexpr auto id = ci_message::pe_get;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::get_reply> {
   static constexpr auto id = ci_message::pe_get_reply;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::set> {
   static constexpr auto id = ci_message::pe_set;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::set_reply> {
   static constexpr auto id = ci_message::pe_set_reply;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::subscription> {
   static constexpr auto id = ci_message::pe_sub;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::subscription_reply> {
   static constexpr auto id = ci_message::pe_sub_reply;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::notify> {
   static constexpr auto id = ci_message::pe_notify;
-  // using v1 = property_exchange::packed::capabilities_reply_v1;
-  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+
+template <> struct type_to_packed<process_inquiry::capabilities> {
+  static constexpr auto id = ci_message::pi_capability;
+  using v1 = empty;
+  using v2 = empty;
+};
+template <> struct type_to_packed<process_inquiry::capabilities_reply> {
+  static constexpr auto id = ci_message::pi_capability_reply;
+  using v1 = not_available;
+  using v2 = process_inquiry::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<process_inquiry::midi_message_report> {
+  static constexpr auto id = ci_message::pi_mm_report;
+  using v1 = not_available;
+  using v2 = process_inquiry::packed::midi_message_report_v2;
+};
+template <> struct type_to_packed<process_inquiry::midi_message_report_reply> {
+  static constexpr auto id = ci_message::pi_mm_report_reply;
+  using v1 = not_available;
+  using v2 = process_inquiry::packed::midi_message_report_reply_v2;
+};
+template <> struct type_to_packed<process_inquiry::midi_message_report_end> {
+  static constexpr auto id = ci_message::pi_mm_report_end;
+  using v1 = not_available;
+  using v2 = empty;
 };
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -230,15 +241,19 @@ constexpr O write_pe(O first, S const last, struct params const &params, propert
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params, T const &t) {
-  first = details::write_header(first, last, params, details::type_to_packed<T>::id);
   using v1_type = details::type_to_packed<T>::v1;
   using v2_type = details::type_to_packed<T>::v2;
+
   if (params.ciVer == 1) {
-    if constexpr (!std::is_same_v<v1_type, details::empty>) {
-      first = details::safe_copy(first, last, static_cast<v1_type>(t));
+    if constexpr (!std::is_same_v<v1_type, details::not_available>) {
+      first = details::write_header(first, last, params, details::type_to_packed<T>::id);
+      if constexpr (!std::is_same_v<v1_type, details::empty>) {
+        first = details::safe_copy(first, last, static_cast<v1_type>(t));
+      }
     }
     return first;
   }
+  first = details::write_header(first, last, params, details::type_to_packed<T>::id);
   if constexpr (!std::is_same_v<v2_type, details::empty>) {
     first = details::safe_copy(first, last, static_cast<v2_type>(t));
   }
@@ -350,13 +365,4 @@ constexpr O create_message(O first, S const last, struct params const &params, p
 
 }  // end namespace midi2::ci
 
-namespace midi2::CIMessage {
-
-uint16_t sendPICapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid);
-uint16_t sendPICapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t supportedFeatures);
-uint16_t sendPIMMReport(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination, uint8_t MDC, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
-uint16_t sendPIMMReportReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination, uint8_t systemBitmap, uint8_t chanContBitmap, uint8_t chanNoteBitmap);
-uint16_t sendPIMMReportEnd(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t destination);
-
-}  // end namespace midi2::CIMessage
 #endif  // MIDI2_MIDICIMESSAGECREATE_HPP
