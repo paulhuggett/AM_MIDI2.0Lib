@@ -1094,7 +1094,7 @@ static_assert(std::is_trivially_copyable_v<specific_data_v1>);
 
 struct specific_data {
   constexpr specific_data() = default;
-  constexpr specific_data(byte_array_5 const &pid_, std::span<std::byte const> data_) : pid{pid_}, data{data_} {}
+  constexpr specific_data(byte_array_5 const &pid, std::span<std::byte const> data);
   constexpr specific_data(specific_data const &) = default;
   constexpr specific_data(specific_data &&) noexcept = default;
   constexpr explicit specific_data(packed::specific_data_v1 const &);
@@ -1109,6 +1109,9 @@ struct specific_data {
   std::span<std::byte const> data{};  ///< Profile specific data
 };
 
+constexpr specific_data::specific_data(byte_array_5 const &pid_, std::span<std::byte const> data_)
+    : pid{pid_}, data{data_} {
+}
 constexpr specific_data::specific_data(packed::specific_data_v1 const &other)
     : pid{other.pid}, data{std::begin(other.data), from_le7(other.data_length)} {
 }
@@ -1294,18 +1297,98 @@ static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 
 }  // end namespace packed
 
-// This is all related to property exchange...
-struct chunk_info {
-  bool operator==(chunk_info const &) const = default;
-
-  std::uint16_t number_of_chunks = 0;
-  std::uint16_t chunk_number = 0;
-};
-
 struct property_exchange {
-  std::uint8_t request_id = 0;
+  struct chunk_info {
+    chunk_info() = default;
+    chunk_info(std::uint16_t const number_of_chunks_, std::uint16_t const chunk_number_)
+        : number_of_chunks{number_of_chunks_}, chunk_number{chunk_number_} {}
+    bool operator==(chunk_info const &) const = default;
+    std::uint16_t number_of_chunks = 0;
+    std::uint16_t chunk_number = 0;
+  };
+  chunk_info chunk;
+  std::uint8_t request = 0;
   std::span<char const> header;
   std::span<char const> data;
+
+  constexpr operator packed::property_exchange_pt1() const;
+  constexpr operator packed::property_exchange_pt2() const;
+
+protected:
+  constexpr property_exchange() = default;
+
+  constexpr property_exchange(chunk_info const &chunk_, std::uint8_t request_, std::span<char const> header_,
+                              std::span<char const> data_)
+      : chunk{chunk_}, request{request_}, header{header_}, data{data_} {}
+};
+
+constexpr property_exchange::operator packed::property_exchange_pt1() const {
+  return {
+      static_cast<std::byte>(request),
+      to_le7(static_cast<std::uint16_t>(header.size())),
+      {std::byte{0}},
+  };
+}
+
+constexpr property_exchange::operator packed::property_exchange_pt2() const {
+  return {
+      to_le7(chunk.number_of_chunks),
+      to_le7(chunk.chunk_number),
+      to_le7(static_cast<std::uint16_t>(data.size())),
+      {std::byte{0}},
+  };
+}
+
+struct get : public property_exchange {
+public:
+  constexpr get() = default;
+  constexpr get(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_)
+      : property_exchange(chunk_, request_, header_, {}) {}
+
+private:
+  using property_exchange::data;
+};
+struct get_reply : public property_exchange {
+  constexpr get_reply() = default;
+  constexpr get_reply(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_,
+                      std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
+};
+struct set : public property_exchange {
+  constexpr set() = default;
+  constexpr set(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_,
+                std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
+};
+struct set_reply : public property_exchange {
+  constexpr set_reply() = default;
+  constexpr set_reply(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_,
+                      std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
+
+private:
+  using property_exchange::data;
+};
+struct subscription : public property_exchange {
+  constexpr subscription() = default;
+  constexpr subscription(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_,
+                         std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
+
+private:
+  using property_exchange::data;
+};
+struct subscription_reply : public property_exchange {
+  constexpr subscription_reply() = default;
+  constexpr subscription_reply(chunk_info const &chunk_, std::uint8_t const request_,
+                               std::span<char const> const header_, std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
+};
+struct notify : public property_exchange {
+  constexpr notify() = default;
+  constexpr notify(chunk_info const &chunk_, std::uint8_t const request_, std::span<char const> const header_,
+                   std::span<char const> const data_)
+      : property_exchange(chunk_, request_, header_, data_) {}
 };
 
 }  // end namespace property_exchange

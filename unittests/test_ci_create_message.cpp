@@ -28,10 +28,13 @@
 
 namespace {
 
+using midi2::ci::byte_array_5;
 using midi2::ci::from_le7;
 
 class CICreateMessage : public testing::Test {
 public:
+  static constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
+
   template <typename T> struct trivial_sentinel {
     constexpr bool operator==(T) const { return false; }
     friend constexpr bool operator==(T, trivial_sentinel) { return false; }
@@ -410,6 +413,537 @@ TEST_F(CICreateMessage, NakV2) {
   nak.message = std::span{text};
 
   EXPECT_THAT(make_message(params, nak), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileInquiry) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x20}, // Universal System Exclusive Sub-ID#2: Profile Inquiry
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(receiver_muid);
+
+  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry{}), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileInquiryReply) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+
+  constexpr auto enabled = std::array<byte_array_5, 2>{
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
+      byte_array_5{std::byte{0x76}, std::byte{0x65}, std::byte{0x54}, std::byte{0x43}, std::byte{0x32}},
+  };
+  constexpr auto disabled = std::array<byte_array_5, 1>{
+      byte_array_5{std::byte{0x71}, std::byte{0x61}, std::byte{0x51}, std::byte{0x41}, std::byte{0x31}},
+  };
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x21}, // Universal System Exclusive Sub-ID#2: Profile Inquiry Reply
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
+    std::byte{2}, std::byte{0},
+    enabled[0][0], enabled[0][1], enabled[0][2], enabled[0][3], enabled[0][4],
+    enabled[1][0], enabled[1][1], enabled[1][2], enabled[1][3], enabled[1][4],
+    std::byte{1}, std::byte{0},
+    disabled[0][0], disabled[0][1], disabled[0][2], disabled[0][3], disabled[0][4],
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(receiver_muid);
+
+  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
+              testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileAdded) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x26}, // Universal System Exclusive Sub-ID#2: Profile Added Report
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being added
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(broadcast_muid);
+
+  midi2::ci::profile_configuration::added added;
+  added.pid = pid;
+
+  EXPECT_THAT(make_message(params, added), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileRemoved) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x27}, // Universal System Exclusive Sub-ID#2: Profile Removed Report
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being removed
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(broadcast_muid);
+
+  midi2::ci::profile_configuration::removed removed;
+  removed.pid = pid;
+
+  EXPECT_THAT(make_message(params, removed), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileDetails) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x28}, // Universal System Exclusive Sub-ID#2: Profile Details Inquiry
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    std::byte{0x23}, // Inquiry target
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  midi2::ci::profile_configuration::details details;
+  details.pid = pid;
+  details.target = 0x23;
+
+  EXPECT_THAT(make_message(params, details), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileDetailsReply) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto target = std::byte{0x23};
+  constexpr auto data_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x29}, // Universal System Exclusive Sub-ID#2: Profile Details Reply
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    target, // Inquiry target
+    data_length[0], data_length[1], // Inquiry target data length (LSB first)
+    data[0], data[1], data[2], data[3], data[4],
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  using midi2::ci::profile_configuration::details_reply;
+
+  EXPECT_THAT(make_message(params, details_reply{pid, static_cast<std::uint8_t>(target), data}),
+              testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileOn) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto channels = std::array{std::byte{0x23}, std::byte{0x00}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x22}, // Universal System Exclusive Sub-ID#2: Set Profile On
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    channels[0], channels[1], // Number of channels
+  };
+  // clang-format on
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
+              testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileOff) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto reserved = std::array{std::byte{0x00}, std::byte{0x00}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x23}, // Universal System Exclusive Sub-ID#2: Set Profile Off
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    reserved[0], reserved[1],
+  };
+  // clang-format on
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, ProfileEnabled) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto pid =
+      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto num_channels = std::array{std::byte{0x22}, std::byte{0x11}};
+
+  // clang-format off
+  constexpr std::array expected{
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x24}, // Universal System Exclusive Sub-ID#2: Profile Enabled Report
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    broadcast_muid[0], broadcast_muid[1], broadcast_muid[2], broadcast_muid[3], // Destination MUID (LSB first)
+    pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
+    num_channels[0], num_channels[1], // Number of channels
+  };
+  // clang-format on
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(broadcast_muid);
+
+  midi2::ci::profile_configuration::enabled enabled;
+  enabled.pid = pid;
+  enabled.num_channels = from_le7(num_channels);
+
+  EXPECT_THAT(make_message(params, enabled), testing::ElementsAreArray(expected));
+}
+
+using namespace std::string_view_literals;
+
+TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request = std::byte{1};
+
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+
+  constexpr auto header_size = std::array{std::byte{25}, std::byte{0}};
+  constexpr auto data_size = std::array{std::byte{0}, std::byte{0}};
+
+  auto const header = R"({"resource":"DeviceInfo"})"sv;
+
+  // clang-format off
+  std::vector<std::byte> expected {
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x34}, // Universal System Exclusive Sub-ID#2: Inquiry: Get Property Data
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+    request,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char const c) { return static_cast<std::byte>(c); };
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U) << "the CI spec mandates that total_chunks==1";
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U) << "the CI spec mandates that chunk_number==1";
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(data_size), 0) << "data size must be 0";
+  out = std::ranges::copy(data_size, out).out;
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::get get;
+  get.chunk.number_of_chunks = from_le7(total_chunks);
+  get.chunk.chunk_number = from_le7(chunk_number);
+  get.request = static_cast<std::uint8_t>(request);
+  get.header = header;
+
+  EXPECT_THAT(make_message(params, get), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request = std::byte{1};
+
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto data_size = std::array{std::byte{61}, std::byte{0}};
+  constexpr auto header = R"({"status":200})"sv;
+  constexpr auto data = R"({"manufacturerId":[125,0,0],"manufacturer":"Educational Use"})"sv;
+
+  // clang-format off
+  std::vector<std::byte> expected {
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x35}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  out = std::ranges::copy(total_chunks, out).out;
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(data_size), data.length());
+  out = std::ranges::copy(data_size, out).out;
+  // Property Data
+  std::ranges::copy(std::views::transform(data, as_byte), out);
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::get_reply get_reply;
+  get_reply.chunk.number_of_chunks = from_le7(total_chunks);
+  get_reply.chunk.chunk_number = from_le7(chunk_number);
+  get_reply.request = static_cast<std::uint8_t>(request);
+  get_reply.header = header;
+  get_reply.data = data;
+
+  EXPECT_THAT(make_message(params, get_reply), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request = std::byte{1};
+
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+
+  constexpr auto header_size = std::array{std::byte{61}, std::byte{0}};
+  constexpr auto data_size = std::array{std::byte{16}, std::byte{0}};
+
+  constexpr auto header = R"({"resource":"X-ProgramEdit","resId":"abcd","setPartial":true})"sv;
+  constexpr auto data = R"({"/lfoSpeed":10})"sv;
+
+  // clang-format off
+  std::vector expected {
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x36}, // Universal System Exclusive Sub-ID#2: Inquiry: Set Property Data
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+  // Header Size/Body
+  ASSERT_EQ(from_le7(header_size), header.length());
+  auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Data Size/Body
+  ASSERT_EQ(from_le7(data_size), data.length());
+  out = std::ranges::copy(data_size, out).out;
+  out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::set set;
+  set.chunk.number_of_chunks = from_le7(total_chunks);
+  set.chunk.chunk_number = from_le7(chunk_number);
+  set.request = static_cast<std::uint8_t>(request);
+  set.header = header;
+  set.data = data;
+  EXPECT_THAT(make_message(params, set), testing::ElementsAreArray(expected));
+}
+
+TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
+  constexpr auto destination = std::byte{0x0F};
+  constexpr auto sender_muid = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
+  constexpr auto destination_muid = std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+
+  constexpr auto request = std::byte{1};
+
+  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
+  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+
+  auto const header = R"({"status":200})"sv;
+
+  // clang-format off
+  std::vector<std::byte> expected {
+    midi2::S7UNIVERSAL_NRT, // Universal System Exclusive
+    destination, // Destination
+    midi2::S7MIDICI, // Universal System Exclusive Sub-ID#1: MIDI-CI
+    std::byte{0x37}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Set Property Data
+    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    sender_muid[0], sender_muid[1], sender_muid[2], sender_muid[3], // 4 bytes Source MUID (LSB first)
+    destination_muid[0], destination_muid[1], destination_muid[2], destination_muid[3], // Destination MUID (LSB first)
+
+    request,
+  };
+  // clang-format on
+
+  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
+
+  // Header Size
+  ASSERT_EQ(from_le7(header_size), header.length());
+  auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
+  // Header Body
+  out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
+  // Total/current chunk numbers
+  ASSERT_EQ(from_le7(total_chunks), 1U);
+  out = std::ranges::copy(total_chunks, out).out;
+  ASSERT_EQ(from_le7(chunk_number), 1U);
+  out = std::ranges::copy(chunk_number, out).out;
+  // Property Length
+  ASSERT_EQ(from_le7(property_data_size), 0);
+  out = std::ranges::copy(property_data_size, out).out;
+
+  midi2::ci::params params;
+  params.deviceId = static_cast<std::uint8_t>(destination);
+  params.ciVer = 2;
+  params.remoteMUID = from_le7(sender_muid);
+  params.localMUID = from_le7(destination_muid);
+
+  midi2::ci::property_exchange::set_reply set_reply;
+  set_reply.chunk.number_of_chunks = from_le7(total_chunks);
+  set_reply.chunk.chunk_number = from_le7(chunk_number);
+  set_reply.request = static_cast<std::uint8_t>(request);
+  set_reply.header = header;
+  EXPECT_THAT(make_message(params, set_reply), testing::ElementsAreArray(expected));
 }
 
 }  // end anonymous namespace

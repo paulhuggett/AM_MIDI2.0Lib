@@ -44,14 +44,6 @@ void setBytesFromNumbers(uint8_t *message, uint32_t number, uint16_t *start,
   }
 }
 
-void concatSysexArray(uint8_t *sysex, uint16_t *start, uint8_t const *add,
-                      uint16_t len) {
-  uint16_t i;
-  for (i = 0; i < len; i++) {
-    sysex[(*start)++] = add[i];
-  }
-}
-
 void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, ci_message ciType, uint8_t ciVer, uint32_t localMUID,
                     uint32_t remoteMUID) {
   sysexHeader[0] = static_cast<std::uint8_t>(midi2::S7UNIVERSAL_NRT);
@@ -64,125 +56,9 @@ void createCIHeader(uint8_t *sysexHeader, uint8_t deviceId, ci_message ciType, u
   setBytesFromNumbers(sysexHeader, remoteMUID, &length, 4);
 }
 
-uint16_t sendPEWithBody(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
-                        uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk,
-                        uint16_t bodyLength, uint8_t *body, ci_message ciType) {
-  createCIHeader(sysex, 0x7f, ciType, midiCIVer, srcMUID, destMUID);
-  sysex[13] = requestId;
-  uint16_t length = 14;
-  setBytesFromNumbers(sysex, headerLen, &length, 2);
-  concatSysexArray(sysex, &length, header, headerLen);
-  setBytesFromNumbers(sysex, numberOfChunks, &length, 2);
-  setBytesFromNumbers(sysex, numberOfThisChunk, &length, 2);
-  setBytesFromNumbers(sysex, bodyLength, &length, 2);
-  concatSysexArray(sysex, &length, body, bodyLength);
-  return length;
-}
-
-uint16_t sendPEHeaderOnly(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMUID, uint8_t requestId,
-                          uint16_t headerLen, uint8_t *header, ci_message ciType) {
-  createCIHeader(sysex, 0x7F, ciType, midiCIVer, srcMUID, destMUID);
-  sysex[13] = requestId;
-  uint16_t length = 14;
-  setBytesFromNumbers(sysex, headerLen, &length, 2);
-  concatSysexArray(sysex, &length, header, headerLen);
-  setBytesFromNumbers(sysex, 1, &length, 2);
-  setBytesFromNumbers(sysex, 1, &length, 2);
-  setBytesFromNumbers(sysex, 0, &length, 2);
-  return length;
-}
-
 }  // end anonymous namespace
 
 namespace midi2 {
-
-// Property Exchange
-
-uint16_t CIMessage::sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer,
-                                            uint32_t srcMUID, uint32_t destMUID,
-                                            uint8_t numSimulRequests,
-                                            uint8_t majVer, uint8_t minVer) {
-  createCIHeader(sysex, 0x7F, ci_message::pe_capability, midiCIVer, srcMUID, destMUID);
-  sysex[13] = numSimulRequests;
-  if (midiCIVer == 1) {
-    return 14;
-  }
-  sysex[14] = majVer;
-  sysex[15] = minVer;
-  return 16;
-}
-
-uint16_t CIMessage::sendPECapabilityReply(uint8_t *sysex, uint8_t midiCIVer,
-                                          uint32_t srcMUID, uint32_t destMUID,
-                                          uint8_t numSimulRequests,
-                                          uint8_t majVer, uint8_t minVer) {
-  createCIHeader(sysex, 0x7F, ci_message::pe_capability_reply, midiCIVer, srcMUID, destMUID);
-  sysex[13] = numSimulRequests;
-  if (midiCIVer == 1) {
-    return 14;
-  }
-  sysex[14] = majVer;
-  sysex[15] = minVer;
-  return 16;
-}
-
-uint16_t CIMessage::sendPESub(uint8_t *sysex, uint8_t midiCIVer,
-                              uint32_t srcMUID, uint32_t destMUID,
-                              uint8_t requestId, uint16_t headerLen,
-                              uint8_t *header, uint16_t numberOfChunks,
-                              uint16_t numberOfThisChunk, uint16_t bodyLength,
-                              uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
-                        numberOfThisChunk, bodyLength, body, ci_message::pe_sub);
-}
-
-uint16_t CIMessage::sendPESet(uint8_t *sysex, uint8_t midiCIVer,
-                              uint32_t srcMUID, uint32_t destMUID,
-                              uint8_t requestId, uint16_t headerLen,
-                              uint8_t *header, uint16_t numberOfChunks,
-                              uint16_t numberOfThisChunk, uint16_t bodyLength,
-                              uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
-                        numberOfThisChunk, bodyLength, body, ci_message::pe_set);
-}
-
-uint16_t CIMessage::sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer,
-                                   uint32_t srcMUID, uint32_t destMUID,
-                                   uint8_t requestId, uint16_t headerLen,
-                                   uint8_t *header, uint16_t numberOfChunks,
-                                   uint16_t numberOfThisChunk,
-                                   uint16_t bodyLength, uint8_t *body) {
-  return sendPEWithBody(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, numberOfChunks,
-                        numberOfThisChunk, bodyLength, body, ci_message::pe_get_reply);
-}
-
-uint16_t CIMessage::sendPEGet(uint8_t *sysex, uint8_t midiCIVer,
-                              uint32_t srcMUID, uint32_t destMUID,
-                              uint8_t requestId, uint16_t headerLen,
-                              uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_get);
-}
-
-uint16_t CIMessage::sendPESubReply(uint8_t *sysex, uint8_t midiCIVer,
-                                   uint32_t srcMUID, uint32_t destMUID,
-                                   uint8_t requestId, uint16_t headerLen,
-                                   uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_sub_reply);
-}
-
-uint16_t CIMessage::sendPENotify(uint8_t *sysex, uint8_t midiCIVer,
-                                 uint32_t srcMUID, uint32_t destMUID,
-                                 uint8_t requestId, uint16_t headerLen,
-                                 uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_notify);
-}
-
-uint16_t CIMessage::sendPESetReply(uint8_t *sysex, uint8_t midiCIVer,
-                                   uint32_t srcMUID, uint32_t destMUID,
-                                   uint8_t requestId, uint16_t headerLen,
-                                   uint8_t *header) {
-  return sendPEHeaderOnly(sysex, midiCIVer, srcMUID, destMUID, requestId, headerLen, header, ci_message::pe_set_reply);
-}
 
 // Process Inquiry
 uint16_t CIMessage::sendPICapabilityRequest(uint8_t *sysex, uint8_t midiCIVer,

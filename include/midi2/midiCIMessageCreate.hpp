@@ -137,6 +137,42 @@ template <> struct type_to_packed<property_exchange::capabilities_reply> {
   using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 
+template <> struct type_to_packed<property_exchange::get> {
+  static constexpr auto id = ci_message::pe_get;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::get_reply> {
+  static constexpr auto id = ci_message::pe_get_reply;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::set> {
+  static constexpr auto id = ci_message::pe_set;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::set_reply> {
+  static constexpr auto id = ci_message::pe_set_reply;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::subscription> {
+  static constexpr auto id = ci_message::pe_sub;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::subscription_reply> {
+  static constexpr auto id = ci_message::pe_sub_reply;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+template <> struct type_to_packed<property_exchange::notify> {
+  static constexpr auto id = ci_message::pe_notify;
+  // using v1 = property_exchange::packed::capabilities_reply_v1;
+  // using v2 = property_exchange::packed::capabilities_reply_v2;
+};
+
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
   requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
 constexpr O safe_copy(O first, S last, T const &t) {
@@ -169,6 +205,25 @@ constexpr O write_header(O first, S const last, struct params const &params, ci_
   auto header = static_cast<packed::header>(params);
   header.sub_id_2 = static_cast<std::byte>(id);
   return details::safe_copy(first, last, header);
+}
+
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O write_pe(O first, S const last, struct params const &params, property_exchange::property_exchange const &pe,
+                     ci_message const id) {
+  first = details::write_header(first, last, params, id);
+
+  using property_exchange::packed::property_exchange_pt1;
+  using property_exchange::packed::property_exchange_pt2;
+  auto const part1 = static_cast<property_exchange_pt1>(pe);
+  static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
+  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part1),
+                                          offsetof(property_exchange_pt1, header), pe.header);
+
+  auto const part2 = static_cast<property_exchange_pt2>(pe);
+  static_assert(std::is_trivially_copyable_v<decltype(part2)> && alignof(decltype(part2)) == 1);
+  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part2),
+                                          offsetof(property_exchange_pt2, data), pe.data);
+  return first;
 }
 
 }  // end namespace details
@@ -262,19 +317,40 @@ constexpr O create_message(O first, S const last, struct params const &params,
                                          offsetof(specific_data_v1, data), sd.data);
 }
 
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params, property_exchange::get const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params, property_exchange::get_reply const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params, property_exchange::set const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params, property_exchange::set_reply const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params,
+                           property_exchange::subscription const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params,
+                           property_exchange::subscription_reply const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O create_message(O first, S const last, struct params const &params, property_exchange::notify const &pe) {
+  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+}
+
 }  // end namespace midi2::ci
 
 namespace midi2::CIMessage {
-
-uint16_t sendPECapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
-uint16_t sendPECapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t numSimulRequests, uint8_t majVer, uint8_t minVer);
-uint16_t sendPEGet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
-uint16_t sendPESet(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
-uint16_t sendPESub(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
-uint16_t sendPEGetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header, uint16_t numberOfChunks, uint16_t numberOfThisChunk, uint16_t bodyLength, uint8_t *body);
-uint16_t sendPESubReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
-uint16_t sendPENotify(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
-uint16_t sendPESetReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t requestId, uint16_t headerLen, uint8_t *header);
 
 uint16_t sendPICapabilityRequest(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid);
 uint16_t sendPICapabilityReply(uint8_t *sysex, uint8_t midiCIVer, uint32_t srcMUID, uint32_t destMuid, uint8_t supportedFeatures);

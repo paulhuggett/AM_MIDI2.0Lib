@@ -86,14 +86,14 @@ template <typename T> concept property_exchange_backend = requires(T && v) {
   { v.capabilities(MIDICI{}, ci::property_exchange::capabilities{}) } -> std::same_as<void>;
   { v.capabilities_reply(MIDICI{}, ci::property_exchange::capabilities_reply{}) } -> std::same_as<void>;
 
-  { v.get(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
-  { v.get_reply(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
-  { v.set(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
-  { v.set_reply(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
+  { v.get(MIDICI{}, ci::property_exchange::get{}) } -> std::same_as<void>;
+  { v.get_reply(MIDICI{}, ci::property_exchange::get_reply{}) } -> std::same_as<void>;
+  { v.set(MIDICI{}, ci::property_exchange::set{}) } -> std::same_as<void>;
+  { v.set_reply(MIDICI{}, ci::property_exchange::set_reply{}) } -> std::same_as<void>;
 
-  { v.subscription(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
-  { v.subscription_reply(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
-  { v.notify(MIDICI{}, ci::property_exchange::chunk_info{}, ci::property_exchange::property_exchange{}) } -> std::same_as<void>;
+  { v.subscription(MIDICI{}, ci::property_exchange::subscription{}) } -> std::same_as<void>;
+  { v.subscription_reply(MIDICI{}, ci::property_exchange::subscription_reply{}) } -> std::same_as<void>;
+  { v.notify(MIDICI{}, ci::property_exchange::notify{}) } -> std::same_as<void>;
 };
 
 template <typename T> concept process_inquiry_backend = requires(T && v) {
@@ -164,17 +164,14 @@ public:
   virtual void capabilities(MIDICI const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
   virtual void capabilities_reply(MIDICI const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
 
-  virtual void get(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
-  virtual void get_reply(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
-  virtual void set(MIDICI const &, midi2::ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
-  virtual void set_reply(MIDICI const &, ci::property_exchange::chunk_info const &, ci::property_exchange::property_exchange const &) { /* do nothing */ }
+  virtual void get(MIDICI const &, ci::property_exchange::get const &) { /* do nothing */ }
+  virtual void get_reply(MIDICI const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
+  virtual void set(MIDICI const &, ci::property_exchange::set const &) { /* do nothing */ }
+  virtual void set_reply(MIDICI const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
 
-  virtual void subscription(MIDICI const &, ci::property_exchange::chunk_info const &,
-                            ci::property_exchange::property_exchange const &) { /* do nothing */ }
-  virtual void subscription_reply(MIDICI const &, ci::property_exchange::chunk_info const &,
-                                  ci::property_exchange::property_exchange const &) { /* do nothing */ }
-  virtual void notify(MIDICI const &, ci::property_exchange::chunk_info const &,
-                      ci::property_exchange::property_exchange const &) { /* do nothing */ }
+  virtual void subscription(MIDICI const &, ci::property_exchange::subscription const &) { /* do nothing */ }
+  virtual void subscription_reply(MIDICI const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
+  virtual void notify(MIDICI const &, ci::property_exchange::notify const &) { /* do nothing */ }
 };
 
 class process_inquiry_callbacks {
@@ -777,24 +774,32 @@ void midiCIProcessor<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::p
     return;
   }
 
-  ci::property_exchange::chunk_info chunk;
-  chunk.number_of_chunks = ci::from_le7(pt2->number_of_chunks);
-  chunk.chunk_number = ci::from_le7(pt2->chunk_number);
-
-  ci::property_exchange::property_exchange pe;
-  pe.request_id = static_cast<std::uint8_t>(pt1->request_id);
-  pe.header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
-  pe.data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
+  using chunk_info = ci::property_exchange::property_exchange::chunk_info;
+  auto const chunk = chunk_info{ci::from_le7(pt2->number_of_chunks), ci::from_le7(pt2->chunk_number)};
+  auto const request = static_cast<std::uint8_t>(pt1->request_id);
+  auto const header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
+  auto const data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
 
   using enum ci_message;
   switch (midici_.ciType) {
-  case pe_get: property_exchange_backend_.get(midici_, chunk, pe); break;
-  case pe_get_reply: property_exchange_backend_.get_reply(midici_, chunk, pe); break;
-  case pe_set: property_exchange_backend_.set(midici_, chunk, pe); break;
-  case pe_set_reply: property_exchange_backend_.set_reply(midici_, chunk, pe); break;
-  case pe_sub: property_exchange_backend_.subscription(midici_, chunk, pe); break;
-  case pe_sub_reply: property_exchange_backend_.subscription_reply(midici_, chunk, pe); break;
-  case pe_notify: property_exchange_backend_.notify(midici_, chunk, pe); break;
+  case pe_get: property_exchange_backend_.get(midici_, ci::property_exchange::get{chunk, request, header}); break;
+  case pe_get_reply:
+    property_exchange_backend_.get_reply(midici_, ci::property_exchange::get_reply{chunk, request, header, data});
+    break;
+  case pe_set: property_exchange_backend_.set(midici_, ci::property_exchange::set{chunk, request, header, data}); break;
+  case pe_set_reply:
+    property_exchange_backend_.set_reply(midici_, ci::property_exchange::set_reply{chunk, request, header, data});
+    break;
+  case pe_sub:
+    property_exchange_backend_.subscription(midici_, ci::property_exchange::subscription{chunk, request, header, data});
+    break;
+  case pe_sub_reply:
+    property_exchange_backend_.subscription_reply(
+        midici_, ci::property_exchange::subscription_reply{chunk, request, header, data});
+    break;
+  case pe_notify:
+    property_exchange_backend_.notify(midici_, ci::property_exchange::notify{chunk, request, header, data});
+    break;
   default: assert(false); break;
   }
   consumer_ = &midiCIProcessor::discard;
