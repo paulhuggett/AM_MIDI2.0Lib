@@ -26,21 +26,21 @@
 
 namespace midi2 {
 
-std::ostream& operator<<(std::ostream& os, umpCommon const& common);
-std::ostream& operator<<(std::ostream& os, umpCommon const& common) {
+std::ostream& operator<<(std::ostream& os, ump_common const& common);
+std::ostream& operator<<(std::ostream& os, ump_common const& common) {
   return os << "{ group=" << static_cast<unsigned>(common.group)
             << ", messageType=" << static_cast<unsigned>(common.messageType)
             << ", status=" << static_cast<unsigned>(common.status) << " }";
 };
 
-std::ostream& operator<<(std::ostream& os, midi2::umpGeneric const& generic);
-std::ostream& operator<<(std::ostream& os, midi2::umpGeneric const& generic) {
+std::ostream& operator<<(std::ostream& os, midi2::ump_generic const& generic);
+std::ostream& operator<<(std::ostream& os, midi2::ump_generic const& generic) {
   return os << "{ common:" << generic.common << ", value=" << generic.value
             << " }";
 }
 
-std::ostream& operator<<(std::ostream& os, umpCVM const& cvm);
-std::ostream& operator<<(std::ostream& os, umpCVM const& cvm) {
+std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm);
+std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm) {
   return os << "{ common:" << cvm.common
             << ", channel=" << static_cast<unsigned>(cvm.channel)
             << ", note=" << static_cast<unsigned>(cvm.note)
@@ -49,8 +49,8 @@ std::ostream& operator<<(std::ostream& os, umpCVM const& cvm) {
             << ", flag1=" << cvm.flag1 << ", flag2=" << cvm.flag2 << " }";
 };
 
-std::ostream& operator<<(std::ostream& os, umpData const& data);
-std::ostream& operator<<(std::ostream& os, umpData const& data) {
+std::ostream& operator<<(std::ostream& os, ump_data const& data);
+std::ostream& operator<<(std::ostream& os, ump_data const& data) {
   os << "{ common:" << data.common
      << ", streamId=" << static_cast<unsigned>(data.streamId)
      << ", form=" << static_cast<unsigned>(data.form) << ", data=[";
@@ -114,10 +114,10 @@ using midi2::pack;
 
 class MockCallbacks final : public midi2::callbacks_base {
 public:
-  MOCK_METHOD(void, utility_message, (midi2::umpGeneric const&), (override));
-  MOCK_METHOD(void, channel_voice_message, (midi2::umpCVM const&), (override));
-  MOCK_METHOD(void, system_message, (midi2::umpGeneric const&), (override));
-  MOCK_METHOD(void, send_out_sysex, (midi2::umpData const&), (override));
+  MOCK_METHOD(void, utility_message, (midi2::ump_generic const&), (override));
+  MOCK_METHOD(void, channel_voice_message, (midi2::ump_cvm const&), (override));
+  MOCK_METHOD(void, system_message, (midi2::ump_generic const&), (override));
+  MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
 
   MOCK_METHOD(void, flex_tempo, (std::uint8_t group, std::uint32_t num10nsPQN),
               (override));
@@ -137,19 +137,14 @@ public:
   MOCK_METHOD(void, flex_chord,
               (std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&),
               (override));
-  MOCK_METHOD(void, flex_performance,
-              (midi2::umpData const& mess, std::uint8_t addrs,
-               std::uint8_t channel),
+  MOCK_METHOD(void, flex_performance, (midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
               (override));
-  MOCK_METHOD(void, flex_lyric,
-              (midi2::umpData const& mess, std::uint8_t addrs,
-               std::uint8_t channel),
-              (override));
+  MOCK_METHOD(void, flex_lyric, (midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel), (override));
 
   MOCK_METHOD(void, midiEndpoint, (std::uint8_t, std::uint8_t, std::uint8_t),
               (override));
-  MOCK_METHOD(void, midiEndpointName, (midi2::umpData const&), (override));
-  MOCK_METHOD(void, midiEndpointProdId, (midi2::umpData const&), (override));
+  MOCK_METHOD(void, midiEndpointName, (midi2::ump_data const&), (override));
+  MOCK_METHOD(void, midiEndpointProdId, (midi2::ump_data const&), (override));
   MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool),
               (override));
   MOCK_METHOD(void, midiEndpointInfo,
@@ -169,8 +164,7 @@ public:
               (override));
   MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
               (override));
-  MOCK_METHOD(void, functionBlockName, (midi2::umpData const&, std::uint8_t),
-              (override));
+  MOCK_METHOD(void, functionBlockName, (midi2::ump_data const&, std::uint8_t), (override));
 
   MOCK_METHOD(void, startOfSeq, (), (override));
   MOCK_METHOD(void, endOfFile, (), (override));
@@ -185,7 +179,7 @@ template class midi2::umpProcessor<MockCallbacks&>;
 namespace {
 
 TEST(UMPProcessor, Noop) {
-  midi2::umpGeneric message;
+  midi2::ump_generic message;
   message.common.group = 255;
   message.common.messageType = midi2::ump_message_type::utility;
   message.common.status = 0;
@@ -220,7 +214,7 @@ TEST(UMPProcessor, Midi1NoteOn) {
   constexpr auto velocity = std::uint16_t{0x43};
   constexpr auto group = std::uint8_t{0};
 
-  midi2::umpCVM message;
+  midi2::ump_cvm message;
   message.common.group = group;
   message.common.messageType = midi2::ump_message_type::m1cvm;
   message.common.status = midi2::status::note_on >> 4;
@@ -252,7 +246,7 @@ TEST(UMPProcessor, Midi2NoteOn) {
   constexpr auto velocity = std::uint16_t{0x432};
   constexpr auto group = std::uint8_t{0};
 
-  midi2::umpCVM message;
+  midi2::ump_cvm message;
   message.common.group = group;
   message.common.messageType = midi2::ump_message_type::m2cvm;
   message.common.status = midi2::status::note_on;
@@ -284,13 +278,12 @@ using testing::InSequence;
 // The umpData type contains a std::span{} so we can't just lean on the default
 // operator==() for comparing instances.
 template <std::input_iterator Iterator>
-auto UMPDataMatches(midi2::umpCommon const& common, std::uint8_t stream_id,
-                    std::uint8_t form, Iterator first, Iterator last) {
-  return AllOf(
-      Field("common", &midi2::umpData::common, Eq(common)),
-      Field("streamId", &midi2::umpData::streamId, Eq(stream_id)),
-      Field("form", &midi2::umpData::form, Eq(form)),
-      Field("data", &midi2::umpData::data, ElementsAreArray(first, last)));
+auto UMPDataMatches(midi2::ump_common const& common, std::uint8_t stream_id, std::uint8_t form, Iterator first,
+                    Iterator last) {
+  return AllOf(Field("common", &midi2::ump_data::common, Eq(common)),
+               Field("streamId", &midi2::ump_data::streamId, Eq(stream_id)),
+               Field("form", &midi2::ump_data::form, Eq(form)),
+               Field("data", &midi2::ump_data::data, ElementsAreArray(first, last)));
 };
 
 TEST(UMPProcessor, Sysex8_16ByteMessage) {
@@ -309,7 +302,7 @@ TEST(UMPProcessor, Sysex8_16ByteMessage) {
   MockCallbacks callbacks;
   {
     InSequence _;
-    midi2::umpCommon const common{group, midi2::ump_message_type::data, 0};
+    midi2::ump_common const common{group, midi2::ump_message_type::data, 0};
     EXPECT_CALL(callbacks, send_out_sysex(UMPDataMatches(
                                common, stream_id, start_form,
                                std::begin(payload), split_point)));
@@ -340,7 +333,7 @@ TEST(UMPProcessor, PartialMessageThenClear) {
   constexpr auto velocity = std::uint16_t{0x43};  // 7 bits
   constexpr auto group = std::uint8_t{0};
 
-  midi2::umpCVM message;
+  midi2::ump_cvm message;
   message.common.group = group;
   message.common.messageType = midi2::ump_message_type::m1cvm;
   message.common.status = midi2::status::note_on >> 4;
@@ -427,8 +420,8 @@ TEST(UMPProcessor, FunctionBlockName) {
   MockCallbacks callbacks;
   EXPECT_CALL(
       callbacks,
-      functionBlockName(UMPDataMatches(midi2::umpCommon{group, midi2::ump_message_type::midi_endpoint,
-                                                        static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
+      functionBlockName(UMPDataMatches(midi2::ump_common{group, midi2::ump_message_type::midi_endpoint,
+                                                         static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
                                        stream_id, format, std::begin(payload), std::end(payload)),
                         function_block_num));
 

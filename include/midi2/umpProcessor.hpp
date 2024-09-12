@@ -40,17 +40,17 @@
 
 namespace midi2 {
 
-struct umpCommon {
-  bool operator==(umpCommon const&) const = default;
+struct ump_common {
+  bool operator==(ump_common const&) const = default;
 
   uint8_t group = 255;
   ump_message_type messageType = ump_message_type::utility;
   uint8_t status = 0;
 };
-struct umpCVM {
-  bool operator==(umpCVM const&) const = default;
+struct ump_cvm {
+  bool operator==(ump_cvm const&) const = default;
 
-  umpCommon common;
+  ump_common common;
   uint8_t channel = 0xFF;
   uint8_t note = 0xFF;
   uint32_t value = 0;
@@ -60,15 +60,15 @@ struct umpCVM {
   bool flag2 = false;
 };
 
-struct umpGeneric {
-  bool operator==(umpGeneric const&) const = default;
+struct ump_generic {
+  bool operator==(ump_generic const&) const = default;
 
-  umpCommon common;
+  ump_common common;
   std::uint16_t value = 0;
 };
 
-struct umpData {
-  umpCommon common;
+struct ump_data {
+  ump_common common;
   uint8_t streamId = 0;
   uint8_t form = 0;
   std::span<std::uint8_t> data;
@@ -172,10 +172,10 @@ struct function_block_info {
 };
 
 template <typename T> concept backend = requires(T && v) {
-  { v.utility_message(umpGeneric{}) } -> std::same_as<void>;
-  { v.channel_voice_message(umpCVM{}) } -> std::same_as<void>;
-  { v.system_message(umpGeneric{}) } -> std::same_as<void>;
-  { v.send_out_sysex(umpData{}) } -> std::same_as<void>;
+  { v.utility_message(ump_generic{}) } -> std::same_as<void>;
+  { v.channel_voice_message(ump_cvm{}) } -> std::same_as<void>;
+  { v.system_message(ump_generic{}) } -> std::same_as<void>;
+  { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
   { v.flex_tempo(std::uint8_t{}, std::uint32_t{}) } -> std::same_as<void>;
   { v.flex_time_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
@@ -187,12 +187,12 @@ template <typename T> concept backend = requires(T && v) {
     v.flex_key_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{})
   } -> std::same_as<void>;
   { v.flex_chord(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, chord{}) } -> std::same_as<void>;
-  { v.flex_performance(umpData{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
-  { v.flex_lyric(umpData{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.flex_performance(ump_data{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.flex_lyric(ump_data{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
 
   { v.midiEndpoint(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
-  { v.midiEndpointName(umpData{}) } -> std::same_as<void>;
-  { v.midiEndpointProdId(umpData{}) } -> std::same_as<void>;
+  { v.midiEndpointName(ump_data{}) } -> std::same_as<void>;
+  { v.midiEndpointProdId(ump_data{}) } -> std::same_as<void>;
   { v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
   {
     v.midiEndpointInfo(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, bool{}, bool{}, bool{}, bool{})
@@ -205,7 +205,7 @@ template <typename T> concept backend = requires(T && v) {
 
   { v.functionBlock(std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.functionBlockInfo(function_block_info{}) } -> std::same_as<void>;
-  { v.functionBlockName(umpData{}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.functionBlockName(ump_data{}, std::uint8_t{}) } -> std::same_as<void>;
 
   { v.startOfSeq() } -> std::same_as<void>;
   { v.endOfFile() } -> std::same_as<void>;
@@ -222,10 +222,10 @@ public:
   callbacks_base& operator=(callbacks_base const&) = default;
 
   //-----------------------Handlers ---------------------------
-  virtual void utility_message(umpGeneric const& /*mess*/) { /* nop */ }
-  virtual void channel_voice_message(umpCVM const& /*mess*/) { /* nop */ }
-  virtual void system_message(umpGeneric const& /*mess*/) { /* nop */ }
-  virtual void send_out_sysex(umpData const& /*mess*/) { /* nop */ }
+  virtual void utility_message(ump_generic const& /*mess*/) { /* nop */ }
+  virtual void channel_voice_message(ump_cvm const& /*mess*/) { /* nop */ }
+  virtual void system_message(ump_generic const& /*mess*/) { /* nop */ }
+  virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
 
   //---------- Flex Data
   virtual void flex_tempo(uint8_t /*group*/, uint32_t /*num10nsPQN*/) { /* nop */ }
@@ -237,13 +237,13 @@ public:
                             uint8_t /*tonic*/) { /* nop */ }
   virtual void flex_chord(uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/, chord const& /*chord*/) { /* nop */
   }
-  virtual void flex_performance(umpData const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
-  virtual void flex_lyric(umpData const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
+  virtual void flex_performance(ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
+  virtual void flex_lyric(ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* nop */ }
 
   //---------- UMP Stream
   virtual void midiEndpoint(uint8_t /*majVer*/, uint8_t /*minVer*/, uint8_t /*filter*/) { /* nop */ }
-  virtual void midiEndpointName(umpData const& /*mess*/) { /* nop */ }
-  virtual void midiEndpointProdId(umpData const& /*mess*/) { /* nop */ }
+  virtual void midiEndpointName(ump_data const& /*mess*/) { /* nop */ }
+  virtual void midiEndpointProdId(ump_data const& /*mess*/) { /* nop */ }
   virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* nop */ }
   virtual void midiEndpointInfo(uint8_t /*majVer*/, uint8_t /*minVer*/, uint8_t /*numOfFuncBlocks*/, bool /*m2*/,
                                 bool /*m1*/, bool /*rxjr*/, bool /*txjr*/) { /* nop */ }
@@ -255,7 +255,7 @@ public:
 
   virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */ }
   virtual void functionBlockInfo(function_block_info const& fbi) { (void)fbi; }
-  virtual void functionBlockName(umpData const& /*mess*/, uint8_t /*fbIdx*/) { /* nop */ }
+  virtual void functionBlockName(ump_data const& /*mess*/, uint8_t /*fbIdx*/) { /* nop */ }
 
   virtual void startOfSeq() { /* nop */ }
   virtual void endOfFile() { /* nop */ }
@@ -299,6 +299,8 @@ private:
   void set_chord_name();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
+  void unknown_message();
+
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 
@@ -316,7 +318,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::clearUMP() {
 
 template <backend Callbacks> void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
   // 32 bit utility messages
-  umpGeneric mess;
+  ump_generic mess;
   mess.common.messageType = mt;
   mess.common.status = static_cast<std::uint8_t>((message_[0] >> 20) & 0x0F);
   mess.value = static_cast<std::uint16_t>((message_[0] >> 16) & 0xFFFF);
@@ -327,7 +329,7 @@ template <backend Callbacks>
 void umpProcessor<Callbacks>::system_message(ump_message_type const mt, std::uint8_t const group) {
   // 32 bit System Real Time and System Common Messages (except System
   // Exclusive)
-  umpGeneric mess;
+  ump_generic mess;
   mess.common.messageType = mt;
   mess.common.group = group;
   mess.common.status = static_cast<std::uint8_t>((message_[0] >> 16) & 0xFF);
@@ -350,7 +352,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::m1cvm_message() {
 
   auto const w1 = std::bit_cast<types::m1cvm_w1>(message_[0]);
 
-  umpCVM mess;
+  ump_cvm mess;
   mess.common.group = w1.group;
   mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
   mess.common.status = w1.status;
@@ -410,7 +412,7 @@ void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt, std::uin
   if (data_length > 5) {
     sysex[5] = message_[1] & 0x7F;
   }
-  umpData mess;
+  ump_data mess;
   mess.common.group = group;
   mess.common.messageType = mt;
   mess.form = (message_[0] >> 20) & 0xF;
@@ -422,7 +424,7 @@ void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt, std::uin
 template <backend Callbacks>
 void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt, std::uint8_t const group) {
   // 64 bits MIDI 2.0 Channel Voice Messages
-  umpCVM mess;
+  ump_cvm mess;
   mess.common.group = group;
   mess.common.messageType = mt;
   mess.common.status = (message_[0] >> 16) & 0xF0;
@@ -515,7 +517,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::midiendpoint_name_or_
     }
   }
   assert(text_length <= text.size());
-  umpData mess;
+  ump_data mess;
   mess.common.messageType = mt;
   mess.common.status = static_cast<std::uint8_t>(status);
   mess.form = message_[0] >> 24 & 0x3;
@@ -554,7 +556,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::functionblock_name() 
       find_if_not(std::rbegin(text), std::rend(text), [](std::uint8_t v) { return v == 0; }), std::rend(text));
   assert(text_length >= 0 && static_cast<std::size_t>(text_length) <= text.size());
 
-  umpData mess;
+  ump_data mess;
   mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
   mess.common.status = static_cast<std::uint8_t>(w1.status);
   mess.form = w1.format;
@@ -648,7 +650,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
       sysex[0] = w1.data;
       umpProcessor::payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
     }
-    umpData mess;
+    ump_data mess;
     mess.common.group = w1.group;
     mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
     mess.streamId = w1.stream_id;
@@ -719,7 +721,7 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
 
 template <backend Callbacks>
 void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type const mt, std::uint8_t const group) {
-  std::uint8_t const statusBank = (message_[0] >> 8) & 0xFF;
+  std::uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   std::uint8_t const status = message_[0] & 0xFF;
   std::uint8_t const channel = (message_[0] >> 16) & 0xF;
   std::uint8_t const addrs = (message_[0] >> 18) & 3;
@@ -736,16 +738,16 @@ void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type con
   }
   assert(text_length <= text.size());
 
-  umpData mess;
+  ump_data mess;
   mess.common.group = group;
   mess.common.messageType = mt;
   mess.common.status = status;
   mess.form = form;
   mess.data = std::span{text.data(), text_length};
-  if (statusBank == FLEXDATA_LYRIC) {
+  if (status_bank == FLEXDATA_LYRIC) {
     callbacks_.flex_lyric(mess, addrs, channel);
   } else {
-    assert(statusBank == FLEXDATA_PERFORMANCE);
+    assert(status_bank == FLEXDATA_PERFORMANCE);
     callbacks_.flex_performance(mess, addrs, channel);
   }
 }
@@ -753,12 +755,12 @@ void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type con
 template <backend Callbacks>
 void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt, std::uint8_t const group) {
   // 128 bit Data Messages (including System Exclusive 8)
-  uint8_t statusBank = (message_[0] >> 8) & 0xFF;
-  uint8_t status = message_[0] & 0xFF;
-  uint8_t channel = (message_[0] >> 16) & 0xF;
-  uint8_t addrs = (message_[0] >> 18) & 3;
+  uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
+  uint8_t const status = message_[0] & 0xFF;
+  uint8_t const channel = (message_[0] >> 16) & 0xF;
+  uint8_t const addrs = (message_[0] >> 18) & 3;
   // SysEx 8
-  switch (statusBank) {
+  switch (status_bank) {
   case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project,
                            // and Track
     switch (status) {
@@ -793,54 +795,92 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt, std::u
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::processUMP(uint32_t UMP) {
-  message_[pos_] = UMP;
+template <backend Callbacks> void umpProcessor<Callbacks>::unknown_message() {
+  callbacks_.unknownUMPMessage(std::span{message_.data(), pos_});
+  pos_ = 0;
+}
 
-  auto mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
-  uint8_t group = (message_[0] >> 24) & 0xF;
+template <backend Callbacks> void umpProcessor<Callbacks>::processUMP(uint32_t const ump) {
+  assert(pos_ < message_.size());
+  message_[pos_++] = ump;
 
-  if (pos_ == 0 &&
-      (mt == ump_message_type::utility || mt == ump_message_type::system || mt == ump_message_type::m1cvm ||
-       mt == ump_message_type::reserved32_06 || mt == ump_message_type::reserved32_07)) {
-    // 32bit Messages
-    if (mt == ump_message_type::utility) {
+  auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
+  auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
+
+  switch (mt) {
+  case ump_message_type::utility:
+    if (pos_ == 1) {
       this->utility_message(mt);
-    } else if (mt == ump_message_type::system) {
+      pos_ = 0;
+    }
+    break;
+  case ump_message_type::system:
+    if (pos_ == 1) {
       this->system_message(mt, group);
-    } else if (mt == ump_message_type::m1cvm) {
+      pos_ = 0;
+    }
+    break;
+  case ump_message_type::m1cvm:
+    if (pos_ == 1) {
       this->m1cvm_message();
+      pos_ = 0;
     }
-    return;
-
-  } else if (pos_ == 1 && (mt == ump_message_type::sysex7 || mt == ump_message_type::m2cvm ||
-                           mt == ump_message_type::reserved64_08 || mt == ump_message_type::reserved64_09 ||
-                           mt == ump_message_type::reserved64_0A)) {  // 64bit Messages
-    if (mt == ump_message_type::sysex7) {
+    break;
+  case ump_message_type::reserved32_06:
+  case ump_message_type::reserved32_07:
+    if (pos_ == 1) {
+      unknown_message();
+    }
+    break;
+  case ump_message_type::sysex7:
+    if (pos_ == 2) {
       this->sysex7_message(mt, group);
-    } else if (mt == ump_message_type::m2cvm) {
+      pos_ = 0;
+    }
+    break;
+  case ump_message_type::m2cvm:
+    if (pos_ == 2) {
       this->m2cvm_message(mt, group);
+      pos_ = 0;
     }
-    pos_ = 0;
-  } else if (pos_ == 2 &&
-             (mt == ump_message_type::reserved96_0B || mt == ump_message_type::reserved96_0C)) {  // 96bit Messages
-    pos_ = 0;
-    callbacks_.unknownUMPMessage(std::span{message_.data(), 3});
-  } else if (pos_ == 3 &&
-             (mt == ump_message_type::data || mt == ump_message_type::flex_data ||
-              mt == ump_message_type::reserved128_0E || mt == ump_message_type::midi_endpoint)) {  // 128bit Messages
-
-    if (mt == ump_message_type::midi_endpoint) {
-      this->midi_endpoint_message(mt);
-    } else if (mt == ump_message_type::data) {
+    break;
+  case ump_message_type::reserved64_08:
+  case ump_message_type::reserved64_09:
+  case ump_message_type::reserved64_0A:
+    if (pos_ == 2) {
+      this->unknown_message();
+    }
+    break;
+  case ump_message_type::reserved96_0B:
+  case ump_message_type::reserved96_0C:
+    if (pos_ == 3) {
+      this->unknown_message();
+    }
+    break;
+  case ump_message_type::data:
+    if (pos_ == 4) {
       this->data_message();
-    } else if (mt == ump_message_type::flex_data) {
-      this->flexdata_message(mt, group);
-    } else {
-      callbacks_.unknownUMPMessage(std::span{message_.data(), 4});
+      pos_ = 0;
     }
-    pos_ = 0;
-  } else {
-    pos_++;
+    break;
+  case ump_message_type::flex_data:
+    if (pos_ == 4) {
+      this->flexdata_message(mt, group);
+      pos_ = 0;
+    }
+    break;
+  case ump_message_type::midi_endpoint:
+    if (pos_ == 4) {
+      this->midi_endpoint_message(mt);
+      pos_ = 0;
+    }
+    break;
+  case ump_message_type::reserved128_0E:
+  default:
+    if (pos_ == 4) {
+      this->unknown_message();
+    }
+    break;
   }
 }
 
