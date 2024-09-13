@@ -1,3 +1,11 @@
+//===-- UMP Types -------------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 #ifndef MIDI2_UMP_TYPES_HPP
 #define MIDI2_UMP_TYPES_HPP
 
@@ -73,6 +81,27 @@ union sysex7_w1 {
   ump_bitfield<16, 4> number_of_bytes;
   ump_bitfield<8, 8> data0;
   ump_bitfield<0, 8> data1;
+};
+
+// F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
+// Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
+
+union m2cvm_program_change_w1 {
+  ump_bitfield<28, 4> mt;  // 0x4
+  ump_bitfield<24, 4> group;
+  ump_bitfield<20, 4> status;  // 0b0000..0b1111
+  ump_bitfield<16, 4> channel;
+  ump_bitfield<8, 8> reserved;
+  ump_bitfield<1, 7> option_flags;  // reserved option flags
+  ump_bitfield<0, 1> bank_valid;
+};
+union m2cvm_program_change_w2 {
+  ump_bitfield<24, 8> program;
+  ump_bitfield<16, 8> reserved;
+  ump_bitfield<15, 1> r0;  // reserved
+  ump_bitfield<8, 7> bank_msb;
+  ump_bitfield<7, 1> r1;  // reserved
+  ump_bitfield<0, 7> bank_lsb;
 };
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed

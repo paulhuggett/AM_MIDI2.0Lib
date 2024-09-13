@@ -269,6 +269,50 @@ TEST(UMPProcessor, Midi2NoteOn) {
   p.processUMP(std::uint32_t{velocity << 16});
 }
 
+TEST(UMPProcessor, Midi2ProgramChange) {
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto group = std::uint8_t{0};
+  constexpr auto program = 0b10101010;
+  constexpr auto bank_msb = 0b01010101;
+  constexpr auto bank_lsb = 0b00101010;
+
+  midi2::ump_cvm message;
+  message.common.group = group;
+  message.common.messageType = midi2::ump_message_type::m2cvm;
+  message.common.status = midi2::status::program_change;
+  message.channel = channel;
+  message.note = 0xFF;
+  message.value = program;
+  message.index = bank_lsb;
+  message.bank = bank_msb;
+  message.flag1 = true;
+  message.flag2 = false;
+
+  MockCallbacks callbacks;
+  EXPECT_CALL(callbacks, channel_voice_message(message)).Times(1);
+
+  midi2::types::m2cvm_program_change_w1 w1{};
+  w1.mt = 0x4;
+  w1.group = group;
+  w1.status = ump_cvm(midi2::status::program_change);
+  w1.channel = channel;
+  w1.reserved = 0;
+  w1.option_flags = 0;
+  w1.bank_valid = true;
+
+  midi2::types::m2cvm_program_change_w2 w2{};
+  w2.program = program;
+  w2.reserved = 0;
+  w2.r0 = 0;
+  w2.bank_msb = bank_msb;
+  w2.r1 = 0;
+  w2.bank_lsb = bank_lsb;
+
+  midi2::umpProcessor p{std::ref(callbacks)};
+  p.processUMP(std::bit_cast<std::uint32_t>(w1));
+  p.processUMP(std::bit_cast<std::uint32_t>(w2));
+}
+
 using testing::AllOf;
 using testing::ElementsAreArray;
 using testing::Eq;
