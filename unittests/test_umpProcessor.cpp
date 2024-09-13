@@ -197,13 +197,13 @@ TEST(UMPProcessor, Noop) {
   p.processUMP(std::bit_cast<std::uint32_t>(w1));
 }
 
-constexpr std::uint32_t ump_cvm(midi2::status s) {
+constexpr std::uint8_t ump_cvm(midi2::status s) {
   static_assert(
       std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
       "status type must be a std::uint8_t");
   assert((s & 0x0F) == 0 &&
          "Bottom 4 bits of a channel voice message status enum must be 0");
-  return std::uint32_t{s} >> 4;
+  return std::uint8_t{s} >> 4;
 }
 
 constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
