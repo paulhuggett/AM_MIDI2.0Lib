@@ -64,15 +64,10 @@ private:
 
   struct sysex7 {
     enum class status : std::uint8_t {
-      /// A complete system exclusive message in one UMP
-      single_ump = 0x0,
-      /// System exclusive Start UMP
-      start = 0x1,
-      /// System exclusive continue UMP. There might be multiple 'cont' UMPs in
-      /// a single message.
-      cont = 0x02,
-      /// System exclusive end UMP
-      end = 0x03,
+      single_ump = 0x0,  ///< A complete sysex message in one UMP
+      start = 0x1,       ///< Sysex start
+      cont = 0x02,       ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
+      end = 0x03,        ///< Sysex end
     };
     status state = status::single_ump;
     /// The number of system exclusive bytes in the current UMP [0,6]

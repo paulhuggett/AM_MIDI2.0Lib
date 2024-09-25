@@ -24,11 +24,11 @@ public:
   /// \param dest  An output iterator to which the output sequence is written.
   /// \returns  Iterator one past the last element assigned.
   template <std::output_iterator<output_type> OutputIterator>
-  OutputIterator operator() (input_type code_unit, OutputIterator dest) noexcept {
-    static_assert (icubaby::longest_sequence_v<char32_t> == 1);
+  OutputIterator operator()(input_type code_unit, OutputIterator dest) noexcept {
+    static_assert(icubaby::longest_sequence_v<char32_t> == 1);
     std::array<char32_t, 2> out32{};
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
-    auto const first = std::begin (out32);
+    auto const first = std::begin(out32);
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const last = src_to_32_(code_unit, first);
     std::for_each(first, last, [this, &dest](char32_t c) { dest = this->convert_from_32(c, dest); });
@@ -41,8 +41,7 @@ public:
   /// \tparam OutputIterator  An output iterator type to which values of type transcoder::output_type can be written.
   /// \param dest  An output iterator to which the output sequence is written.
   /// \returns  Iterator one past the last element assigned.
-  template <std::output_iterator<output_type> OutputIterator>
-  constexpr OutputIterator end_cp (OutputIterator dest) {
+  template <std::output_iterator<output_type> OutputIterator> constexpr OutputIterator end_cp(OutputIterator dest) {
     char32_t out32 = 0;
     if (auto* const out_pos = src_to_32_.end_cp(&out32); out_pos != &out32) {
       dest = this->convert_from_32(out32, dest);
@@ -52,7 +51,7 @@ public:
 
   /// Indicates whether the input was well formed
   /// \returns True if the input was well formed.
-  [[nodiscard]] constexpr bool well_formed () const noexcept { return src_to_32_.well_formed(); }
+  [[nodiscard]] constexpr bool well_formed() const noexcept { return src_to_32_.well_formed(); }
 
   /// \brief Indicates whether a "partial" code point has been passed to \ref transcoder-call-operator "operator()".
   ///
@@ -60,7 +59,7 @@ public:
   ///
   /// \returns True if a partial code-point has been passed to \ref transcoder-call-operator "operator()" and
   ///   false otherwise.
-  [[nodiscard]] constexpr bool partial () const noexcept { return src_to_32_.partial(); }
+  [[nodiscard]] constexpr bool partial() const noexcept { return src_to_32_.partial(); }
 
 private:
   icubaby::transcoder<input_type, char32_t> src_to_32_;

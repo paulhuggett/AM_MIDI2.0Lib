@@ -17,9 +17,7 @@
 
 namespace midi2 {
 
-void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
-                                      std::uint8_t const b1,
-                                      std::uint8_t const b2) {
+void bytestreamToUMP::controllerToUMP(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2) {
   std::uint8_t const channel = b0 & 0x0F;
   auto& c = channel_[channel];
   switch (b1) {
@@ -30,8 +28,7 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
       if (c.rpnMode && c.rpnMsb == 0 && (c.rpnLsb == 0 || c.rpnLsb == 6)) {
         auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
-        output_.push_back(pack(ump_message_type::m2cvm, status | channel,
-                               c.rpnMsb, c.rpnLsb));
+        output_.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
         output_.push_back(midi2::scaleUp(std::uint32_t{b2} << 7, 14, 32));
       } else {
         c.rpnMsbValue = b2;
@@ -42,10 +39,8 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
     // RPN LSB Value
     if (c.rpnMsb != 0xFF && c.rpnLsb != 0xFF) {
       auto const status = c.rpnMode ? midi2status::rpn : midi2status::nrpn;
-      output_.push_back(
-          pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
-      output_.push_back(
-          midi2::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
+      output_.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
+      output_.push_back(midi2::scaleUp((std::uint32_t{c.rpnMsbValue} << 7) | b2, 14, 32));
     }
     break;
   case control::nrpn_msb: c.rpnMode = false; c.rpnMsb = b2; break;
@@ -59,10 +54,8 @@ void bytestreamToUMP::controllerToUMP(std::uint8_t const b0,
   }
 }
 
-void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
-                              std::uint8_t b2) {
-  assert((b1 & 0x80) == 0 && (b2 & 0x80) == 0 &&
-         "The top bit of b1 and b2 must be zero");
+void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1, std::uint8_t b2) {
+  assert((b1 & 0x80) == 0 && (b2 & 0x80) == 0 && "The top bit of b1 and b2 must be zero");
   using midi2::scaleUp;
   std::uint8_t const channel = b0 & 0x0F;
   std::uint8_t status = b0 & 0xF0;
@@ -99,8 +92,7 @@ void bytestreamToUMP::bsToUMP(std::uint8_t b0, std::uint8_t b1,
   case status::program_change: {
     auto bank_msb = std::uint8_t{0};
     auto bank_lsb = std::uint8_t{0};
-    if (channel_[channel].bankMSB != 0xFF &&
-        channel_[channel].bankLSB != 0xFF) {
+    if (channel_[channel].bankMSB != 0xFF && channel_[channel].bankLSB != 0xFF) {
       message |= 0x01U;  // Set the "bank valid" bit.
       bank_msb = channel_[channel].bankMSB;
       bank_lsb = channel_[channel].bankLSB;
@@ -139,8 +131,7 @@ constexpr bool isStatusByte(std::uint8_t const midi1Byte) {
 
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
 constexpr bool isOneByteMessage(std::uint8_t const midi1Byte) {
-  return (midi1Byte & 0xF0) == status::program_change ||
-         (midi1Byte & 0xF0) == status::channel_pressure ||
+  return (midi1Byte & 0xF0) == status::program_change || (midi1Byte & 0xF0) == status::channel_pressure ||
          midi1Byte == status::timing_code || midi1Byte == status::song_select;
 }
 
@@ -148,8 +139,7 @@ constexpr bool isOneByteMessage(std::uint8_t const midi1Byte) {
 
 void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
   if (isStatusByte(midi1Byte)) {
-    if (midi1Byte == status::tunerequest ||
-        isSystemRealTimeMessage(midi1Byte)) {
+    if (midi1Byte == status::tunerequest || isSystemRealTimeMessage(midi1Byte)) {
       if (midi1Byte == status::tunerequest) {
         d0_ = midi1Byte;
       }
@@ -175,14 +165,12 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       static_assert(sizeof(w0) == sizeof(std::uint32_t));
       auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
       output_.push_back(w0_32);
-      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
-                             sysex7_.bytes[4], sysex7_.bytes[5]));
+      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3], sysex7_.bytes[4], sysex7_.bytes[5]));
 
       sysex7_.reset();
       sysex7_.state = single_ump;
     }
-  } else if (sysex7_.state == sysex7::status::start ||
-             sysex7_.state == sysex7::status::cont ||
+  } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont ||
              sysex7_.state == sysex7::status::end) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
       types::sysex7_w0 w0{};
@@ -195,8 +183,7 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       static_assert(sizeof(w0) == sizeof(std::uint32_t));
       auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
       output_.push_back(w0_32);
-      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
-                             sysex7_.bytes[4], sysex7_.bytes[5]));
+      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3], sysex7_.bytes[4], sysex7_.bytes[5]));
 
       sysex7_.reset();
       sysex7_.state = sysex7::status::cont;

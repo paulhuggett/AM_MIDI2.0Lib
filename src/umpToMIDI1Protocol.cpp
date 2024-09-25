@@ -97,69 +97,53 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
 
       switch (status) {
       case note_off:
-        output_.push_back(UMPMessage::mt2NoteOff(
-            group, channel, val1,
-            static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7))));
+        output_.push_back(
+            UMPMessage::mt2NoteOff(group, channel, val1, static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7))));
         break;
       case note_on: {
-        auto velocity =
-            static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7));
+        auto velocity = static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7));
         if (velocity == 0) {
           velocity = 1;
         }
-        output_.push_back(
-            UMPMessage::mt2NoteOn(group, channel, val1, velocity));
+        output_.push_back(UMPMessage::mt2NoteOn(group, channel, val1, velocity));
         break;
       }
       case key_pressure:
-        output_.push_back(UMPMessage::mt2PolyPressure(
-            group, channel, val1,
-            static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
+        output_.push_back(
+            UMPMessage::mt2PolyPressure(group, channel, val1, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case cc:
-        output_.push_back(UMPMessage::mt2CC(
-            group, channel, val1,
-            static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
+        output_.push_back(UMPMessage::mt2CC(group, channel, val1, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case channel_pressure:
-        output_.push_back(UMPMessage::mt2ChannelPressure(
-            group, channel, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
+        output_.push_back(
+            UMPMessage::mt2ChannelPressure(group, channel, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
         break;
       case nrpn: {
         output_.push_back(UMPMessage::mt2CC(group, channel, 99, val1));
         output_.push_back(UMPMessage::mt2CC(group, channel, 98, val2));
-        auto const val14bit =
-            static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-        output_.push_back(
-            UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
-        output_.push_back(
-            UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
+        auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
+        output_.push_back(UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
+        output_.push_back(UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
         break;
       }
       case rpn: {
         output_.push_back(UMPMessage::mt2CC(group, channel, 101, val1));
         output_.push_back(UMPMessage::mt2CC(group, channel, 100, val2));
-        auto const val14bit =
-            static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-        output_.push_back(
-            UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
-        output_.push_back(
-            UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
+        auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
+        output_.push_back(UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
+        output_.push_back(UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
         break;
       }
       case program_change: {
         if (ump64word1 & 0x1) {
-          output_.push_back(
-              UMPMessage::mt2CC(group, channel, 0, (UMP >> 8) & 0x7F));
+          output_.push_back(UMPMessage::mt2CC(group, channel, 0, (UMP >> 8) & 0x7F));
           output_.push_back(UMPMessage::mt2CC(group, channel, 32, UMP & 0x7F));
         }
-        output_.push_back(
-            UMPMessage::mt2ProgramChange(group, channel, (UMP >> 24) & 0x7F));
+        output_.push_back(UMPMessage::mt2ProgramChange(group, channel, (UMP >> 24) & 0x7F));
         break;
       }
-      case pitch_bend:
-        output_.push_back(UMPMessage::mt2PitchBend(group, channel, UMP >> 18));
-        break;
+      case pitch_bend: output_.push_back(UMPMessage::mt2PitchBend(group, channel, UMP >> 18)); break;
       default:
         // An unknown CVM message
         break;

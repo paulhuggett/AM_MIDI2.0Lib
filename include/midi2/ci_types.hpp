@@ -456,12 +456,12 @@ constexpr invalidate_muid::operator packed::invalidate_muid_v1() const {
 namespace packed {
 
 struct ack_v1 {
-  std::byte original_id;             ///< Original Transaction Sub-ID#2 Classification
-  std::byte status_code;             ///< ACK Status Code
-  std::byte status_data;             ///< ACK Status Data
-  byte_array_5 details;              ///< ACK details for each SubID Classification
-  byte_array_2 message_length;       ///< Message Length (LSB firt)
-  std::byte message[1];              ///< Message text (array of size given by message_length)
+  std::byte original_id;        ///< Original Transaction Sub-ID#2 Classification
+  std::byte status_code;        ///< ACK Status Code
+  std::byte status_data;        ///< ACK Status Data
+  byte_array_5 details;         ///< ACK details for each SubID Classification
+  byte_array_2 message_length;  ///< Message Length (LSB firt)
+  std::byte message[1];         ///< Message text (array of size given by message_length)
 };
 static_assert(offsetof(ack_v1, original_id) == 0);
 static_assert(offsetof(ack_v1, status_code) == 1);
@@ -519,12 +519,12 @@ namespace packed {
 
 struct nak_v1 {};
 struct nak_v2 {
-  std::byte original_id;             ///< Original transaction sub-ID#2 classification
-  std::byte status_code;             ///< ACK Status Code
-  std::byte status_data;             ///< ACK Status Data
-  byte_array_5 details;              ///< ACK details for each SubID Classification
-  byte_array_2 message_length;       ///< Message Length (LSB firt)
-  std::byte message[1];              ///< Message text (length given by message_length)
+  std::byte original_id;        ///< Original transaction sub-ID#2 classification
+  std::byte status_code;        ///< ACK Status Code
+  std::byte status_data;        ///< ACK Status Data
+  byte_array_5 details;         ///< ACK details for each SubID Classification
+  byte_array_2 message_length;  ///< Message Length (LSB firt)
+  std::byte message[1];         ///< Message text (length given by message_length)
 };
 static_assert(offsetof(nak_v2, original_id) == 0);
 static_assert(offsetof(nak_v2, status_code) == 1);
@@ -603,8 +603,8 @@ struct inquiry {};
 namespace packed {
 
 struct inquiry_reply_v1_pt1 {
-  byte_array_2 num_enabled;         ///< Number of currently enabled profiles
-  byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_enabled)
+  byte_array_2 num_enabled;  ///< Number of currently enabled profiles
+  byte_array_5 ids[1];       ///< Profile ID of currently enabled profiles (array length given by num_enabled)
 };
 
 static_assert(offsetof(inquiry_reply_v1_pt1, num_enabled) == 0);
@@ -614,8 +614,8 @@ static_assert(alignof(inquiry_reply_v1_pt1) == 1);
 static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt1>);
 
 struct inquiry_reply_v1_pt2 {
-  byte_array_2 num_disabled;        ///< Number of currently disabled profiles
-  byte_array_5 ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_disabled)
+  byte_array_2 num_disabled;  ///< Number of currently disabled profiles
+  byte_array_5 ids[1];        ///< Profile ID of currently enabled profiles (array length given by num_disabled)
 };
 
 static_assert(offsetof(inquiry_reply_v1_pt2, num_disabled) == 0);
@@ -804,7 +804,8 @@ static_assert(std::is_trivially_copyable_v<details_reply_v1>);
 
 struct details_reply {
   constexpr details_reply() = default;
-  constexpr details_reply(byte_array_5 const &pid_, std::uint8_t target_, std::span<std::byte const> data_) : pid{pid_}, target{target_}, data{data_} {}
+  constexpr details_reply(byte_array_5 const &pid_, std::uint8_t target_, std::span<std::byte const> data_)
+      : pid{pid_}, target{target_}, data{data_} {}
   constexpr details_reply(details_reply const &) = default;
   constexpr details_reply(details_reply &&) noexcept = default;
   constexpr explicit details_reply(packed::details_reply_v1 const &);
@@ -928,7 +929,7 @@ static_assert(sizeof(off_v1) <= sizeof(off_v2));
 
 struct off {
   constexpr off() = default;
-  explicit constexpr off(byte_array_5 const & pid_) : pid{pid_}{}
+  explicit constexpr off(byte_array_5 const &pid_) : pid{pid_} {}
   constexpr off(off const &) = default;
   constexpr off(off &&) noexcept = default;
   constexpr explicit off(packed::off_v1 const &);
@@ -1018,7 +1019,6 @@ constexpr enabled::operator packed::enabled_v1() const {
 constexpr enabled::operator packed::enabled_v2() const {
   return {static_cast<packed::enabled_v1>(*this), to_le7(num_channels)};
 }
-
 
 //*                __ _ _          _ _          _    _        _  *
 //*  _ __ _ _ ___ / _(_) |___   __| (_)___ __ _| |__| |___ __| | *
@@ -1610,7 +1610,8 @@ constexpr midi_message_report_reply::midi_message_report_reply(packed::midi_mess
       poly_pressure{static_cast<unsigned>((v2.note_data_messages_bitmap >> 1) & std::byte{0x01})},
       per_note_pitchbend{static_cast<unsigned>((v2.note_data_messages_bitmap >> 2) & std::byte{0x01})},
       registered_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 3) & std::byte{0x01})},
-      assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {}
+      assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {
+}
 
 constexpr midi_message_report_reply::operator packed::midi_message_report_reply_v2() const {
   return {static_cast<std::byte>(mtc_quarter_frame) | (static_cast<std::byte>(song_position) << 1) |

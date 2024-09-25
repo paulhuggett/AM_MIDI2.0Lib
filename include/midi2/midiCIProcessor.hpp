@@ -280,8 +280,8 @@ midiCIProcessor(C, P, PE, PI) -> midiCIProcessor<C, P, PE, PI>;
 template <management_backend C, profile_backend P>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>) -> midiCIProcessor<C &, P &>;
 template <management_backend C, profile_backend P, property_exchange_backend PE>
-midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>,
-                std::reference_wrapper<PE>) -> midiCIProcessor<C &, P &, PE &>;
+midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>, std::reference_wrapper<PE>)
+    -> midiCIProcessor<C &, P &, PE &>;
 template <management_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
 midiCIProcessor(std::reference_wrapper<C>, std::reference_wrapper<P>, std::reference_wrapper<PE>,
                 std::reference_wrapper<PI>) -> midiCIProcessor<C &, P &, PE &, PI &>;
