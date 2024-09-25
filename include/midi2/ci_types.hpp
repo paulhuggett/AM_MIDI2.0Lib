@@ -1,9 +1,10 @@
+//===-- CI Types --------------------------------------------------------------*- C++ -*-===//
 //
-//  ci_types.h
-//  libmidi2
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 09/08/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
 #ifndef MIDI2_CI_TYPES_HPP
 #define MIDI2_CI_TYPES_HPP
@@ -119,13 +120,13 @@ struct params {
 };
 
 constexpr params::operator packed::header() const {
-  return packed::header{S7UNIVERSAL_NRT,
-                        static_cast<std::byte>(deviceId),
-                        S7MIDICI,
-                        std::byte{0},  // message type
-                        static_cast<std::byte>(ciVer),
-                        ci::to_le7(remoteMUID),
-                        ci::to_le7(localMUID)};
+  return packed::header{.sysex = S7UNIVERSAL_NRT,
+                        .source = static_cast<std::byte>(deviceId),
+                        .sub_id_1 = S7MIDICI,
+                        .sub_id_2 = std::byte{0},  // message type
+                        .version = static_cast<std::byte>(ciVer),
+                        .source_muid = ci::to_le7(remoteMUID),
+                        .destination_muid = ci::to_le7(localMUID)};
 }
 
 struct MIDICI {
@@ -212,11 +213,15 @@ constexpr discovery::discovery(packed::discovery_v2 const &v2) : discovery(v2.v1
   output_path_id = from_le7(v2.output_path_id);
 }
 constexpr discovery::operator packed::discovery_v1() const {
-  return {to_array(manufacturer), to_le7(family), to_le7(model), to_array(version), static_cast<std::byte>(capability),
-          to_le7(max_sysex_size)};
+  return {.manufacturer = to_array(manufacturer),
+          .family = to_le7(family),
+          .model = to_le7(model),
+          .version = to_array(version),
+          .capability = static_cast<std::byte>(capability),
+          .max_sysex_size = to_le7(max_sysex_size)};
 }
 constexpr discovery::operator packed::discovery_v2() const {
-  return {static_cast<packed::discovery_v1>(*this), to_le7(output_path_id)};
+  return {.v1 = static_cast<packed::discovery_v1>(*this), .output_path_id = to_le7(output_path_id)};
 }
 
 //*     _ _                                            _       *
@@ -299,13 +304,17 @@ constexpr discovery_reply::discovery_reply(packed::discovery_reply_v2 const &v2)
 }
 
 constexpr discovery_reply::operator packed::discovery_reply_v1() const {
-  return packed::discovery_reply_v1{
-      to_array(manufacturer), to_le7(family), to_le7(model), to_array(version), static_cast<std::byte>(capability),
-      to_le7(max_sysex_size)};
+  return packed::discovery_reply_v1{.manufacturer = to_array(manufacturer),
+                                    .family = to_le7(family),
+                                    .model = to_le7(model),
+                                    .version = to_array(version),
+                                    .capability = static_cast<std::byte>(capability),
+                                    .max_sysex_size = to_le7(max_sysex_size)};
 }
 constexpr discovery_reply::operator packed::discovery_reply_v2() const {
-  return {static_cast<packed::discovery_reply_v1>(*this), static_cast<std::byte>(output_path_id),
-          static_cast<std::byte>(function_block)};
+  return {.v1 = static_cast<packed::discovery_reply_v1>(*this),
+          .output_path_id = static_cast<std::byte>(output_path_id),
+          .function_block = static_cast<std::byte>(function_block)};
 }
 
 //*              _           _     _     _       __      *
@@ -347,7 +356,7 @@ constexpr endpoint_info::endpoint_info(packed::endpoint_info_v1 const &other)
 }
 
 constexpr endpoint_info::operator packed::endpoint_info_v1() const {
-  return {static_cast<std::byte>(status)};
+  return {.status = static_cast<std::byte>(status)};
 }
 
 //*              _           _     _     _       __                    _       *
@@ -393,7 +402,8 @@ constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v
 }
 
 constexpr endpoint_info_reply::operator packed::endpoint_info_reply_v1() const {
-  return {status, to_le7(static_cast<std::uint16_t>(information.size())), {std::byte{0}}};
+  return {
+      .status = status, .data_length = to_le7(static_cast<std::uint16_t>(information.size())), .data = {std::byte{0}}};
 }
 
 //*  _              _ _    _      _         __  __ _   _ ___ ___   *

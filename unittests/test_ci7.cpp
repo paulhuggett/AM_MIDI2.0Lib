@@ -8,6 +8,7 @@
 
 // DUT
 #include "midi2/ci7text.hpp"
+#include "midi2/utils.hpp"
 
 // Standard library
 #include <string>
@@ -34,16 +35,6 @@ template <> inline std::string GetTypeName<char8_t> () {
 }  // end namespace testing::internal
 #endif  // defined(__cpp_char8_t) && defined(__cpp_lib_char8_t)
 
-[[noreturn, maybe_unused]] inline void unreachable () {
-  // Uses compiler specific extensions if possible. Even if no extension is used, undefined behavior is still raised by
-  // an empty function body and the noreturn attribute.
-#ifdef __GNUC__  // GCC, Clang, ICC
-  __builtin_unreachable ();
-#elif defined(_MSC_VER)  // MSVC
-  __assume (false);
-#endif
-}
-
 /// A type that is always false. Used to improve the failure mesages from
 /// static_assert().
 template <typename... T> [[maybe_unused]] constexpr bool always_false = false;
@@ -62,7 +53,7 @@ public:
       return "char32_t";
     } else {
       static_assert (always_false<T>, "non-exhaustive visitor");
-      unreachable ();
+      midi2::unreachable();
     }
   }
 };

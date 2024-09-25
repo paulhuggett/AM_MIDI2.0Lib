@@ -1,29 +1,10 @@
-/**********************************************************
- * MIDI 2.0 Library
- * Author: Andrew Mee
- *
- * MIT License
- * Copyright 2021 Andrew Mee
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * ********************************************************/
+//===-- Bytestream To UMP -----------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
 
 #include "midi2/bytestreamToUMP.hpp"
 
@@ -184,17 +165,16 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
       sysex7_.pos = 0;
     } else if (midi1Byte == status::sysex_stop) {
       using enum sysex7::status;
-      types::sysex7_w1 w1{};
-      w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
-      w1.group = defaultGroup_;
-      w1.status =
-          static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
-      w1.number_of_bytes = sysex7_.pos;
-      w1.data0 = sysex7_.bytes[0];
-      w1.data1 = sysex7_.bytes[1];
-      static_assert(sizeof(w1) == sizeof(std::uint32_t));
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
+      types::sysex7_w0 w0{};
+      w0.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w0.group = defaultGroup_;
+      w0.status = static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
+      w0.number_of_bytes = sysex7_.pos;
+      w0.data0 = sysex7_.bytes[0];
+      w0.data1 = sysex7_.bytes[1];
+      static_assert(sizeof(w0) == sizeof(std::uint32_t));
+      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
+      output_.push_back(w0_32);
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 
@@ -205,16 +185,16 @@ void bytestreamToUMP::bytestreamParse(std::uint8_t const midi1Byte) {
              sysex7_.state == sysex7::status::cont ||
              sysex7_.state == sysex7::status::end) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      types::sysex7_w1 w1{};
-      w1.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
-      w1.group = defaultGroup_;
-      w1.status = static_cast<std::uint8_t>(sysex7_.state);
-      w1.number_of_bytes = std::uint8_t{6};
-      w1.data0 = sysex7_.bytes[0];
-      w1.data1 = sysex7_.bytes[1];
-      static_assert(sizeof(w1) == sizeof(std::uint32_t));
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
+      types::sysex7_w0 w0{};
+      w0.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w0.group = defaultGroup_;
+      w0.status = static_cast<std::uint8_t>(sysex7_.state);
+      w0.number_of_bytes = std::uint8_t{6};
+      w0.data0 = sysex7_.bytes[0];
+      w0.data1 = sysex7_.bytes[1];
+      static_assert(sizeof(w0) == sizeof(std::uint32_t));
+      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
+      output_.push_back(w0_32);
       output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3],
                              sysex7_.bytes[4], sysex7_.bytes[5]));
 

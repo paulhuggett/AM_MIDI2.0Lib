@@ -1,29 +1,11 @@
-/**********************************************************
- * MIDI 2.0 Library
- * Author: Andrew Mee
- *
- * MIT License
- * Copyright 2021 Andrew Mee
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * ********************************************************/
+//===-- UMP Processor ---------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 #ifndef MIDI2_UMP_PROCESSOR_HPP
 #define MIDI2_UMP_PROCESSOR_HPP
 
@@ -171,9 +153,37 @@ struct function_block_info {
   std::uint8_t maxS8Streams;
 };
 
+// See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
+//    Table 4 Message Type (MT) Allocation
+template <midi2::ump_message_type> struct message_size {};
+template <> struct message_size<midi2::ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::sysex7> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::data> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<midi2::ump_message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::midi_endpoint> : std::integral_constant<unsigned, 4> {};
+
+constexpr unsigned ump_message_size(ump_message_type const mt) {
+#define X(a, b) \
+  case ump_message_type::a: return message_size<ump_message_type::a>();
+  switch (mt) { UMP_MESSAGE_TYPES }
+#undef X
+}
+
 template <typename T> concept backend = requires(T && v) {
-  { v.utility_message(ump_generic{}) } -> std::same_as<void>;
-  { v.channel_voice_message(ump_cvm{}) } -> std::same_as<void>;
+  {
+    v.utility_message(ump_generic{})
+  } -> std::same_as<void>;
   { v.system_message(ump_generic{}) } -> std::same_as<void>;
   { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
@@ -213,6 +223,31 @@ template <typename T> concept backend = requires(T && v) {
   { v.unknownUMPMessage(std::span<std::uint32_t>{}) } -> std::same_as<void>;
 };
 
+template<typename T> concept m1cvm_backend = requires(T && v) {
+  { v.note_off(types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.note_on(types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.poly_pressure(types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.control_change(types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.program_change(types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.channel_pressure (types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.pitch_bend (types::m1cvm_w0{}) } -> std::same_as<void>;
+};
+
+template <typename T> concept m2cvm_backend = requires(T && v) {
+  { v.note_off (types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
+  { v.note_on (types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
+  { v.poly_pressure (types::m2cvm::poly_pressure_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.program_change (types::m2cvm::program_change_w0{}, types::m2cvm::program_change_w1{}) } -> std::same_as<void>;
+  { v.channel_pressure (types::m2cvm::channel_pressure_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.rpn_controller(types::m2cvm::controller_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.nrpn_controller(types::m2cvm::controller_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.per_note_management (types::m2cvm::per_note_management_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.control_change(types::m2cvm::control_change_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.controller_message(types::m2cvm::controller_message_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.pitch_bend (types::m2cvm::pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.per_note_pitch_bend (types::m2cvm::per_note_pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+};
+
 class callbacks_base {
 public:
   callbacks_base() = default;
@@ -223,7 +258,6 @@ public:
 
   //-----------------------Handlers ---------------------------
   virtual void utility_message(ump_generic const& /*mess*/) { /* nop */ }
-  virtual void channel_voice_message(ump_cvm const& /*mess*/) { /* nop */ }
   virtual void system_message(ump_generic const& /*mess*/) { /* nop */ }
   virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
 
@@ -263,9 +297,45 @@ public:
   virtual void unknownUMPMessage(std::span<std::uint32_t>) { /* nop */ }
 };
 
-template <backend Callbacks = callbacks_base> class umpProcessor {
+struct m1cvm_base {
+  m1cvm_base() = default;
+  m1cvm_base(m1cvm_base const&) = default;
+  virtual ~m1cvm_base() noexcept = default;
+
+  virtual void note_off(types::m1cvm_w0) { /* do nothing */ }
+  virtual void note_on(types::m1cvm_w0) { /* do nothing */ }
+  virtual void poly_pressure(types::m1cvm_w0) { /* do nothing */ }
+  virtual void control_change(types::m1cvm_w0) { /* do nothing */ }
+  virtual void program_change(types::m1cvm_w0) { /* do nothing */ }
+  virtual void channel_pressure(types::m1cvm_w0) { /* do nothing */ }
+  virtual void pitch_bend(types::m1cvm_w0) { /* do nothing */ }
+};
+struct m2cvm_base {
+  m2cvm_base() = default;
+  m2cvm_base(m2cvm_base const&) = default;
+  virtual ~m2cvm_base() noexcept = default;
+
+  virtual void note_off(types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
+  virtual void note_on(types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
+  virtual void poly_pressure(types::m2cvm::poly_pressure_w0, std::uint32_t) { /* do nothing */ }
+  virtual void program_change(types::m2cvm::program_change_w0, types::m2cvm::program_change_w1) { /* do nothing */ }
+  virtual void channel_pressure(types::m2cvm::channel_pressure_w0, std::uint32_t) { /* do nothing */ }
+  virtual void rpn_controller(types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
+  virtual void nrpn_controller(types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
+  virtual void per_note_management(types::m2cvm::per_note_management_w0, std::uint32_t) { /* do nothing */ }
+  virtual void control_change(types::m2cvm::control_change_w0, std::uint32_t) { /* do nothing */ }
+  virtual void controller_message(types::m2cvm::controller_message_w0, std::uint32_t) { /* do nothing */ }
+  virtual void pitch_bend(types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
+  virtual void per_note_pitch_bend(types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
+};
+
+template <backend Callbacks = callbacks_base, m1cvm_backend M1CVMBackend = m1cvm_base,
+          m2cvm_backend M2CVMBackend = m2cvm_base>
+class umpProcessor {
 public:
-  explicit umpProcessor(Callbacks cb = Callbacks{}) : callbacks_{cb} {}
+  explicit umpProcessor(Callbacks cb = Callbacks{}, M1CVMBackend m1cvm = m1cvm_base{},
+                        M2CVMBackend m2cvm = m2cvm_base{})
+      : callbacks_{cb}, m1cvm_backend_{m1cvm}, m2cvm_backend_{m2cvm} {}
 
   void clearUMP();
   void processUMP(uint32_t UMP);
@@ -275,7 +345,7 @@ private:
   void system_message(ump_message_type mt, std::uint8_t group);
   void m1cvm_message();
   void sysex7_message(ump_message_type mt, std::uint8_t group);
-  void m2cvm_message(ump_message_type mt, std::uint8_t group);
+  void m2cvm_message();
   void midi_endpoint_message(ump_message_type mt);
   void data_message();
   void flexdata_message(ump_message_type mt, std::uint8_t group);
@@ -299,25 +369,27 @@ private:
   void set_chord_name();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
-  void unknown_message();
-
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 
-  Callbacks callbacks_;
+  [[no_unique_address]] Callbacks callbacks_;
+  [[no_unique_address]] M1CVMBackend m1cvm_backend_;
+  [[no_unique_address]] M2CVMBackend m2cvm_backend_;
 };
 
 umpProcessor() -> umpProcessor<callbacks_base>;
 template <backend T> umpProcessor(T) -> umpProcessor<T>;
 template <backend T> umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
 
-template <backend Callbacks> void umpProcessor<Callbacks>::clearUMP() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::clearUMP() {
   pos_ = 0;
   std::fill(std::begin(message_), std::end(message_), std::uint8_t{0});
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::utility_message(ump_message_type const mt) {
-  // 32 bit utility messages
+// 32 bit utility messages
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::utility_message(ump_message_type const mt) {
   ump_generic mess;
   mess.common.messageType = mt;
   mess.common.status = static_cast<std::uint8_t>((message_[0] >> 20) & 0x0F);
@@ -325,10 +397,10 @@ template <backend Callbacks> void umpProcessor<Callbacks>::utility_message(ump_m
   callbacks_.utility_message(mess);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::system_message(ump_message_type const mt, std::uint8_t const group) {
-  // 32 bit System Real Time and System Common Messages (except System
-  // Exclusive)
+// 32 bit System Real Time and System Common Messages (except System Exclusive)
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::system_message(ump_message_type const mt,
+                                                                         std::uint8_t const group) {
   ump_generic mess;
   mess.common.messageType = mt;
   mess.common.group = group;
@@ -347,51 +419,33 @@ void umpProcessor<Callbacks>::system_message(ump_message_type const mt, std::uin
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::m1cvm_message() {
-  // 32 Bit MIDI 1.0 Channel Voice Messages
-
-  auto const w1 = std::bit_cast<types::m1cvm_w1>(message_[0]);
-
-  ump_cvm mess;
-  mess.common.group = w1.group;
-  mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
-  mess.common.status = w1.status;
-  mess.channel = w1.channel;
-  auto const val1 = w1.byte_a;
-  auto const val2 = w1.byte_b;
-
-  switch (mess.common.status << 4) {
-  case status::note_off:
-  case status::note_on:
-  case status::key_pressure:
-    mess.note = val1;
-    mess.value = scaleUp(val2, 7, 16);
-    callbacks_.channel_voice_message(mess);
-    break;
-  case status::channel_pressure:
-    mess.value = scaleUp(val2, 7, 32);
-    callbacks_.channel_voice_message(mess);
-    break;
-  case status::cc:
-    mess.index = val1;
-    mess.value = scaleUp(val2, 7, 32);
-    callbacks_.channel_voice_message(mess);
-    break;
-  case status::program_change:
-    mess.value = val1;
-    callbacks_.channel_voice_message(mess);
-    break;
-  case status::pitch_bend:
-    mess.value = scaleUp((std::uint32_t{val2} << 7) | val1, 14, 32);
-    callbacks_.channel_voice_message(mess);
-    break;
-  default: callbacks_.unknownUMPMessage(std::span{message_.data(), 2}); break;
+// 32 Bit MIDI 1.0 Channel Voice Messages
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m1cvm_message() {
+  auto const w0 = std::bit_cast<types::m1cvm_w0>(message_[0]);
+  switch ((message_[0] >> 16) & 0xF0) {
+  // 7.3.1 MIDI 1.0 Note Off Message
+  case status::note_off: m1cvm_backend_.note_off(w0); break;
+  // 7.3.2 MIDI 1.0 Note On Message
+  case status::note_on: m1cvm_backend_.note_on(w0); break;
+  // 7.3.3 MIDI 1.0 Poly Pressure Message
+  case status::key_pressure: m1cvm_backend_.poly_pressure(w0); break;
+  // 7.3.4 MIDI 1.0 Control Change Message
+  case status::cc: m1cvm_backend_.control_change(w0); break;
+  // 7.3.5 MIDI 1.0 Program Change Message
+  case status::program_change: m1cvm_backend_.program_change(w0); break;
+  // 7.3.6 MIDI 1.0 Channel Pressure Message
+  case status::channel_pressure: m1cvm_backend_.channel_pressure(w0); break;
+  // 7.3.7 MIDI 1.0 Pitch Bend Message
+  case status::pitch_bend: m1cvm_backend_.pitch_bend(w0); break;
+  default: callbacks_.unknownUMPMessage(std::span{message_.data(), 1}); break;
   }
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt, std::uint8_t const group) {
-  // 64 bit Data Messages (including System Exclusive)
+// 64 bit System Exclusive Data Message
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::sysex7_message(ump_message_type const mt,
+                                                                         std::uint8_t const group) {
   std::array<std::uint8_t, 7> sysex{};
   auto const data_length = (message_[0] >> 16) & 0x7;
   if (data_length > 0) {
@@ -421,83 +475,71 @@ void umpProcessor<Callbacks>::sysex7_message(ump_message_type const mt, std::uin
   callbacks_.send_out_sysex(mess);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::m2cvm_message(ump_message_type const mt, std::uint8_t const group) {
-  // 64 bits MIDI 2.0 Channel Voice Messages
-  ump_cvm mess;
-  mess.common.group = group;
-  mess.common.messageType = mt;
-  mess.common.status = (message_[0] >> 16) & 0xF0;
-  mess.channel = (message_[0] >> 16) & 0xF;
-  uint8_t val1 = (message_[0] >> 8) & 0xFF;
-  uint8_t val2 = message_[0] & 0xFF;
-
-  switch (mess.common.status) {
-  case status::note_off:  // Note Off
-  case status::note_on:   // Note On
-    mess.note = val1;
-    mess.value = message_[1] >> 16;
-    mess.bank = val2;
-    mess.index = message_[1] & 65535;
-    callbacks_.channel_voice_message(mess);
+// 64 bit MIDI 2.0 Channel Voice Messages
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m2cvm_message() {
+  switch ((message_[0] >> 16) & 0xF0) {
+  // 7.4.1 MIDI 2.0 Note Off Message
+  case status::note_off:
+    m2cvm_backend_.note_off(std::bit_cast<types::m2cvm::note_w0>(message_[0]),
+                            std::bit_cast<types::m2cvm::note_w1>(message_[1]));
     break;
-  case midi2status::pitch_bend_pernote:
-  case status::key_pressure:  // Poly Pressure
-    mess.note = val1;
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+  // 7.4.2 MIDI 2.0 Note On Message
+  case status::note_on:
+    m2cvm_backend_.note_on(std::bit_cast<types::m2cvm::note_w0>(message_[0]),
+                           std::bit_cast<types::m2cvm::note_w1>(message_[1]));
     break;
-  case status::channel_pressure:  // Channel Pressure
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+  // 7.4.3 MIDI 2.0 Poly Pressure Message
+  case status::key_pressure:  // Polyphonic pressure
+    m2cvm_backend_.poly_pressure(std::bit_cast<types::m2cvm::poly_pressure_w0>(message_[0]), message_[1]);
     break;
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
+  case midi2status::rpn_pernote:
+    m2cvm_backend_.rpn_controller(std::bit_cast<types::m2cvm::controller_w0>(message_[0]), message_[1]);
+    break;
+  // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
+  case midi2status::nrpn_pernote:
+    m2cvm_backend_.nrpn_controller(std::bit_cast<types::m2cvm::controller_w0>(message_[0]), message_[1]);
+    break;
+  // 7.4.5 MIDI 2.0 Per-Note Management Message
+  case midi2status::pernote_manage:
+    m2cvm_backend_.per_note_management(std::bit_cast<types::m2cvm::per_note_management_w0>(message_[0]), message_[1]);
+    break;
+  // 7.4.6 MIDI 2.0 Control Change Message
   case status::cc:
-    mess.index = val1;
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+    m2cvm_backend_.control_change(std::bit_cast<types::m2cvm::control_change_w0>(message_[0]), message_[1]);
     break;
-
-  case midi2status::rpn:            // RPN
-  case midi2status::nrpn:           // NRPN
-  case midi2status::rpn_relative:   // Relative RPN
-  case midi2status::nrpn_relative:  // Relative NRPN
-    mess.bank = val1;
-    mess.index = val2;
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+  // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
+  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
+  case midi2status::rpn:
+  case midi2status::nrpn:
+  case midi2status::rpn_relative:
+  case midi2status::nrpn_relative:
+    m2cvm_backend_.controller_message(std::bit_cast<types::m2cvm::controller_message_w0>(message_[0]), message_[1]);
     break;
-
+  // 7.4.9 MIDI 2.0 Program Change Message
   case status::program_change:  // Program Change Message
-    mess.value = message_[1] >> 24;
-    mess.flag1 = message_[0] & 1;
-    mess.bank = (message_[1] >> 8) & 0x7f;
-    mess.index = message_[1] & 0x7f;
-    callbacks_.channel_voice_message(mess);
+    m2cvm_backend_.program_change(std::bit_cast<types::m2cvm::program_change_w0>(message_[0]),
+                                  std::bit_cast<types::m2cvm::program_change_w1>(message_[1]));
     break;
-
-  case status::pitch_bend:  // PitchBend
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+  // 7.4.10 MIDI 2.0 Channel Pressure Message
+  case status::channel_pressure:
+    m2cvm_backend_.channel_pressure(std::bit_cast<types::m2cvm::channel_pressure_w0>(message_[0]), message_[1]);
     break;
-
-  case midi2status::nrpn_pernote:  // Assignable Per-Note Controller 1
-  case midi2status::rpn_pernote:   // Registered Per-Note Controller 0
-    mess.note = val1;
-    mess.index = val2;
-    mess.value = message_[1];
-    callbacks_.channel_voice_message(mess);
+  // 7.4.11 MIDI 2.0 Pitch Bend Message
+  case status::pitch_bend:
+    m2cvm_backend_.pitch_bend(std::bit_cast<types::m2cvm::pitch_bend_w0>(message_[0]), message_[1]);
     break;
-  case midi2status::pernote_manage:  // Per-Note Management Message
-    mess.note = val1;
-    mess.flag1 = (val2 & 2) != 0;
-    mess.flag2 = (val2 & 1) != 0;
-    callbacks_.channel_voice_message(mess);
+  // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
+  case midi2status::pitch_bend_pernote:
+    m2cvm_backend_.per_note_pitch_bend(std::bit_cast<types::m2cvm::per_note_pitch_bend_w0>(message_[0]), message_[1]);
     break;
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 2}); break;
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::midiendpoint_name_or_prodid(ump_message_type const mt) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midiendpoint_name_or_prodid(ump_message_type const mt) {
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   assert(status == MIDIENDPOINT_NAME_NOTIFICATION || status == MIDIENDPOINT_PRODID_NOTIFICATION);
 
@@ -529,10 +571,10 @@ template <backend Callbacks> void umpProcessor<Callbacks>::midiendpoint_name_or_
   }
 }
 
-template <backend Callbacks>
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
 template <std::output_iterator<std::uint8_t> OutputIterator>
-constexpr OutputIterator umpProcessor<Callbacks>::payload(std::array<std::uint32_t, 4> const& message,
-                                                          std::size_t index, std::size_t limit, OutputIterator out) {
+constexpr OutputIterator umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::payload(
+    std::array<std::uint32_t, 4> const& message, std::size_t index, std::size_t limit, OutputIterator out) {
   assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
   if (index >= limit) {
     return out;
@@ -545,42 +587,45 @@ constexpr OutputIterator umpProcessor<Callbacks>::payload(std::array<std::uint32
   return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::functionblock_name() {
-  auto w1 = std::bit_cast<types::function_block_name_w1>(message_[0]);
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_name() {
+  auto w0 = std::bit_cast<types::function_block_name_w0>(message_[0]);
 
-  std::uint8_t const fbIdx = w1.block_number;
+  std::uint8_t const fbIdx = w0.block_number;
   std::array<std::uint8_t, 13> text;
-  text[0] = w1.name;
+  text[0] = w0.name;
   umpProcessor::payload(message_, 0, text.size() - 1, std::begin(text) + 1);
   auto const text_length = std::distance(
       find_if_not(std::rbegin(text), std::rend(text), [](std::uint8_t v) { return v == 0; }), std::rend(text));
   assert(text_length >= 0 && static_cast<std::size_t>(text_length) <= text.size());
 
   ump_data mess;
-  mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
-  mess.common.status = static_cast<std::uint8_t>(w1.status);
-  mess.form = w1.format;
+  mess.common.messageType = static_cast<ump_message_type>(w0.mt.value());
+  mess.common.status = static_cast<std::uint8_t>(w0.status);
+  mess.form = w0.format;
   mess.data = std::span{text.data(), static_cast<std::size_t>(text_length)};
   callbacks_.functionBlockName(mess, fbIdx);
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::functionblock_info() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_info() {
   function_block_info info;
-  auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[0]);
-  auto const w2 = std::bit_cast<types::function_block_info_w2>(message_[1]);
+  auto const w0 = std::bit_cast<types::function_block_info_w0>(message_[0]);
+  auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[1]);
 
-  info.fbIdx = w1.block_number;
-  info.active = w1.a;
-  info.direction = static_cast<function_block_info::fbdirection>(w1.dir.value());
-  info.firstGroup = w2.first_group;
-  info.groupLength = w2.groups_spanned;
-  info.midiCIVersion = w2.message_version;
-  info.isMIDI1 = w1.m1;
-  info.maxS8Streams = w2.num_sysex8_streams;
+  info.fbIdx = w0.block_number;
+  info.active = w0.a;
+  info.direction = static_cast<function_block_info::fbdirection>(w0.dir.value());
+  info.firstGroup = w1.first_group;
+  info.groupLength = w1.groups_spanned;
+  info.midiCIVersion = w1.message_version;
+  info.isMIDI1 = w0.m1;
+  info.maxS8Streams = w1.num_sysex8_streams;
   callbacks_.functionBlockInfo(info);
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message(ump_message_type const mt) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midi_endpoint_message(ump_message_type const mt) {
   // 128 bits UMP Stream Messages
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   switch (status) {
@@ -635,8 +680,9 @@ template <backend Callbacks> void umpProcessor<Callbacks>::midi_endpoint_message
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
-  // 128 bit Data Messages (including System Exclusive 8)
+// 128 bit Data Messages (including System Exclusive 8)
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::data_message() {
   uint8_t const status = (message_[0] >> 20) & 0xF;
   switch (status) {
   case data_message_status::sysex8_in_1_ump:
@@ -644,17 +690,17 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   case data_message_status::sysex8_continue:
   case data_message_status::sysex8_end: {
     std::array<std::uint8_t, 13> sysex{};
-    auto const w1 = std::bit_cast<types::sysex8_w1>(message_[0]);
-    auto const data_length = std::min(std::size_t{w1.number_of_bytes}, sysex.size());
+    auto const w0 = std::bit_cast<types::sysex8_w0>(message_[0]);
+    auto const data_length = std::min(std::size_t{w0.number_of_bytes}, sysex.size());
     if (data_length >= 1) {
-      sysex[0] = w1.data;
+      sysex[0] = w0.data;
       umpProcessor::payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
     }
     ump_data mess;
-    mess.common.group = w1.group;
-    mess.common.messageType = static_cast<ump_message_type>(w1.mt.value());
-    mess.streamId = w1.stream_id;
-    mess.form = w1.status;
+    mess.common.group = w0.group;
+    mess.common.messageType = static_cast<ump_message_type>(w0.mt.value());
+    mess.streamId = w0.stream_id;
+    mess.form = w0.status;
     assert(data_length <= sysex.size());
     mess.data = std::span{sysex.data(), data_length};
     callbacks_.send_out_sysex(mess);
@@ -681,11 +727,12 @@ template <backend Callbacks> void umpProcessor<Callbacks>::data_message() {
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
-  auto const w1 = std::bit_cast<types::set_chord_name_w1>(message_[0]);
-  auto const w2 = std::bit_cast<types::set_chord_name_w2>(message_[1]);
-  auto const w3 = std::bit_cast<types::set_chord_name_w3>(message_[2]);
-  auto const w4 = std::bit_cast<types::set_chord_name_w4>(message_[3]);
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::set_chord_name() {
+  auto const w0 = std::bit_cast<types::set_chord_name_w0>(message_[0]);
+  auto const w1 = std::bit_cast<types::set_chord_name_w1>(message_[1]);
+  auto const w2 = std::bit_cast<types::set_chord_name_w2>(message_[2]);
+  auto const w3 = std::bit_cast<types::set_chord_name_w3>(message_[3]);
 
   auto const valid_note = [](std::uint8_t n) {
     return n <= static_cast<std::uint8_t>(chord::note::G) ? static_cast<chord::note>(n) : chord::note::unknown;
@@ -698,29 +745,30 @@ template <backend Callbacks> void umpProcessor<Callbacks>::set_chord_name() {
 
   chord c;
   // TODO(pbh): validate the ShrpFlt fields.
-  c.chShrpFlt = static_cast<chord::sharps_flats>(w2.tonic_sharps_flats.signed_value());
-  c.chTonic = valid_note(w2.chord_tonic);
-  c.chType = valid_chord_type(w2.chord_type);
-  c.chAlt1.type = w2.alter_1_type;
-  c.chAlt1.degree = w2.alter_1_degree;
-  c.chAlt2.type = w2.alter_2_type;
-  c.chAlt2.degree = w2.alter_2_degree;
-  c.chAlt3.type = w3.alter_3_type;
-  c.chAlt3.degree = w3.alter_3_degree;
-  c.chAlt4.type = w3.alter_4_type;
-  c.chAlt4.degree = w3.alter_4_degree;
-  c.baShrpFlt = static_cast<chord::sharps_flats>(w4.bass_sharps_flats.signed_value());
-  c.baTonic = valid_note(w4.bass_note);
-  c.baType = valid_chord_type(w4.bass_chord_type);
-  c.baAlt1.type = w4.alter_1_type;
-  c.baAlt1.degree = w4.alter_1_degree;
-  c.baAlt2.type = w4.alter_2_type;
-  c.baAlt2.degree = w4.alter_2_degree;
-  callbacks_.flex_chord(w1.group, w1.addrs, w1.channel, c);
+  c.chShrpFlt = static_cast<chord::sharps_flats>(w1.tonic_sharps_flats.signed_value());
+  c.chTonic = valid_note(w1.chord_tonic);
+  c.chType = valid_chord_type(w1.chord_type);
+  c.chAlt1.type = w1.alter_1_type;
+  c.chAlt1.degree = w1.alter_1_degree;
+  c.chAlt2.type = w1.alter_2_type;
+  c.chAlt2.degree = w1.alter_2_degree;
+  c.chAlt3.type = w2.alter_3_type;
+  c.chAlt3.degree = w2.alter_3_degree;
+  c.chAlt4.type = w2.alter_4_type;
+  c.chAlt4.degree = w2.alter_4_degree;
+  c.baShrpFlt = static_cast<chord::sharps_flats>(w3.bass_sharps_flats.signed_value());
+  c.baTonic = valid_note(w3.bass_note);
+  c.baType = valid_chord_type(w3.bass_chord_type);
+  c.baAlt1.type = w3.alter_1_type;
+  c.baAlt1.degree = w3.alter_1_degree;
+  c.baAlt2.type = w3.alter_2_type;
+  c.baAlt2.degree = w3.alter_2_degree;
+  callbacks_.flex_chord(w0.group, w0.addrs, w0.channel, c);
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type const mt, std::uint8_t const group) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_performance_or_lyric(ump_message_type const mt,
+                                                                                        std::uint8_t const group) {
   std::uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   std::uint8_t const status = message_[0] & 0xFF;
   std::uint8_t const channel = (message_[0] >> 16) & 0xF;
@@ -752,17 +800,17 @@ void umpProcessor<Callbacks>::flexdata_performance_or_lyric(ump_message_type con
   }
 }
 
-template <backend Callbacks>
-void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt, std::uint8_t const group) {
-  // 128 bit Data Messages (including System Exclusive 8)
+// 128 bit Data Messages (including System Exclusive 8)
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_message(ump_message_type const mt,
+                                                                           std::uint8_t const group) {
   uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   uint8_t const status = message_[0] & 0xFF;
   uint8_t const channel = (message_[0] >> 16) & 0xF;
   uint8_t const addrs = (message_[0] >> 18) & 3;
   // SysEx 8
   switch (status_bank) {
-  case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project,
-                           // and Track
+  case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project, and Track
     switch (status) {
     case FLEXDATA_COMMON_TEMPO: {  // Set Tempo Message
       callbacks_.flex_tempo(group, message_[1]);
@@ -795,91 +843,39 @@ void umpProcessor<Callbacks>::flexdata_message(ump_message_type const mt, std::u
   }
 }
 
-template <backend Callbacks> void umpProcessor<Callbacks>::unknown_message() {
-  callbacks_.unknownUMPMessage(std::span{message_.data(), pos_});
-  pos_ = 0;
-}
-
-template <backend Callbacks> void umpProcessor<Callbacks>::processUMP(uint32_t const ump) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::processUMP(uint32_t const ump) {
   assert(pos_ < message_.size());
   message_[pos_++] = ump;
 
   auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
-  auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
+  if (pos_ < ump_message_size(mt)) {
+    return;
+  }
+  pos_ = 0;
 
+  auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
   switch (mt) {
-  case ump_message_type::utility:
-    if (pos_ == 1) {
-      this->utility_message(mt);
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::system:
-    if (pos_ == 1) {
-      this->system_message(mt, group);
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::m1cvm:
-    if (pos_ == 1) {
-      this->m1cvm_message();
-      pos_ = 0;
-    }
-    break;
+  case ump_message_type::utility: this->utility_message(mt); break;
+  case ump_message_type::system: this->system_message(mt, group); break;
+  case ump_message_type::m1cvm: this->m1cvm_message(); break;
+  case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
+  case ump_message_type::m2cvm: this->m2cvm_message(); break;
+  case ump_message_type::data: this->data_message(); break;
+  case ump_message_type::flex_data: this->flexdata_message(mt, group); break;
+  case ump_message_type::midi_endpoint: this->midi_endpoint_message(mt); break;
+
   case ump_message_type::reserved32_06:
   case ump_message_type::reserved32_07:
-    if (pos_ == 1) {
-      unknown_message();
-    }
-    break;
-  case ump_message_type::sysex7:
-    if (pos_ == 2) {
-      this->sysex7_message(mt, group);
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::m2cvm:
-    if (pos_ == 2) {
-      this->m2cvm_message(mt, group);
-      pos_ = 0;
-    }
-    break;
   case ump_message_type::reserved64_08:
   case ump_message_type::reserved64_09:
   case ump_message_type::reserved64_0A:
-    if (pos_ == 2) {
-      this->unknown_message();
-    }
-    break;
   case ump_message_type::reserved96_0B:
   case ump_message_type::reserved96_0C:
-    if (pos_ == 3) {
-      this->unknown_message();
-    }
-    break;
-  case ump_message_type::data:
-    if (pos_ == 4) {
-      this->data_message();
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::flex_data:
-    if (pos_ == 4) {
-      this->flexdata_message(mt, group);
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::midi_endpoint:
-    if (pos_ == 4) {
-      this->midi_endpoint_message(mt);
-      pos_ = 0;
-    }
-    break;
-  case ump_message_type::reserved128_0E:
+  case ump_message_type::reserved128_0E: callbacks_.unknownUMPMessage(std::span{message_.data(), pos_}); break;
   default:
-    if (pos_ == 4) {
-      this->unknown_message();
-    }
+    assert(false);
+    unreachable();
     break;
   }
 }

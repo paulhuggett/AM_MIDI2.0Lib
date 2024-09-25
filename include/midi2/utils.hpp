@@ -1,29 +1,10 @@
-/**********************************************************
- * MIDI 2.0 Library
- * Author: Andrew Mee
- *
- * MIT License
- * Copyright 2021 Andrew Mee
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * ********************************************************/
+//===-- Utils -----------------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
 
 #ifndef MIDI2_UTILS_HPP
 #define MIDI2_UTILS_HPP
@@ -32,6 +13,16 @@
 #include <cstdint>
 
 namespace midi2 {
+
+[[noreturn, maybe_unused]] inline void unreachable() {
+  // Uses compiler specific extensions if possible. Even if no extension is used, undefined behavior is still raised by
+  // an empty function body and the noreturn attribute.
+#ifdef __GNUC__  // GCC, Clang, ICC
+  __builtin_unreachable();
+#elif defined(_MSC_VER)  // MSVC
+  __assume(false);
+#endif
+}
 
 enum status : std::uint8_t {
   // Channel voice messages
@@ -220,24 +211,27 @@ enum : std::uint32_t {
   UMP_VER_MINOR = 1,
 };
 
-enum class ump_message_type : std::uint32_t {
-  utility = 0x00,
-  system = 0x01,
-  m1cvm = 0x02,
-  sysex7 = 0x03,
-  m2cvm = 0x04,
-  data = 0x05,
-  reserved32_06 = 0x06,
-  reserved32_07 = 0x07,
-  reserved64_08 = 0x08,
-  reserved64_09 = 0x09,
-  reserved64_0A = 0x0A,
-  reserved96_0B = 0x0B,
-  reserved96_0C = 0x0C,
-  flex_data = 0x0D,
-  reserved128_0E = 0x0E,
-  midi_endpoint = 0x0F,
-};
+#define UMP_MESSAGE_TYPES \
+  X(utility, 0x00)        \
+  X(system, 0x01)         \
+  X(m1cvm, 0x02)          \
+  X(sysex7, 0x03)         \
+  X(m2cvm, 0x04)          \
+  X(data, 0x05)           \
+  X(reserved32_06, 0x06)  \
+  X(reserved32_07, 0x07)  \
+  X(reserved64_08, 0x08)  \
+  X(reserved64_09, 0x09)  \
+  X(reserved64_0A, 0x0A)  \
+  X(reserved96_0B, 0x0B)  \
+  X(reserved96_0C, 0x0C)  \
+  X(flex_data, 0x0D)      \
+  X(reserved128_0E, 0x0E) \
+  X(midi_endpoint, 0x0F)
+
+#define X(a, b) a = b,
+enum class ump_message_type : std::uint32_t { UMP_MESSAGE_TYPES };
+#undef X
 
 constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
                              std::uint8_t const b3) {
