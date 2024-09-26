@@ -11,16 +11,11 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <cassert>
-#include <concepts>
+#include <cstddef>
 #include <cstdint>
-#include <functional>
-#include <map>
-#include <optional>
 #include <span>
 #include <string>
-#include <tuple>
 #include <type_traits>
 
 #include "midi2/utils.hpp"
@@ -69,7 +64,7 @@ constexpr std::byte to_le7(std::uint8_t v) {
 
 template <std::size_t Size>
 constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
-  std::array<std::uint8_t, Size> result;
+  std::array<std::uint8_t, Size> result{};
   std::transform(std::begin(other), std::end(other), std::begin(result),
                  [](std::byte v) { return static_cast<std::uint8_t>(v); });
   return result;
@@ -77,7 +72,7 @@ constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> 
 
 template <std::size_t Size>
 constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) {
-  std::array<std::byte, Size> result;
+  std::array<std::byte, Size> result{};
   std::transform(std::begin(other), std::end(other), std::begin(result),
                  [](std::uint8_t v) { return static_cast<std::byte>(v); });
   return result;
@@ -394,7 +389,7 @@ struct endpoint_info_reply {
   explicit constexpr operator packed::endpoint_info_reply_v1() const;
 
   std::byte status{};
-  std::span<std::byte const> information{};
+  std::span<std::byte const> information;
 };
 
 constexpr endpoint_info_reply::endpoint_info_reply(packed::endpoint_info_reply_v1 const &other)
@@ -490,7 +485,7 @@ struct ack {
   std::uint8_t status_code = 0;
   std::uint8_t status_data = 0;
   byte_array_5 details{};
-  std::span<std::byte const> message{};
+  std::span<std::byte const> message;
 };
 
 constexpr ack::ack(packed::ack_v1 const &other)
@@ -560,7 +555,7 @@ struct nak {
   std::uint8_t status_code = 0;  // NAK Status Code
   std::uint8_t status_data = 0;  // NAK Status Data
   byte_array_5 details{};        // NAK details for each SubID Classification
-  std::span<std::byte const> message{};
+  std::span<std::byte const> message;
 };
 
 constexpr nak::nak(packed::nak_v1 const &) {
@@ -641,8 +636,8 @@ struct inquiry_reply {
   explicit constexpr operator packed::inquiry_reply_v1_pt1() const;
   explicit constexpr operator packed::inquiry_reply_v1_pt2() const;
 
-  std::span<byte_array_5 const> enabled{};
-  std::span<byte_array_5 const> disabled{};
+  std::span<byte_array_5 const> enabled;
+  std::span<byte_array_5 const> disabled;
 };
 
 constexpr inquiry_reply::inquiry_reply(packed::inquiry_reply_v1_pt1 const &v1_pt1,
@@ -818,7 +813,7 @@ struct details_reply {
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
-  std::span<std::byte const> data{};
+  std::span<std::byte const> data;
 };
 
 constexpr details_reply::details_reply(packed::details_reply_v1 const &other)
@@ -1115,8 +1110,8 @@ struct specific_data {
 
   explicit constexpr operator packed::specific_data_v1() const;
 
-  byte_array_5 pid{};                 ///< Profile ID
-  std::span<std::byte const> data{};  ///< Profile specific data
+  byte_array_5 pid{};               ///< Profile ID
+  std::span<std::byte const> data;  ///< Profile specific data
 };
 
 constexpr specific_data::specific_data(byte_array_5 const &pid_, std::span<std::byte const> data_)
@@ -1433,6 +1428,10 @@ struct capabilities_reply {
   constexpr capabilities_reply(capabilities_reply &&) noexcept = default;
   constexpr explicit capabilities_reply(std::byte features_);
   constexpr explicit capabilities_reply(packed::capabilities_reply_v2 const &v2);
+  ~capabilities_reply() noexcept = default;
+
+  capabilities_reply &operator=(capabilities_reply const &) = default;
+  capabilities_reply &operator=(capabilities_reply &&) noexcept = default;
 
   bool operator==(capabilities_reply const &) const = default;
 
@@ -1479,8 +1478,11 @@ struct midi_message_report {
   constexpr midi_message_report() = default;
   constexpr midi_message_report(midi_message_report const &) = default;
   constexpr midi_message_report(midi_message_report &&) noexcept = default;
-
   constexpr explicit midi_message_report(packed::midi_message_report_v2 const &v2);
+  ~midi_message_report() noexcept = default;
+
+  midi_message_report &operator=(midi_message_report const &) = default;
+  midi_message_report &operator=(midi_message_report &&) noexcept = default;
 
   bool operator==(midi_message_report const &) const = default;
 
@@ -1572,6 +1574,10 @@ struct midi_message_report_reply {
   constexpr midi_message_report_reply(midi_message_report_reply const &) = default;
   constexpr midi_message_report_reply(midi_message_report_reply &&) noexcept = default;
   constexpr explicit midi_message_report_reply(packed::midi_message_report_reply_v2 const &v2);
+  ~midi_message_report_reply() noexcept = default;
+
+  midi_message_report_reply &operator=(midi_message_report_reply const &) = default;
+  midi_message_report_reply &operator=(midi_message_report_reply &&) noexcept = default;
 
   bool operator==(midi_message_report_reply const &) const = default;
 

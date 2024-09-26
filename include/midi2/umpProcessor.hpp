@@ -12,10 +12,13 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <functional>
+#include <iterator>
 #include <span>
+#include <type_traits>
 
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
@@ -174,9 +177,13 @@ template <> struct message_size<midi2::ump_message_type::reserved128_0E> : std::
 template <> struct message_size<midi2::ump_message_type::midi_endpoint> : std::integral_constant<unsigned, 4> {};
 
 constexpr unsigned ump_message_size(ump_message_type const mt) {
+  using enum ump_message_type;
 #define X(a, b) \
-  case ump_message_type::a: return message_size<ump_message_type::a>();
-  switch (mt) { UMP_MESSAGE_TYPES }
+  case a: return message_size<a>();
+  switch (mt) {
+    UMP_MESSAGE_TYPES
+  default: return 0U;
+  }
 #undef X
 }
 
@@ -338,7 +345,7 @@ public:
       : callbacks_{cb}, m1cvm_backend_{m1cvm}, m2cvm_backend_{m2cvm} {}
 
   void clearUMP();
-  void processUMP(uint32_t UMP);
+  void processUMP(std::uint32_t ump);
 
 private:
   void utility_message(ump_message_type mt);
@@ -384,7 +391,7 @@ template <backend T> umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>
 template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
 void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::clearUMP() {
   pos_ = 0;
-  std::fill(std::begin(message_), std::end(message_), std::uint8_t{0});
+  std::ranges::fill(message_, std::uint8_t{0});
 }
 
 // 32 bit utility messages
@@ -543,7 +550,7 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midiendpoint_name_or_p
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   assert(status == MIDIENDPOINT_NAME_NOTIFICATION || status == MIDIENDPOINT_PRODID_NOTIFICATION);
 
-  std::array<std::uint8_t, 14> text;
+  std::array<std::uint8_t, 14> text{};
   auto text_length = 0U;
   if ((message_[0] >> 8) & 0xFF) {
     text[text_length++] = (message_[0] >> 8) & 0xFF;
@@ -592,7 +599,7 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_name() {
   auto w0 = std::bit_cast<types::function_block_name_w0>(message_[0]);
 
   std::uint8_t const fbIdx = w0.block_number;
-  std::array<std::uint8_t, 13> text;
+  std::array<std::uint8_t, 13> text{};
   text[0] = w0.name;
   umpProcessor::payload(message_, 0, text.size() - 1, std::begin(text) + 1);
   auto const text_length = std::distance(
@@ -775,7 +782,7 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_performance_o
   std::uint8_t const addrs = (message_[0] >> 18) & 3;
   std::uint8_t const form = (message_[0] >> 20) & 3;
 
-  std::array<std::uint8_t, 12> text;
+  std::array<std::uint8_t, 12> text{};
   auto text_length = 0U;
   for (uint8_t i = 1; i <= 3; i++) {
     for (int j = 24; j >= 0; j -= 8) {

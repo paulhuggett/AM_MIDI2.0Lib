@@ -36,11 +36,8 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <map>
-#include <optional>
 #include <span>
 #include <string>
-#include <tuple>
 #include <type_traits>
 
 #include "midi2/ci_types.hpp"

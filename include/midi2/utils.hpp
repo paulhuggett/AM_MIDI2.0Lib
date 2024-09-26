@@ -10,6 +10,7 @@
 #define MIDI2_UTILS_HPP
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 
 namespace midi2 {
@@ -229,7 +230,7 @@ enum : std::uint32_t {
   X(reserved128_0E, 0x0E) \
   X(midi_endpoint, 0x0F)
 
-#define X(a, b) a = b,
+#define X(a, b) a = (b),
 enum class ump_message_type : std::uint32_t { UMP_MESSAGE_TYPES };
 #undef X
 

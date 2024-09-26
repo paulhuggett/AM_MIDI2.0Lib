@@ -57,6 +57,7 @@ public:
   template <std::output_iterator<std::byte> OutputIterator> OutputIterator flush(OutputIterator out);
 
   /// All input is good for encoding, so this function always returns true.
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
   [[nodiscard]] constexpr bool good() const { return true; }
 
   /// Resets the internal state.

@@ -5,6 +5,13 @@
 //  Created by Paul Bowen-Huggett on 01/09/2024.
 //
 
+#include <array>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <type_traits>
+
 #include "icubaby/icubaby.hpp"
 
 template <icubaby::unicode_char_type InputEncoding> class icubaby::transcoder<InputEncoding, char> {
@@ -74,8 +81,10 @@ private:
       return dest;
     }
 
-    std::array<char16_t, 2> out16;
+    std::array<char16_t, 2> out16{};
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const first = out16.begin();
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const last = icubaby::t32_16{}(code_unit, first);
     auto const to_hex = [](unsigned const v) { return static_cast<char>(v + ((v < 10) ? '0' : 'A' - 10)); };
     std::for_each(first, last, [&dest, &to_hex](char16_t const c) {
@@ -230,4 +239,4 @@ private:
 
 namespace midi2 {
 using icubaby::transcoder;
-}
+}  // end namespace midi2

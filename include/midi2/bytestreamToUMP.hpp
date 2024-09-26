@@ -27,6 +27,7 @@
 #ifndef MIDI2_BYTESTREAMTOUMP_HPP
 #define MIDI2_BYTESTREAMTOUMP_HPP
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -75,10 +76,10 @@ private:
     /// System exclusive message bytes gathered for the current UMP
     std::array<std::uint8_t, 6> bytes{};
 
-    void reset() { std::fill(std::begin(bytes), std::end(bytes), std::uint8_t{0}); }
+    void reset() { std::ranges::fill(bytes, std::uint8_t{0}); }
   };
   sysex7 sysex7_;
-  fifo<std::uint32_t, 4> output_;
+  fifo<std::uint32_t, 4> output_{};
 
   // Channel Based Data
   struct channel {
@@ -89,7 +90,7 @@ private:
     std::uint8_t rpnMsb = 0xFF;
     std::uint8_t rpnLsb = 0xFF;
   };
-  std::array<channel, 16> channel_;
+  std::array<channel, 16> channel_{};
 
   [[nodiscard]] static constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
                                                     std::uint8_t const b3) {

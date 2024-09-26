@@ -28,8 +28,10 @@
 #ifndef MIDI2_MIDICIMESSAGECREATE_HPP
 #define MIDI2_MIDICIMESSAGECREATE_HPP
 
-#include <array>
-#include <cstdint>
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <type_traits>
 
 #include "midi2/ci_types.hpp"
 #include "midi2/utils.hpp"

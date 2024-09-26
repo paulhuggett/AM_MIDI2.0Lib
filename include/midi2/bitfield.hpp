@@ -5,6 +5,7 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 
 namespace midi2 {
 

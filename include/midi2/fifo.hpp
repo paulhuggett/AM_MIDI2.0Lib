@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -51,7 +52,9 @@ public:
   /// \returns The first element in the container.
   ElementType pop_front() {
     assert(!this->empty());
-    return std::move(arr_[(readIndex_++) & mask_]);
+    auto result = std::move(arr_[readIndex_ & mask_]);
+    ++readIndex_;
+    return result;
   }
   /// \brief Checks whether the container is empty.
   /// The FIFO is empty when both indices are equal.

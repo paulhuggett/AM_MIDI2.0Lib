@@ -9,6 +9,9 @@
 #ifndef MIDI2_UMP_TYPES_HPP
 #define MIDI2_UMP_TYPES_HPP
 
+#include <bit>
+#include <cstdint>
+
 #include "midi2/bitfield.hpp"
 
 namespace midi2::types {

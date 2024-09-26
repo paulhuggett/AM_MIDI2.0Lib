@@ -37,7 +37,7 @@ namespace midi2 {
 
 class umpToBytestream {
 public:
-  uint8_t group = 0;
+  std::uint8_t group = 0;
 
   umpToBytestream() = default;
 

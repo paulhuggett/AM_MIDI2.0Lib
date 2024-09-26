@@ -575,8 +575,7 @@ TEST_F(UMPProcessor, Sysex7) {
 
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
   midi2::umpProcessor p;
-  std::for_each(std::begin(in), std::end(in),
-                std::bind_front(&decltype(p)::processUMP, &p));
+  std::ranges::for_each(in, [&p](std::uint32_t ump) { p.processUMP(ump); });
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
