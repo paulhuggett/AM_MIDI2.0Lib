@@ -344,8 +344,50 @@ public:
                         M2CVMBackend m2cvm = m2cvm_base{})
       : callbacks_{cb}, m1cvm_backend_{m1cvm}, m2cvm_backend_{m2cvm} {}
 
-  void clearUMP();
-  void processUMP(std::uint32_t ump);
+  void clearUMP() {
+    // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
+    // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
+    pos_ = 0;
+    std::ranges::fill(message_, std::uint8_t{0});
+  }
+
+  void processUMP(std::uint32_t ump) {
+    // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
+    // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
+    assert(pos_ < message_.size());
+    message_[pos_++] = ump;
+
+    auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
+    if (pos_ < ump_message_size(mt)) {
+      return;
+    }
+    pos_ = 0;
+
+    auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
+    switch (mt) {
+    case ump_message_type::utility: this->utility_message(mt); break;
+    case ump_message_type::system: this->system_message(mt, group); break;
+    case ump_message_type::m1cvm: this->m1cvm_message(); break;
+    case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
+    case ump_message_type::m2cvm: this->m2cvm_message(); break;
+    case ump_message_type::data: this->data_message(); break;
+    case ump_message_type::flex_data: this->flexdata_message(mt, group); break;
+    case ump_message_type::midi_endpoint: this->midi_endpoint_message(mt); break;
+
+    case ump_message_type::reserved32_06:
+    case ump_message_type::reserved32_07:
+    case ump_message_type::reserved64_08:
+    case ump_message_type::reserved64_09:
+    case ump_message_type::reserved64_0A:
+    case ump_message_type::reserved96_0B:
+    case ump_message_type::reserved96_0C:
+    case ump_message_type::reserved128_0E: callbacks_.unknownUMPMessage(std::span{message_.data(), pos_}); break;
+    default:
+      assert(false);
+      unreachable();
+      break;
+    }
+  }
 
 private:
   void utility_message(ump_message_type mt);
@@ -387,12 +429,6 @@ private:
 umpProcessor() -> umpProcessor<callbacks_base>;
 template <backend T> umpProcessor(T) -> umpProcessor<T>;
 template <backend T> umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
-
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::clearUMP() {
-  pos_ = 0;
-  std::ranges::fill(message_, std::uint8_t{0});
-}
 
 // 32 bit utility messages
 template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
@@ -847,43 +883,6 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_message(ump_m
   case FLEXDATA_LYRIC: this->flexdata_performance_or_lyric(mt, group); break;
 
   default: callbacks_.unknownUMPMessage(std::span{message_.data(), 4}); break;
-  }
-}
-
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::processUMP(uint32_t const ump) {
-  assert(pos_ < message_.size());
-  message_[pos_++] = ump;
-
-  auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
-  if (pos_ < ump_message_size(mt)) {
-    return;
-  }
-  pos_ = 0;
-
-  auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
-  switch (mt) {
-  case ump_message_type::utility: this->utility_message(mt); break;
-  case ump_message_type::system: this->system_message(mt, group); break;
-  case ump_message_type::m1cvm: this->m1cvm_message(); break;
-  case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
-  case ump_message_type::m2cvm: this->m2cvm_message(); break;
-  case ump_message_type::data: this->data_message(); break;
-  case ump_message_type::flex_data: this->flexdata_message(mt, group); break;
-  case ump_message_type::midi_endpoint: this->midi_endpoint_message(mt); break;
-
-  case ump_message_type::reserved32_06:
-  case ump_message_type::reserved32_07:
-  case ump_message_type::reserved64_08:
-  case ump_message_type::reserved64_09:
-  case ump_message_type::reserved64_0A:
-  case ump_message_type::reserved96_0B:
-  case ump_message_type::reserved96_0C:
-  case ump_message_type::reserved128_0E: callbacks_.unknownUMPMessage(std::span{message_.data(), pos_}); break;
-  default:
-    assert(false);
-    unreachable();
-    break;
   }
 }
 
