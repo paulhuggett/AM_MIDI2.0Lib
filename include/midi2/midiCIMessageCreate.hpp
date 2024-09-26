@@ -29,6 +29,7 @@
 #define MIDI2_MIDICIMESSAGECREATE_HPP
 
 #include <algorithm>
+#include <bit>
 #include <cstddef>
 #include <iterator>
 #include <type_traits>
