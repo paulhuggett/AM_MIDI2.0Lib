@@ -176,8 +176,8 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
       w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
       w0.status = static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
       w0.number_of_bytes = sysex7_.pos;
-      w0.data0 = static_cast<std::uint32_t>(sysex7_.bytes[0]);
-      w0.data1 = static_cast<std::uint32_t>(sysex7_.bytes[1]);
+      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
+      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
       static_assert(sizeof(w0) == sizeof(std::uint32_t));
       auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
       output_.push_back(w0_32);
