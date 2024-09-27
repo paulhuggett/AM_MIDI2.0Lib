@@ -26,7 +26,7 @@
 
 namespace {
 
-using byte_vector = std::vector<std::uint8_t>;
+using byte_vector = std::vector<std::byte>;
 using ump_vector = std::vector<std::uint32_t>;
 
 ump_vector bytesToUMP(byte_vector const& in) {
@@ -73,10 +73,10 @@ void UMPByteStreamRoundTrip(byte_vector const& b1) {
   // The presence of partial system exclusive messages causes the test to
   // fail. For the time being just filter out any buffers with even a hint
   // of sysex.
-  if (auto const end = std::end(b1);
-      std::find_if(std::begin(b1), end, [](std::uint8_t const b) {
-        return b == 0xF0 || b == 0xF7;
-      }) != end) {
+  if (auto const end = std::end(b1); std::find_if(std::begin(b1), end, [](std::byte const b) {
+                                       using enum midi2::status;
+                                       return b == std::byte{sysex_start} || b == std::byte{sysex_stop};
+                                     }) != end) {
     return;
   }
   // The test first converts the original byte-stream to UMP, converts the

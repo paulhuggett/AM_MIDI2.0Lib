@@ -483,8 +483,8 @@ TEST_F(UMPProcessor, FunctionBlockName) {
 }
 
 TEST_F(UMPProcessor, SetChordName) {
-  constexpr auto group = std::uint8_t{0xF};
-  constexpr auto addrs = std::uint8_t{0x3};
+  constexpr auto group = std::uint8_t{0x0F};
+  constexpr auto addrs = std::uint8_t{0x03};
   constexpr auto channel = std::uint8_t{3};
 
   constexpr auto chord_tonic = midi2::chord::note::E;

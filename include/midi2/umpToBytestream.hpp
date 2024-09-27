@@ -42,16 +42,16 @@ public:
   umpToBytestream() = default;
 
   [[nodiscard]] constexpr bool availableBS() const { return !output_.empty(); }
-  [[nodiscard]] uint8_t readBS() { return output_.pop_front(); }
+  [[nodiscard]] std::byte readBS() { return output_.pop_front(); }
 
   void UMPStreamParse(uint32_t UMP);
 
 private:
-  ump_message_type mType = ump_message_type::utility;
-  std::uint32_t ump64word1 = 0;
+  ump_message_type mType_ = ump_message_type::utility;
+  std::uint32_t ump64word1_ = 0;
 
-  std::uint8_t UMPPos = 0;
-  fifo<std::uint8_t, 16> output_;
+  std::uint8_t UMPPos_ = 0;
+  fifo<std::byte, 16> output_;
 
   void word1(std::uint32_t ump);
   void word2(std::uint32_t ump);
