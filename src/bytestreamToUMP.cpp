@@ -135,11 +135,6 @@ constexpr bool isStatusByte(std::byte const midi1Byte) {
   return (midi1Byte & std::byte{0x80}) != std::byte{0x00};
 }
 
-template <typename Enum>
-requires std::is_enum_v<Enum> constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
-  return static_cast<std::underlying_type_t<Enum>>(e);
-}
-
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
 constexpr bool isOneByteMessage(std::byte const midi1Byte) {
   using status_type = std::underlying_type_t<status>;

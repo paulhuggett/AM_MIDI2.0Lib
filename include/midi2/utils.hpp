@@ -25,6 +25,13 @@ namespace midi2 {
 #endif
 }
 
+template <typename Enum>
+  requires std::is_enum_v<Enum>
+constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
+
+
 enum status : std::uint8_t {
   // Channel voice messages
   note_off = 0x80,
@@ -86,12 +93,12 @@ enum control : std::uint8_t {
   nrpn_msb = 0x63,
 };
 
-enum : std::uint8_t {
-  UTILITY_NOOP = 0x0,
-  UTILITY_JRCLOCK = 0x1,
-  UTILITY_JRTS = 0x2,
-  UTILITY_DELTACLOCKTICK = 0x3,
-  UTILITY_DELTACLOCKSINCE = 0x4,
+enum class ump_utility : std::uint32_t {
+  noop = 0b0000,
+  jr_clock = 0b0001,
+  jr_ts = 0b0010,
+  delta_clock_tick = 0b0011,
+  delta_clock_since = 0b0100,
 };
 
 enum : std::uint8_t {

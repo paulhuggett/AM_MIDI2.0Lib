@@ -114,8 +114,7 @@ using midi2::pack;
 
 class MockCallbacks final : public midi2::callbacks_base {
 public:
-  MOCK_METHOD(void, utility_message, (midi2::ump_generic const&), (override));
-  MOCK_METHOD(void, system_message, (midi2::ump_generic const&), (override));
+  MOCK_METHOD(void, system_message, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
 
   MOCK_METHOD(void, flex_tempo, (std::uint8_t group, std::uint32_t num10nsPQN),
@@ -199,30 +198,45 @@ public:
   MOCK_METHOD(void, per_note_pitch_bend, (midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t), (override));
 };
 
+class UtilityMocks final : public midi2::utility_base {
+public:
+  MOCK_METHOD(void, noop, (), (override));
+  MOCK_METHOD(void, jr_clock, (midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, jr_timestamp, (midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, delta_clockstamp_tpqn, (midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, delta_clockstamp, (midi2::types::delta_clockstamp), (override));
+};
+
 }  // end anonymous namespace
 
 template class midi2::umpProcessor<MockCallbacks&>;
 
 namespace {
 
+using testing::AllOf;
+using testing::ElementsAre;
+using testing::ElementsAreArray;
+using testing::Eq;
+using testing::Field;
+using testing::InSequence;
+
 class UMPProcessor : public testing::Test {
 public:
-  UMPProcessor() : processor_{std::ref(callbacks_), std::ref(m1cvm_mocks_), std::ref(m2cvm_mocks_)} {}
+  UMPProcessor()
+      : processor_{std::ref(callbacks_), std::ref(m1cvm_mocks_), std::ref(m2cvm_mocks_), std::ref(utility_mocks_)} {}
 
   MockCallbacks callbacks_;
   M1CVMMocks m1cvm_mocks_;
   M2CVMMocks m2cvm_mocks_;
-  midi2::umpProcessor<decltype(callbacks_)&, decltype(m1cvm_mocks_)&, decltype(m2cvm_mocks_)&> processor_;
+  UtilityMocks utility_mocks_;
+  midi2::umpProcessor<decltype(callbacks_)&, decltype(m1cvm_mocks_)&, decltype(m2cvm_mocks_)&,
+                      decltype(utility_mocks_)&>
+      processor_;
 };
 
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Noop) {
-  midi2::ump_generic message;
-  message.common.group = 255;
-  message.common.messageType = midi2::ump_message_type::utility;
-  message.common.status = 0;
-  message.value = 0;
-
-  EXPECT_CALL(callbacks_, utility_message(message)).Times(1);
+  EXPECT_CALL(utility_mocks_, noop()).Times(1);
 
   midi2::types::noop w0{};
   w0.mt = static_cast<std::uint8_t>(midi2::ump_message_type::utility);
@@ -230,6 +244,52 @@ TEST_F(UMPProcessor, Noop) {
   w0.status = 0b0000;
   w0.data = 0;
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, JRClock) {
+  midi2::types::jr_clock message{};
+  message.mt = 0x0;
+  message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_clock);
+  message.sender_clock_time = 0b1010101010101010;
+  EXPECT_CALL(utility_mocks_, jr_clock(message)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(message));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, JRTimestamp) {
+  midi2::types::jr_clock message{};
+  message.mt = 0x0;
+  message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_ts);
+  message.sender_clock_time = 0b1010101010101010;
+  EXPECT_CALL(utility_mocks_, jr_timestamp(message)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(message));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, DeltaClockstampTqpn) {
+  midi2::types::jr_clock message{};
+  message.mt = 0x0;
+  message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_tick);
+  message.sender_clock_time = 0b1010101010101010;
+  EXPECT_CALL(utility_mocks_, delta_clockstamp_tpqn(message)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(message));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, DeltaClockstamp) {
+  midi2::types::delta_clockstamp message{};
+  message.mt = 0x0;
+  message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_since);
+  message.ticks_per_quarter_note = (1U << 20) - 1U;
+  EXPECT_CALL(utility_mocks_, delta_clockstamp(message)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(message));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, BadUtility) {
+  midi2::types::delta_clockstamp message{};
+  message.mt = to_underlying(midi2::ump_message_type::utility);
+  message.status = std::uint8_t{0b1111};
+
+  auto const m32 = std::bit_cast<std::uint32_t>(message);
+  EXPECT_CALL(callbacks_, unknownUMPMessage(ElementsAre(m32)));
+  processor_.processUMP(m32);
 }
 
 constexpr std::uint8_t ump_cvm(midi2::status s) {
@@ -328,12 +388,6 @@ TEST_F(UMPProcessor, Midi2ProgramChange) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
 }
-
-using testing::AllOf;
-using testing::ElementsAreArray;
-using testing::Eq;
-using testing::Field;
-using testing::InSequence;
 
 // The umpData type contains a std::span{} so we can't just lean on the default
 // operator==() for comparing instances.

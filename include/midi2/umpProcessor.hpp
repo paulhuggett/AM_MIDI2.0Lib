@@ -188,21 +188,13 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 }
 
 template <typename T> concept backend = requires(T && v) {
-  {
-    v.utility_message(ump_generic{})
-  } -> std::same_as<void>;
-  { v.system_message(ump_generic{}) } -> std::same_as<void>;
+  { v.system_message(midi2::types::system_general{}) } -> std::same_as<void>;
   { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
   { v.flex_tempo(std::uint8_t{}, std::uint32_t{}) } -> std::same_as<void>;
   { v.flex_time_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
-  {
-    v.flex_metronome(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{},
-                     std::uint8_t{})
-  } -> std::same_as<void>;
-  {
-    v.flex_key_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{})
-  } -> std::same_as<void>;
+  { v.flex_metronome(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
+  { v.flex_key_sig(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.flex_chord(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, chord{}) } -> std::same_as<void>;
   { v.flex_performance(ump_data{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.flex_lyric(ump_data{}, std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
@@ -211,13 +203,8 @@ template <typename T> concept backend = requires(T && v) {
   { v.midiEndpointName(ump_data{}) } -> std::same_as<void>;
   { v.midiEndpointProdId(ump_data{}) } -> std::same_as<void>;
   { v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
-  {
-    v.midiEndpointInfo(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, bool{}, bool{}, bool{}, bool{})
-  } -> std::same_as<void>;
-  {
-    v.midiEndpointDeviceInfo(std::array<std::uint8_t, 3>{}, std::array<std::uint8_t, 2>{},
-                             std::array<std::uint8_t, 2>{}, std::array<std::uint8_t, 4>{})
-  } -> std::same_as<void>;
+  { v.midiEndpointInfo(std::uint8_t{}, std::uint8_t{}, std::uint8_t{}, bool{}, bool{}, bool{}, bool{}) } -> std::same_as<void>;
+  { v.midiEndpointDeviceInfo(std::array<std::uint8_t, 3>{}, std::array<std::uint8_t, 2>{}, std::array<std::uint8_t, 2>{}, std::array<std::uint8_t, 4>{}) } -> std::same_as<void>;
   { v.midiEndpointJRProtocolNotify(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
 
   { v.functionBlock(std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
@@ -239,7 +226,6 @@ template<typename T> concept m1cvm_backend = requires(T && v) {
   { v.channel_pressure (types::m1cvm_w0{}) } -> std::same_as<void>;
   { v.pitch_bend (types::m1cvm_w0{}) } -> std::same_as<void>;
 };
-
 template <typename T> concept m2cvm_backend = requires(T && v) {
   { v.note_off (types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
   { v.note_on (types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
@@ -254,6 +240,13 @@ template <typename T> concept m2cvm_backend = requires(T && v) {
   { v.pitch_bend (types::m2cvm::pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
   { v.per_note_pitch_bend (types::m2cvm::per_note_pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
 };
+template <typename T> concept utility_backend = requires(T && v) {
+  { v.noop () } -> std::same_as<void>;
+  { v.jr_clock (types::jr_clock{}) } -> std::same_as<void>;
+  { v.jr_timestamp (types::jr_clock{}) } -> std::same_as<void>;
+  { v.delta_clockstamp_tpqn(types::jr_clock{}) } -> std::same_as<void>;
+  { v.delta_clockstamp(types::delta_clockstamp{}) } -> std::same_as<void>;
+};
 
 class callbacks_base {
 public:
@@ -263,9 +256,7 @@ public:
 
   callbacks_base& operator=(callbacks_base const&) = default;
 
-  //-----------------------Handlers ---------------------------
-  virtual void utility_message(ump_generic const& /*mess*/) { /* nop */ }
-  virtual void system_message(ump_generic const& /*mess*/) { /* nop */ }
+  virtual void system_message(types::system_general) { /* nop */ }
   virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
 
   //---------- Flex Data
@@ -335,14 +326,25 @@ struct m2cvm_base {
   virtual void pitch_bend(types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
   virtual void per_note_pitch_bend(types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
 };
+struct utility_base {
+  utility_base() = default;
+  utility_base(utility_base const&) = default;
+  virtual ~utility_base() noexcept = default;
+
+  virtual void noop() { /* do nothing */ }
+  virtual void jr_clock(types::jr_clock) { /* do nothing */ }
+  virtual void jr_timestamp(types::jr_clock) { /* do nothing */ }
+  virtual void delta_clockstamp_tpqn(types::jr_clock) { /* do nothing */ }
+  virtual void delta_clockstamp(types::delta_clockstamp) { /* do nothing */ }
+};
 
 template <backend Callbacks = callbacks_base, m1cvm_backend M1CVMBackend = m1cvm_base,
-          m2cvm_backend M2CVMBackend = m2cvm_base>
+          m2cvm_backend M2CVMBackend = m2cvm_base, utility_backend UtilityBackend = utility_base>
 class umpProcessor {
 public:
-  explicit umpProcessor(Callbacks cb = Callbacks{}, M1CVMBackend m1cvm = m1cvm_base{},
-                        M2CVMBackend m2cvm = m2cvm_base{})
-      : callbacks_{cb}, m1cvm_backend_{m1cvm}, m2cvm_backend_{m2cvm} {}
+  explicit umpProcessor(Callbacks const& cb = Callbacks{}, M1CVMBackend const& m1cvm = m1cvm_base{},
+                        M2CVMBackend const& m2cvm = m2cvm_base{}, UtilityBackend const& utility = utility_base{})
+      : callbacks_{cb}, m1cvm_backend_{m1cvm}, m2cvm_backend_{m2cvm}, utility_{utility} {}
 
   void clearUMP() {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
@@ -365,8 +367,8 @@ public:
 
     auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
     switch (mt) {
-    case ump_message_type::utility: this->utility_message(mt); break;
-    case ump_message_type::system: this->system_message(mt, group); break;
+    case ump_message_type::utility: this->utility_message(); break;
+    case ump_message_type::system: this->system_message(); break;
     case ump_message_type::m1cvm: this->m1cvm_message(); break;
     case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
     case ump_message_type::m2cvm: this->m2cvm_message(); break;
@@ -390,8 +392,8 @@ public:
   }
 
 private:
-  void utility_message(ump_message_type mt);
-  void system_message(ump_message_type mt, std::uint8_t group);
+  void utility_message();
+  void system_message();
   void m1cvm_message();
   void sysex7_message(ump_message_type mt, std::uint8_t group);
   void m2cvm_message();
@@ -424,6 +426,7 @@ private:
   [[no_unique_address]] Callbacks callbacks_;
   [[no_unique_address]] M1CVMBackend m1cvm_backend_;
   [[no_unique_address]] M2CVMBackend m2cvm_backend_;
+  [[no_unique_address]] UtilityBackend utility_;
 };
 
 umpProcessor() -> umpProcessor<callbacks_base>;
@@ -431,40 +434,37 @@ template <backend T> umpProcessor(T) -> umpProcessor<T>;
 template <backend T> umpProcessor(std::reference_wrapper<T>) -> umpProcessor<T&>;
 
 // 32 bit utility messages
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::utility_message(ump_message_type const mt) {
-  ump_generic mess;
-  mess.common.messageType = mt;
-  mess.common.status = static_cast<std::uint8_t>((message_[0] >> 20) & 0x0F);
-  mess.value = static_cast<std::uint16_t>((message_[0] >> 16) & 0xFFFF);
-  callbacks_.utility_message(mess);
-}
-
-// 32 bit System Real Time and System Common Messages (except System Exclusive)
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::system_message(ump_message_type const mt,
-                                                                         std::uint8_t const group) {
-  ump_generic mess;
-  mess.common.messageType = mt;
-  mess.common.group = group;
-  mess.common.status = static_cast<std::uint8_t>((message_[0] >> 16) & 0xFF);
-  switch (mess.common.status) {
-  case status::timing_code:
-  case status::song_select:
-    mess.value = (message_[0] >> 8) & 0x7F;
-    callbacks_.system_message(mess);
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::utility_message() {
+  switch (static_cast<ump_utility>((message_[0] >> 20) & 0x0F)) {
+  // 7.2.1 NOOP
+  case ump_utility::noop: utility_.noop(); break;
+  // 7.2.2.1 JR Clock
+  case ump_utility::jr_clock: utility_.jr_clock(std::bit_cast<types::jr_clock>(message_[0])); break;
+  // 7.2.2.2 JR Timestamp
+  case ump_utility::jr_ts: utility_.jr_timestamp(std::bit_cast<types::jr_clock>(message_[0])); break;
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  case ump_utility::delta_clock_tick:
+    utility_.delta_clockstamp_tpqn(std::bit_cast<types::jr_clock>(message_[0]));
     break;
-  case status::spp:
-    mess.value = static_cast<std::uint16_t>(((message_[0] >> 8) & 0x7F) | ((message_[0] & 0x7F) << 7));
-    callbacks_.system_message(mess);
+  // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
+  case ump_utility::delta_clock_since:
+    utility_.delta_clockstamp(std::bit_cast<types::delta_clockstamp>(message_[0]));
     break;
-  default: callbacks_.system_message(mess); break;
+  default: callbacks_.unknownUMPMessage(std::span{message_.data(), 1}); break;
   }
 }
 
+// 32 bit System Real Time and System Common Messages (except System Exclusive)
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::system_message() {
+  // 7.6 System Common and System Real Time Messages
+  callbacks_.system_message(std::bit_cast<types::system_general>(message_[0]));
+}
+
 // 32 Bit MIDI 1.0 Channel Voice Messages
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m1cvm_message() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::m1cvm_message() {
   auto const w0 = std::bit_cast<types::m1cvm_w0>(message_[0]);
   switch ((message_[0] >> 16) & 0xF0) {
   // 7.3.1 MIDI 1.0 Note Off Message
@@ -486,9 +486,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m1cvm_message() {
 }
 
 // 64 bit System Exclusive Data Message
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::sysex7_message(ump_message_type const mt,
-                                                                         std::uint8_t const group) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::sysex7_message(ump_message_type const mt,
+                                                                                         std::uint8_t const group) {
   std::array<std::uint8_t, 7> sysex{};
   auto const data_length = (message_[0] >> 16) & 0x7;
   if (data_length > 0) {
@@ -519,8 +519,8 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::sysex7_message(ump_mes
 }
 
 // 64 bit MIDI 2.0 Channel Voice Messages
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m2cvm_message() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::m2cvm_message() {
   switch ((message_[0] >> 16) & 0xF0) {
   // 7.4.1 MIDI 2.0 Note Off Message
   case status::note_off:
@@ -581,8 +581,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::m2cvm_message() {
   }
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midiendpoint_name_or_prodid(ump_message_type const mt) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::midiendpoint_name_or_prodid(
+    ump_message_type const mt) {
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   assert(status == MIDIENDPOINT_NAME_NOTIFICATION || status == MIDIENDPOINT_PRODID_NOTIFICATION);
 
@@ -614,9 +615,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midiendpoint_name_or_p
   }
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
 template <std::output_iterator<std::uint8_t> OutputIterator>
-constexpr OutputIterator umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::payload(
+constexpr OutputIterator umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::payload(
     std::array<std::uint32_t, 4> const& message, std::size_t index, std::size_t limit, OutputIterator out) {
   assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
   if (index >= limit) {
@@ -630,8 +631,8 @@ constexpr OutputIterator umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::pa
   return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_name() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::functionblock_name() {
   auto w0 = std::bit_cast<types::function_block_name_w0>(message_[0]);
 
   std::uint8_t const fbIdx = w0.block_number;
@@ -650,8 +651,8 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_name() {
   callbacks_.functionBlockName(mess, fbIdx);
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_info() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::functionblock_info() {
   function_block_info info;
   auto const w0 = std::bit_cast<types::function_block_info_w0>(message_[0]);
   auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[1]);
@@ -667,8 +668,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::functionblock_info() {
   callbacks_.functionBlockInfo(info);
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midi_endpoint_message(ump_message_type const mt) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::midi_endpoint_message(
+    ump_message_type const mt) {
   // 128 bits UMP Stream Messages
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
   switch (status) {
@@ -724,8 +726,8 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::midi_endpoint_message(
 }
 
 // 128 bit Data Messages (including System Exclusive 8)
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::data_message() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::data_message() {
   uint8_t const status = (message_[0] >> 20) & 0xF;
   switch (status) {
   case data_message_status::sysex8_in_1_ump:
@@ -770,8 +772,8 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::data_message() {
   }
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::set_chord_name() {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::set_chord_name() {
   auto const w0 = std::bit_cast<types::set_chord_name_w0>(message_[0]);
   auto const w1 = std::bit_cast<types::set_chord_name_w1>(message_[1]);
   auto const w2 = std::bit_cast<types::set_chord_name_w2>(message_[2]);
@@ -809,9 +811,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::set_chord_name() {
   callbacks_.flex_chord(w0.group, w0.addrs, w0.channel, c);
 }
 
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_performance_or_lyric(ump_message_type const mt,
-                                                                                        std::uint8_t const group) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::flexdata_performance_or_lyric(
+    ump_message_type const mt, std::uint8_t const group) {
   std::uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   std::uint8_t const status = message_[0] & 0xFF;
   std::uint8_t const channel = (message_[0] >> 16) & 0xF;
@@ -844,9 +846,9 @@ void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_performance_o
 }
 
 // 128 bit Data Messages (including System Exclusive 8)
-template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend>
-void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend>::flexdata_message(ump_message_type const mt,
-                                                                           std::uint8_t const group) {
+template <backend Callbacks, m1cvm_backend M1CVMBackend, m2cvm_backend M2CVMBackend, utility_backend UtilityBackend>
+void umpProcessor<Callbacks, M1CVMBackend, M2CVMBackend, UtilityBackend>::flexdata_message(ump_message_type const mt,
+                                                                                           std::uint8_t const group) {
   uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   uint8_t const status = message_[0] & 0xFF;
   uint8_t const channel = (message_[0] >> 16) & 0xF;

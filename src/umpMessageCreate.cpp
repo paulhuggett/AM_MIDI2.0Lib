@@ -60,19 +60,19 @@ uint32_t UMPMessage::mt0NOOP() {
 }
 
 uint32_t UMPMessage::mt0JRClock(uint16_t clockTime) {
-  return ((UTILITY_JRCLOCK + 0L) << 20) + clockTime;
+  return (to_underlying(ump_utility::jr_clock) << 20) | clockTime;
 }
 
 uint32_t UMPMessage::mt0JRTimeStamp(uint16_t timestamp) {
-  return ((UTILITY_JRTS + 0L) << 20) + timestamp;
+  return (to_underlying(ump_utility::jr_clock) << 20) | timestamp;
 }
 
 uint32_t UMPMessage::mt0DeltaClockTick(uint16_t ticksPerQtrNote) {
-  return ((UTILITY_DELTACLOCKTICK + 0L) << 20) + ticksPerQtrNote;
+  return (to_underlying(ump_utility::delta_clock_tick) << 20) | ticksPerQtrNote;
 }
 
 uint32_t UMPMessage::mt0DeltaTicksSinceLast(uint16_t noTicksSince) {
-  return ((UTILITY_DELTACLOCKSINCE + 0L) << 20) + noTicksSince;
+  return (to_underlying(ump_utility::delta_clock_since) << 20) | noTicksSince;
 }
 
 uint32_t UMPMessage::mt1MTC(uint8_t group, uint8_t timeCode) {

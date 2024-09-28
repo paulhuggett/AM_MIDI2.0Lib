@@ -33,6 +33,9 @@ union noop {
 // JR Timestamp
 // Delta Clockstamp Ticks Per Quarter Note
 union jr_clock {
+  friend constexpr bool operator==(jr_clock const& a, jr_clock const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;  // 0x0
   ump_bitfield<24, 4> reserved1;
   ump_bitfield<20, 4> status;  // 0b0001
@@ -42,6 +45,9 @@ union jr_clock {
 
 // Delta Clockstamp
 union delta_clockstamp {
+  friend constexpr bool operator==(delta_clockstamp const& a, delta_clockstamp const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;  // 0x0
   ump_bitfield<24, 4> reserved;
   ump_bitfield<20, 4> status;  // 0b0100
@@ -51,6 +57,13 @@ union delta_clockstamp {
 // F.1.2 Message Type 0x1: System Common & System Real Time
 // Table 27 4-Byte UMP Formats for Message Type 0x1: System Common & System Real
 // Time
+union system_general {
+  ump_bitfield<28, 4> mt;  // 0x1
+  ump_bitfield<24, 4> group;
+  ump_bitfield<16, 8> status;  // 0xF0..0xFF
+  ump_bitfield<8, 8> byte2;
+  ump_bitfield<0, 8> byte3;
+};
 
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
