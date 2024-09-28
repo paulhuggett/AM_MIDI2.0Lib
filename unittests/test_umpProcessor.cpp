@@ -284,7 +284,7 @@ TEST_F(UMPProcessor, DeltaClockstamp) {
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, BadUtility) {
   midi2::types::delta_clockstamp message{};
-  message.mt = to_underlying(midi2::ump_message_type::utility);
+  message.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::utility));
   message.status = std::uint8_t{0b1111};
 
   auto const m32 = std::bit_cast<std::uint32_t>(message);
