@@ -519,9 +519,9 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
   w0.format = 0x03;
-  w0.status = to_underlying(midi2::ump_stream::endpoint_discovery);
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_discovery));
   w0.version_major = 0x01;
   w0.version_minor = 0x01;
   midi2::types::ump_stream::endpoint_discovery_w1 w1{};
@@ -539,9 +539,9 @@ TEST_F(UMPProcessor, StreamEndpointDiscovery) {
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointInfoNotification) {
   midi2::types::ump_stream::endpoint_info_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::endpoint_info_notification);
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_info_notification));
   w0.version_major = 0x01;
   w0.version_minor = 0x01;
   midi2::types::ump_stream::endpoint_info_notification_w1 w1{};
@@ -564,9 +564,9 @@ TEST_F(UMPProcessor, StreamEndpointInfoNotification) {
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamDeviceIdentityNotification) {
   midi2::types::ump_stream::device_identity_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::device_identity_notification);
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::device_identity_notification));
   midi2::types::ump_stream::device_identity_notification_w1 w1{};
   w1.dev_manuf_sysex_id_1 = 1;
   w1.dev_manuf_sysex_id_2 = 1;
