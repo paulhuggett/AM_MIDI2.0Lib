@@ -112,22 +112,19 @@ enum : std::uint8_t {
   FLEXDATA_LYRIC = 0x02,
 };
 
-enum : std::uint32_t {
-  MIDIENDPOINT = 0x000,
-  MIDIENDPOINT_INFO_NOTIFICATION = 0x001,
-  MIDIENDPOINT_DEVICEINFO_NOTIFICATION = 0x002,
+enum class ump_stream : std::uint32_t {
+  endpoint_discovery = 0x00,
+  endpoint_info_notification = 0x01,
+  device_identity_notification = 0x02,
   MIDIENDPOINT_NAME_NOTIFICATION = 0x003,
   MIDIENDPOINT_PRODID_NOTIFICATION = 0x004,
   MIDIENDPOINT_PROTOCOL_REQUEST = 0x005,
   MIDIENDPOINT_PROTOCOL_NOTIFICATION = 0x006,
-  STARTOFSEQ = 0x020,
-  ENDOFFILE = 0x021,
-};
-
-enum : std::uint32_t {
   FUNCTIONBLOCK = 0x010,
   FUNCTIONBLOCK_INFO_NOTFICATION = 0x011,
   FUNCTIONBLOCK_NAME_NOTIFICATION = 0x012,
+  STARTOFSEQ = 0x020,
+  ENDOFFILE = 0x021,
 };
 
 enum class ci_message : std::uint8_t {
@@ -235,7 +232,7 @@ enum : std::uint32_t {
   X(reserved96_0C, 0x0C)  \
   X(flex_data, 0x0D)      \
   X(reserved128_0E, 0x0E) \
-  X(midi_endpoint, 0x0F)
+  X(ump_stream, 0x0F)
 
 #define X(a, b) a = (b),
 enum class ump_message_type : std::uint32_t { UMP_MESSAGE_TYPES };

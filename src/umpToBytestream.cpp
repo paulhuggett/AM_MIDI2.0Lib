@@ -66,7 +66,7 @@ void umpToBytestream::word1(std::uint32_t const ump) {
   case ump_message_type::reserved96_0C:
   case ump_message_type::reserved128_0E:
   case ump_message_type::flex_data:
-  case ump_message_type::midi_endpoint:
+  case ump_message_type::ump_stream:
   default: UMPPos_++; break;
   }
 }
@@ -82,7 +82,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
   case ump_message_type::reserved96_0C:
   case ump_message_type::flex_data:
   case ump_message_type::reserved128_0E:
-  case ump_message_type::midi_endpoint:
+  case ump_message_type::ump_stream:
   case ump_message_type::system: assert(false); break;
   case ump_message_type::reserved64_08:  // 64 Reserved
   case ump_message_type::reserved64_09:  // 64 Reserved
@@ -228,7 +228,7 @@ void umpToBytestream::word3(std::uint32_t /*UMP*/) {
   case ump_message_type::reserved32_07:
   case ump_message_type::flex_data:
   case ump_message_type::reserved128_0E:
-  case ump_message_type::midi_endpoint:
+  case ump_message_type::ump_stream:
   case ump_message_type::system: assert(false); unreachable();
   default: UMPPos_++; break;
   }

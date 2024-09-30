@@ -202,14 +202,22 @@ public:
                midi2::types::ump_stream::endpoint_discovery_w1, midi2::types::ump_stream::endpoint_discovery_w2,
                midi2::types::ump_stream::endpoint_discovery_w3),
               (override));
+  MOCK_METHOD(void, endpoint_info_notification,
+              (context_type, midi2::types::ump_stream::endpoint_info_notification_w0,
+               midi2::types::ump_stream::endpoint_info_notification_w1,
+               midi2::types::ump_stream::endpoint_info_notification_w2,
+               midi2::types::ump_stream::endpoint_info_notification_w3),
+              (override));
+  MOCK_METHOD(void, device_identity_notification,
+              (context_type, midi2::types::ump_stream::device_identity_notification_w0,
+               midi2::types::ump_stream::device_identity_notification_w1,
+               midi2::types::ump_stream::device_identity_notification_w2,
+               midi2::types::ump_stream::device_identity_notification_w3),
+              (override));
+
   MOCK_METHOD(void, midiEndpointName, (midi2::ump_data const&), (override));
   MOCK_METHOD(void, midiEndpointProdId, (midi2::ump_data const&), (override));
   MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool), (override));
-  MOCK_METHOD(void, midiEndpointInfo, (std::uint8_t, std::uint8_t, std::uint8_t, bool, bool, bool, bool), (override));
-  MOCK_METHOD(void, midiEndpointDeviceInfo,
-              ((std::array<std::uint8_t, 3> const&), (std::array<std::uint8_t, 2> const&),
-               (std::array<std::uint8_t, 2> const&), (std::array<std::uint8_t, 4> const&)),
-              (override));
   MOCK_METHOD(void, midiEndpointJRProtocolNotify, (std::uint8_t protocol, bool jrrx, bool jrtx), (override));
 };
 
@@ -508,12 +516,12 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   processor_.processUMP(pack((static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
                              (ump_note_on << 4) | channel, note_number, velocity));
 }
-
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery_w0 w0{};
-  w0.mt = 0x0F;
+  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x03;
-  w0.status = 0x00;
+  w0.status = to_underlying(midi2::ump_stream::endpoint_discovery);
   w0.version_major = 0x01;
   w0.version_minor = 0x01;
   midi2::types::ump_stream::endpoint_discovery_w1 w1{};
@@ -522,6 +530,58 @@ TEST_F(UMPProcessor, StreamEndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery_w3 w3{};
 
   EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamEndpointInfoNotification) {
+  midi2::types::ump_stream::endpoint_info_notification_w0 w0{};
+  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  w0.format = 0x00;
+  w0.status = to_underlying(midi2::ump_stream::endpoint_info_notification);
+  w0.version_major = 0x01;
+  w0.version_minor = 0x01;
+  midi2::types::ump_stream::endpoint_info_notification_w1 w1{};
+  w1.static_function_blocks = 1;
+  w1.number_function_blocks = 0b0101010;
+  w1.midi2_protocol_capability = 1;
+  w1.midi1_protocol_capability = 0;
+  w1.receive_jr_timestamp_capability = 1;
+  w1.transmit_jr_timestamp_capability = 0;
+  midi2::types::ump_stream::endpoint_info_notification_w2 w2{};
+  midi2::types::ump_stream::endpoint_info_notification_w3 w3{};
+
+  EXPECT_CALL(config_.ump_stream, endpoint_info_notification(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamDeviceIdentityNotification) {
+  midi2::types::ump_stream::device_identity_notification_w0 w0{};
+  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  w0.format = 0x00;
+  w0.status = to_underlying(midi2::ump_stream::device_identity_notification);
+  midi2::types::ump_stream::device_identity_notification_w1 w1{};
+  w1.dev_manuf_sysex_id_1 = 1;
+  w1.dev_manuf_sysex_id_2 = 1;
+  w1.dev_manuf_sysex_id_3 = 0;
+  midi2::types::ump_stream::device_identity_notification_w2 w2{};
+  w2.device_family_lsb = 0x79;
+  w2.device_family_msb = 0x7B;
+  w2.device_family_model_lsb = 0x7D;
+  w2.device_family_model_msb = 0x7F;
+  midi2::types::ump_stream::device_identity_notification_w3 w3{};
+  w3.sw_revision_1 = 0x7F;
+  w3.sw_revision_2 = 0x7D;
+  w3.sw_revision_3 = 0x7B;
+  w3.sw_revision_4 = 0x79;
+  EXPECT_CALL(config_.ump_stream, device_identity_notification(config_.context, w0, w1, w2, w3)).Times(1);
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
@@ -552,7 +612,7 @@ TEST_F(UMPProcessor, FunctionBlockInfo) {
   EXPECT_CALL(config_.callbacks, functionBlockInfo(fbi)).Times(1);
 
   midi2::types::function_block_info_w0 word1{};
-  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
+  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::ump_stream);
   word1.format = 0U;
   word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_negotiation_reply);
   word1.a = active;
@@ -585,13 +645,13 @@ TEST_F(UMPProcessor, FunctionBlockName) {
 
   EXPECT_CALL(
       config_.callbacks,
-      functionBlockName(UMPDataMatches(midi2::ump_common{group, midi2::ump_message_type::midi_endpoint,
+      functionBlockName(UMPDataMatches(midi2::ump_common{group, midi2::ump_message_type::ump_stream,
                                                          static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
                                        stream_id, format, std::begin(payload), std::end(payload)),
                         function_block_num));
 
   midi2::types::function_block_name_w0 word1{};
-  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
+  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::ump_stream);
   word1.format = 0U;  // "complete UMP"
   word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_set);
   word1.block_number = function_block_num;
@@ -747,9 +807,8 @@ void flex_data(std::vector<std::uint32_t> message) {
   process_message<midi2::ump_message_type::flex_data>(
       {std::begin(message), std::end(message)});
 }
-void midi_endpoint(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::midi_endpoint>(
-      {std::begin(message), std::end(message)});
+void stream(std::vector<std::uint32_t> message) {
+  process_message<midi2::ump_message_type::ump_stream>({std::begin(message), std::end(message)});
 }
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
@@ -767,7 +826,7 @@ FUZZ_TEST(UMPProcessorFuzz, data);
 // NOLINTNEXTLINE
 FUZZ_TEST(UMPProcessorFuzz, flex_data);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, midi_endpoint);
+FUZZ_TEST(UMPProcessorFuzz, stream);
 #endif
 
 // NOLINTNEXTLINE
@@ -799,8 +858,8 @@ TEST(UMPProcessorFuzz, FlexDataMessage) {
   flex_data({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, MidiEndpointaMessage) {
-  midi_endpoint({});
+TEST(UMPProcessorFuzz, UMPStreamMessage) {
+  stream({});
 }
 
 }  // end anonymous namespace

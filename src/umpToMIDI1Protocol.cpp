@@ -62,7 +62,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       break;
     case ump_message_type::data:
     case ump_message_type::flex_data:
-    case ump_message_type::midi_endpoint:
+    case ump_message_type::ump_stream:
     case ump_message_type::reserved128_0E:
     case ump_message_type::reserved64_08:
     case ump_message_type::reserved64_09:
@@ -153,7 +153,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     case ump_message_type::data:
     case ump_message_type::flex_data:
     case ump_message_type::m1cvm:
-    case ump_message_type::midi_endpoint:
+    case ump_message_type::ump_stream:
     case ump_message_type::reserved128_0E:
     case ump_message_type::reserved32_06:
     case ump_message_type::reserved32_07:
@@ -175,7 +175,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     case ump_message_type::flex_data:
     case ump_message_type::m1cvm:
     case ump_message_type::m2cvm:
-    case ump_message_type::midi_endpoint:
+    case ump_message_type::ump_stream:
     case ump_message_type::reserved128_0E:
     case ump_message_type::reserved32_06:
     case ump_message_type::reserved32_07:

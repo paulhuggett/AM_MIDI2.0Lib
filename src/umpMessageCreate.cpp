@@ -254,8 +254,8 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpoint(uint8_t filter) {
 std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointInfoNotify(uint8_t numOfFuncBlock, bool m2, bool m1, bool rxjr,
                                                               bool txjr) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] =
-      (std::uint32_t{0xF} << 28) | (MIDIENDPOINT_INFO_NOTIFICATION << 16) | (UMP_VER_MAJOR << 8) | UMP_VER_MINOR;
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::endpoint_info_notification) << 16) |
+               (UMP_VER_MAJOR << 8) | UMP_VER_MINOR;
   umpMess[1] = (static_cast<std::uint32_t>(numOfFuncBlock) << 24) | (static_cast<std::uint32_t>(m2) << 9) |
                (static_cast<std::uint32_t>(m1) << 8) | (static_cast<std::uint32_t>(rxjr) << 1) |
                static_cast<std::uint32_t>(txjr);
@@ -267,7 +267,8 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointDeviceInfoNotify(std::array<u
                                                                     std::array<uint8_t, 2> modelId,
                                                                     std::array<uint8_t, 4> version) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (MIDIENDPOINT_DEVICEINFO_NOTIFICATION << 16) /*+  numOfFuncBlock*/;
+  umpMess[0] = (std::uint32_t{0xF} << 28) |
+               (to_underlying(ump_stream::device_identity_notification) << 16) /*+  numOfFuncBlock*/;
 
   umpMess[1] = (static_cast<std::uint32_t>(manuId[0]) << 16) | static_cast<std::uint32_t>((manuId[1]) << 8) |
                static_cast<std::uint32_t>(manuId[2]);
@@ -318,7 +319,7 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(uint16_t replyType
 
 std::array<uint32_t, 4> UMPMessage::mtFFunctionBlock(uint8_t fbIdx, uint8_t filter) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (FUNCTIONBLOCK << 16) |
+  umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (to_underlying(ump_stream::FUNCTIONBLOCK) << 16) |
                (static_cast<std::uint32_t>(fbIdx) << 8) | filter;
   return umpMess;
 }
@@ -328,10 +329,10 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockInfoNotify(uint8_t fbIdx, bo
                                                                uint8_t groupLength, uint8_t midiCISupport,
                                                                uint8_t isMIDI1, uint8_t maxS8Streams) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (FUNCTIONBLOCK_INFO_NOTFICATION << 16) | ((active ? 1U : 0U) << 15) |
-               (static_cast<std::uint32_t>(fbIdx) << 8) | (static_cast<std::uint32_t>(recv) << 5) |
-               (static_cast<std::uint32_t>(sender) << 4) | (static_cast<std::uint32_t>(isMIDI1) << 2) |
-               static_cast<std::uint32_t>(direction);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::FUNCTIONBLOCK_INFO_NOTFICATION) << 16) |
+               ((active ? 1U : 0U) << 15) | (static_cast<std::uint32_t>(fbIdx) << 8) |
+               (static_cast<std::uint32_t>(recv) << 5) | (static_cast<std::uint32_t>(sender) << 4) |
+               (static_cast<std::uint32_t>(isMIDI1) << 2) | static_cast<std::uint32_t>(direction);
   umpMess[1] = (static_cast<std::uint32_t>(firstGroup) << 24) | (static_cast<std::uint32_t>(groupLength) << 16) |
                (static_cast<std::uint32_t>(midiCISupport) << 8) | maxS8Streams;
   return umpMess;
@@ -353,7 +354,8 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(uint8_t fbIdx, ui
     }
   }
   umpMess[0] = (std::uint32_t{0xF} << 28) | (static_cast<std::uint32_t>(form) << 26) |
-               (FUNCTIONBLOCK_NAME_NOTIFICATION << 16) | (static_cast<std::uint32_t>(fbIdx) << 8);
+               (to_underlying(ump_stream::FUNCTIONBLOCK_NAME_NOTIFICATION) << 16) |
+               (static_cast<std::uint32_t>(fbIdx) << 8);
   if (offset < textLen) {
     umpMess[0] += static_cast<std::uint32_t>(text[offset++]);
   }
@@ -376,19 +378,19 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(uint8_t fbIdx, ui
 
 std::array<uint32_t, 4> UMPMessage::mtFStartOfSeq() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (std::uint32_t{STARTOFSEQ} << 16);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::STARTOFSEQ) << 16);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFEndOfFile() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (std::uint32_t{ENDOFFILE} << 16);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::ENDOFFILE) << 16);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFRequestProtocol(uint8_t protocol, bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (MIDIENDPOINT_PROTOCOL_REQUEST << 16) |
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::MIDIENDPOINT_PROTOCOL_REQUEST) << 16) |
                (static_cast<std::uint32_t>(protocol) << 8) | (static_cast<std::uint32_t>(jrrx) << 1) |
                static_cast<std::uint32_t>(jrtx);
   return umpMess;
@@ -396,7 +398,7 @@ std::array<uint32_t, 4> UMPMessage::mtFRequestProtocol(uint8_t protocol, bool jr
 
 std::array<uint32_t, 4> UMPMessage::mtFNotifyProtocol(uint8_t protocol, bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (MIDIENDPOINT_PROTOCOL_NOTIFICATION << 16) |
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::MIDIENDPOINT_PROTOCOL_NOTIFICATION) << 16) |
                (static_cast<std::uint32_t>(protocol) << 8) | (static_cast<std::uint32_t>(jrrx) << 1) |
                static_cast<std::uint32_t>(jrtx);
   return umpMess;

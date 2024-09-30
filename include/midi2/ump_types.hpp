@@ -271,6 +271,82 @@ union endpoint_discovery_w1 {
 using endpoint_discovery_w2 = std::uint32_t;
 using endpoint_discovery_w3 = std::uint32_t;
 
+// 7.1.2 Endpoint Info Notification Message
+union endpoint_info_notification_w0 {
+  friend constexpr bool operator==(endpoint_info_notification_w0 const& a, endpoint_info_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;
+  ump_bitfield<26, 2> format;
+  ump_bitfield<16, 10> status;
+  ump_bitfield<8, 8> version_major;
+  ump_bitfield<0, 8> version_minor;
+};
+union endpoint_info_notification_w1 {
+  friend constexpr bool operator==(endpoint_info_notification_w1 const& a, endpoint_info_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<31, 1> static_function_blocks;
+  ump_bitfield<24, 7> number_function_blocks;
+  ump_bitfield<10, 14> reserved0;
+  ump_bitfield<9, 1> midi2_protocol_capability;
+  ump_bitfield<8, 1> midi1_protocol_capability;
+  ump_bitfield<2, 6> reserved1;
+  ump_bitfield<1, 1> receive_jr_timestamp_capability;
+  ump_bitfield<0, 1> transmit_jr_timestamp_capability;
+};
+using endpoint_info_notification_w2 = std::uint32_t;
+using endpoint_info_notification_w3 = std::uint32_t;
+
+// 7.1.3 Device Identity Notification Message
+union device_identity_notification_w0 {
+  friend constexpr bool operator==(device_identity_notification_w0 const& a, device_identity_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;
+  ump_bitfield<26, 2> format;
+  ump_bitfield<16, 10> status;
+  ump_bitfield<0, 16> reserved0;
+};
+union device_identity_notification_w1 {
+  friend constexpr bool operator==(device_identity_notification_w1 const& a, device_identity_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> reserved0;
+  ump_bitfield<23, 1> reserved1;
+  ump_bitfield<16, 7> dev_manuf_sysex_id_1;  // device manufacturer sysex id byte 1
+  ump_bitfield<15, 1> reserved2;
+  ump_bitfield<8, 7> dev_manuf_sysex_id_2;  // device manufacturer sysex id byte 2
+  ump_bitfield<7, 1> reserved3;
+  ump_bitfield<0, 7> dev_manuf_sysex_id_3;  // device manufacturer sysex id byte 3
+};
+union device_identity_notification_w2 {
+  friend constexpr bool operator==(device_identity_notification_w2 const& a, device_identity_notification_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<31, 1> reserved0;
+  ump_bitfield<24, 7> device_family_lsb;
+  ump_bitfield<23, 1> reserved1;
+  ump_bitfield<16, 7> device_family_msb;
+  ump_bitfield<15, 1> reserved2;
+  ump_bitfield<8, 7> device_family_model_lsb;
+  ump_bitfield<7, 1> reserved3;
+  ump_bitfield<0, 7> device_family_model_msb;
+};
+union device_identity_notification_w3 {
+  friend constexpr bool operator==(device_identity_notification_w3 const& a, device_identity_notification_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<31, 1> reserved0;
+  ump_bitfield<24, 7> sw_revision_1;  // Software revision level byte 1
+  ump_bitfield<23, 1> reserved1;
+  ump_bitfield<16, 7> sw_revision_2;  // Software revision level byte 2
+  ump_bitfield<15, 1> reserved2;
+  ump_bitfield<8, 7> sw_revision_3;  // Software revision level byte 3
+  ump_bitfield<7, 1> reserved3;
+  ump_bitfield<0, 7> sw_revision_4;  // Software revision level byte 4
+};
+
 };  // end namespace ump_stream
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
