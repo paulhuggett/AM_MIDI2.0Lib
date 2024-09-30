@@ -104,10 +104,10 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
   std::array const input{std::byte{static_cast<std::byte>(midi2::status::note_on) | channel}, note_number, velocity,
                          note_number, std::byte{0}};
 
-  auto const m0 =
+  constexpr auto m0 =
       std::uint32_t{(2U << 28) | (group << 24) | (ump_note_on << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::to_integer<std::uint32_t>(velocity)};
-  auto const m1 =
+  constexpr auto m1 =
       std::uint32_t{(2U << 28) | (group << 24) | (ump_note_on << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::uint32_t{0x00}};
   std::array const expected{m0, m1};
