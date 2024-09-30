@@ -220,10 +220,25 @@ public:
                midi2::types::ump_stream::endpoint_name_notification_w2,
                midi2::types::ump_stream::endpoint_name_notification_w3),
               (override));
+  MOCK_METHOD(void, product_instance_id_notification,
+              (context_type, midi2::types::ump_stream::product_instance_id_notification_w0,
+               midi2::types::ump_stream::product_instance_id_notification_w1,
+               midi2::types::ump_stream::product_instance_id_notification_w2,
+               midi2::types::ump_stream::product_instance_id_notification_w3),
+              (override));
 
-  MOCK_METHOD(void, midiEndpointProdId, (midi2::ump_data const&), (override));
-  MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool), (override));
-  MOCK_METHOD(void, midiEndpointJRProtocolNotify, (std::uint8_t protocol, bool jrrx, bool jrtx), (override));
+  MOCK_METHOD(void, jr_configuration_request,
+              (context_type, midi2::types::ump_stream::jr_configuration_request_w0,
+               midi2::types::ump_stream::jr_configuration_request_w1,
+               midi2::types::ump_stream::jr_configuration_request_w2,
+               midi2::types::ump_stream::jr_configuration_request_w3),
+              (override));
+  MOCK_METHOD(void, jr_configuration_notification,
+              (context_type, midi2::types::ump_stream::jr_configuration_notification_w0,
+               midi2::types::ump_stream::jr_configuration_notification_w1,
+               midi2::types::ump_stream::jr_configuration_notification_w2,
+               midi2::types::ump_stream::jr_configuration_notification_w3),
+              (override));
 };
 
 }  // end anonymous namespace
@@ -380,6 +395,7 @@ TEST_F(UMPProcessor, Midi1NoteOff) {
   EXPECT_CALL(config_.m1cvm, note_off(config_.context, w0)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
 }
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi1PolyPressure) {
   midi2::types::m1cvm_w0 w0{};
   w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
@@ -391,6 +407,7 @@ TEST_F(UMPProcessor, Midi1PolyPressure) {
   EXPECT_CALL(config_.m1cvm, poly_pressure(config_.context, w0)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
 }
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi1ControlChange) {
   midi2::types::m1cvm_w0 w0{};
   w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
@@ -599,23 +616,23 @@ TEST_F(UMPProcessor, StreamEndpointNameNotification) {
   w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
   w0.format = 0x00;
   w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_name_notification));
-  w0.name_byte_1 = std::uint8_t{'a'};
-  w0.name_byte_2 = std::uint8_t{'b'};
+  w0.name1 = std::uint8_t{'a'};
+  w0.name2 = std::uint8_t{'b'};
   midi2::types::ump_stream::endpoint_name_notification_w1 w1{};
-  w1.name_byte_3 = std::uint8_t{'c'};
-  w1.name_byte_4 = std::uint8_t{'d'};
-  w1.name_byte_5 = std::uint8_t{'e'};
-  w1.name_byte_6 = std::uint8_t{'f'};
+  w1.name3 = std::uint8_t{'c'};
+  w1.name4 = std::uint8_t{'d'};
+  w1.name5 = std::uint8_t{'e'};
+  w1.name6 = std::uint8_t{'f'};
   midi2::types::ump_stream::endpoint_name_notification_w2 w2{};
-  w2.name_byte_7 = std::uint8_t{'g'};
-  w2.name_byte_8 = std::uint8_t{'h'};
-  w2.name_byte_9 = std::uint8_t{'i'};
-  w2.name_byte_10 = std::uint8_t{'j'};
+  w2.name7 = std::uint8_t{'g'};
+  w2.name8 = std::uint8_t{'h'};
+  w2.name9 = std::uint8_t{'i'};
+  w2.name10 = std::uint8_t{'j'};
   midi2::types::ump_stream::endpoint_name_notification_w3 w3{};
-  w3.name_byte_11 = std::uint8_t{'k'};
-  w3.name_byte_12 = std::uint8_t{'l'};
-  w3.name_byte_13 = std::uint8_t{'m'};
-  w3.name_byte_14 = std::uint8_t{'m'};
+  w3.name11 = std::uint8_t{'k'};
+  w3.name12 = std::uint8_t{'l'};
+  w3.name13 = std::uint8_t{'m'};
+  w3.name14 = std::uint8_t{'m'};
   EXPECT_CALL(config_.ump_stream, endpoint_name_notification(config_.context, w0, w1, w2, w3)).Times(1);
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
@@ -623,7 +640,37 @@ TEST_F(UMPProcessor, StreamEndpointNameNotification) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamProductInstanceIdNotification) {
+  midi2::types::ump_stream::product_instance_id_notification_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::product_instance_id_notification));
+  w0.pid1 = 0x22;
+  w0.pid2 = 0x33;
+  midi2::types::ump_stream::product_instance_id_notification_w1 w1{};
+  w1.pid3 = 0x44;
+  w1.pid4 = 0x55;
+  w1.pid5 = 0x66;
+  w1.pid6 = 0x77;
+  midi2::types::ump_stream::product_instance_id_notification_w2 w2{};
+  w2.pid7 = 0x88;
+  w2.pid8 = 0x99;
+  w2.pid9 = 0xAA;
+  w2.pid10 = 0xBB;
+  midi2::types::ump_stream::product_instance_id_notification_w3 w3{};
+  w3.pid11 = 0xCC;
+  w3.pid12 = 0xDD;
+  w3.pid13 = 0xEE;
+  w3.pid14 = 0xFF;
+  EXPECT_CALL(config_.ump_stream, product_instance_id_notification(config_.context, w0, w1, w2, w3)).Times(1);
 
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, FunctionBlockInfo) {
   constexpr auto active = std::uint32_t{0b1};  // 1 bit
   constexpr auto first_group = std::uint8_t{0};
@@ -669,7 +716,7 @@ TEST_F(UMPProcessor, FunctionBlockInfo) {
   processor_.processUMP(0);
   processor_.processUMP(0);
 }
-
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, FunctionBlockName) {
   constexpr auto function_block_num = std::uint8_t{0b0101010};  // 8 bits
   constexpr auto group = std::uint8_t{0xFF};
@@ -697,7 +744,7 @@ TEST_F(UMPProcessor, FunctionBlockName) {
   processor_.processUMP(0);
   processor_.processUMP(0);
 }
-
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, SetChordName) {
   constexpr auto group = std::uint8_t{0x0F};
   constexpr auto addrs = std::uint8_t{0x03};
@@ -763,7 +810,7 @@ TEST_F(UMPProcessor, SetChordName) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(word3));
   processor_.processUMP(std::bit_cast<std::uint32_t>(word4));
 }
-
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Sysex7) {
   std::array data{std::uint8_t{1}, std::uint8_t{2}, std::uint8_t{3}, std::uint8_t{4}, std::uint8_t{5}};
 

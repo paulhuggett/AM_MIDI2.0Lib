@@ -255,9 +255,9 @@ union endpoint_discovery_w0 {
   friend constexpr bool operator==(endpoint_discovery_w0 const& a, endpoint_discovery_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x00
   ump_bitfield<8, 8> version_major;
   ump_bitfield<0, 8> version_minor;
 };
@@ -276,9 +276,9 @@ union endpoint_info_notification_w0 {
   friend constexpr bool operator==(endpoint_info_notification_w0 const& a, endpoint_info_notification_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x01
   ump_bitfield<8, 8> version_major;
   ump_bitfield<0, 8> version_minor;
 };
@@ -303,9 +303,9 @@ union device_identity_notification_w0 {
   friend constexpr bool operator==(device_identity_notification_w0 const& a, device_identity_notification_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x02
   ump_bitfield<0, 16> reserved0;
 };
 union device_identity_notification_w1 {
@@ -352,39 +352,112 @@ union endpoint_name_notification_w0 {
   friend constexpr bool operator==(endpoint_name_notification_w0 const& a, endpoint_name_notification_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<28, 4> mt;
+  ump_bitfield<28, 4> mt;  // 0x0F
   ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
-  ump_bitfield<8, 8> name_byte_1;
-  ump_bitfield<0, 8> name_byte_2;
+  ump_bitfield<16, 10> status;  // 0x03
+  ump_bitfield<8, 8> name1;
+  ump_bitfield<0, 8> name2;
 };
 union endpoint_name_notification_w1 {
   friend constexpr bool operator==(endpoint_name_notification_w1 const& a, endpoint_name_notification_w1 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<24, 8> name_byte_3;
-  ump_bitfield<16, 8> name_byte_4;
-  ump_bitfield<8, 8> name_byte_5;
-  ump_bitfield<0, 8> name_byte_6;
+  ump_bitfield<24, 8> name3;
+  ump_bitfield<16, 8> name4;
+  ump_bitfield<8, 8> name5;
+  ump_bitfield<0, 8> name6;
 };
 union endpoint_name_notification_w2 {
   friend constexpr bool operator==(endpoint_name_notification_w2 const& a, endpoint_name_notification_w2 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<24, 8> name_byte_7;
-  ump_bitfield<16, 8> name_byte_8;
-  ump_bitfield<8, 8> name_byte_9;
-  ump_bitfield<0, 8> name_byte_10;
+  ump_bitfield<24, 8> name7;
+  ump_bitfield<16, 8> name8;
+  ump_bitfield<8, 8> name9;
+  ump_bitfield<0, 8> name10;
 };
 union endpoint_name_notification_w3 {
   friend constexpr bool operator==(endpoint_name_notification_w3 const& a, endpoint_name_notification_w3 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
-  ump_bitfield<24, 8> name_byte_11;
-  ump_bitfield<16, 8> name_byte_12;
-  ump_bitfield<8, 8> name_byte_13;
-  ump_bitfield<0, 8> name_byte_14;
+  ump_bitfield<24, 8> name11;
+  ump_bitfield<16, 8> name12;
+  ump_bitfield<8, 8> name13;
+  ump_bitfield<0, 8> name14;
 };
+
+// 7.1.5 Product Instance Id Notification Message
+union product_instance_id_notification_w0 {
+  friend constexpr bool operator==(product_instance_id_notification_w0 const& a,
+                                   product_instance_id_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;
+  ump_bitfield<26, 2> format;
+  ump_bitfield<16, 10> status;
+  ump_bitfield<8, 8> pid1;
+  ump_bitfield<0, 8> pid2;
+};
+union product_instance_id_notification_w1 {
+  friend constexpr bool operator==(product_instance_id_notification_w1 const& a,
+                                   product_instance_id_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> pid3;
+  ump_bitfield<16, 8> pid4;
+  ump_bitfield<8, 8> pid5;
+  ump_bitfield<0, 8> pid6;
+};
+union product_instance_id_notification_w2 {
+  friend constexpr bool operator==(product_instance_id_notification_w2 const& a,
+                                   product_instance_id_notification_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> pid7;
+  ump_bitfield<16, 8> pid8;
+  ump_bitfield<8, 8> pid9;
+  ump_bitfield<0, 8> pid10;
+};
+union product_instance_id_notification_w3 {
+  friend constexpr bool operator==(product_instance_id_notification_w3 const& a,
+                                   product_instance_id_notification_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> pid11;
+  ump_bitfield<16, 8> pid12;
+  ump_bitfield<8, 8> pid13;
+  ump_bitfield<0, 8> pid14;
+};
+
+// 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
+// 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
+// 7.1.6.2 JR Stream Configuration Request
+union jr_configuration_request_w0 {
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x05
+  ump_bitfield<8, 8> protocol;
+  ump_bitfield<2, 6> reserved0;
+  ump_bitfield<1, 1> rxjr;
+  ump_bitfield<0, 1> txjr;
+};
+using jr_configuration_request_w1 = std::uint32_t;
+using jr_configuration_request_w2 = std::uint32_t;
+using jr_configuration_request_w3 = std::uint32_t;
+
+// 7.1.6.3 JR Stream Configuration Notification Message
+union jr_configuration_notification_w0 {
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x06
+  ump_bitfield<8, 8> protocol;
+  ump_bitfield<2, 6> reserved0;
+  ump_bitfield<1, 1> rxjr;
+  ump_bitfield<0, 1> txjr;
+};
+using jr_configuration_notification_w1 = std::uint32_t;
+using jr_configuration_notification_w2 = std::uint32_t;
+using jr_configuration_notification_w3 = std::uint32_t;
 
 };  // end namespace ump_stream
 

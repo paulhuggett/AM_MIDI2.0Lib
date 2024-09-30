@@ -390,7 +390,7 @@ std::array<uint32_t, 4> UMPMessage::mtFEndOfFile() {
 
 std::array<uint32_t, 4> UMPMessage::mtFRequestProtocol(uint8_t protocol, bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::MIDIENDPOINT_PROTOCOL_REQUEST) << 16) |
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::jr_configuration_request) << 16) |
                (static_cast<std::uint32_t>(protocol) << 8) | (static_cast<std::uint32_t>(jrrx) << 1) |
                static_cast<std::uint32_t>(jrtx);
   return umpMess;
@@ -398,7 +398,7 @@ std::array<uint32_t, 4> UMPMessage::mtFRequestProtocol(uint8_t protocol, bool jr
 
 std::array<uint32_t, 4> UMPMessage::mtFNotifyProtocol(uint8_t protocol, bool jrrx, bool jrtx) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::MIDIENDPOINT_PROTOCOL_NOTIFICATION) << 16) |
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::jr_configuration_notification) << 16) |
                (static_cast<std::uint32_t>(protocol) << 8) | (static_cast<std::uint32_t>(jrrx) << 1) |
                static_cast<std::uint32_t>(jrtx);
   return umpMess;

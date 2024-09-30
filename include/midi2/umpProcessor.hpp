@@ -256,12 +256,22 @@ concept ump_stream_backend = requires(T v, Context context) {
       types::ump_stream::endpoint_name_notification_w1{},
       types::ump_stream::endpoint_name_notification_w2{},
       types::ump_stream::endpoint_name_notification_w3{}) } -> std::same_as<void>;
-
-
-  { v.midiEndpointProdId(ump_data{}) } -> std::same_as<void>;
-  { v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
-  { v.midiEndpointJRProtocolNotify(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
-  };
+  { v.product_instance_id_notification(context,
+      types::ump_stream::product_instance_id_notification_w0{},
+      types::ump_stream::product_instance_id_notification_w1{},
+      types::ump_stream::product_instance_id_notification_w2{},
+      types::ump_stream::product_instance_id_notification_w3{}) } -> std::same_as<void>;
+  { v.jr_configuration_request(context,
+      types::ump_stream::jr_configuration_request_w0{},
+      types::ump_stream::jr_configuration_request_w1{},
+      types::ump_stream::jr_configuration_request_w2{},
+      types::ump_stream::jr_configuration_request_w3{}) } -> std::same_as<void>;
+  { v.jr_configuration_notification(context,
+      types::ump_stream::jr_configuration_notification_w0{},
+      types::ump_stream::jr_configuration_notification_w1{},
+      types::ump_stream::jr_configuration_notification_w2{},
+      types::ump_stream::jr_configuration_notification_w3{}) } -> std::same_as<void>;
+};
 template <typename T, typename Context>
 concept flex_backend = requires(T v, Context context) {
   { v.tempo(context, uint8_t{}, uint32_t{}) } -> std::same_as<void>;
@@ -389,10 +399,18 @@ template <typename Context> struct ump_stream_base {
                                           types::ump_stream::endpoint_name_notification_w1,
                                           types::ump_stream::endpoint_name_notification_w2,
                                           types::ump_stream::endpoint_name_notification_w3) { /* do nothing */ }
-
-  virtual void midiEndpointProdId(ump_data const& /*mess*/) { /* do nothing */ }
-  virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* do nothing */ }
-  virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* do nothing */ }
+  virtual void product_instance_id_notification(
+      Context, types::ump_stream::product_instance_id_notification_w0,
+      types::ump_stream::product_instance_id_notification_w1, types::ump_stream::product_instance_id_notification_w2,
+      types::ump_stream::product_instance_id_notification_w3) { /* do nothing */ }
+  virtual void jr_configuration_request(Context, types::ump_stream::jr_configuration_request_w0,
+                                        types::ump_stream::jr_configuration_request_w1,
+                                        types::ump_stream::jr_configuration_request_w2,
+                                        types::ump_stream::jr_configuration_request_w3) { /* do nothing */ }
+  virtual void jr_configuration_notification(Context, types::ump_stream::jr_configuration_notification_w0,
+                                             types::ump_stream::jr_configuration_notification_w1,
+                                             types::ump_stream::jr_configuration_notification_w2,
+                                             types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
 };
 
 struct default_config {
@@ -438,7 +456,7 @@ public:
     case ump_message_type::m2cvm: this->m2cvm_message(); break;
     case ump_message_type::data: this->data_message(); break;
     case ump_message_type::flex_data: this->flexdata_message(mt, group); break;
-    case ump_message_type::ump_stream: this->midi_endpoint_message(mt); break;
+    case ump_message_type::ump_stream: this->midi_endpoint_message(); break;
 
     case ump_message_type::reserved32_06:
     case ump_message_type::reserved32_07:
@@ -461,7 +479,7 @@ private:
   void m1cvm_message();
   void sysex7_message(ump_message_type mt, std::uint8_t group);
   void m2cvm_message();
-  void midi_endpoint_message(ump_message_type mt);
+  void midi_endpoint_message();
   void data_message();
   void flexdata_message(ump_message_type mt, std::uint8_t group);
 
@@ -478,7 +496,6 @@ private:
   static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
                                           std::size_t limit, OutputIterator out);
 
-  void midiendpoint_name_or_prodid(ump_message_type mt);
   void functionblock_name();
   void functionblock_info();
   void set_chord_name();
@@ -654,35 +671,6 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
 }
 
 template <ump_processor_config Config>
-void umpProcessor<Config>::midiendpoint_name_or_prodid(ump_message_type const mt) {
-  std::uint16_t status = (message_[0] >> 16) & 0x3FF;
-  assert(status == to_underlying(ump_stream::MIDIENDPOINT_PRODID_NOTIFICATION));
-
-  std::array<std::uint8_t, 14> text{};
-  auto text_length = 0U;
-  if ((message_[0] >> 8) & 0xFF) {
-    text[text_length++] = (message_[0] >> 8) & 0xFF;
-  }
-  if (message_[0] & 0xFF) {
-    text[text_length++] = message_[0] & 0xFF;
-  }
-  for (auto i = 1U; i <= 3U; ++i) {
-    for (auto j = 24; j >= 0; j -= 8) {
-      if (std::uint8_t c = (message_[i] >> j) & 0xFF) {
-        text[text_length++] = c;
-      }
-    }
-  }
-  assert(text_length <= text.size());
-  ump_data mess;
-  mess.common.messageType = mt;
-  mess.common.status = static_cast<std::uint8_t>(status);
-  mess.form = message_[0] >> 24 & 0x3;
-  mess.data = std::span{text.data(), text_length};
-  config_.ump_stream.midiEndpointProdId(mess);
-}
-
-template <ump_processor_config Config>
 template <std::output_iterator<std::uint8_t> OutputIterator>
 constexpr OutputIterator umpProcessor<Config>::payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
                                                        std::size_t limit, OutputIterator out) {
@@ -733,7 +721,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::functionblock_
   config_.callbacks.functionBlockInfo(info);
 }
 
-template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_message(ump_message_type const mt) {
+template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_message() {
   // 128 bits UMP Stream Messages
   auto const status = static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U));
   switch (status) {
@@ -769,14 +757,27 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::endpoint_name_notification_w3>(message_[3]));
     break;
 
-  case ump_stream::MIDIENDPOINT_PRODID_NOTIFICATION: this->midiendpoint_name_or_prodid(mt); break;
-  case ump_stream::MIDIENDPOINT_PROTOCOL_REQUEST:  // JR Protocol Req
-    config_.ump_stream.midiEndpointJRProtocolReq(static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
-                                                 message_[0] & 1);
+  case ump_stream::product_instance_id_notification:
+    config_.ump_stream.product_instance_id_notification(
+        config_.context, std::bit_cast<types::ump_stream::product_instance_id_notification_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::product_instance_id_notification_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::product_instance_id_notification_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::product_instance_id_notification_w3>(message_[3]));
     break;
-  case ump_stream::MIDIENDPOINT_PROTOCOL_NOTIFICATION:  // JR Protocol Req
-    config_.ump_stream.midiEndpointJRProtocolNotify(static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,
-                                                    message_[0] & 1);
+
+  case ump_stream::jr_configuration_request:
+    config_.ump_stream.jr_configuration_request(
+        config_.context, std::bit_cast<types::ump_stream::jr_configuration_request_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::jr_configuration_request_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::jr_configuration_request_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::jr_configuration_request_w3>(message_[3]));
+    break;
+  case ump_stream::jr_configuration_notification:
+    config_.ump_stream.jr_configuration_notification(
+        config_.context, std::bit_cast<types::ump_stream::jr_configuration_notification_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::jr_configuration_notification_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::jr_configuration_notification_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::jr_configuration_notification_w3>(message_[3]));
     break;
 
   case ump_stream::FUNCTIONBLOCK:
