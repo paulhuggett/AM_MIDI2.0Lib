@@ -112,51 +112,12 @@ namespace {
 
 using midi2::pack;
 
+using context_type = int;
+
 class MockCallbacks final : public midi2::callbacks_base {
 public:
-  MOCK_METHOD(void, system_message, (midi2::types::system_general), (override));
+  MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
-
-  MOCK_METHOD(void, flex_tempo, (std::uint8_t group, std::uint32_t num10nsPQN),
-              (override));
-  MOCK_METHOD(void, flex_time_sig,
-              (std::uint8_t group, std::uint8_t numerator,
-               std::uint8_t denominator, std::uint8_t num32Notes),
-              (override));
-  MOCK_METHOD(void, flex_metronome,
-              (std::uint8_t group, std::uint8_t numClkpPriCli,
-               std::uint8_t bAccP1, std::uint8_t bAccP2, std::uint8_t bAccP3,
-               std::uint8_t numSubDivCli1, std::uint8_t numSubDivCli2),
-              (override));
-  MOCK_METHOD(void, flex_key_sig,
-              (std::uint8_t group, std::uint8_t addrs, std::uint8_t channel,
-               std::uint8_t sharpFlats, std::uint8_t tonic),
-              (override));
-  MOCK_METHOD(void, flex_chord,
-              (std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&),
-              (override));
-  MOCK_METHOD(void, flex_performance, (midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
-              (override));
-  MOCK_METHOD(void, flex_lyric, (midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel), (override));
-
-  MOCK_METHOD(void, midiEndpoint, (std::uint8_t, std::uint8_t, std::uint8_t),
-              (override));
-  MOCK_METHOD(void, midiEndpointName, (midi2::ump_data const&), (override));
-  MOCK_METHOD(void, midiEndpointProdId, (midi2::ump_data const&), (override));
-  MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool),
-              (override));
-  MOCK_METHOD(void, midiEndpointInfo,
-              (std::uint8_t, std::uint8_t, std::uint8_t, bool, bool, bool,
-               bool),
-              (override));
-  MOCK_METHOD(void, midiEndpointDeviceInfo,
-              ((std::array<std::uint8_t, 3> const&),
-               (std::array<std::uint8_t, 2> const&),
-               (std::array<std::uint8_t, 2> const&),
-               (std::array<std::uint8_t, 4> const&)),
-              (override));
-  MOCK_METHOD(void, midiEndpointJRProtocolNotify,
-              (std::uint8_t protocol, bool jrrx, bool jrtx), (override));
 
   MOCK_METHOD(void, functionBlock, (std::uint8_t fbIdx, std::uint8_t filter),
               (override));
@@ -170,46 +131,89 @@ public:
   MOCK_METHOD(void, unknownUMPMessage, (std::span<std::uint32_t>), (override));
 };
 
-class M1CVMMocks final : public midi2::m1cvm_base {
+class M1CVMMocks final : public midi2::m1cvm_base<context_type> {
 public:
-  MOCK_METHOD(void, note_off, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, note_on, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, poly_pressure, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, control_change, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, program_change, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, channel_pressure, (midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, pitch_bend, (midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, note_off, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, control_change, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm_w0), (override));
 };
 
-class M2CVMMocks final : public midi2::m2cvm_base {
+class M2CVMMocks final : public midi2::m2cvm_base<context_type> {
 public:
-  MOCK_METHOD(void, note_off, (midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
-  MOCK_METHOD(void, note_on, (midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
-  MOCK_METHOD(void, poly_pressure, (midi2::types::m2cvm::poly_pressure_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, program_change, (midi2::types::m2cvm::program_change_w0, midi2::types::m2cvm::program_change_w1),
+  MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
+  MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
+  MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m2cvm::poly_pressure_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, program_change,
+              (context_type, midi2::types::m2cvm::program_change_w0, midi2::types::m2cvm::program_change_w1),
               (override));
-  MOCK_METHOD(void, channel_pressure, (midi2::types::m2cvm::channel_pressure_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, rpn_controller, (midi2::types::m2cvm::controller_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, nrpn_controller, (midi2::types::m2cvm::controller_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, per_note_management, (midi2::types::m2cvm::per_note_management_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, control_change, (midi2::types::m2cvm::control_change_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, controller_message, (midi2::types::m2cvm::controller_message_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, pitch_bend, (midi2::types::m2cvm::pitch_bend_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, per_note_pitch_bend, (midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m2cvm::channel_pressure_w0, std::uint32_t),
+              (override));
+  MOCK_METHOD(void, rpn_controller, (context_type, midi2::types::m2cvm::controller_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, nrpn_controller, (context_type, midi2::types::m2cvm::controller_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management_w0, std::uint32_t),
+              (override));
+  MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, controller_message, (context_type, midi2::types::m2cvm::controller_message_w0, std::uint32_t),
+              (override));
+  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m2cvm::pitch_bend_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t),
+              (override));
 };
 
-class UtilityMocks final : public midi2::utility_base {
+class UtilityMocks final : public midi2::utility_base<context_type> {
 public:
-  MOCK_METHOD(void, noop, (), (override));
-  MOCK_METHOD(void, jr_clock, (midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, jr_timestamp, (midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, delta_clockstamp_tpqn, (midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, delta_clockstamp, (midi2::types::delta_clockstamp), (override));
+  MOCK_METHOD(void, noop, (context_type), (override));
+  MOCK_METHOD(void, jr_clock, (context_type, midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, jr_timestamp, (context_type, midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, delta_clockstamp_tpqn, (context_type, midi2::types::jr_clock), (override));
+  MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::delta_clockstamp), (override));
+};
+
+class FlexMocks final : public midi2::flex_base<context_type> {
+public:
+  MOCK_METHOD(void, tempo, (context_type, std::uint8_t group, std::uint32_t num10nsPQN), (override));
+  MOCK_METHOD(void, time_sig,
+              (context_type, std::uint8_t group, std::uint8_t numerator, std::uint8_t denominator,
+               std::uint8_t num32Notes),
+              (override));
+  MOCK_METHOD(void, metronome,
+              (context_type, std::uint8_t group, std::uint8_t numClkpPriCli, std::uint8_t bAccP1, std::uint8_t bAccP2,
+               std::uint8_t bAccP3, std::uint8_t numSubDivCli1, std::uint8_t numSubDivCli2),
+              (override));
+  MOCK_METHOD(void, key_sig,
+              (context_type, std::uint8_t group, std::uint8_t addrs, std::uint8_t channel, std::uint8_t sharpFlats,
+               std::uint8_t tonic),
+              (override));
+  MOCK_METHOD(void, chord, (context_type, std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&), (override));
+  MOCK_METHOD(void, performance, (context_type, midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
+              (override));
+  MOCK_METHOD(void, lyric, (context_type, midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
+              (override));
+};
+
+class UMPStreamMocks final : public midi2::ump_stream_base<context_type> {
+public:
+  MOCK_METHOD(void, endpoint_discovery,
+              (context_type, midi2::types::ump_stream::endpoint_discovery_w0,
+               midi2::types::ump_stream::endpoint_discovery_w1, midi2::types::ump_stream::endpoint_discovery_w2,
+               midi2::types::ump_stream::endpoint_discovery_w3),
+              (override));
+  MOCK_METHOD(void, midiEndpointName, (midi2::ump_data const&), (override));
+  MOCK_METHOD(void, midiEndpointProdId, (midi2::ump_data const&), (override));
+  MOCK_METHOD(void, midiEndpointJRProtocolReq, (std::uint8_t, bool, bool), (override));
+  MOCK_METHOD(void, midiEndpointInfo, (std::uint8_t, std::uint8_t, std::uint8_t, bool, bool, bool, bool), (override));
+  MOCK_METHOD(void, midiEndpointDeviceInfo,
+              ((std::array<std::uint8_t, 3> const&), (std::array<std::uint8_t, 2> const&),
+               (std::array<std::uint8_t, 2> const&), (std::array<std::uint8_t, 4> const&)),
+              (override));
+  MOCK_METHOD(void, midiEndpointJRProtocolNotify, (std::uint8_t protocol, bool jrrx, bool jrtx), (override));
 };
 
 }  // end anonymous namespace
-
-template class midi2::umpProcessor<MockCallbacks&>;
 
 namespace {
 
@@ -222,24 +226,33 @@ using testing::InSequence;
 
 class UMPProcessor : public testing::Test {
 public:
-  UMPProcessor()
-      : processor_{std::ref(callbacks_), std::ref(m1cvm_mocks_), std::ref(m2cvm_mocks_), std::ref(utility_mocks_)} {}
+  UMPProcessor() : processor_{std::ref(config_)} {}
 
-  MockCallbacks callbacks_;
-  M1CVMMocks m1cvm_mocks_;
-  M2CVMMocks m2cvm_mocks_;
-  UtilityMocks utility_mocks_;
-  midi2::umpProcessor<decltype(callbacks_)&, decltype(m1cvm_mocks_)&, decltype(m2cvm_mocks_)&,
-                      decltype(utility_mocks_)&>
-      processor_;
+  struct mocked_config {
+    context_type context = 42;
+    MockCallbacks callbacks;
+    M1CVMMocks m1cvm;
+    M2CVMMocks m2cvm;
+    UtilityMocks utility;
+    FlexMocks flex;
+    UMPStreamMocks ump_stream;
+  };
+  mocked_config config_;
+  midi2::umpProcessor<mocked_config&> processor_;
 };
+
+constexpr std::uint8_t ump_mt(midi2::ump_message_type mt) {
+  auto const result = static_cast<std::uint8_t>(mt);
+  assert(to_underlying(mt) == result);
+  return result;
+}
 
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Noop) {
-  EXPECT_CALL(utility_mocks_, noop()).Times(1);
+  EXPECT_CALL(config_.utility, noop(config_.context)).Times(1);
 
   midi2::types::noop w0{};
-  w0.mt = static_cast<std::uint8_t>(midi2::ump_message_type::utility);
+  w0.mt = ump_mt(midi2::ump_message_type::utility);
   w0.reserved = 0;
   w0.status = 0b0000;
   w0.data = 0;
@@ -248,50 +261,72 @@ TEST_F(UMPProcessor, Noop) {
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, JRClock) {
   midi2::types::jr_clock message{};
-  message.mt = 0x0;
+  message.mt = ump_mt(midi2::ump_message_type::utility);
   message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_clock);
   message.sender_clock_time = 0b1010101010101010;
-  EXPECT_CALL(utility_mocks_, jr_clock(message)).Times(1);
+  EXPECT_CALL(config_.utility, jr_clock(config_.context, message)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(message));
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, JRTimestamp) {
   midi2::types::jr_clock message{};
-  message.mt = 0x0;
+  message.mt = ump_mt(midi2::ump_message_type::utility);
   message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_ts);
-  message.sender_clock_time = 0b1010101010101010;
-  EXPECT_CALL(utility_mocks_, jr_timestamp(message)).Times(1);
+  message.sender_clock_time = (1U << 16) - 1U;
+  EXPECT_CALL(config_.utility, jr_timestamp(config_.context, message)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(message));
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, DeltaClockstampTqpn) {
   midi2::types::jr_clock message{};
-  message.mt = 0x0;
+  message.mt = ump_mt(midi2::ump_message_type::utility);
   message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_tick);
   message.sender_clock_time = 0b1010101010101010;
-  EXPECT_CALL(utility_mocks_, delta_clockstamp_tpqn(message)).Times(1);
+  EXPECT_CALL(config_.utility, delta_clockstamp_tpqn(config_.context, message)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(message));
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, DeltaClockstamp) {
   midi2::types::delta_clockstamp message{};
-  message.mt = 0x0;
+  message.mt = ump_mt(midi2::ump_message_type::utility);
   message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_since);
   message.ticks_per_quarter_note = (1U << 20) - 1U;
-  EXPECT_CALL(utility_mocks_, delta_clockstamp(message)).Times(1);
+  EXPECT_CALL(config_.utility, delta_clockstamp(config_.context, message)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(message));
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, BadUtility) {
   midi2::types::delta_clockstamp message{};
-  message.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::utility));
+  message.mt = ump_mt(midi2::ump_message_type::utility);
   message.status = std::uint8_t{0b1111};
 
   auto const m32 = std::bit_cast<std::uint32_t>(message);
-  EXPECT_CALL(callbacks_, unknownUMPMessage(ElementsAre(m32)));
+  EXPECT_CALL(config_.callbacks, unknownUMPMessage(ElementsAre(m32)));
   processor_.processUMP(m32);
 }
-
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, System) {
+  midi2::types::system_general sg{};
+  sg.mt = ump_mt(midi2::ump_message_type::system);
+  sg.group = 1;
+  sg.status = midi2::status::spp;
+  sg.byte2 = 0x7F;
+  sg.byte3 = 0x7F;
+  EXPECT_CALL(config_.callbacks, system(sg)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(sg));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, SystemBadStatus) {
+  midi2::types::system_general sg{};
+  sg.mt = ump_mt(midi2::ump_message_type::system);
+  sg.group = 1;
+  sg.status = 0x00;
+  sg.byte2 = 0x7F;
+  sg.byte3 = 0x7F;
+  auto const m32 = std::bit_cast<std::uint32_t>(sg);
+  EXPECT_CALL(config_.callbacks, unknownUMPMessage(ElementsAre(m32)));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(sg));
+}
 constexpr std::uint8_t ump_cvm(midi2::status s) {
   static_assert(
       std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
@@ -303,6 +338,7 @@ constexpr std::uint8_t ump_cvm(midi2::status s) {
 
 constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
 
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi1NoteOn) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
@@ -310,80 +346,91 @@ TEST_F(UMPProcessor, Midi1NoteOn) {
   constexpr auto group = std::uint8_t{0};
 
   midi2::types::m1cvm_w0 w0{};
-  w0.mt = static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm);
+  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
   w0.group = group;
-  w0.status = midi2::status::note_on >> 4;
+  w0.status = ump_cvm(midi2::status::note_on);
   w0.channel = channel;
   w0.data_a = note_number;
   w0.data_b = velocity;
-  EXPECT_CALL(m1cvm_mocks_, note_on(w0)).Times(1);
-
+  EXPECT_CALL(config_.m1cvm, note_on(config_.context, w0)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, Midi1NoteOff) {
+  midi2::types::m1cvm_w0 w0{};
+  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = ump_cvm(midi2::status::note_off);
+  w0.channel = std::uint8_t{3};
+  w0.data_a = std::uint8_t{60};
+  w0.data_b = std::uint16_t{0x43};
+  EXPECT_CALL(config_.m1cvm, note_off(config_.context, w0)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+}
+TEST_F(UMPProcessor, Midi1PolyPressure) {
+  midi2::types::m1cvm_w0 w0{};
+  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = ump_cvm(midi2::status::key_pressure);
+  w0.channel = std::uint8_t{3};
+  w0.data_a = std::uint8_t{60};
+  w0.data_b = std::uint8_t{0x43};
+  EXPECT_CALL(config_.m1cvm, poly_pressure(config_.context, w0)).Times(1);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+}
+TEST_F(UMPProcessor, Midi1ControlChange) {
+  midi2::types::m1cvm_w0 w0{};
+  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
+  w0.group = 0;
+  w0.status = ump_cvm(midi2::status::cc);
+  w0.channel = 3;
+  w0.data_a = 60;
+  w0.data_b = 127;
+  EXPECT_CALL(config_.m1cvm, control_change(config_.context, w0)).Times(1);
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
 }
 
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi2NoteOn) {
-  constexpr auto channel = std::uint8_t{3};
-  constexpr auto note_number = std::uint8_t{60};
-  constexpr auto velocity = std::uint16_t{0x432};
-  constexpr auto group = std::uint8_t{0};
-
-  midi2::ump_cvm message;
-  message.common.group = group;
-  message.common.messageType = midi2::ump_message_type::m2cvm;
-  message.common.status = midi2::status::note_on;
-  message.channel = channel;
-  message.note = note_number;
-  message.value = velocity;
-  message.index = 0;
-  message.bank = 0;
-  message.flag1 = false;
-  message.flag2 = false;
-
   midi2::types::m2cvm::note_w0 w0{};
-  w0.mt = 0x4;
-  w0.group = group;
+  w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
   w0.status = 0x9;
-  w0.channel = channel;
+  w0.channel = std::uint8_t{3};
   w0.reserved = 0;
-  w0.note = note_number;
+  w0.note = std::uint8_t{60};
   w0.attribute = 0;
+
   midi2::types::m2cvm::note_w1 w1{};
-  w1.velocity = velocity;
+  w1.velocity = std::uint16_t{0x432};
   w1.attribute = 0;
 
-  EXPECT_CALL(m2cvm_mocks_, note_on(w0, w1)).Times(1);
+  EXPECT_CALL(config_.m2cvm, note_on(config_.context, w0, w1)).Times(1);
 
-  processor_.processUMP(std::uint32_t{(static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm) << 28) |
-                                      (std::uint32_t{group} << 24) | (ump_note_on << 20) |
-                                      (std::uint32_t{channel} << 16) | (std::uint32_t{note_number} << 8)});
-  processor_.processUMP(std::uint32_t{velocity << 16});
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
 }
 
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi2ProgramChange) {
-  constexpr auto channel = std::uint8_t{3};
-  constexpr auto group = std::uint8_t{0};
-  constexpr auto program = 0b10101010;
-  constexpr auto bank_msb = 0b01010101;
-  constexpr auto bank_lsb = 0b00101010;
-
   midi2::types::m2cvm::program_change_w0 w0{};
-  w0.mt = 0x4;
-  w0.group = group;
+  w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
   w0.status = ump_cvm(midi2::status::program_change);
-  w0.channel = channel;
+  w0.channel = std::uint8_t{3};
   w0.reserved = 0;
   w0.option_flags = 0;
   w0.bank_valid = true;
 
   midi2::types::m2cvm::program_change_w1 w1{};
-  w1.program = program;
+  w1.program = 0b10101010;
   w1.reserved = 0;
   w1.r0 = 0;
-  w1.bank_msb = bank_msb;
+  w1.bank_msb = 0b01010101;
   w1.r1 = 0;
-  w1.bank_lsb = bank_lsb;
+  w1.bank_lsb = 0b00101010;
 
-  EXPECT_CALL(m2cvm_mocks_, program_change(w0, w1)).Times(1);
+  EXPECT_CALL(config_.m2cvm, program_change(config_.context, w0, w1)).Times(1);
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
@@ -416,9 +463,9 @@ TEST_F(UMPProcessor, Sysex8_16ByteMessage) {
   {
     InSequence _;
     midi2::ump_common const common{group, midi2::ump_message_type::data, 0};
-    EXPECT_CALL(callbacks_,
+    EXPECT_CALL(config_.callbacks,
                 send_out_sysex(UMPDataMatches(common, stream_id, start_form, std::begin(payload), split_point)));
-    EXPECT_CALL(callbacks_,
+    EXPECT_CALL(config_.callbacks,
                 send_out_sysex(UMPDataMatches(common, stream_id, end_form, split_point, std::end(payload))));
   }
 
@@ -450,7 +497,7 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   message.data_a = note_number;
   message.data_b = velocity;
 
-  EXPECT_CALL(m1cvm_mocks_, note_on(message)).Times(1);
+  EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
 
   // The first half of a 64-bit MIDI 2 note-on message.
   processor_.processUMP(pack((static_cast<std::uint8_t>(midi2::ump_message_type::m2cvm) << 4) | group,
@@ -460,6 +507,26 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   // An entire 32-bit MIDI 1 note-on message.
   processor_.processUMP(pack((static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
                              (ump_note_on << 4) | channel, note_number, velocity));
+}
+
+TEST_F(UMPProcessor, StreamEndpointDiscovery) {
+  midi2::types::ump_stream::endpoint_discovery_w0 w0{};
+  w0.mt = 0x0F;
+  w0.format = 0x03;
+  w0.status = 0x00;
+  w0.version_major = 0x01;
+  w0.version_minor = 0x01;
+  midi2::types::ump_stream::endpoint_discovery_w1 w1{};
+  w1.filter = 0b00011111;
+  midi2::types::ump_stream::endpoint_discovery_w2 w2{};
+  midi2::types::ump_stream::endpoint_discovery_w3 w3{};
+
+  EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
 
 TEST_F(UMPProcessor, FunctionBlockInfo) {
@@ -482,7 +549,7 @@ TEST_F(UMPProcessor, FunctionBlockInfo) {
   fbi.isMIDI1 = false;
   fbi.maxS8Streams = num_sysex8_streams;
 
-  EXPECT_CALL(callbacks_, functionBlockInfo(fbi)).Times(1);
+  EXPECT_CALL(config_.callbacks, functionBlockInfo(fbi)).Times(1);
 
   midi2::types::function_block_info_w0 word1{};
   word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::midi_endpoint);
@@ -517,7 +584,7 @@ TEST_F(UMPProcessor, FunctionBlockName) {
   std::array<std::uint8_t, 4> const payload{'n', 'a', 'm', 'e'};
 
   EXPECT_CALL(
-      callbacks_,
+      config_.callbacks,
       functionBlockName(UMPDataMatches(midi2::ump_common{group, midi2::ump_message_type::midi_endpoint,
                                                          static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
                                        stream_id, format, std::begin(payload), std::end(payload)),
@@ -594,7 +661,7 @@ TEST_F(UMPProcessor, SetChordName) {
   word4.alter_2_type = 2;
   word4.alter_2_degree = 4;
 
-  EXPECT_CALL(callbacks_, flex_chord(group, addrs, channel, chord)).Times(1);
+  EXPECT_CALL(config_.flex, chord(config_.context, group, addrs, channel, chord)).Times(1);
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(word1));
   processor_.processUMP(std::bit_cast<std::uint32_t>(word2));
@@ -620,7 +687,7 @@ TEST_F(UMPProcessor, Sysex7) {
   mess.form = 0;
   mess.data = data;
 
-  EXPECT_CALL(callbacks_,
+  EXPECT_CALL(config_.callbacks,
               send_out_sysex(UMPDataMatches(mess.common, mess.streamId, mess.form, std::begin(data), std::end(data))));
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(word1));

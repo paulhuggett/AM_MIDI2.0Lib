@@ -58,6 +58,9 @@ union delta_clockstamp {
 // Table 27 4-Byte UMP Formats for Message Type 0x1: System Common & System Real
 // Time
 union system_general {
+  friend constexpr bool operator==(system_general const& a, system_general const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;  // 0x1
   ump_bitfield<24, 4> group;
   ump_bitfield<16, 8> status;  // 0xF0..0xFF
@@ -244,6 +247,31 @@ union per_note_pitch_bend_w0 {
 };
 
 }  // end namespace m2cvm
+
+namespace ump_stream {
+
+// 7.1.1 Endpoint Discovery Message
+union endpoint_discovery_w0 {
+  friend constexpr bool operator==(endpoint_discovery_w0 const& a, endpoint_discovery_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;
+  ump_bitfield<26, 2> format;
+  ump_bitfield<16, 10> status;
+  ump_bitfield<8, 8> version_major;
+  ump_bitfield<0, 8> version_minor;
+};
+union endpoint_discovery_w1 {
+  friend constexpr bool operator==(endpoint_discovery_w1 const& a, endpoint_discovery_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<8, 24> reserved;
+  ump_bitfield<0, 8> filter;
+};
+using endpoint_discovery_w2 = std::uint32_t;
+using endpoint_discovery_w3 = std::uint32_t;
+
+};  // end namespace ump_stream
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
 // Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
