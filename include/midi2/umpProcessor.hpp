@@ -251,10 +251,13 @@ concept ump_stream_backend = requires(T v, Context context) {
       types::ump_stream::device_identity_notification_w1{},
       types::ump_stream::device_identity_notification_w2{},
       types::ump_stream::device_identity_notification_w3{}) } -> std::same_as<void>;
+  { v.endpoint_name_notification(context,
+      types::ump_stream::endpoint_name_notification_w0{},
+      types::ump_stream::endpoint_name_notification_w1{},
+      types::ump_stream::endpoint_name_notification_w2{},
+      types::ump_stream::endpoint_name_notification_w3{}) } -> std::same_as<void>;
 
 
-
-  { v.midiEndpointName(ump_data{}) } -> std::same_as<void>;
   { v.midiEndpointProdId(ump_data{}) } -> std::same_as<void>;
   { v.midiEndpointJRProtocolReq(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
   { v.midiEndpointJRProtocolNotify(std::uint8_t{}, bool{}, bool{}) } -> std::same_as<void>;
@@ -382,9 +385,11 @@ template <typename Context> struct ump_stream_base {
                                             types::ump_stream::device_identity_notification_w1,
                                             types::ump_stream::device_identity_notification_w2,
                                             types::ump_stream::device_identity_notification_w3) { /* do nothing */ }
+  virtual void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification_w0,
+                                          types::ump_stream::endpoint_name_notification_w1,
+                                          types::ump_stream::endpoint_name_notification_w2,
+                                          types::ump_stream::endpoint_name_notification_w3) { /* do nothing */ }
 
-
-  virtual void midiEndpointName(ump_data const& /*mess*/) { /* do nothing */ }
   virtual void midiEndpointProdId(ump_data const& /*mess*/) { /* do nothing */ }
   virtual void midiEndpointJRProtocolReq(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* do nothing */ }
   virtual void midiEndpointJRProtocolNotify(uint8_t /*protocol*/, bool /*jrrx*/, bool /*jrtx*/) { /* do nothing */ }
@@ -651,8 +656,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
 template <ump_processor_config Config>
 void umpProcessor<Config>::midiendpoint_name_or_prodid(ump_message_type const mt) {
   std::uint16_t status = (message_[0] >> 16) & 0x3FF;
-  assert(status == to_underlying(ump_stream::MIDIENDPOINT_NAME_NOTIFICATION) ||
-         status == to_underlying(ump_stream::MIDIENDPOINT_PRODID_NOTIFICATION));
+  assert(status == to_underlying(ump_stream::MIDIENDPOINT_PRODID_NOTIFICATION));
 
   std::array<std::uint8_t, 14> text{};
   auto text_length = 0U;
@@ -675,11 +679,7 @@ void umpProcessor<Config>::midiendpoint_name_or_prodid(ump_message_type const mt
   mess.common.status = static_cast<std::uint8_t>(status);
   mess.form = message_[0] >> 24 & 0x3;
   mess.data = std::span{text.data(), text_length};
-  if (status == to_underlying(ump_stream::MIDIENDPOINT_NAME_NOTIFICATION)) {
-    config_.ump_stream.midiEndpointName(mess);
-  } else {
-    config_.ump_stream.midiEndpointProdId(mess);
-  }
+  config_.ump_stream.midiEndpointProdId(mess);
 }
 
 template <ump_processor_config Config>
@@ -760,7 +760,15 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::device_identity_notification_w3>(message_[3]));
     break;
 
-  case ump_stream::MIDIENDPOINT_NAME_NOTIFICATION:
+  // 7.1.4 Endpoint Name Notification
+  case ump_stream::endpoint_name_notification:
+    config_.ump_stream.endpoint_name_notification(
+        config_.context, std::bit_cast<types::ump_stream::endpoint_name_notification_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::endpoint_name_notification_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::endpoint_name_notification_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::endpoint_name_notification_w3>(message_[3]));
+    break;
+
   case ump_stream::MIDIENDPOINT_PRODID_NOTIFICATION: this->midiendpoint_name_or_prodid(mt); break;
   case ump_stream::MIDIENDPOINT_PROTOCOL_REQUEST:  // JR Protocol Req
     config_.ump_stream.midiEndpointJRProtocolReq(static_cast<std::uint8_t>(message_[0] >> 8), (message_[0] >> 1) & 1,

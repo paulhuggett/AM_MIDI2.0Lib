@@ -116,7 +116,7 @@ enum class ump_stream : std::uint32_t {
   endpoint_discovery = 0x00,
   endpoint_info_notification = 0x01,
   device_identity_notification = 0x02,
-  MIDIENDPOINT_NAME_NOTIFICATION = 0x003,
+  endpoint_name_notification = 0x03,
   MIDIENDPOINT_PRODID_NOTIFICATION = 0x004,
   MIDIENDPOINT_PROTOCOL_REQUEST = 0x005,
   MIDIENDPOINT_PROTOCOL_NOTIFICATION = 0x006,

@@ -347,6 +347,45 @@ union device_identity_notification_w3 {
   ump_bitfield<0, 7> sw_revision_4;  // Software revision level byte 4
 };
 
+// 7.1.4 Endpoint Name Notification
+union endpoint_name_notification_w0 {
+  friend constexpr bool operator==(endpoint_name_notification_w0 const& a, endpoint_name_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;
+  ump_bitfield<26, 2> format;
+  ump_bitfield<16, 10> status;
+  ump_bitfield<8, 8> name_byte_1;
+  ump_bitfield<0, 8> name_byte_2;
+};
+union endpoint_name_notification_w1 {
+  friend constexpr bool operator==(endpoint_name_notification_w1 const& a, endpoint_name_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name_byte_3;
+  ump_bitfield<16, 8> name_byte_4;
+  ump_bitfield<8, 8> name_byte_5;
+  ump_bitfield<0, 8> name_byte_6;
+};
+union endpoint_name_notification_w2 {
+  friend constexpr bool operator==(endpoint_name_notification_w2 const& a, endpoint_name_notification_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name_byte_7;
+  ump_bitfield<16, 8> name_byte_8;
+  ump_bitfield<8, 8> name_byte_9;
+  ump_bitfield<0, 8> name_byte_10;
+};
+union endpoint_name_notification_w3 {
+  friend constexpr bool operator==(endpoint_name_notification_w3 const& a, endpoint_name_notification_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name_byte_11;
+  ump_bitfield<16, 8> name_byte_12;
+  ump_bitfield<8, 8> name_byte_13;
+  ump_bitfield<0, 8> name_byte_14;
+};
+
 };  // end namespace ump_stream
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
