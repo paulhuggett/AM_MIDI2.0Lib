@@ -433,6 +433,9 @@ union product_instance_id_notification_w3 {
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
 union jr_configuration_request_w0 {
+  friend constexpr bool operator==(jr_configuration_request_w0 const& a, jr_configuration_request_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x05
@@ -447,6 +450,10 @@ using jr_configuration_request_w3 = std::uint32_t;
 
 // 7.1.6.3 JR Stream Configuration Notification Message
 union jr_configuration_notification_w0 {
+  friend constexpr bool operator==(jr_configuration_notification_w0 const& a,
+                                   jr_configuration_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x06

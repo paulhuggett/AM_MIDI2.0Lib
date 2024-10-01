@@ -114,7 +114,7 @@ using midi2::pack;
 
 using context_type = int;
 
-class MockCallbacks final : public midi2::callbacks_base {
+class MockCallbacks : public midi2::callbacks_base {
 public:
   MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
@@ -131,7 +131,7 @@ public:
   MOCK_METHOD(void, unknownUMPMessage, (std::span<std::uint32_t>), (override));
 };
 
-class M1CVMMocks final : public midi2::m1cvm_base<context_type> {
+class M1CVMMocks : public midi2::m1cvm_base<context_type> {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::types::m1cvm_w0), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm_w0), (override));
@@ -142,7 +142,7 @@ public:
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm_w0), (override));
 };
 
-class M2CVMMocks final : public midi2::m2cvm_base<context_type> {
+class M2CVMMocks : public midi2::m2cvm_base<context_type> {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
@@ -164,7 +164,7 @@ public:
               (override));
 };
 
-class UtilityMocks final : public midi2::utility_base<context_type> {
+class UtilityMocks : public midi2::utility_base<context_type> {
 public:
   MOCK_METHOD(void, noop, (context_type), (override));
   MOCK_METHOD(void, jr_clock, (context_type, midi2::types::jr_clock), (override));
@@ -173,7 +173,7 @@ public:
   MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::delta_clockstamp), (override));
 };
 
-class FlexMocks final : public midi2::flex_base<context_type> {
+class FlexMocks : public midi2::flex_base<context_type> {
 public:
   MOCK_METHOD(void, tempo, (context_type, std::uint8_t group, std::uint32_t num10nsPQN), (override));
   MOCK_METHOD(void, time_sig,
@@ -195,7 +195,7 @@ public:
               (override));
 };
 
-class UMPStreamMocks final : public midi2::ump_stream_base<context_type> {
+class UMPStreamMocks : public midi2::ump_stream_base<context_type> {
 public:
   MOCK_METHOD(void, endpoint_discovery,
               (context_type, midi2::types::ump_stream::endpoint_discovery_w0,
@@ -251,6 +251,7 @@ using testing::ElementsAreArray;
 using testing::Eq;
 using testing::Field;
 using testing::InSequence;
+using testing::StrictMock;
 
 class UMPProcessor : public testing::Test {
 public:
@@ -258,11 +259,11 @@ public:
 
   struct mocked_config {
     context_type context = 42;
-    MockCallbacks callbacks;
-    M1CVMMocks m1cvm;
-    M2CVMMocks m2cvm;
-    UtilityMocks utility;
-    FlexMocks flex;
+    StrictMock<MockCallbacks> callbacks;
+    StrictMock<M1CVMMocks> m1cvm;
+    StrictMock<M2CVMMocks> m2cvm;
+    StrictMock<UtilityMocks> utility;
+    StrictMock<FlexMocks> flex;
     UMPStreamMocks ump_stream;
   };
   mocked_config config_;
@@ -670,6 +671,45 @@ TEST_F(UMPProcessor, StreamProductInstanceIdNotification) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamJRConfigurationRequest) {
+  midi2::types::ump_stream::jr_configuration_request_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_request));
+  w0.protocol = 0x02;
+  w0.rxjr = 1;
+  w0.txjr = 0;
+  midi2::types::ump_stream::jr_configuration_request_w1 w1{};
+  midi2::types::ump_stream::jr_configuration_request_w2 w2{};
+  midi2::types::ump_stream::jr_configuration_request_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, jr_configuration_request(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamJRConfigurationNotification) {
+  midi2::types::ump_stream::jr_configuration_notification_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_notification));
+  w0.protocol = 0x02;
+  w0.rxjr = 1;
+  w0.txjr = 0;
+  midi2::types::ump_stream::jr_configuration_notification_w1 w1{};
+  midi2::types::ump_stream::jr_configuration_notification_w2 w2{};
+  midi2::types::ump_stream::jr_configuration_notification_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, FunctionBlockInfo) {
   constexpr auto active = std::uint32_t{0b1};  // 1 bit

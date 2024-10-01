@@ -51,20 +51,19 @@ void bytestreamToUMP::controllerToUMP(std::byte const b0, std::byte const b1, st
   case control::rpn_lsb: c.rpnMode = true; c.rpnLsb = b2; break;
   default:
     output_.push_back(pack(ump_message_type::m2cvm, b0, b1, std::byte{0}));
-    output_.push_back(midi2::scaleUp(static_cast<std::uint32_t>(b2), 7, 32));
+    output_.push_back(midi2::scaleUp(std::to_integer<std::uint32_t>(b2), 7, 32));
     break;
   }
 }
 
 void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
-  using status_type = std::underlying_type_t<status>;
   assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
          "The top bit of b1 and b2 must be zero");
   using midi2::scaleUp;
   auto const channel = b0 & std::byte{0x0F};
   auto status = static_cast<enum status>(b0 & std::byte{0xF0});
 
-  if (static_cast<status_type>(b0) >= status::timing_code) {
+  if (to_underlying(b0) >= status::timing_code) {
     output_.push_back(pack(ump_message_type::system, b0, b1, b2));
     return;
   }
@@ -75,7 +74,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
     output_.push_back(pack(ump_message_type::m1cvm, b0, b1, b2));
     return;
   }
-  if (static_cast<enum status>(status) == status::note_on && b2 == std::byte{0}) {
+  if (status == status::note_on && b2 == std::byte{0}) {
     // Map note-on velocity 0 to note-off,
     status = status::note_off;
     b0 = static_cast<std::byte>(status) | channel;
@@ -87,7 +86,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   case status::note_off:
   case status::key_pressure:
     output_.push_back(message | (std::to_integer<std::uint32_t>(b1) << 8));
-    output_.push_back(scaleUp(static_cast<std::uint32_t>(b2), 7, 16) << 16);
+    output_.push_back(scaleUp(std::to_integer<std::uint32_t>(b2), 7, 16) << 16);
     break;
   case status::pitch_bend:
     output_.push_back(message);
@@ -107,7 +106,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   } break;
   case status::channel_pressure:
     output_.push_back(message);
-    output_.push_back(scaleUp(static_cast<unsigned>(b1), 7, 32));
+    output_.push_back(scaleUp(std::to_integer<unsigned>(b1), 7, 32));
     break;
   case status::cc: this->controllerToUMP(b0, b1, b2); break;
   default:
