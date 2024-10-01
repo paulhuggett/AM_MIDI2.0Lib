@@ -192,7 +192,6 @@ template <typename T> concept backend = requires(T && v) {
   { v.system(midi2::types::system_general{}) } -> std::same_as<void>;
   { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
-  { v.functionBlock(std::uint8_t{}, std::uint8_t{}) } -> std::same_as<void>;
   { v.functionBlockInfo(function_block_info{}) } -> std::same_as<void>;
   { v.functionBlockName(ump_data{}, std::uint8_t{}) } -> std::same_as<void>;
 
@@ -271,6 +270,11 @@ concept ump_stream_backend = requires(T v, Context context) {
       types::ump_stream::jr_configuration_notification_w1{},
       types::ump_stream::jr_configuration_notification_w2{},
       types::ump_stream::jr_configuration_notification_w3{}) } -> std::same_as<void>;
+  { v.function_block_discovery(context,
+      types::ump_stream::function_block_discovery_w0{},
+      types::ump_stream::function_block_discovery_w1{},
+      types::ump_stream::function_block_discovery_w2{},
+      types::ump_stream::function_block_discovery_w3{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept flex_backend = requires(T v, Context context) {
@@ -308,7 +312,6 @@ public:
 
   //---------- UMP Stream
 
-  virtual void functionBlock(uint8_t /*fbIdx*/, uint8_t /*filter*/) { /* nop */ }
   virtual void functionBlockInfo(function_block_info const& fbi) { (void)fbi; }
   virtual void functionBlockName(ump_data const& /*mess*/, uint8_t /*fbIdx*/) { /* nop */ }
 
@@ -411,6 +414,10 @@ template <typename Context> struct ump_stream_base {
                                              types::ump_stream::jr_configuration_notification_w1,
                                              types::ump_stream::jr_configuration_notification_w2,
                                              types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
+  virtual void function_block_discovery(Context, types::ump_stream::function_block_discovery_w0,
+                                        midi2::types::ump_stream::function_block_discovery_w1,
+                                        midi2::types::ump_stream::function_block_discovery_w2,
+                                        midi2::types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
 };
 
 struct default_config {
@@ -780,10 +787,12 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::jr_configuration_notification_w3>(message_[3]));
     break;
 
-  case ump_stream::FUNCTIONBLOCK:
-    config_.callbacks.functionBlock((message_[0] >> 8) & 0xFF,  // fbIdx
-                                    message_[0] & 0xFF          // filter
-    );
+  case ump_stream::function_block_discovery:
+    config_.ump_stream.function_block_discovery(
+        config_.context, std::bit_cast<types::ump_stream::function_block_discovery_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::function_block_discovery_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::function_block_discovery_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::function_block_discovery_w3>(message_[3]));
     break;
 
   case ump_stream::FUNCTIONBLOCK_INFO_NOTFICATION: this->functionblock_info(); break;

@@ -466,6 +466,21 @@ using jr_configuration_notification_w1 = std::uint32_t;
 using jr_configuration_notification_w2 = std::uint32_t;
 using jr_configuration_notification_w3 = std::uint32_t;
 
+// 7.1.7 Function Block Discovery Message
+union function_block_discovery_w0 {
+  friend constexpr bool operator==(function_block_discovery_w0 const& a, function_block_discovery_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x10
+  ump_bitfield<8, 8> block_num;
+  ump_bitfield<0, 8> filter;
+};
+using function_block_discovery_w1 = std::uint32_t;
+using function_block_discovery_w2 = std::uint32_t;
+using function_block_discovery_w3 = std::uint32_t;
+
 };  // end namespace ump_stream
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed

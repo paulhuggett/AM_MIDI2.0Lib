@@ -119,8 +119,6 @@ public:
   MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
 
-  MOCK_METHOD(void, functionBlock, (std::uint8_t fbIdx, std::uint8_t filter),
-              (override));
   MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
               (override));
   MOCK_METHOD(void, functionBlockName, (midi2::ump_data const&, std::uint8_t), (override));
@@ -238,6 +236,12 @@ public:
                midi2::types::ump_stream::jr_configuration_notification_w1,
                midi2::types::ump_stream::jr_configuration_notification_w2,
                midi2::types::ump_stream::jr_configuration_notification_w3),
+              (override));
+  MOCK_METHOD(void, function_block_discovery,
+              (context_type, midi2::types::ump_stream::function_block_discovery_w0,
+               midi2::types::ump_stream::function_block_discovery_w1,
+               midi2::types::ump_stream::function_block_discovery_w2,
+               midi2::types::ump_stream::function_block_discovery_w3),
               (override));
 };
 
@@ -703,6 +707,23 @@ TEST_F(UMPProcessor, StreamJRConfigurationNotification) {
   midi2::types::ump_stream::jr_configuration_notification_w2 w2{};
   midi2::types::ump_stream::jr_configuration_notification_w3 w3{};
   EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+TEST_F(UMPProcessor, StreamFunctionBlockDiscovery) {
+  midi2::types::ump_stream::function_block_discovery_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_discovery));
+  w0.block_num = 0xFF;
+  w0.filter = 0x03;
+  midi2::types::ump_stream::function_block_discovery_w1 w1{};
+  midi2::types::ump_stream::function_block_discovery_w2 w2{};
+  midi2::types::ump_stream::function_block_discovery_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, w0, w1, w2, w3)).Times(1);
 
   processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w1));

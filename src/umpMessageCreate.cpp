@@ -319,7 +319,7 @@ std::array<uint32_t, 4> UMPMessage::mtFMidiEndpointTextNotify(uint16_t replyType
 
 std::array<uint32_t, 4> UMPMessage::mtFFunctionBlock(uint8_t fbIdx, uint8_t filter) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (to_underlying(ump_stream::FUNCTIONBLOCK) << 16) |
+  umpMess[0] = (static_cast<std::uint32_t>(0xF) << 28) | (to_underlying(ump_stream::function_block_discovery) << 16) |
                (static_cast<std::uint32_t>(fbIdx) << 8) | filter;
   return umpMess;
 }

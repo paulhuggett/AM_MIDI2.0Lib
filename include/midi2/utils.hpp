@@ -120,8 +120,8 @@ enum class ump_stream : std::uint32_t {
   product_instance_id_notification = 0x04,
   jr_configuration_request = 0x05,
   jr_configuration_notification = 0x06,
+  function_block_discovery = 0x10,
 
-  FUNCTIONBLOCK = 0x010,
   FUNCTIONBLOCK_INFO_NOTFICATION = 0x011,
   FUNCTIONBLOCK_NAME_NOTIFICATION = 0x012,
   STARTOFSEQ = 0x020,
