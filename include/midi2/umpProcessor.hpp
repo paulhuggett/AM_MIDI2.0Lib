@@ -470,8 +470,8 @@ public:
     case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
     case ump_message_type::m2cvm: this->m2cvm_message(); break;
     case ump_message_type::data: this->data_message(); break;
-    case ump_message_type::flex_data: this->flexdata_message(mt, group); break;
-    case ump_message_type::ump_stream: this->midi_endpoint_message(); break;
+    case ump_message_type::flex_data: this->flex_data_message(mt, group); break;
+    case ump_message_type::ump_stream: this->ump_stream_message(); break;
 
     case ump_message_type::reserved32_06:
     case ump_message_type::reserved32_07:
@@ -494,9 +494,9 @@ private:
   void m1cvm_message();
   void sysex7_message(ump_message_type mt, std::uint8_t group);
   void m2cvm_message();
-  void midi_endpoint_message();
+  void ump_stream_message();
   void data_message();
-  void flexdata_message(ump_message_type mt, std::uint8_t group);
+  void flex_data_message(ump_message_type mt, std::uint8_t group);
 
   enum data_message_status : std::uint8_t {
     sysex8_in_1_ump = 0b0000,
@@ -520,6 +520,8 @@ private:
   [[no_unique_address]] Config config_;
 };
 
+// utility message
+// ~~~~~~~~~~~~~~~
 // 32 bit utility messages
 template <ump_processor_config Config> void umpProcessor<Config>::utility_message() {
   static_assert(message_size<midi2::ump_message_type::utility>() == 1);
@@ -558,6 +560,8 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
   }
 }
 
+// m1cvm message
+// ~~~~~~~~~~~~~
 // 32 Bit MIDI 1.0 Channel Voice Messages
 template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m1cvm>() == 1);
@@ -613,6 +617,8 @@ void umpProcessor<Config>::sysex7_message(ump_message_type const mt, std::uint8_
   config_.callbacks.send_out_sysex(mess);
 }
 
+// m2cvm message
+// ~~~~~~~~~~~~~
 // 64 bit MIDI 2.0 Channel Voice Messages
 template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
@@ -699,10 +705,10 @@ constexpr OutputIterator umpProcessor<Config>::payload(std::array<std::uint32_t,
   return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
-template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_message() {
-  // 128 bits UMP Stream Messages
-  auto const status = static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U));
-  switch (status) {
+// ump stream message
+// ~~~~~~~~~~~~~~~~~~
+template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_message() {
+  switch (static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
   case ump_stream::endpoint_discovery:
     config_.ump_stream.endpoint_discovery(
@@ -915,13 +921,49 @@ void umpProcessor<Config>::flexdata_performance_or_lyric(ump_message_type const 
   }
 }
 
+// flex data message
+// ~~~~~~~~~~~~~~~~~
 // 128 bit Data Messages (including System Exclusive 8)
 template <ump_processor_config Config>
-void umpProcessor<Config>::flexdata_message(ump_message_type const mt, std::uint8_t const group) {
+void umpProcessor<Config>::flex_data_message(ump_message_type const mt, std::uint8_t const group) {
   uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
   uint8_t const status = message_[0] & 0xFF;
   uint8_t const channel = (message_[0] >> 16) & 0xF;
   uint8_t const addrs = (message_[0] >> 18) & 3;
+
+#if 0
+auto const m0 = std::bit_cast<types::flex_data::flex_data_w0> (message_[0]));
+auto const m1 = std::bit_cast<types::flex_data::flex_data_w1> (message_[1]));
+auto const m2 = std::bit_cast<types::flex_data::flex_data_w1> (message_[2]));
+auto const m3 = std::bit_cast<types::flex_data::flex_data_w1> (message_[3]));
+
+  ump_bitfield<28, 4> mt;       // 0x0D
+  ump_bitfield<24, 4> group;
+  ump_bitfield<22, 2> form;
+  ump_bitfield<20, 2> addrs;
+  ump_bitfield<16, 4> channel;
+  ump_bitfield<8, 8> status_bank;
+  ump_bitfield<0, 8> status;
+};
+using flex_data_w1 = std::uint32_t;
+using flex_data_w2 = std::uint32_t;
+using flex_data_w3 = std::uint32_t;
+
+
+//Set Tempo
+//Set Time Signature
+//Set Metronome
+//Set Key Signature
+//Set Chord Name
+//Text Message Common Format
+  switch (static_cast<flex_data> (message_[0] & 0xF) {
+  // 7.5.3 Set Tempo Message
+  case flex_data::set_tempo:
+    config_.flex.set_tempo(config_.context, group, message_[1]);
+    break;
+  }
+#endif
+
   // SysEx 8
   switch (status_bank) {
   case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project, and Track

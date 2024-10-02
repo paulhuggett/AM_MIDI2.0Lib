@@ -777,6 +777,38 @@ TEST_F(UMPProcessor, StreamFunctionBlockNameNotification) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamStartOfClip) {
+  midi2::types::ump_stream::start_of_clip_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::start_of_clip));
+  midi2::types::ump_stream::start_of_clip_w1 w1{};
+  midi2::types::ump_stream::start_of_clip_w2 w2{};
+  midi2::types::ump_stream::start_of_clip_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamEndOfClip) {
+  midi2::types::ump_stream::end_of_clip_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::end_of_clip));
+  midi2::types::ump_stream::end_of_clip_w1 w1{};
+  midi2::types::ump_stream::end_of_clip_w2 w2{};
+  midi2::types::ump_stream::end_of_clip_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
 
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, SetChordName) {

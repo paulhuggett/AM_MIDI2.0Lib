@@ -101,6 +101,10 @@ enum class ump_utility : std::uint32_t {
   delta_clock_since = 0b0100,
 };
 
+enum class flex_data : std::uint32_t {
+  tempo = 0x00,
+};
+
 enum : std::uint8_t {
   FLEXDATA_COMMON = 0x00,
   FLEXDATA_COMMON_TEMPO = 0x00,

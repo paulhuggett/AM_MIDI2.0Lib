@@ -583,6 +583,23 @@ using end_of_clip_w3 = std::uint32_t;
 
 };  // end namespace ump_stream
 
+namespace flex_data {
+
+union flex_data_w0 {
+  ump_bitfield<28, 4> mt;  // 0x0D
+  ump_bitfield<24, 4> group;
+  ump_bitfield<22, 2> form;
+  ump_bitfield<20, 2> addrs;
+  ump_bitfield<16, 4> channel;
+  ump_bitfield<8, 8> status_bank;
+  ump_bitfield<0, 8> status;
+};
+using flex_data_w1 = std::uint32_t;
+using flex_data_w2 = std::uint32_t;
+using flex_data_w3 = std::uint32_t;
+
+}  // end namespace flex_data
+
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
 // Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
 // 8 and Mixed Data Set
