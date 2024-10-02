@@ -329,7 +329,7 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockInfoNotify(uint8_t fbIdx, bo
                                                                uint8_t groupLength, uint8_t midiCISupport,
                                                                uint8_t isMIDI1, uint8_t maxS8Streams) {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::FUNCTIONBLOCK_INFO_NOTFICATION) << 16) |
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::function_block_info_notification) << 16) |
                ((active ? 1U : 0U) << 15) | (static_cast<std::uint32_t>(fbIdx) << 8) |
                (static_cast<std::uint32_t>(recv) << 5) | (static_cast<std::uint32_t>(sender) << 4) |
                (static_cast<std::uint32_t>(isMIDI1) << 2) | static_cast<std::uint32_t>(direction);
@@ -354,7 +354,7 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(uint8_t fbIdx, ui
     }
   }
   umpMess[0] = (std::uint32_t{0xF} << 28) | (static_cast<std::uint32_t>(form) << 26) |
-               (to_underlying(ump_stream::FUNCTIONBLOCK_NAME_NOTIFICATION) << 16) |
+               (to_underlying(ump_stream::function_block_name_notification) << 16) |
                (static_cast<std::uint32_t>(fbIdx) << 8);
   if (offset < textLen) {
     umpMess[0] += static_cast<std::uint32_t>(text[offset++]);
@@ -378,13 +378,13 @@ std::array<uint32_t, 4> UMPMessage::mtFFunctionBlockNameNotify(uint8_t fbIdx, ui
 
 std::array<uint32_t, 4> UMPMessage::mtFStartOfSeq() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::STARTOFSEQ) << 16);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::start_of_clip) << 16);
   return umpMess;
 }
 
 std::array<uint32_t, 4> UMPMessage::mtFEndOfFile() {
   std::array<uint32_t, 4> umpMess = {0, 0, 0, 0};
-  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::ENDOFFILE) << 16);
+  umpMess[0] = (std::uint32_t{0xF} << 28) | (to_underlying(ump_stream::end_of_clip) << 16);
   return umpMess;
 }
 

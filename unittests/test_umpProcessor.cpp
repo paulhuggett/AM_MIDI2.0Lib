@@ -60,33 +60,6 @@ std::ostream& operator<<(std::ostream& os, ump_data const& data) {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os,
-                         function_block_info::fbdirection const direction);
-std::ostream& operator<<(std::ostream& os,
-                         function_block_info::fbdirection const direction) {
-  using enum function_block_info::fbdirection;
-  switch (direction) {
-  case reserved: os << "reserved"; break;
-  case input: os << "input"; break;
-  case output: os << "output"; break;
-  case bidirectional: os << "bidirectional"; break;
-  default: os << "unknown"; break;
-  }
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, function_block_info const& fbi);
-std::ostream& operator<<(std::ostream& os, function_block_info const& fbi) {
-  return os << "{ fbIdx=" << static_cast<unsigned>(fbi.fbIdx)
-            << ", active=" << fbi.active << ", direction=" << fbi.direction
-            << ", firstGroup=" << static_cast<unsigned>(fbi.firstGroup)
-            << ", groupLength=" << static_cast<unsigned>(fbi.groupLength)
-            << ", midiCIVersion=" << static_cast<unsigned>(fbi.midiCIVersion)
-            << ", isMIDI1=" << static_cast<unsigned>(fbi.isMIDI1)
-            << ", maxS8Streams=" << static_cast<unsigned>(fbi.maxS8Streams)
-            << " }";
-}
-
 std::ostream& operator<<(std::ostream& os, chord::alteration const& alt);
 std::ostream& operator<<(std::ostream& os, chord::alteration const& alt) {
   return os << "{ type=" << static_cast<unsigned>(alt.type)
@@ -118,10 +91,6 @@ class MockCallbacks : public midi2::callbacks_base {
 public:
   MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
-
-  MOCK_METHOD(void, functionBlockInfo, (midi2::function_block_info const&),
-              (override));
-  MOCK_METHOD(void, functionBlockName, (midi2::ump_data const&, std::uint8_t), (override));
 
   MOCK_METHOD(void, startOfSeq, (), (override));
   MOCK_METHOD(void, endOfFile, (), (override));
@@ -237,11 +206,33 @@ public:
                midi2::types::ump_stream::jr_configuration_notification_w2,
                midi2::types::ump_stream::jr_configuration_notification_w3),
               (override));
+
   MOCK_METHOD(void, function_block_discovery,
               (context_type, midi2::types::ump_stream::function_block_discovery_w0,
                midi2::types::ump_stream::function_block_discovery_w1,
                midi2::types::ump_stream::function_block_discovery_w2,
                midi2::types::ump_stream::function_block_discovery_w3),
+              (override));
+  MOCK_METHOD(void, function_block_info_notification,
+              (context_type, midi2::types::ump_stream::function_block_info_notification_w0,
+               midi2::types::ump_stream::function_block_info_notification_w1,
+               midi2::types::ump_stream::function_block_info_notification_w2,
+               midi2::types::ump_stream::function_block_info_notification_w3),
+              (override));
+  MOCK_METHOD(void, function_block_name_notification,
+              (context_type, midi2::types::ump_stream::function_block_name_notification_w0,
+               midi2::types::ump_stream::function_block_name_notification_w1,
+               midi2::types::ump_stream::function_block_name_notification_w2,
+               midi2::types::ump_stream::function_block_name_notification_w3),
+              (override));
+
+  MOCK_METHOD(void, start_of_clip,
+              (context_type, midi2::types::ump_stream::start_of_clip_w0, midi2::types::ump_stream::start_of_clip_w1,
+               midi2::types::ump_stream::start_of_clip_w2, midi2::types::ump_stream::start_of_clip_w3),
+              (override));
+  MOCK_METHOD(void, end_of_clip,
+              (context_type, midi2::types::ump_stream::end_of_clip_w0, midi2::types::ump_stream::end_of_clip_w1,
+               midi2::types::ump_stream::end_of_clip_w2, midi2::types::ump_stream::end_of_clip_w3),
               (override));
 };
 
@@ -268,7 +259,7 @@ public:
     StrictMock<M2CVMMocks> m2cvm;
     StrictMock<UtilityMocks> utility;
     StrictMock<FlexMocks> flex;
-    UMPStreamMocks ump_stream;
+    StrictMock<UMPStreamMocks> ump_stream;
   };
   mocked_config config_;
   midi2::umpProcessor<mocked_config&> processor_;
@@ -713,6 +704,7 @@ TEST_F(UMPProcessor, StreamJRConfigurationNotification) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+// NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamFunctionBlockDiscovery) {
   midi2::types::ump_stream::function_block_discovery_w0 w0{};
   w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
@@ -730,81 +722,62 @@ TEST_F(UMPProcessor, StreamFunctionBlockDiscovery) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
-
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, FunctionBlockInfo) {
-  constexpr auto active = std::uint32_t{0b1};  // 1 bit
-  constexpr auto first_group = std::uint8_t{0};
-  constexpr auto function_block_num = std::uint32_t{0b0101010};  // 7 bits
-  constexpr auto groups_spanned = std::uint8_t{1};
-  constexpr auto midi1 = std::uint32_t{0x00};  // 2 bits
-  constexpr auto num_sysex8_streams = std::uint8_t{0x17U};
-  constexpr auto ui_hint = std::uint32_t{0b10};  // 2 bits
-  constexpr auto version = std::uint8_t{0x01};
+TEST_F(UMPProcessor, StreamFunctionBlockInfoNotification) {
+  midi2::types::ump_stream::function_block_info_notification_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_info_notification));
+  w0.block_active = 1;
+  w0.block_num = 0x1F;
+  w0.ui_hint = 0b10;
+  w0.midi1 = 0;
+  w0.direction = 0b10;
+  midi2::types::ump_stream::function_block_info_notification_w1 w1{};
+  w1.first_group = 0x0b10101010;
+  w1.num_spanned = 0x10;
+  w1.ci_message_version = 0x1;
+  w1.max_sys8_streams = 2;
+  midi2::types::ump_stream::function_block_info_notification_w2 w2{};
+  midi2::types::ump_stream::function_block_info_notification_w3 w3{};
+  EXPECT_CALL(config_.ump_stream, function_block_info_notification(config_.context, w0, w1, w2, w3)).Times(1);
 
-  midi2::function_block_info fbi;
-  fbi.fbIdx = function_block_num;
-  fbi.active = active;
-  fbi.direction = midi2::function_block_info::fbdirection::output;
-  fbi.firstGroup = first_group;
-  fbi.groupLength = groups_spanned;
-  fbi.midiCIVersion = version;
-  fbi.isMIDI1 = false;
-  fbi.maxS8Streams = num_sysex8_streams;
-
-  EXPECT_CALL(config_.callbacks, functionBlockInfo(fbi)).Times(1);
-
-  midi2::types::function_block_info_w0 word1{};
-  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::ump_stream);
-  word1.format = 0U;
-  word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_negotiation_reply);
-  word1.a = active;
-  word1.block_number = function_block_num;
-  word1.reserv = 0U;
-  word1.ui_hint = ui_hint;
-  word1.m1 = midi1;
-  word1.dir = static_cast<std::uint32_t>(
-      midi2::function_block_info::fbdirection::output);
-
-  midi2::types::function_block_info_w1 word2{};
-  word2.first_group = first_group;
-  word2.groups_spanned = groups_spanned;
-  word2.message_version = version;
-  word2.num_sysex8_streams = num_sysex8_streams;
-
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word1));
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word2));
-  processor_.processUMP(0);
-  processor_.processUMP(0);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, FunctionBlockName) {
-  constexpr auto function_block_num = std::uint8_t{0b0101010};  // 8 bits
-  constexpr auto group = std::uint8_t{0xFF};
-  constexpr auto stream_id = 0U;
-  constexpr auto format = 0U;
+TEST_F(UMPProcessor, StreamFunctionBlockNameNotification) {
+  midi2::types::ump_stream::function_block_name_notification_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::ump_stream));
+  w0.format = 0x00;
+  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_name_notification));
+  w0.block_num = 0x1F;
+  w0.name0 = 'a';
+  midi2::types::ump_stream::function_block_name_notification_w1 w1{};
+  w1.name1 = 'b';
+  w1.name2 = 'c';
+  w1.name3 = 'd';
+  w1.name4 = 'e';
+  midi2::types::ump_stream::function_block_name_notification_w2 w2{};
+  w2.name5 = 'f';
+  w2.name6 = 'g';
+  w2.name7 = 'h';
+  w2.name8 = 'i';
+  midi2::types::ump_stream::function_block_name_notification_w3 w3{};
+  w3.name9 = 'k';
+  w3.name10 = 'l';
+  w3.name11 = 'm';
+  w3.name12 = 'n';
+  EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, w0, w1, w2, w3)).Times(1);
 
-  std::array<std::uint8_t, 4> const payload{'n', 'a', 'm', 'e'};
-
-  EXPECT_CALL(
-      config_.callbacks,
-      functionBlockName(UMPDataMatches(midi2::ump_common{group, midi2::ump_message_type::ump_stream,
-                                                         static_cast<std::uint8_t>(midi2::ci_message::protocol_set)},
-                                       stream_id, format, std::begin(payload), std::end(payload)),
-                        function_block_num));
-
-  midi2::types::function_block_name_w0 word1{};
-  word1.mt = static_cast<std::uint32_t>(midi2::ump_message_type::ump_stream);
-  word1.format = 0U;  // "complete UMP"
-  word1.status = static_cast<std::uint32_t>(midi2::ci_message::protocol_set);
-  word1.block_number = function_block_num;
-  word1.name = 'n';
-
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word1));
-  processor_.processUMP(pack('a', 'm', 'e', 0));
-  processor_.processUMP(0);
-  processor_.processUMP(0);
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, SetChordName) {
   constexpr auto group = std::uint8_t{0x0F};

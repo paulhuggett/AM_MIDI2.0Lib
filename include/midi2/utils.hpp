@@ -121,11 +121,10 @@ enum class ump_stream : std::uint32_t {
   jr_configuration_request = 0x05,
   jr_configuration_notification = 0x06,
   function_block_discovery = 0x10,
-
-  FUNCTIONBLOCK_INFO_NOTFICATION = 0x011,
-  FUNCTIONBLOCK_NAME_NOTIFICATION = 0x012,
-  STARTOFSEQ = 0x020,
-  ENDOFFILE = 0x021,
+  function_block_info_notification = 0x11,
+  function_block_name_notification = 0x12,
+  start_of_clip = 0x20,
+  end_of_clip = 0x21,
 };
 
 enum class ci_message : std::uint8_t {

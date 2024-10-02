@@ -136,26 +136,6 @@ struct chord {
   alteration baAlt2;
 };
 
-struct function_block_info {
-  bool operator==(function_block_info const&) const = default;
-
-  enum class fbdirection : std::uint8_t {
-    reserved = 0b00,
-    input = 0b01,
-    output = 0b10,
-    bidirectional = 0b11,
-  };
-
-  std::uint8_t fbIdx;
-  bool active;
-  fbdirection direction;
-  std::uint8_t firstGroup;
-  std::uint8_t groupLength;
-  std::uint8_t midiCIVersion;
-  std::uint8_t isMIDI1;
-  std::uint8_t maxS8Streams;
-};
-
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 template <midi2::ump_message_type> struct message_size {};
@@ -191,9 +171,6 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 template <typename T> concept backend = requires(T && v) {
   { v.system(midi2::types::system_general{}) } -> std::same_as<void>;
   { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
-
-  { v.functionBlockInfo(function_block_info{}) } -> std::same_as<void>;
-  { v.functionBlockName(ump_data{}, std::uint8_t{}) } -> std::same_as<void>;
 
   { v.startOfSeq() } -> std::same_as<void>;
   { v.endOfFile() } -> std::same_as<void>;
@@ -275,6 +252,26 @@ concept ump_stream_backend = requires(T v, Context context) {
       types::ump_stream::function_block_discovery_w1{},
       types::ump_stream::function_block_discovery_w2{},
       types::ump_stream::function_block_discovery_w3{}) } -> std::same_as<void>;
+  { v.function_block_info_notification(context,
+      types::ump_stream::function_block_info_notification_w0{},
+      types::ump_stream::function_block_info_notification_w1{},
+      types::ump_stream::function_block_info_notification_w2{},
+      types::ump_stream::function_block_info_notification_w3{}) } -> std::same_as<void>;
+  { v.function_block_name_notification(context,
+      types::ump_stream::function_block_name_notification_w0{},
+      types::ump_stream::function_block_name_notification_w1{},
+      types::ump_stream::function_block_name_notification_w2{},
+      types::ump_stream::function_block_name_notification_w3{}) } -> std::same_as<void>;
+  { v.start_of_clip(context,
+      types::ump_stream::start_of_clip_w0{},
+      types::ump_stream::start_of_clip_w1{},
+      types::ump_stream::start_of_clip_w2{},
+      types::ump_stream::start_of_clip_w3{}) } -> std::same_as<void>;
+  { v.end_of_clip(context,
+      types::ump_stream::end_of_clip_w0{},
+      types::ump_stream::end_of_clip_w1{},
+      types::ump_stream::end_of_clip_w2{},
+      types::ump_stream::end_of_clip_w3{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept flex_backend = requires(T v, Context context) {
@@ -309,11 +306,6 @@ public:
 
   virtual void system(types::system_general) { /* nop */ }
   virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
-
-  //---------- UMP Stream
-
-  virtual void functionBlockInfo(function_block_info const& fbi) { (void)fbi; }
-  virtual void functionBlockName(ump_data const& /*mess*/, uint8_t /*fbIdx*/) { /* nop */ }
 
   virtual void startOfSeq() { /* nop */ }
   virtual void endOfFile() { /* nop */ }
@@ -414,10 +406,26 @@ template <typename Context> struct ump_stream_base {
                                              types::ump_stream::jr_configuration_notification_w1,
                                              types::ump_stream::jr_configuration_notification_w2,
                                              types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
+
   virtual void function_block_discovery(Context, types::ump_stream::function_block_discovery_w0,
-                                        midi2::types::ump_stream::function_block_discovery_w1,
-                                        midi2::types::ump_stream::function_block_discovery_w2,
-                                        midi2::types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
+                                        types::ump_stream::function_block_discovery_w1,
+                                        types::ump_stream::function_block_discovery_w2,
+                                        types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
+  virtual void function_block_info_notification(
+      Context, types::ump_stream::function_block_info_notification_w0,
+      types::ump_stream::function_block_info_notification_w1, types::ump_stream::function_block_info_notification_w2,
+      types::ump_stream::function_block_info_notification_w3) { /* do nothing */ }
+  virtual void function_block_name_notification(
+      Context, types::ump_stream::function_block_name_notification_w0,
+      types::ump_stream::function_block_name_notification_w1, types::ump_stream::function_block_name_notification_w2,
+      types::ump_stream::function_block_name_notification_w3) { /* do nothing */ }
+
+  virtual void start_of_clip(Context, types::ump_stream::start_of_clip_w0, types::ump_stream::start_of_clip_w1,
+                             types::ump_stream::start_of_clip_w2,
+                             types::ump_stream::start_of_clip_w3) { /* do nothing */ }
+
+  virtual void end_of_clip(Context, types::ump_stream::end_of_clip_w0, types::ump_stream::end_of_clip_w1,
+                           types::ump_stream::end_of_clip_w2, types::ump_stream::end_of_clip_w3) { /* do nothing */ }
 };
 
 struct default_config {
@@ -503,8 +511,6 @@ private:
   static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
                                           std::size_t limit, OutputIterator out);
 
-  void functionblock_name();
-  void functionblock_info();
   void set_chord_name();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
@@ -693,41 +699,6 @@ constexpr OutputIterator umpProcessor<Config>::payload(std::array<std::uint32_t,
   return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
-template <ump_processor_config Config> void umpProcessor<Config>::functionblock_name() {
-  auto w0 = std::bit_cast<types::function_block_name_w0>(message_[0]);
-
-  std::uint8_t const fbIdx = w0.block_number;
-  std::array<std::uint8_t, 13> text{};
-  text[0] = w0.name;
-  umpProcessor::payload(message_, 0, text.size() - 1, std::begin(text) + 1);
-  auto const text_length = std::distance(
-      find_if_not(std::rbegin(text), std::rend(text), [](std::uint8_t v) { return v == 0; }), std::rend(text));
-  assert(text_length >= 0 && static_cast<std::size_t>(text_length) <= text.size());
-
-  ump_data mess;
-  mess.common.messageType = static_cast<ump_message_type>(w0.mt.value());
-  mess.common.status = static_cast<std::uint8_t>(w0.status);
-  mess.form = w0.format;
-  mess.data = std::span{text.data(), static_cast<std::size_t>(text_length)};
-  config_.callbacks.functionBlockName(mess, fbIdx);
-}
-
-template <ump_processor_config Config> void umpProcessor<Config>::functionblock_info() {
-  function_block_info info;
-  auto const w0 = std::bit_cast<types::function_block_info_w0>(message_[0]);
-  auto const w1 = std::bit_cast<types::function_block_info_w1>(message_[1]);
-
-  info.fbIdx = w0.block_number;
-  info.active = w0.a;
-  info.direction = static_cast<function_block_info::fbdirection>(w0.dir.value());
-  info.firstGroup = w1.first_group;
-  info.groupLength = w1.groups_spanned;
-  info.midiCIVersion = w1.message_version;
-  info.isMIDI1 = w0.m1;
-  info.maxS8Streams = w1.num_sysex8_streams;
-  config_.callbacks.functionBlockInfo(info);
-}
-
 template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_message() {
   // 128 bits UMP Stream Messages
   auto const status = static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U));
@@ -763,7 +734,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::endpoint_name_notification_w2>(message_[2]),
         std::bit_cast<types::ump_stream::endpoint_name_notification_w3>(message_[3]));
     break;
-
+  // 7.1.5 Product Instance Id Notification Message
   case ump_stream::product_instance_id_notification:
     config_.ump_stream.product_instance_id_notification(
         config_.context, std::bit_cast<types::ump_stream::product_instance_id_notification_w0>(message_[0]),
@@ -771,7 +742,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::product_instance_id_notification_w2>(message_[2]),
         std::bit_cast<types::ump_stream::product_instance_id_notification_w3>(message_[3]));
     break;
-
+  // 7.1.6.2 Stream Configuration Request
   case ump_stream::jr_configuration_request:
     config_.ump_stream.jr_configuration_request(
         config_.context, std::bit_cast<types::ump_stream::jr_configuration_request_w0>(message_[0]),
@@ -779,6 +750,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::jr_configuration_request_w2>(message_[2]),
         std::bit_cast<types::ump_stream::jr_configuration_request_w3>(message_[3]));
     break;
+  // 7.1.6.3 Stream Configuration Notification Message
   case ump_stream::jr_configuration_notification:
     config_.ump_stream.jr_configuration_notification(
         config_.context, std::bit_cast<types::ump_stream::jr_configuration_notification_w0>(message_[0]),
@@ -786,7 +758,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::jr_configuration_notification_w2>(message_[2]),
         std::bit_cast<types::ump_stream::jr_configuration_notification_w3>(message_[3]));
     break;
-
+  // 7.1.7 Function Block Discovery Message
   case ump_stream::function_block_discovery:
     config_.ump_stream.function_block_discovery(
         config_.context, std::bit_cast<types::ump_stream::function_block_discovery_w0>(message_[0]),
@@ -794,11 +766,34 @@ template <ump_processor_config Config> void umpProcessor<Config>::midi_endpoint_
         std::bit_cast<types::ump_stream::function_block_discovery_w2>(message_[2]),
         std::bit_cast<types::ump_stream::function_block_discovery_w3>(message_[3]));
     break;
-
-  case ump_stream::FUNCTIONBLOCK_INFO_NOTFICATION: this->functionblock_info(); break;
-  case ump_stream::FUNCTIONBLOCK_NAME_NOTIFICATION: this->functionblock_name(); break;
-  case ump_stream::STARTOFSEQ: config_.callbacks.startOfSeq(); break;
-  case ump_stream::ENDOFFILE: config_.callbacks.endOfFile(); break;
+  // 7.1.8 Function Block Info Notification
+  case ump_stream::function_block_info_notification:
+    config_.ump_stream.function_block_info_notification(
+        config_.context, std::bit_cast<types::ump_stream::function_block_info_notification_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::function_block_info_notification_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::function_block_info_notification_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::function_block_info_notification_w3>(message_[3]));
+    break;
+  // 7.1.9 Function Block Name Notification
+  case ump_stream::function_block_name_notification:
+    config_.ump_stream.function_block_name_notification(
+        config_.context, std::bit_cast<types::ump_stream::function_block_name_notification_w0>(message_[0]),
+        std::bit_cast<types::ump_stream::function_block_name_notification_w1>(message_[1]),
+        std::bit_cast<types::ump_stream::function_block_name_notification_w2>(message_[2]),
+        std::bit_cast<types::ump_stream::function_block_name_notification_w3>(message_[3]));
+    break;
+  case ump_stream::start_of_clip:
+    config_.ump_stream.start_of_clip(config_.context, std::bit_cast<types::ump_stream::start_of_clip_w0>(message_[0]),
+                                     std::bit_cast<types::ump_stream::start_of_clip_w1>(message_[1]),
+                                     std::bit_cast<types::ump_stream::start_of_clip_w2>(message_[2]),
+                                     std::bit_cast<types::ump_stream::start_of_clip_w3>(message_[3]));
+    break;
+  case ump_stream::end_of_clip:
+    config_.ump_stream.end_of_clip(config_.context, std::bit_cast<types::ump_stream::end_of_clip_w0>(message_[0]),
+                                   std::bit_cast<types::ump_stream::end_of_clip_w1>(message_[1]),
+                                   std::bit_cast<types::ump_stream::end_of_clip_w2>(message_[2]),
+                                   std::bit_cast<types::ump_stream::end_of_clip_w3>(message_[3]));
+    break;
   default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
   }
 }

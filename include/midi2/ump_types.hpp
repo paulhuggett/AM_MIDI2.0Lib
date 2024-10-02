@@ -481,6 +481,106 @@ using function_block_discovery_w1 = std::uint32_t;
 using function_block_discovery_w2 = std::uint32_t;
 using function_block_discovery_w3 = std::uint32_t;
 
+// 7.1.8 Function Block Info Notification
+union function_block_info_notification_w0 {
+  friend constexpr bool operator==(function_block_info_notification_w0 const& a,
+                                   function_block_info_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x11
+  ump_bitfield<15, 1> block_active;
+  ump_bitfield<8, 7> block_num;
+  ump_bitfield<6, 2> reserved0;
+  ump_bitfield<4, 2> ui_hint;
+  ump_bitfield<2, 2> midi1;
+  ump_bitfield<0, 2> direction;
+};
+union function_block_info_notification_w1 {
+  friend constexpr bool operator==(function_block_info_notification_w1 const& a,
+                                   function_block_info_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> first_group;
+  ump_bitfield<16, 8> num_spanned;
+  ump_bitfield<8, 8> ci_message_version;
+  ump_bitfield<0, 8> max_sys8_streams;
+};
+using function_block_info_notification_w2 = std::uint32_t;
+using function_block_info_notification_w3 = std::uint32_t;
+
+// 7.1.9 Function Block Name Notification
+union function_block_name_notification_w0 {
+  friend constexpr bool operator==(function_block_name_notification_w0 const& a,
+                                   function_block_name_notification_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x12
+  ump_bitfield<8, 8> block_num;
+  ump_bitfield<0, 8> name0;
+};
+union function_block_name_notification_w1 {
+  friend constexpr bool operator==(function_block_name_notification_w1 const& a,
+                                   function_block_name_notification_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name1;
+  ump_bitfield<16, 8> name2;
+  ump_bitfield<8, 8> name3;
+  ump_bitfield<0, 8> name4;
+};
+union function_block_name_notification_w2 {
+  friend constexpr bool operator==(function_block_name_notification_w2 const& a,
+                                   function_block_name_notification_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name5;
+  ump_bitfield<16, 8> name6;
+  ump_bitfield<8, 8> name7;
+  ump_bitfield<0, 8> name8;
+};
+union function_block_name_notification_w3 {
+  friend constexpr bool operator==(function_block_name_notification_w3 const& a,
+                                   function_block_name_notification_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> name9;
+  ump_bitfield<16, 8> name10;
+  ump_bitfield<8, 8> name11;
+  ump_bitfield<0, 8> name12;
+};
+
+// 7.1.10 Start of Clip Message
+union start_of_clip_w0 {
+  friend constexpr bool operator==(start_of_clip_w0 const& a, start_of_clip_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x20
+  ump_bitfield<0, 16> reserved0;
+};
+using start_of_clip_w1 = std::uint32_t;
+using start_of_clip_w2 = std::uint32_t;
+using start_of_clip_w3 = std::uint32_t;
+
+// 7.1.11 End of Clip Message
+union end_of_clip_w0 {
+  friend constexpr bool operator==(end_of_clip_w0 const& a, end_of_clip_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> mt;       // 0x0F
+  ump_bitfield<26, 2> format;   // 0x00
+  ump_bitfield<16, 10> status;  // 0x21
+  ump_bitfield<0, 16> reserved0;
+};
+using end_of_clip_w1 = std::uint32_t;
+using end_of_clip_w2 = std::uint32_t;
+using end_of_clip_w3 = std::uint32_t;
+
 };  // end namespace ump_stream
 
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
