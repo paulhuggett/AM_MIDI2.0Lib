@@ -734,7 +734,7 @@ TEST_F(UMPProcessor, StreamFunctionBlockInfoNotification) {
   w0.midi1 = 0;
   w0.direction = 0b10;
   midi2::types::ump_stream::function_block_info_notification_w1 w1{};
-  w1.first_group = 0x0b10101010;
+  w1.first_group = 0b10101010;
   w1.num_spanned = 0x10;
   w1.ci_message_version = 0x1;
   w1.max_sys8_streams = 2;
