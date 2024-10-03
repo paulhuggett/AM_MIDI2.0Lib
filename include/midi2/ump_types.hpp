@@ -586,6 +586,9 @@ using end_of_clip_w3 = std::uint32_t;
 namespace flex_data {
 
 union flex_data_w0 {
+  friend constexpr bool operator==(flex_data_w0 const& a, flex_data_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;  // 0x0D
   ump_bitfield<24, 4> group;
   ump_bitfield<22, 2> form;
@@ -597,6 +600,110 @@ union flex_data_w0 {
 using flex_data_w1 = std::uint32_t;
 using flex_data_w2 = std::uint32_t;
 using flex_data_w3 = std::uint32_t;
+
+// 7.5.4 Set Time Signature Message
+using set_time_signature_w0 = flex_data_w0;
+union set_time_signature_w1 {
+  friend constexpr bool operator==(set_time_signature_w1 const& a, set_time_signature_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> numerator;
+  ump_bitfield<16, 8> denominator;
+  ump_bitfield<8, 8> number_of_32_notes;
+  ump_bitfield<0, 8> reserved0;
+};
+using set_time_signature_w2 = std::uint32_t;
+using set_time_signature_w3 = std::uint32_t;
+
+// 7.5.8 Set Chord Name Message
+enum class sharps_flats : std::int8_t {
+  double_sharp = 2,
+  sharp = 1,
+  natural = 0,
+  flat = -1,
+  double_flat = -2,
+  /// Indicates that the bass note is the same as the chord tonic note; the
+  /// bass note field is set to note::unknown. Valid only for the bass
+  /// sharps/flats field.
+  chord_tonic = -8,
+};
+
+enum class note : std::uint8_t {
+  unknown = 0x0,
+  A = 0x1,
+  B = 0x2,
+  C = 0x3,
+  D = 0x4,
+  E = 0x5,
+  F = 0x6,
+  G = 0x7,
+};
+
+enum class chord_type : std::uint8_t {
+  no_chord = 0x00,
+  major = 0x01,
+  major_6th = 0x02,
+  major_7th = 0x03,
+  major_9th = 0x04,
+  major_11th = 0x05,
+  major_13th = 0x06,
+  minor = 0x07,
+  minor_6th = 0x08,
+  minor_7th = 0x09,
+  minor_9th = 0x0A,
+  minor_11th = 0x0B,
+  minor_13th = 0x0C,
+  dominant = 0x0D,
+  dominant_ninth = 0x0E,
+  dominant_11th = 0x0F,
+  dominant_13th = 0x10,
+  augmented = 0x11,
+  augmented_seventh = 0x12,
+  diminished = 0x13,
+  diminished_seventh = 0x14,
+  half_diminished = 0x15,
+  major_minor = 0x16,
+  pedal = 0x17,
+  power = 0x18,
+  suspended_2nd = 0x19,
+  suspended_4th = 0x1A,
+  seven_suspended_4th = 0x1B,
+};
+using set_chord_name_w0 = flex_data_w0;
+union set_chord_name_w1 {
+  friend constexpr bool operator==(set_chord_name_w1 const& a, set_chord_name_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
+  ump_bitfield<24, 4> chord_tonic;
+  ump_bitfield<16, 8> chord_type;
+  ump_bitfield<12, 4> alter_1_type;
+  ump_bitfield<8, 4> alter_1_degree;
+  ump_bitfield<4, 4> alter_2_type;
+  ump_bitfield<0, 4> alter_2_degree;
+};
+union set_chord_name_w2 {
+  friend constexpr bool operator==(set_chord_name_w2 const& a, set_chord_name_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> alter_3_type;
+  ump_bitfield<24, 4> alter_3_degree;
+  ump_bitfield<20, 4> alter_4_type;
+  ump_bitfield<16, 4> alter_4_degree;
+  ump_bitfield<0, 16> reserved;  // 0x0000
+};
+union set_chord_name_w3 {
+  friend constexpr bool operator==(set_chord_name_w3 const& a, set_chord_name_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
+  ump_bitfield<24, 4> bass_note;
+  ump_bitfield<16, 8> bass_chord_type;
+  ump_bitfield<12, 4> alter_1_type;
+  ump_bitfield<8, 4> alter_1_degree;
+  ump_bitfield<4, 4> alter_2_type;
+  ump_bitfield<0, 4> alter_2_degree;
+};
 
 }  // end namespace flex_data
 
@@ -629,42 +736,6 @@ union mixed_data_set_w0 {
 
 // F.3.1 Message Type 0xD: Flex Data Messages
 // Table 32 128 bit UMP Formats for Message Type 0xD: Flex Data Messages
-
-// Set Chord Name
-union set_chord_name_w0 {
-  ump_bitfield<28, 4> mt;  // 0xD
-  ump_bitfield<24, 4> group;
-  ump_bitfield<22, 2> format;  // 0x0
-  ump_bitfield<20, 2> addrs;
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<8, 8> status_bank;  // 0x00
-  ump_bitfield<0, 8> status;       // 0x06
-};
-union set_chord_name_w1 {
-  ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
-  ump_bitfield<24, 4> chord_tonic;
-  ump_bitfield<16, 8> chord_type;
-  ump_bitfield<12, 4> alter_1_type;
-  ump_bitfield<8, 4> alter_1_degree;
-  ump_bitfield<4, 4> alter_2_type;
-  ump_bitfield<0, 4> alter_2_degree;
-};
-union set_chord_name_w2 {
-  ump_bitfield<28, 4> alter_3_type;
-  ump_bitfield<24, 4> alter_3_degree;
-  ump_bitfield<20, 4> alter_4_type;
-  ump_bitfield<16, 4> alter_4_degree;
-  ump_bitfield<0, 16> reserved;  // 0x0000
-};
-union set_chord_name_w3 {
-  ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
-  ump_bitfield<24, 4> bass_note;
-  ump_bitfield<16, 8> bass_chord_type;
-  ump_bitfield<12, 4> alter_1_type;
-  ump_bitfield<8, 4> alter_1_degree;
-  ump_bitfield<4, 4> alter_2_type;
-  ump_bitfield<0, 4> alter_2_degree;
-};
 
 // F.3.2 Message Type 0xF: UMP Stream Messages
 // Table 33 128 bit UMP Formats for Message Type 0xF: UMP Stream Messages

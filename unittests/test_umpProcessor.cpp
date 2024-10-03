@@ -33,12 +33,6 @@ std::ostream& operator<<(std::ostream& os, ump_common const& common) {
             << ", status=" << static_cast<unsigned>(common.status) << " }";
 };
 
-std::ostream& operator<<(std::ostream& os, midi2::ump_generic const& generic);
-std::ostream& operator<<(std::ostream& os, midi2::ump_generic const& generic) {
-  return os << "{ common:" << generic.common << ", value=" << generic.value
-            << " }";
-}
-
 std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm);
 std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm) {
   return os << "{ common:" << cvm.common
@@ -58,25 +52,6 @@ std::ostream& operator<<(std::ostream& os, ump_data const& data) {
             std::ostream_iterator<unsigned>(os, ","));
   os << "] }";
   return os;
-}
-
-std::ostream& operator<<(std::ostream& os, chord::alteration const& alt);
-std::ostream& operator<<(std::ostream& os, chord::alteration const& alt) {
-  return os << "{ type=" << static_cast<unsigned>(alt.type)
-            << ", degree=" << static_cast<unsigned>(alt.degree) << " }";
-}
-
-std::ostream& operator<<(std::ostream& os, chord const& c);
-std::ostream& operator<<(std::ostream& os, chord const& c) {
-  return os << "{ chShrpFlt=" << static_cast<unsigned>(c.chShrpFlt)
-            << ", chTonic=" << static_cast<unsigned>(c.chTonic)
-            << ", chType=" << static_cast<unsigned>(c.chType)
-            << ", chAlt1=" << c.chAlt1 << ", chAlt2=" << c.chAlt2
-            << ", chAlt3=" << c.chAlt3 << ", chAlt4=" << c.chAlt4
-            << ", baShrpFlt=" << static_cast<unsigned>(c.baShrpFlt)
-            << ", baTonic=" << static_cast<unsigned>(c.baTonic)
-            << ", baType=" << static_cast<unsigned>(c.baType)
-            << ", baAlt1=" << c.baAlt1 << ", baAlt2=" << c.baAlt2 << " }";
 }
 
 }  // end namespace midi2
@@ -140,25 +115,28 @@ public:
   MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::delta_clockstamp), (override));
 };
 
-class FlexMocks : public midi2::flex_base<context_type> {
+class FlexDataMocks : public midi2::flex_data_base<context_type> {
 public:
-  MOCK_METHOD(void, tempo, (context_type, std::uint8_t group, std::uint32_t num10nsPQN), (override));
-  MOCK_METHOD(void, time_sig,
-              (context_type, std::uint8_t group, std::uint8_t numerator, std::uint8_t denominator,
-               std::uint8_t num32Notes),
+  MOCK_METHOD(void, set_tempo,
+              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
+               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
               (override));
-  MOCK_METHOD(void, metronome,
-              (context_type, std::uint8_t group, std::uint8_t numClkpPriCli, std::uint8_t bAccP1, std::uint8_t bAccP2,
-               std::uint8_t bAccP3, std::uint8_t numSubDivCli1, std::uint8_t numSubDivCli2),
+  MOCK_METHOD(void, set_time_signature,
+              (context_type, midi2::types::flex_data::set_time_signature_w0,
+               midi2::types::flex_data::set_time_signature_w1, midi2::types::flex_data::set_time_signature_w2,
+               midi2::types::flex_data::set_time_signature_w3),
               (override));
-  MOCK_METHOD(void, key_sig,
-              (context_type, std::uint8_t group, std::uint8_t addrs, std::uint8_t channel, std::uint8_t sharpFlats,
-               std::uint8_t tonic),
+  MOCK_METHOD(void, set_metronome,
+              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
+               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
               (override));
-  MOCK_METHOD(void, chord, (context_type, std::uint8_t, std::uint8_t, std::uint8_t, midi2::chord const&), (override));
-  MOCK_METHOD(void, performance, (context_type, midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
+  MOCK_METHOD(void, set_key_signature,
+              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
+               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
               (override));
-  MOCK_METHOD(void, lyric, (context_type, midi2::ump_data const& mess, std::uint8_t addrs, std::uint8_t channel),
+  MOCK_METHOD(void, set_chord_name,
+              (context_type, midi2::types::flex_data::set_chord_name_w0, midi2::types::flex_data::set_chord_name_w1,
+               midi2::types::flex_data::set_chord_name_w2, midi2::types::flex_data::set_chord_name_w3),
               (override));
 };
 
@@ -258,7 +236,7 @@ public:
     StrictMock<M1CVMMocks> m1cvm;
     StrictMock<M2CVMMocks> m2cvm;
     StrictMock<UtilityMocks> utility;
-    StrictMock<FlexMocks> flex;
+    StrictMock<FlexDataMocks> flex;
     StrictMock<UMPStreamMocks> ump_stream;
   };
   mocked_config config_;
@@ -809,72 +787,80 @@ TEST_F(UMPProcessor, StreamEndOfClip) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
-
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, SetChordName) {
+TEST_F(UMPProcessor, StreamSetTimeSignature) {
+  midi2::types::flex_data::set_time_signature_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 3;
+  w0.status_bank = 0;
+  w0.status = static_cast<std::uint8_t>(to_underlying(midi2::flex_data::set_time_signature));
+  midi2::types::flex_data::set_time_signature_w1 w1{};
+  w1.numerator = 1;
+  w1.denominator = 2;
+  w1.number_of_32_notes = 16;
+  midi2::types::flex_data::set_time_signature_w2 w2{};
+  midi2::types::flex_data::set_time_signature_w3 w3{};
+  EXPECT_CALL(config_.flex, set_time_signature(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, StreamSetChordName) {
   constexpr auto group = std::uint8_t{0x0F};
   constexpr auto addrs = std::uint8_t{0x03};
   constexpr auto channel = std::uint8_t{3};
 
-  constexpr auto chord_tonic = midi2::chord::note::E;
-  constexpr auto chord_type = midi2::chord::chord_type::augmented;
-  constexpr auto bass_note = midi2::chord::note::unknown;
-  constexpr auto bass_chord_type = midi2::chord::chord_type::diminished;
+  constexpr auto chord_tonic = midi2::types::flex_data::note::E;
+  constexpr auto chord_type = midi2::types::flex_data::chord_type::augmented;
+  constexpr auto bass_note = midi2::types::flex_data::note::unknown;
+  constexpr auto bass_chord_type = midi2::types::flex_data::chord_type::diminished;
 
-  midi2::chord chord{};
-  chord.chShrpFlt = midi2::chord::sharps_flats::sharp;
-  chord.chTonic = chord_tonic;
-  chord.chType = chord_type;
-  chord.chAlt1 = midi2::chord::alteration{1, 5};
-  chord.chAlt2 = midi2::chord::alteration{2, 6};
-  chord.chAlt3 = midi2::chord::alteration{3, 7};
-  chord.chAlt4 = midi2::chord::alteration{4, 8};
-  chord.baShrpFlt = midi2::chord::sharps_flats::double_flat;  // Double Flat
-  chord.baTonic = bass_note;
-  chord.baType = bass_chord_type;
-  chord.baAlt1 = midi2::chord::alteration{1, 3};
-  chord.baAlt2 = midi2::chord::alteration{2, 4};
+  midi2::types::flex_data::set_chord_name_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(midi2::ump_message_type::flex_data);
+  w0.group = group;
+  w0.form = 0x0;
+  w0.addrs = addrs;
+  w0.channel = channel;
+  w0.status_bank = 0x00;
+  w0.status = 0x06;
 
-  midi2::types::set_chord_name_w0 word1{};
-  word1.mt = static_cast<std::uint8_t>(midi2::ump_message_type::flex_data);
-  word1.group = group;
-  word1.format = 0x0;
-  word1.addrs = addrs;
-  word1.channel = channel;
-  word1.status_bank = 0x00;
-  word1.status = 0x06;
+  midi2::types::flex_data::set_chord_name_w1 w1{};
+  w1.tonic_sharps_flats = 0x1;
+  w1.chord_tonic = static_cast<std::uint8_t>(chord_tonic);
+  w1.chord_type = static_cast<std::uint8_t>(chord_type);
+  w1.alter_1_type = 1;
+  w1.alter_1_degree = 5;
+  w1.alter_2_type = 2;
+  w1.alter_2_degree = 6;
 
-  midi2::types::set_chord_name_w1 word2{};
-  word2.tonic_sharps_flats = 0x1;
-  word2.chord_tonic = static_cast<std::uint8_t>(chord_tonic);
-  word2.chord_type = static_cast<std::uint8_t>(chord_type);
-  word2.alter_1_type = 1;
-  word2.alter_1_degree = 5;
-  word2.alter_2_type = 2;
-  word2.alter_2_degree = 6;
+  midi2::types::flex_data::set_chord_name_w2 w2{};
+  w2.alter_3_type = 3;
+  w2.alter_3_degree = 7;
+  w2.alter_4_type = 4;
+  w2.alter_4_degree = 8;
+  w2.reserved = 0x0000;
 
-  midi2::types::set_chord_name_w2 word3{};
-  word3.alter_3_type = 3;
-  word3.alter_3_degree = 7;
-  word3.alter_4_type = 4;
-  word3.alter_4_degree = 8;
-  word3.reserved = 0x0000;
+  midi2::types::flex_data::set_chord_name_w3 w3{};
+  w3.bass_sharps_flats = 0xE;
+  w3.bass_note = static_cast<std::uint8_t>(bass_note);
+  w3.bass_chord_type = static_cast<std::uint8_t>(bass_chord_type);
+  w3.alter_1_type = 1;
+  w3.alter_1_degree = 3;
+  w3.alter_2_type = 2;
+  w3.alter_2_degree = 4;
 
-  midi2::types::set_chord_name_w3 word4{};
-  word4.bass_sharps_flats = 0xE;
-  word4.bass_note = static_cast<std::uint8_t>(bass_note);
-  word4.bass_chord_type = static_cast<std::uint8_t>(bass_chord_type);
-  word4.alter_1_type = 1;
-  word4.alter_1_degree = 3;
-  word4.alter_2_type = 2;
-  word4.alter_2_degree = 4;
+  EXPECT_CALL(config_.flex, set_chord_name(config_.context, w0, w1, w2, w3)).Times(1);
 
-  EXPECT_CALL(config_.flex, chord(config_.context, group, addrs, channel, chord)).Times(1);
-
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word1));
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word2));
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word3));
-  processor_.processUMP(std::bit_cast<std::uint32_t>(word4));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Sysex7) {

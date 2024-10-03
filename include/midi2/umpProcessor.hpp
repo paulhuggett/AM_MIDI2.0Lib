@@ -59,83 +59,6 @@ struct ump_data {
   std::span<std::uint8_t> data;
 };
 
-struct chord {
-  bool operator==(chord const&) const = default;
-
-  enum class sharps_flats : std::int8_t {
-    double_sharp = 2,
-    sharp = 1,
-    natural = 0,
-    flat = -1,
-    double_flat = -2,
-    /// Indicates that the bass note is the same as the chord tonic note; the
-    /// bass note field is set to note::unknown. Valid only for the bass
-    /// sharps/flats field.
-    chord_tonic = -8,
-  };
-
-  enum class note : std::uint8_t {
-    unknown = 0x0,
-    A = 0x1,
-    B = 0x2,
-    C = 0x3,
-    D = 0x4,
-    E = 0x5,
-    F = 0x6,
-    G = 0x7,
-  };
-
-  enum class chord_type : std::uint8_t {
-    no_chord = 0x00,
-    major = 0x01,
-    major_6th = 0x02,
-    major_7th = 0x03,
-    major_9th = 0x04,
-    major_11th = 0x05,
-    major_13th = 0x06,
-    minor = 0x07,
-    minor_6th = 0x08,
-    minor_7th = 0x09,
-    minor_9th = 0x0A,
-    minor_11th = 0x0B,
-    minor_13th = 0x0C,
-    dominant = 0x0D,
-    dominant_ninth = 0x0E,
-    dominant_11th = 0x0F,
-    dominant_13th = 0x10,
-    augmented = 0x11,
-    augmented_seventh = 0x12,
-    diminished = 0x13,
-    diminished_seventh = 0x14,
-    half_diminished = 0x15,
-    major_minor = 0x16,
-    pedal = 0x17,
-    power = 0x18,
-    suspended_2nd = 0x19,
-    suspended_4th = 0x1A,
-    seven_suspended_4th = 0x1B,
-  };
-
-  struct alteration {
-    bool operator==(alteration const&) const = default;
-    uint8_t type : 4;
-    uint8_t degree : 4;
-  };
-
-  sharps_flats chShrpFlt;
-  note chTonic;
-  chord_type chType;
-  alteration chAlt1;
-  alteration chAlt2;
-  alteration chAlt3;
-  alteration chAlt4;
-  sharps_flats baShrpFlt;
-  note baTonic;
-  chord_type baType;
-  alteration baAlt1;
-  alteration baAlt2;
-};
-
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 template <midi2::ump_message_type> struct message_size {};
@@ -274,7 +197,37 @@ concept ump_stream_backend = requires(T v, Context context) {
       types::ump_stream::end_of_clip_w3{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
-concept flex_backend = requires(T v, Context context) {
+concept flex_data_backend = requires(T v, Context context) {
+  { v.set_tempo(context,
+      types::flex_data::flex_data_w0{},
+      types::flex_data::flex_data_w1{},
+      types::flex_data::flex_data_w2{},
+      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+  { v.set_time_signature(context,
+      types::flex_data::set_time_signature_w0{},
+      types::flex_data::set_time_signature_w1{},
+      types::flex_data::set_time_signature_w2{},
+      types::flex_data::set_time_signature_w3{}) } -> std::same_as<void>;
+  { v.set_metronome(context,
+      types::flex_data::flex_data_w0{},
+      types::flex_data::flex_data_w1{},
+      types::flex_data::flex_data_w2{},
+      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+  { v.set_key_signature(context,
+      types::flex_data::flex_data_w0{},
+      types::flex_data::flex_data_w1{},
+      types::flex_data::flex_data_w2{},
+      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+  { v.set_chord_name(context,
+      types::flex_data::set_chord_name_w0{},
+      types::flex_data::set_chord_name_w1{},
+      types::flex_data::set_chord_name_w2{},
+      types::flex_data::set_chord_name_w3{}) } -> std::same_as<void>;
+
+
+
+
+#if 0
   { v.tempo(context, uint8_t{}, uint32_t{}) } -> std::same_as<void>;
   { v.time_sig(context, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
   { v.metronome(context, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
@@ -282,6 +235,7 @@ concept flex_backend = requires(T v, Context context) {
   { v.chord(context, uint8_t{}, uint8_t{}, uint8_t{}, chord{}) } -> std::same_as<void>;
   { v.performance(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
   { v.lyric(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
+#endif
 };
 
 template <typename T>
@@ -291,7 +245,7 @@ concept ump_processor_config = requires (T v) {
   { v.m1cvm } -> m1cvm_backend<decltype(v.context)>;
   { v.m2cvm } -> m2cvm_backend<decltype(v.context)>;
   { v.utility } -> utility_backend<decltype(v.context)>;
-  { v.flex } -> flex_backend<decltype(v.context)>;
+  { v.flex } -> flex_data_backend<decltype(v.context)>;
   { v.ump_stream } -> ump_stream_backend<decltype(v.context)>;
 };
 // clang-format on
@@ -356,20 +310,31 @@ template <typename Context> struct utility_base {
   virtual void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
   virtual void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
 };
-template <typename Context> struct flex_base {
-  flex_base() = default;
-  flex_base(flex_base const&) = default;
-  virtual ~flex_base() noexcept = default;
+template <typename Context> struct flex_data_base {
+  flex_data_base() = default;
+  flex_data_base(flex_data_base const&) = default;
+  virtual ~flex_data_base() noexcept = default;
 
-  virtual void tempo(Context, uint8_t /*group*/, uint32_t /*num10nsPQN*/) { /* do nothing */ }
-  virtual void time_sig(Context, uint8_t /*group*/, uint8_t /*numerator*/, uint8_t /*denominator*/,
-                        uint8_t /*num32Notes*/) { /* do nothing */ }
-  virtual void metronome(Context, uint8_t /*group*/, uint8_t /*numClkpPriCli*/, uint8_t /*bAccP1*/, uint8_t /*bAccP2*/,
-                         uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/, uint8_t /*numSubDivCli2*/) { /* do nothing */ }
-  virtual void key_sig(Context, uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/, uint8_t /*sharpFlats*/,
-                       uint8_t /*tonic*/) { /* do nothing */ }
-  virtual void chord(Context, uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/,
-                     chord const& /*chord*/) { /* do nothing */ }
+  virtual void set_tempo(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
+                         types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
+  virtual void set_time_signature(Context, types::flex_data::set_time_signature_w0,
+                                  types::flex_data::set_time_signature_w1, types::flex_data::set_time_signature_w2,
+                                  types::flex_data::set_time_signature_w3) { /* do nothing */ }
+  virtual void set_metronome(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
+                             types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
+  virtual void set_key_signature(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
+                                 types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
+  virtual void set_chord_name(Context, types::flex_data::set_chord_name_w0, types::flex_data::set_chord_name_w1,
+                              types::flex_data::set_chord_name_w2,
+                              types::flex_data::set_chord_name_w3) { /* do nothing */ }
+
+  //  virtual void tempo(Context, uint8_t /*group*/, uint32_t /*num10nsPQN*/) { /* do nothing */ }
+  //  virtual void time_sig(Context, uint8_t /*group*/, uint8_t /*numerator*/, uint8_t /*denominator*/, uint8_t
+  //  /*num32Notes*/) { /* do nothing */ } virtual void metronome(Context, uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
+  //  uint8_t /*bAccP1*/, uint8_t /*bAccP2*/, uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/, uint8_t /*numSubDivCli2*/)
+  //  { /* do nothing */ } virtual void key_sig(Context, uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/,
+  //  uint8_t /*sharpFlats*/, uint8_t /*tonic*/) { /* do nothing */ } virtual void chord(Context, uint8_t /*group*/,
+  //  uint8_t /*addrs*/, uint8_t /*channel*/, chord const& /*chord*/) { /* do nothing */ }
   virtual void performance(Context, ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* do nothing */
   }
   virtual void lyric(Context, ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* do nothing */ }
@@ -435,7 +400,7 @@ struct default_config {
   m1cvm_base<decltype(context)> m1cvm;
   m2cvm_base<decltype(context)> m2cvm;
   utility_base<decltype(context)> utility;
-  flex_base<decltype(context)> flex;
+  flex_data_base<decltype(context)> flex;
   ump_stream_base<decltype(context)> ump_stream;
 };
 
@@ -470,7 +435,7 @@ public:
     case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
     case ump_message_type::m2cvm: this->m2cvm_message(); break;
     case ump_message_type::data: this->data_message(); break;
-    case ump_message_type::flex_data: this->flex_data_message(mt, group); break;
+    case ump_message_type::flex_data: this->flex_data_message(); break;
     case ump_message_type::ump_stream: this->ump_stream_message(); break;
 
     case ump_message_type::reserved32_06:
@@ -496,7 +461,7 @@ private:
   void m2cvm_message();
   void ump_stream_message();
   void data_message();
-  void flex_data_message(ump_message_type mt, std::uint8_t group);
+  void flex_data_message();
 
   enum data_message_status : std::uint8_t {
     sysex8_in_1_ump = 0b0000,
@@ -511,7 +476,6 @@ private:
   static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
                                           std::size_t limit, OutputIterator out);
 
-  void set_chord_name();
   void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
   std::array<std::uint32_t, 4> message_{};
@@ -850,44 +814,6 @@ template <ump_processor_config Config> void umpProcessor<Config>::data_message()
   }
 }
 
-template <ump_processor_config Config> void umpProcessor<Config>::set_chord_name() {
-  auto const w0 = std::bit_cast<types::set_chord_name_w0>(message_[0]);
-  auto const w1 = std::bit_cast<types::set_chord_name_w1>(message_[1]);
-  auto const w2 = std::bit_cast<types::set_chord_name_w2>(message_[2]);
-  auto const w3 = std::bit_cast<types::set_chord_name_w3>(message_[3]);
-
-  auto const valid_note = [](std::uint8_t n) {
-    return n <= static_cast<std::uint8_t>(chord::note::G) ? static_cast<chord::note>(n) : chord::note::unknown;
-  };
-
-  auto const valid_chord_type = [](std::uint8_t ct) {
-    return ct <= static_cast<std::uint8_t>(chord::chord_type::seven_suspended_4th) ? static_cast<chord::chord_type>(ct)
-                                                                                   : chord::chord_type::no_chord;
-  };
-
-  chord c;
-  // TODO(pbh): validate the ShrpFlt fields.
-  c.chShrpFlt = static_cast<chord::sharps_flats>(w1.tonic_sharps_flats.signed_value());
-  c.chTonic = valid_note(w1.chord_tonic);
-  c.chType = valid_chord_type(w1.chord_type);
-  c.chAlt1.type = w1.alter_1_type;
-  c.chAlt1.degree = w1.alter_1_degree;
-  c.chAlt2.type = w1.alter_2_type;
-  c.chAlt2.degree = w1.alter_2_degree;
-  c.chAlt3.type = w2.alter_3_type;
-  c.chAlt3.degree = w2.alter_3_degree;
-  c.chAlt4.type = w2.alter_4_type;
-  c.chAlt4.degree = w2.alter_4_degree;
-  c.baShrpFlt = static_cast<chord::sharps_flats>(w3.bass_sharps_flats.signed_value());
-  c.baTonic = valid_note(w3.bass_note);
-  c.baType = valid_chord_type(w3.bass_chord_type);
-  c.baAlt1.type = w3.alter_1_type;
-  c.baAlt1.degree = w3.alter_1_degree;
-  c.baAlt2.type = w3.alter_2_type;
-  c.baAlt2.degree = w3.alter_2_degree;
-  config_.flex.chord(config_.context, w0.group, w0.addrs, w0.channel, c);
-}
-
 template <ump_processor_config Config>
 void umpProcessor<Config>::flexdata_performance_or_lyric(ump_message_type const mt, std::uint8_t const group) {
   std::uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
@@ -924,79 +850,41 @@ void umpProcessor<Config>::flexdata_performance_or_lyric(ump_message_type const 
 // flex data message
 // ~~~~~~~~~~~~~~~~~
 // 128 bit Data Messages (including System Exclusive 8)
-template <ump_processor_config Config>
-void umpProcessor<Config>::flex_data_message(ump_message_type const mt, std::uint8_t const group) {
-  uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
-  uint8_t const status = message_[0] & 0xFF;
-  uint8_t const channel = (message_[0] >> 16) & 0xF;
-  uint8_t const addrs = (message_[0] >> 18) & 3;
+template <ump_processor_config Config> void umpProcessor<Config>::flex_data_message() {
+  auto const m0 = std::bit_cast<types::flex_data::flex_data_w0>(message_[0]);
+  auto const m1 = std::bit_cast<types::flex_data::flex_data_w1>(message_[1]);
+  auto const m2 = std::bit_cast<types::flex_data::flex_data_w1>(message_[2]);
+  auto const m3 = std::bit_cast<types::flex_data::flex_data_w1>(message_[3]);
 
-#if 0
-auto const m0 = std::bit_cast<types::flex_data::flex_data_w0> (message_[0]));
-auto const m1 = std::bit_cast<types::flex_data::flex_data_w1> (message_[1]));
-auto const m2 = std::bit_cast<types::flex_data::flex_data_w1> (message_[2]));
-auto const m3 = std::bit_cast<types::flex_data::flex_data_w1> (message_[3]));
-
-  ump_bitfield<28, 4> mt;       // 0x0D
-  ump_bitfield<24, 4> group;
-  ump_bitfield<22, 2> form;
-  ump_bitfield<20, 2> addrs;
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<8, 8> status_bank;
-  ump_bitfield<0, 8> status;
-};
-using flex_data_w1 = std::uint32_t;
-using flex_data_w2 = std::uint32_t;
-using flex_data_w3 = std::uint32_t;
-
-
-//Set Tempo
-//Set Time Signature
-//Set Metronome
-//Set Key Signature
-//Set Chord Name
-//Text Message Common Format
-  switch (static_cast<flex_data> (message_[0] & 0xF) {
-  // 7.5.3 Set Tempo Message
-  case flex_data::set_tempo:
-    config_.flex.set_tempo(config_.context, group, message_[1]);
-    break;
-  }
-#endif
-
-  // SysEx 8
-  switch (status_bank) {
-  case FLEXDATA_COMMON: {  // Common/Configuration for MIDI File, Project, and Track
-    switch (status) {
-    case FLEXDATA_COMMON_TEMPO: {  // Set Tempo Message
-      config_.flex.tempo(config_.context, group, message_[1]);
+  if (m0.status_bank == 0) {
+    switch (static_cast<flex_data>(m0.status.value())) {
+    // 7.5.3 Set Tempo Message
+    case flex_data::set_tempo: config_.flex.set_tempo(config_.context, m0, m1, m2, m3); break;
+    // 7.5.4 Set Time Signature Message
+    case flex_data::set_time_signature:
+      config_.flex.set_time_signature(config_.context,
+                                      std::bit_cast<types::flex_data::set_time_signature_w0>(message_[0]),
+                                      std::bit_cast<types::flex_data::set_time_signature_w1>(message_[1]),
+                                      std::bit_cast<types::flex_data::set_time_signature_w2>(message_[2]),
+                                      std::bit_cast<types::flex_data::set_time_signature_w3>(message_[3]));
       break;
-    }
-    case FLEXDATA_COMMON_TIMESIG: {  // Set Time Signature Message
-      config_.flex.time_sig(config_.context, group, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF,
-                            (message_[1] >> 8) & 0xFF);
+    // 7.5.5 Set Metronome Message
+    case flex_data::set_metronome: config_.flex.set_metronome(config_.context, m0, m1, m2, m3); break;
+    // 7.5.7 Set Key Signature Message
+    case flex_data::set_key_signature: config_.flex.set_key_signature(config_.context, m0, m1, m2, m3); break;
+    // 7.5.8 Set Chord Name Message
+    case flex_data::set_chord_name:
+      config_.flex.set_chord_name(config_.context, std::bit_cast<types::flex_data::set_chord_name_w0>(message_[0]),
+                                  std::bit_cast<types::flex_data::set_chord_name_w1>(message_[1]),
+                                  std::bit_cast<types::flex_data::set_chord_name_w2>(message_[2]),
+                                  std::bit_cast<types::flex_data::set_chord_name_w3>(message_[3]));
       break;
-    }
-    case FLEXDATA_COMMON_METRONOME: {  // Set Metronome Message
-      config_.flex.metronome(config_.context, group, (message_[1] >> 24) & 0xFF, (message_[1] >> 16) & 0xFF,
-                             (message_[1] >> 8) & 0xFF, message_[1] & 0xFF, (message_[2] >> 24) & 0xFF,
-                             (message_[2] >> 16) & 0xFF);
-      break;
-    }
-    case FLEXDATA_COMMON_KEYSIG: {  // Set Key Signature Message
-      config_.flex.key_sig(config_.context, group, addrs, channel, (message_[1] >> 24) & 0xFF,
-                           (message_[1] >> 16) & 0xFF);
-      break;
-    }
-    case FLEXDATA_COMMON_CHORD: this->set_chord_name(); break;
-    default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
-    }
-    break;
-  }
-  case FLEXDATA_PERFORMANCE:
-  case FLEXDATA_LYRIC: this->flexdata_performance_or_lyric(mt, group); break;
 
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
+      // Set Metronome
+      // Set Key Signature
+      // Set Chord Name
+      // Text Message Common Format
+    }
   }
 }
 
