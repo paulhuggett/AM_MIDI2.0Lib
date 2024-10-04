@@ -33,16 +33,6 @@ std::ostream& operator<<(std::ostream& os, ump_common const& common) {
             << ", status=" << static_cast<unsigned>(common.status) << " }";
 };
 
-std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm);
-std::ostream& operator<<(std::ostream& os, ump_cvm const& cvm) {
-  return os << "{ common:" << cvm.common
-            << ", channel=" << static_cast<unsigned>(cvm.channel)
-            << ", note=" << static_cast<unsigned>(cvm.note)
-            << ", value=" << cvm.value << ", index=" << cvm.index
-            << ", bank=" << static_cast<unsigned>(cvm.bank)
-            << ", flag1=" << cvm.flag1 << ", flag2=" << cvm.flag2 << " }";
-};
-
 std::ostream& operator<<(std::ostream& os, ump_data const& data);
 std::ostream& operator<<(std::ostream& os, ump_data const& data) {
   os << "{ common:" << data.common
@@ -67,10 +57,7 @@ public:
   MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, send_out_sysex, (midi2::ump_data const&), (override));
 
-  MOCK_METHOD(void, startOfSeq, (), (override));
-  MOCK_METHOD(void, endOfFile, (), (override));
-
-  MOCK_METHOD(void, unknownUMPMessage, (std::span<std::uint32_t>), (override));
+  MOCK_METHOD(void, unknown, (std::span<std::uint32_t>), (override));
 };
 
 class M1CVMMocks : public midi2::m1cvm_base<context_type> {
@@ -308,7 +295,7 @@ TEST_F(UMPProcessor, BadUtility) {
   message.status = std::uint8_t{0b1111};
 
   auto const m32 = std::bit_cast<std::uint32_t>(message);
-  EXPECT_CALL(config_.callbacks, unknownUMPMessage(ElementsAre(m32)));
+  EXPECT_CALL(config_.callbacks, unknown(ElementsAre(m32)));
   processor_.processUMP(m32);
 }
 // NOLINTNEXTLINE
@@ -331,7 +318,7 @@ TEST_F(UMPProcessor, SystemBadStatus) {
   sg.byte2 = 0x7F;
   sg.byte3 = 0x7F;
   auto const m32 = std::bit_cast<std::uint32_t>(sg);
-  EXPECT_CALL(config_.callbacks, unknownUMPMessage(ElementsAre(m32)));
+  EXPECT_CALL(config_.callbacks, unknown(ElementsAre(m32)));
   processor_.processUMP(std::bit_cast<std::uint32_t>(sg));
 }
 constexpr std::uint8_t ump_cvm(midi2::status s) {

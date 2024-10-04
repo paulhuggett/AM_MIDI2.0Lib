@@ -32,26 +32,6 @@ struct ump_common {
   ump_message_type messageType = ump_message_type::utility;
   uint8_t status = 0;
 };
-struct ump_cvm {
-  constexpr bool operator==(ump_cvm const&) const = default;
-
-  ump_common common;
-  uint8_t channel = 0xFF;
-  uint8_t note = 0xFF;
-  uint32_t value = 0;
-  uint16_t index = 0;
-  uint8_t bank = 0;
-  bool flag1 = false;
-  bool flag2 = false;
-};
-
-struct ump_generic {
-  constexpr bool operator==(ump_generic const&) const = default;
-
-  ump_common common;
-  std::uint16_t value = 0;
-};
-
 struct ump_data {
   ump_common common;
   uint8_t streamId = 0;
@@ -95,10 +75,7 @@ template <typename T> concept backend = requires(T && v) {
   { v.system(midi2::types::system_general{}) } -> std::same_as<void>;
   { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
-  { v.startOfSeq() } -> std::same_as<void>;
-  { v.endOfFile() } -> std::same_as<void>;
-
-  { v.unknownUMPMessage(std::span<std::uint32_t>{}) } -> std::same_as<void>;
+  { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
 };
 template<typename T, typename Context>
 concept m1cvm_backend = requires(T v, Context context) {
@@ -228,11 +205,6 @@ concept flex_data_backend = requires(T v, Context context) {
       types::flex_data::text_common_w1{},
       types::flex_data::text_common_w2{},
       types::flex_data::text_common_w3{}) } -> std::same_as<void>;
-
-#if 0
-  { v.performance(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
-  { v.lyric(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
-#endif
 };
 
 template <typename T>
@@ -258,10 +230,7 @@ public:
   virtual void system(types::system_general) { /* nop */ }
   virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
 
-  virtual void startOfSeq() { /* nop */ }
-  virtual void endOfFile() { /* nop */ }
-
-  virtual void unknownUMPMessage(std::span<std::uint32_t>) { /* nop */ }
+  virtual void unknown(std::span<std::uint32_t>) { /* nop */ }
 };
 
 template <typename Context> struct m1cvm_base {
@@ -422,11 +391,13 @@ public:
     case ump_message_type::utility: this->utility_message(); break;
     case ump_message_type::system: this->system_message(); break;
     case ump_message_type::m1cvm: this->m1cvm_message(); break;
-    case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
     case ump_message_type::m2cvm: this->m2cvm_message(); break;
-    case ump_message_type::data: this->data_message(); break;
     case ump_message_type::flex_data: this->flex_data_message(); break;
     case ump_message_type::ump_stream: this->ump_stream_message(); break;
+
+    // TODO(pbh): move to the new style.
+    case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
+    case ump_message_type::data: this->data_message(); break;
 
     case ump_message_type::reserved32_06:
     case ump_message_type::reserved32_07:
@@ -435,7 +406,7 @@ public:
     case ump_message_type::reserved64_0A:
     case ump_message_type::reserved96_0B:
     case ump_message_type::reserved96_0C:
-    case ump_message_type::reserved128_0E: config_.callbacks.unknownUMPMessage(std::span{message_.data(), pos_}); break;
+    case ump_message_type::reserved128_0E: config_.callbacks.unknown(std::span{message_.data(), pos_}); break;
     default:
       assert(false);
       unreachable();
@@ -496,7 +467,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
   case ump_utility::delta_clock_since:
     config_.utility.delta_clockstamp(config_.context, std::bit_cast<types::delta_clockstamp>(message_[0]));
     break;
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 1}); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 1}); break;
   }
 }
 
@@ -508,7 +479,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
   if (sg.status >= 0xF0) {
     config_.callbacks.system(sg);
   } else {
-    config_.callbacks.unknownUMPMessage(std::span{message_.data(), 1});
+    config_.callbacks.unknown(std::span{message_.data(), 1});
   }
 }
 
@@ -533,7 +504,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
   case status::channel_pressure: config_.m1cvm.channel_pressure(config_.context, w0); break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
   case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, w0); break;
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 1}); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 1}); break;
   }
 }
 
@@ -637,7 +608,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     config_.m2cvm.per_note_pitch_bend(config_.context, std::bit_cast<types::m2cvm::per_note_pitch_bend_w0>(message_[0]),
                                       message_[1]);
     break;
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 2}); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
 }
 
@@ -752,7 +723,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
                                    std::bit_cast<types::ump_stream::end_of_clip_w2>(message_[2]),
                                    std::bit_cast<types::ump_stream::end_of_clip_w3>(message_[3]));
     break;
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
 }
 
@@ -796,9 +767,9 @@ template <ump_processor_config Config> void umpProcessor<Config>::data_message()
     } else {
       // MDS bytes?
     }
-    config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4});
+    config_.callbacks.unknown(std::span{message_.data(), 4});
   } break;
-  default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
 }
 
@@ -847,7 +818,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::flex_data_mess
                                   std::bit_cast<types::flex_data::set_chord_name_w2>(message_[2]),
                                   std::bit_cast<types::flex_data::set_chord_name_w3>(message_[3]));
       break;
-    default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
+    default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
     }
   } else {
     config_.flex.text(config_.context, std::bit_cast<types::flex_data::text_common_w0>(message_[0]),
