@@ -102,19 +102,12 @@ enum class ump_utility : std::uint32_t {
 };
 
 enum class flex_data : std::uint32_t {
+  // status bank == 0
   set_tempo = 0x00,
   set_time_signature = 0x01,
   set_metronome = 0x02,
   set_key_signature = 0x05,
   set_chord_name = 0x06,
-};
-
-enum : std::uint8_t {
-  FLEXDATA_COMMON = 0x00,
-  FLEXDATA_COMMON_KEYSIG = 0x05,
-  FLEXDATA_COMMON_CHORD = 0x06,
-  FLEXDATA_PERFORMANCE = 0x01,
-  FLEXDATA_LYRIC = 0x02,
 };
 
 enum class ump_stream : std::uint32_t {

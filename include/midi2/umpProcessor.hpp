@@ -199,40 +199,37 @@ concept ump_stream_backend = requires(T v, Context context) {
 template <typename T, typename Context>
 concept flex_data_backend = requires(T v, Context context) {
   { v.set_tempo(context,
-      types::flex_data::flex_data_w0{},
-      types::flex_data::flex_data_w1{},
-      types::flex_data::flex_data_w2{},
-      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+      types::flex_data::set_tempo_w0{},
+      types::flex_data::set_tempo_w1{},
+      types::flex_data::set_tempo_w2{},
+      types::flex_data::set_tempo_w3{}) } -> std::same_as<void>;
   { v.set_time_signature(context,
       types::flex_data::set_time_signature_w0{},
       types::flex_data::set_time_signature_w1{},
       types::flex_data::set_time_signature_w2{},
       types::flex_data::set_time_signature_w3{}) } -> std::same_as<void>;
   { v.set_metronome(context,
-      types::flex_data::flex_data_w0{},
-      types::flex_data::flex_data_w1{},
-      types::flex_data::flex_data_w2{},
-      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+      types::flex_data::set_metronome_w0{},
+      types::flex_data::set_metronome_w1{},
+      types::flex_data::set_metronome_w2{},
+      types::flex_data::set_metronome_w3{}) } -> std::same_as<void>;
   { v.set_key_signature(context,
-      types::flex_data::flex_data_w0{},
-      types::flex_data::flex_data_w1{},
-      types::flex_data::flex_data_w2{},
-      types::flex_data::flex_data_w3{}) } -> std::same_as<void>;
+      types::flex_data::set_key_signature_w0{},
+      types::flex_data::set_key_signature_w1{},
+      types::flex_data::set_key_signature_w2{},
+      types::flex_data::set_key_signature_w3{}) } -> std::same_as<void>;
   { v.set_chord_name(context,
       types::flex_data::set_chord_name_w0{},
       types::flex_data::set_chord_name_w1{},
       types::flex_data::set_chord_name_w2{},
       types::flex_data::set_chord_name_w3{}) } -> std::same_as<void>;
-
-
-
+  { v.text (context,
+      types::flex_data::text_common_w0{},
+      types::flex_data::text_common_w1{},
+      types::flex_data::text_common_w2{},
+      types::flex_data::text_common_w3{}) } -> std::same_as<void>;
 
 #if 0
-  { v.tempo(context, uint8_t{}, uint32_t{}) } -> std::same_as<void>;
-  { v.time_sig(context, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
-  { v.metronome(context, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
-  { v.key_sig(context, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
-  { v.chord(context, uint8_t{}, uint8_t{}, uint8_t{}, chord{}) } -> std::same_as<void>;
   { v.performance(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
   { v.lyric(context, ump_data{}, uint8_t{}, uint8_t{}) } -> std::same_as<void>;
 #endif
@@ -315,29 +312,22 @@ template <typename Context> struct flex_data_base {
   flex_data_base(flex_data_base const&) = default;
   virtual ~flex_data_base() noexcept = default;
 
-  virtual void set_tempo(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
-                         types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
+  virtual void set_tempo(Context, types::flex_data::set_tempo_w0, types::flex_data::set_tempo_w1,
+                         types::flex_data::set_tempo_w2, types::flex_data::set_tempo_w3) { /* do nothing */ }
   virtual void set_time_signature(Context, types::flex_data::set_time_signature_w0,
                                   types::flex_data::set_time_signature_w1, types::flex_data::set_time_signature_w2,
                                   types::flex_data::set_time_signature_w3) { /* do nothing */ }
-  virtual void set_metronome(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
-                             types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
-  virtual void set_key_signature(Context, types::flex_data::flex_data_w0, types::flex_data::flex_data_w1,
-                                 types::flex_data::flex_data_w2, types::flex_data::flex_data_w3) { /* do nothing */ }
+  virtual void set_metronome(Context, types::flex_data::set_metronome_w0, types::flex_data::set_metronome_w1,
+                             types::flex_data::set_metronome_w2, types::flex_data::set_metronome_w3) { /* do nothing */
+  }
+  virtual void set_key_signature(Context, types::flex_data::set_key_signature_w0,
+                                 types::flex_data::set_key_signature_w1, types::flex_data::set_key_signature_w2,
+                                 types::flex_data::set_key_signature_w3) { /* do nothing */ }
   virtual void set_chord_name(Context, types::flex_data::set_chord_name_w0, types::flex_data::set_chord_name_w1,
                               types::flex_data::set_chord_name_w2,
                               types::flex_data::set_chord_name_w3) { /* do nothing */ }
-
-  //  virtual void tempo(Context, uint8_t /*group*/, uint32_t /*num10nsPQN*/) { /* do nothing */ }
-  //  virtual void time_sig(Context, uint8_t /*group*/, uint8_t /*numerator*/, uint8_t /*denominator*/, uint8_t
-  //  /*num32Notes*/) { /* do nothing */ } virtual void metronome(Context, uint8_t /*group*/, uint8_t /*numClkpPriCli*/,
-  //  uint8_t /*bAccP1*/, uint8_t /*bAccP2*/, uint8_t /*bAccP3*/, uint8_t /*numSubDivCli1*/, uint8_t /*numSubDivCli2*/)
-  //  { /* do nothing */ } virtual void key_sig(Context, uint8_t /*group*/, uint8_t /*addrs*/, uint8_t /*channel*/,
-  //  uint8_t /*sharpFlats*/, uint8_t /*tonic*/) { /* do nothing */ } virtual void chord(Context, uint8_t /*group*/,
-  //  uint8_t /*addrs*/, uint8_t /*channel*/, chord const& /*chord*/) { /* do nothing */ }
-  virtual void performance(Context, ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* do nothing */
-  }
-  virtual void lyric(Context, ump_data const& /*mess*/, uint8_t /*addrs*/, uint8_t /*channel*/) { /* do nothing */ }
+  virtual void text(Context, types::flex_data::text_common_w0, types::flex_data::text_common_w1,
+                    types::flex_data::text_common_w2, types::flex_data::text_common_w3) { /* do nothing */ }
 };
 template <typename Context> struct ump_stream_base {
   ump_stream_base() = default;
@@ -475,8 +465,6 @@ private:
   template <std::output_iterator<std::uint8_t> OutputIterator>
   static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
                                           std::size_t limit, OutputIterator out);
-
-  void flexdata_performance_or_lyric(ump_message_type mt, std::uint8_t group);
 
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
@@ -814,52 +802,21 @@ template <ump_processor_config Config> void umpProcessor<Config>::data_message()
   }
 }
 
-template <ump_processor_config Config>
-void umpProcessor<Config>::flexdata_performance_or_lyric(ump_message_type const mt, std::uint8_t const group) {
-  std::uint8_t const status_bank = (message_[0] >> 8) & 0xFF;
-  std::uint8_t const status = message_[0] & 0xFF;
-  std::uint8_t const channel = (message_[0] >> 16) & 0xF;
-  std::uint8_t const addrs = (message_[0] >> 18) & 3;
-  std::uint8_t const form = (message_[0] >> 20) & 3;
-
-  std::array<std::uint8_t, 12> text{};
-  auto text_length = 0U;
-  for (uint8_t i = 1; i <= 3; i++) {
-    for (int j = 24; j >= 0; j -= 8) {
-      if (uint8_t const c = (message_[i] >> j) & 0xFF) {
-        text[text_length++] = c;
-      }
-    }
-  }
-  assert(text_length <= text.size());
-
-  ump_data mess;
-  mess.common.group = group;
-  mess.common.messageType = mt;
-  mess.common.status = status;
-  mess.form = form;
-  mess.data = std::span{text.data(), text_length};
-  if (status_bank == FLEXDATA_LYRIC) {
-    config_.flex.lyric(config_.context, mess, addrs, channel);
-  } else {
-    assert(status_bank == FLEXDATA_PERFORMANCE);
-    config_.flex.performance(config_.context, mess, addrs, channel);
-  }
-}
-
 // flex data message
 // ~~~~~~~~~~~~~~~~~
 // 128 bit Data Messages (including System Exclusive 8)
 template <ump_processor_config Config> void umpProcessor<Config>::flex_data_message() {
   auto const m0 = std::bit_cast<types::flex_data::flex_data_w0>(message_[0]);
-  auto const m1 = std::bit_cast<types::flex_data::flex_data_w1>(message_[1]);
-  auto const m2 = std::bit_cast<types::flex_data::flex_data_w1>(message_[2]);
-  auto const m3 = std::bit_cast<types::flex_data::flex_data_w1>(message_[3]);
-
+  auto const status = static_cast<flex_data>(m0.status.value());
   if (m0.status_bank == 0) {
-    switch (static_cast<flex_data>(m0.status.value())) {
+    switch (status) {
     // 7.5.3 Set Tempo Message
-    case flex_data::set_tempo: config_.flex.set_tempo(config_.context, m0, m1, m2, m3); break;
+    case flex_data::set_tempo:
+      config_.flex.set_tempo(config_.context, std::bit_cast<types::flex_data::set_tempo_w0>(message_[0]),
+                             std::bit_cast<types::flex_data::set_tempo_w1>(message_[1]),
+                             std::bit_cast<types::flex_data::set_tempo_w2>(message_[2]),
+                             std::bit_cast<types::flex_data::set_tempo_w3>(message_[3]));
+      break;
     // 7.5.4 Set Time Signature Message
     case flex_data::set_time_signature:
       config_.flex.set_time_signature(config_.context,
@@ -869,9 +826,20 @@ template <ump_processor_config Config> void umpProcessor<Config>::flex_data_mess
                                       std::bit_cast<types::flex_data::set_time_signature_w3>(message_[3]));
       break;
     // 7.5.5 Set Metronome Message
-    case flex_data::set_metronome: config_.flex.set_metronome(config_.context, m0, m1, m2, m3); break;
+    case flex_data::set_metronome:
+      config_.flex.set_metronome(config_.context, std::bit_cast<types::flex_data::set_metronome_w0>(message_[0]),
+                                 std::bit_cast<types::flex_data::set_metronome_w1>(message_[1]),
+                                 std::bit_cast<types::flex_data::set_metronome_w2>(message_[2]),
+                                 std::bit_cast<types::flex_data::set_metronome_w3>(message_[3]));
+      break;
     // 7.5.7 Set Key Signature Message
-    case flex_data::set_key_signature: config_.flex.set_key_signature(config_.context, m0, m1, m2, m3); break;
+    case flex_data::set_key_signature:
+      config_.flex.set_key_signature(config_.context,
+                                     std::bit_cast<types::flex_data::set_key_signature_w0>(message_[0]),
+                                     std::bit_cast<types::flex_data::set_key_signature_w1>(message_[1]),
+                                     std::bit_cast<types::flex_data::set_key_signature_w2>(message_[2]),
+                                     std::bit_cast<types::flex_data::set_key_signature_w3>(message_[3]));
+      break;
     // 7.5.8 Set Chord Name Message
     case flex_data::set_chord_name:
       config_.flex.set_chord_name(config_.context, std::bit_cast<types::flex_data::set_chord_name_w0>(message_[0]),
@@ -879,12 +847,13 @@ template <ump_processor_config Config> void umpProcessor<Config>::flex_data_mess
                                   std::bit_cast<types::flex_data::set_chord_name_w2>(message_[2]),
                                   std::bit_cast<types::flex_data::set_chord_name_w3>(message_[3]));
       break;
-
-      // Set Metronome
-      // Set Key Signature
-      // Set Chord Name
-      // Text Message Common Format
+    default: config_.callbacks.unknownUMPMessage(std::span{message_.data(), 4}); break;
     }
+  } else {
+    config_.flex.text(config_.context, std::bit_cast<types::flex_data::text_common_w0>(message_[0]),
+                      std::bit_cast<types::flex_data::text_common_w1>(message_[1]),
+                      std::bit_cast<types::flex_data::text_common_w2>(message_[2]),
+                      std::bit_cast<types::flex_data::text_common_w3>(message_[3]));
   }
 }
 

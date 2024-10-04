@@ -597,9 +597,12 @@ union flex_data_w0 {
   ump_bitfield<8, 8> status_bank;
   ump_bitfield<0, 8> status;
 };
-using flex_data_w1 = std::uint32_t;
-using flex_data_w2 = std::uint32_t;
-using flex_data_w3 = std::uint32_t;
+
+// 7.5.3 Set Tempo Message
+using set_tempo_w0 = flex_data_w0;
+using set_tempo_w1 = std::uint32_t;
+using set_tempo_w2 = std::uint32_t;
+using set_tempo_w3 = std::uint32_t;
 
 // 7.5.4 Set Time Signature Message
 using set_time_signature_w0 = flex_data_w0;
@@ -614,6 +617,41 @@ union set_time_signature_w1 {
 };
 using set_time_signature_w2 = std::uint32_t;
 using set_time_signature_w3 = std::uint32_t;
+
+// 7.5.5 Set Metronome Message
+
+using set_metronome_w0 = flex_data_w0;
+union set_metronome_w1 {
+  friend constexpr bool operator==(set_metronome_w1 const& a, set_metronome_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> num_clocks_per_primary_click;
+  ump_bitfield<16, 8> bar_accent_part_1;
+  ump_bitfield<8, 8> bar_accent_part_2;
+  ump_bitfield<0, 8> bar_accent_part_3;
+};
+union set_metronome_w2 {
+  friend constexpr bool operator==(set_metronome_w2 const& a, set_metronome_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> num_subdivision_clicks_1;
+  ump_bitfield<16, 8> num_subdivision_clicks_2;
+  ump_bitfield<0, 16> reserved0;
+};
+using set_metronome_w3 = std::uint32_t;
+
+// 7.5.7 Set Key Signature Message
+using set_key_signature_w0 = flex_data_w0;
+union set_key_signature_w1 {
+  friend constexpr bool operator==(set_key_signature_w1 const& a, set_key_signature_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<28, 4> sharps_flats;
+  ump_bitfield<24, 4> tonic_note;
+  ump_bitfield<0, 24> reserved0;
+};
+using set_key_signature_w2 = std::uint32_t;
+using set_key_signature_w3 = std::uint32_t;
 
 // 7.5.8 Set Chord Name Message
 enum class sharps_flats : std::int8_t {
@@ -704,6 +742,12 @@ union set_chord_name_w3 {
   ump_bitfield<4, 4> alter_2_type;
   ump_bitfield<0, 4> alter_2_degree;
 };
+
+// 7.5.9 Text Messages Common Format
+using text_common_w0 = flex_data_w0;
+using text_common_w1 = std::uint32_t;
+using text_common_w2 = std::uint32_t;
+using text_common_w3 = std::uint32_t;
 
 }  // end namespace flex_data
 

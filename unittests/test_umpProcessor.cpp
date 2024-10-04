@@ -118,8 +118,8 @@ public:
 class FlexDataMocks : public midi2::flex_data_base<context_type> {
 public:
   MOCK_METHOD(void, set_tempo,
-              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
-               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
+              (context_type, midi2::types::flex_data::set_tempo_w0, midi2::types::flex_data::set_tempo_w1,
+               midi2::types::flex_data::set_tempo_w2, midi2::types::flex_data::set_tempo_w3),
               (override));
   MOCK_METHOD(void, set_time_signature,
               (context_type, midi2::types::flex_data::set_time_signature_w0,
@@ -127,16 +127,21 @@ public:
                midi2::types::flex_data::set_time_signature_w3),
               (override));
   MOCK_METHOD(void, set_metronome,
-              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
-               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
+              (context_type, midi2::types::flex_data::set_metronome_w0, midi2::types::flex_data::set_metronome_w1,
+               midi2::types::flex_data::set_metronome_w2, midi2::types::flex_data::set_metronome_w3),
               (override));
   MOCK_METHOD(void, set_key_signature,
-              (context_type, midi2::types::flex_data::flex_data_w0, midi2::types::flex_data::flex_data_w1,
-               midi2::types::flex_data::flex_data_w2, midi2::types::flex_data::flex_data_w3),
+              (context_type, midi2::types::flex_data::set_key_signature_w0,
+               midi2::types::flex_data::set_key_signature_w1, midi2::types::flex_data::set_key_signature_w2,
+               midi2::types::flex_data::set_key_signature_w3),
               (override));
   MOCK_METHOD(void, set_chord_name,
               (context_type, midi2::types::flex_data::set_chord_name_w0, midi2::types::flex_data::set_chord_name_w1,
                midi2::types::flex_data::set_chord_name_w2, midi2::types::flex_data::set_chord_name_w3),
+              (override));
+  MOCK_METHOD(void, text,
+              (context_type, midi2::types::flex_data::text_common_w0, midi2::types::flex_data::text_common_w1,
+               midi2::types::flex_data::text_common_w2, midi2::types::flex_data::text_common_w3),
               (override));
 };
 
@@ -512,6 +517,11 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   processor_.processUMP(pack((static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm) << 4) | group,
                              (ump_note_on << 4) | channel, note_number, velocity));
 }
+//*  _   _ __  __ ___   ___ _                       *
+//* | | | |  \/  | _ \ / __| |_ _ _ ___ __ _ _ __   *
+//* | |_| | |\/| |  _/ \__ \  _| '_/ -_) _` | '  \  *
+//*  \___/|_|  |_|_|   |___/\__|_| \___\__,_|_|_|_| *
+//*                                                 *
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery_w0 w0{};
@@ -787,8 +797,34 @@ TEST_F(UMPProcessor, StreamEndOfClip) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+
+//*  ___ _           ___       _         *
+//* | __| |_____ __ |   \ __ _| |_ __ _  *
+//* | _|| / -_) \ / | |) / _` |  _/ _` | *
+//* |_| |_\___/_\_\ |___/\__,_|\__\__,_| *
+//*                                      *
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, StreamSetTimeSignature) {
+TEST_F(UMPProcessor, FlexDataSetTempo) {
+  midi2::types::flex_data::set_tempo_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 0;
+  w0.status_bank = 0;
+  w0.status = static_cast<std::uint8_t>(to_underlying(midi2::flex_data::set_tempo));
+  midi2::types::flex_data::set_tempo_w1 w1 = std::uint32_t{0xF0F0F0F0};
+  midi2::types::flex_data::set_tempo_w2 w2{};
+  midi2::types::flex_data::set_tempo_w3 w3{};
+  EXPECT_CALL(config_.flex, set_tempo(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, FlexDataSetTimeSignature) {
   midi2::types::flex_data::set_time_signature_w0 w0{};
   w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
   w0.group = 0;
@@ -811,7 +847,55 @@ TEST_F(UMPProcessor, StreamSetTimeSignature) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, StreamSetChordName) {
+TEST_F(UMPProcessor, FlexDataSetMetronome) {
+  midi2::types::flex_data::set_metronome_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 3;
+  w0.status_bank = 0;
+  w0.status = static_cast<std::uint8_t>(to_underlying(midi2::flex_data::set_metronome));
+  midi2::types::flex_data::set_metronome_w1 w1{};
+  w1.num_clocks_per_primary_click = 24;
+  w1.bar_accent_part_1 = 4;
+  w1.bar_accent_part_2 = 0;
+  w1.bar_accent_part_3 = 0;
+  midi2::types::flex_data::set_metronome_w2 w2{};
+  w2.num_subdivision_clicks_1 = 0;
+  w2.num_subdivision_clicks_2 = 0;
+  midi2::types::flex_data::set_metronome_w3 w3{};
+  EXPECT_CALL(config_.flex, set_metronome(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, FlexDataSetKeySignature) {
+  midi2::types::flex_data::set_key_signature_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 3;
+  w0.status_bank = 0;
+  w0.status = static_cast<std::uint8_t>(to_underlying(midi2::flex_data::set_key_signature));
+  midi2::types::flex_data::set_key_signature_w1 w1{};
+  w1.sharps_flats = 0b100;  // (-8)
+  w1.tonic_note = static_cast<std::uint8_t>(midi2::types::flex_data::note::E);
+  midi2::types::flex_data::set_key_signature_w2 w2{};
+  midi2::types::flex_data::set_key_signature_w3 w3{};
+  EXPECT_CALL(config_.flex, set_key_signature(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, FlexDataSetChordName) {
   constexpr auto group = std::uint8_t{0x0F};
   constexpr auto addrs = std::uint8_t{0x03};
   constexpr auto channel = std::uint8_t{3};
@@ -828,7 +912,7 @@ TEST_F(UMPProcessor, StreamSetChordName) {
   w0.addrs = addrs;
   w0.channel = channel;
   w0.status_bank = 0x00;
-  w0.status = 0x06;
+  w0.status = static_cast<std::uint8_t>(to_underlying(midi2::flex_data::set_chord_name));
 
   midi2::types::flex_data::set_chord_name_w1 w1{};
   w1.tonic_sharps_flats = 0x1;
@@ -862,6 +946,30 @@ TEST_F(UMPProcessor, StreamSetChordName) {
   processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
   processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
 }
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, FlexDataText) {
+  midi2::types::flex_data::text_common_w0 w0{};
+  w0.mt = static_cast<std::uint8_t>(to_underlying(midi2::ump_message_type::flex_data));
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 3;
+  w0.status_bank = 1;
+  w0.status = 4;
+  midi2::types::flex_data::text_common_w1 const w1 =
+      (std::uint32_t{0xC2} << 24) | (std::uint32_t{0xA9} << 16) | (std::uint32_t{'2'} << 8) | (std::uint32_t{'0'} << 0);
+  midi2::types::flex_data::text_common_w2 const w2 =
+      (std::uint32_t{'2'} << 24) | (std::uint32_t{'4'} << 16) | (std::uint32_t{' '} << 8) | (std::uint32_t{'P'} << 0);
+  midi2::types::flex_data::text_common_w3 const w3 =
+      (std::uint32_t{'B'} << 24) | (std::uint32_t{'H'} << 16) | (std::uint32_t{'\0'} << 8) | (std::uint32_t{'\0'} << 0);
+  EXPECT_CALL(config_.flex, text(config_.context, w0, w1, w2, w3)).Times(1);
+
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w0));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w1));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w2));
+  processor_.processUMP(std::bit_cast<std::uint32_t>(w3));
+}
+
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Sysex7) {
   std::array data{std::uint8_t{1}, std::uint8_t{2}, std::uint8_t{3}, std::uint8_t{4}, std::uint8_t{5}};
