@@ -554,7 +554,7 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   constexpr auto group = std::uint8_t{0};
 
   midi2::types::m1cvm_w0 message{};
-  message.mt = static_cast<std::uint8_t>(midi2::ump_message_type::m1cvm);
+  message.mt = to_underlying(midi2::ump_message_type::m1cvm);
   message.group = group;
   message.status = midi2::status::note_on >> 4;
   message.channel = channel;
@@ -961,7 +961,7 @@ TEST_F(UMPProcessor, FlexDataSetChordName) {
   constexpr auto bass_chord_type = midi2::types::flex_data::chord_type::diminished;
 
   midi2::types::flex_data::set_chord_name_w0 w0{};
-  w0.mt = static_cast<std::uint8_t>(midi2::ump_message_type::flex_data);
+  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = group;
   w0.form = 0x0;
   w0.addrs = addrs;

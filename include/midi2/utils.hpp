@@ -249,7 +249,7 @@ enum : std::uint32_t {
   X(ump_stream, 0x0F)
 
 #define X(a, b) a = (b),
-enum class ump_message_type : std::uint32_t { UMP_MESSAGE_TYPES };
+enum class ump_message_type : std::uint8_t { UMP_MESSAGE_TYPES };
 #undef X
 
 constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
