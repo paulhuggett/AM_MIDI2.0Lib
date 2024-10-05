@@ -434,8 +434,10 @@ public:
     pos_ = 0;
     std::ranges::fill(message_, std::uint8_t{0});
   }
-  void processUMP() {}
-  template <typename First, typename... Rest> void processUMP(First ump, Rest&&... rest) {
+  void processUMP() { /* nothing to do */ }
+  template <typename First, typename... Rest>
+    requires (sizeof(First) == sizeof(std::uint32_t))
+  void processUMP(First ump, Rest&&... rest) {
     this->processUMP(ump.word(), std::forward<Rest>(rest)...);
   }
   template <typename... Rest> void processUMP(std::uint32_t ump, Rest&&... rest) {

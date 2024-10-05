@@ -14,6 +14,18 @@
 
 #include "midi2/bitfield.hpp"
 
+#define UMP_MEMBERS(name)                                                      \
+  name() {                                                                     \
+    static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
+    *std::bit_cast<std::uint32_t*>(this) = 0;                                  \
+  }                                                                            \
+  [[nodiscard]] constexpr auto word() const {                                  \
+    return std::bit_cast<std::uint32_t>(*this);                                \
+  }                                                                            \
+  friend constexpr bool operator==(name const& a, name const& b) {             \
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b); \
+  }
+
 namespace midi2::types {
 
 template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
@@ -23,6 +35,7 @@ template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint
 
 // NOOP
 union noop {
+  UMP_MEMBERS(noop)
   ump_bitfield<28, 4> mt;  // 0x0
   ump_bitfield<24, 4> reserved;
   ump_bitfield<20, 4> status;  // 0b0000
@@ -33,9 +46,7 @@ union noop {
 // JR Timestamp
 // Delta Clockstamp Ticks Per Quarter Note
 union jr_clock {
-  friend constexpr bool operator==(jr_clock const& a, jr_clock const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(jr_clock)
   ump_bitfield<28, 4> mt;  // 0x0
   ump_bitfield<24, 4> reserved1;
   ump_bitfield<20, 4> status;  // 0b0001
@@ -45,9 +56,7 @@ union jr_clock {
 
 // Delta Clockstamp
 union delta_clockstamp {
-  friend constexpr bool operator==(delta_clockstamp const& a, delta_clockstamp const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(delta_clockstamp)
   ump_bitfield<28, 4> mt;  // 0x0
   ump_bitfield<24, 4> reserved;
   ump_bitfield<20, 4> status;  // 0b0100
@@ -58,9 +67,7 @@ union delta_clockstamp {
 // Table 27 4-Byte UMP Formats for Message Type 0x1: System Common & System Real
 // Time
 union system_general {
-  friend constexpr bool operator==(system_general const& a, system_general const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(system_general)
   ump_bitfield<28, 4> mt;  // 0x1
   ump_bitfield<24, 4> group;
   ump_bitfield<16, 8> status;  // 0xF0..0xFF
@@ -80,9 +87,7 @@ union system_general {
 // Channel Pressure
 // Pitch Bend
 union m1cvm_w0 {
-  friend constexpr bool operator==(m1cvm_w0 const& a, m1cvm_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(m1cvm_w0)
   ump_bitfield<28, 4> mt;  // 0x2
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  // 0b1000..0b1110
@@ -98,6 +103,7 @@ union m1cvm_w0 {
 
 // 7.7 System Exclusive (7-Bit) Messages
 union sysex7_w0 {
+  UMP_MEMBERS(sysex7_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x3
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  // 0b0000..0b0011
@@ -108,6 +114,7 @@ union sysex7_w0 {
   ump_bitfield<0, 7> data1;
 };
 union sysex7_w1 {
+  UMP_MEMBERS(sysex7_w1)
   ump_bitfield<31, 1> reserved0;
   ump_bitfield<24, 7> data0;
   ump_bitfield<23, 1> reserved1;
@@ -124,12 +131,7 @@ namespace m2cvm {
 // 7.4.1 MIDI 2.0 Note Off Message
 // 7.4.2 MIDI 2.0 Note On Message
 union note_w0 {
-  note_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(note_w0 const& a, note_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
-
+  UMP_MEMBERS(note_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
@@ -138,26 +140,15 @@ union note_w0 {
   ump_bitfield<8, 7> note;
   ump_bitfield<0, 8> attribute;
 };
-static_assert(sizeof(note_w0) == sizeof(std::uint32_t));
-
 union note_w1 {
-  note_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(note_w1 const& a, note_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(note_w1)
   ump_bitfield<16, 16> velocity;
   ump_bitfield<0, 16> attribute;
 };
-static_assert(sizeof(note_w1) == sizeof(std::uint32_t));
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 union poly_pressure_w0 {
-  poly_pressure_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(poly_pressure_w0 const& a, poly_pressure_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(poly_pressure_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xA
@@ -169,6 +160,7 @@ union poly_pressure_w0 {
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller and Assignable Per-Note Controller Messages
 union controller_w0 {
+  UMP_MEMBERS(controller_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Registered Controller=0x0, Assignable Controller=0x1
@@ -180,6 +172,7 @@ union controller_w0 {
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 union per_note_management_w0 {
+  UMP_MEMBERS(per_note_management_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -193,6 +186,7 @@ union per_note_management_w0 {
 
 // 7.4.6 MIDI 2.0 Control Change Message
 union control_change_w0 {
+  UMP_MEMBERS(control_change_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xB
@@ -204,6 +198,7 @@ union control_change_w0 {
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
 union controller_message_w0 {
+  UMP_MEMBERS(controller_message_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Absolute RPN=0x2, NRPN=0x3; relative RPN=0x4, NRPN=0x5
@@ -216,12 +211,7 @@ union controller_message_w0 {
 
 // 7.4.9 MIDI 2.0 Program Change Message
 union program_change_w0 {
-  program_change_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(program_change_w0 const& a, program_change_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
-
+  UMP_MEMBERS(program_change_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xC
@@ -231,11 +221,7 @@ union program_change_w0 {
   ump_bitfield<0, 1> bank_valid;    ///< Bank change is ignored if this bit is zero.
 };
 union program_change_w1 {
-  program_change_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(program_change_w1 const& a, program_change_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(program_change_w1)
   ump_bitfield<24, 8> program;
   ump_bitfield<16, 8> reserved;
   ump_bitfield<15, 1> r0;  // reserved
@@ -246,6 +232,7 @@ union program_change_w1 {
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 union channel_pressure_w0 {
+  UMP_MEMBERS(channel_pressure_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xA
@@ -256,6 +243,7 @@ union channel_pressure_w0 {
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 union pitch_bend_w0 {
+  UMP_MEMBERS(pitch_bend_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xE
@@ -266,6 +254,7 @@ union pitch_bend_w0 {
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 union per_note_pitch_bend_w0 {
+  UMP_MEMBERS(per_note_pitch_bend_w0)
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0x6
@@ -281,9 +270,7 @@ namespace ump_stream {
 
 // 7.1.1 Endpoint Discovery Message
 union endpoint_discovery_w0 {
-  friend constexpr bool operator==(endpoint_discovery_w0 const& a, endpoint_discovery_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_discovery_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x00
@@ -291,9 +278,7 @@ union endpoint_discovery_w0 {
   ump_bitfield<0, 8> version_minor;
 };
 union endpoint_discovery_w1 {
-  friend constexpr bool operator==(endpoint_discovery_w1 const& a, endpoint_discovery_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_discovery_w1)
   ump_bitfield<8, 24> reserved;
   ump_bitfield<0, 8> filter;
 };
@@ -302,9 +287,7 @@ using endpoint_discovery_w3 = std::uint32_t;
 
 // 7.1.2 Endpoint Info Notification Message
 union endpoint_info_notification_w0 {
-  friend constexpr bool operator==(endpoint_info_notification_w0 const& a, endpoint_info_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_info_notification_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x01
@@ -312,9 +295,7 @@ union endpoint_info_notification_w0 {
   ump_bitfield<0, 8> version_minor;
 };
 union endpoint_info_notification_w1 {
-  friend constexpr bool operator==(endpoint_info_notification_w1 const& a, endpoint_info_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_info_notification_w1)
   ump_bitfield<31, 1> static_function_blocks;
   ump_bitfield<24, 7> number_function_blocks;
   ump_bitfield<10, 14> reserved0;
@@ -329,18 +310,14 @@ using endpoint_info_notification_w3 = std::uint32_t;
 
 // 7.1.3 Device Identity Notification Message
 union device_identity_notification_w0 {
-  friend constexpr bool operator==(device_identity_notification_w0 const& a, device_identity_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(device_identity_notification_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x02
   ump_bitfield<0, 16> reserved0;
 };
 union device_identity_notification_w1 {
-  friend constexpr bool operator==(device_identity_notification_w1 const& a, device_identity_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(device_identity_notification_w1)
   ump_bitfield<24, 8> reserved0;
   ump_bitfield<23, 1> reserved1;
   ump_bitfield<16, 7> dev_manuf_sysex_id_1;  // device manufacturer sysex id byte 1
@@ -350,9 +327,7 @@ union device_identity_notification_w1 {
   ump_bitfield<0, 7> dev_manuf_sysex_id_3;  // device manufacturer sysex id byte 3
 };
 union device_identity_notification_w2 {
-  friend constexpr bool operator==(device_identity_notification_w2 const& a, device_identity_notification_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(device_identity_notification_w2)
   ump_bitfield<31, 1> reserved0;
   ump_bitfield<24, 7> device_family_lsb;
   ump_bitfield<23, 1> reserved1;
@@ -363,9 +338,7 @@ union device_identity_notification_w2 {
   ump_bitfield<0, 7> device_family_model_msb;
 };
 union device_identity_notification_w3 {
-  friend constexpr bool operator==(device_identity_notification_w3 const& a, device_identity_notification_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(device_identity_notification_w3)
   ump_bitfield<31, 1> reserved0;
   ump_bitfield<24, 7> sw_revision_1;  // Software revision level byte 1
   ump_bitfield<23, 1> reserved1;
@@ -378,9 +351,7 @@ union device_identity_notification_w3 {
 
 // 7.1.4 Endpoint Name Notification
 union endpoint_name_notification_w0 {
-  friend constexpr bool operator==(endpoint_name_notification_w0 const& a, endpoint_name_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_name_notification_w0)
   ump_bitfield<28, 4> mt;  // 0x0F
   ump_bitfield<26, 2> format;
   ump_bitfield<16, 10> status;  // 0x03
@@ -388,27 +359,21 @@ union endpoint_name_notification_w0 {
   ump_bitfield<0, 8> name2;
 };
 union endpoint_name_notification_w1 {
-  friend constexpr bool operator==(endpoint_name_notification_w1 const& a, endpoint_name_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_name_notification_w1)
   ump_bitfield<24, 8> name3;
   ump_bitfield<16, 8> name4;
   ump_bitfield<8, 8> name5;
   ump_bitfield<0, 8> name6;
 };
 union endpoint_name_notification_w2 {
-  friend constexpr bool operator==(endpoint_name_notification_w2 const& a, endpoint_name_notification_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_name_notification_w2)
   ump_bitfield<24, 8> name7;
   ump_bitfield<16, 8> name8;
   ump_bitfield<8, 8> name9;
   ump_bitfield<0, 8> name10;
 };
 union endpoint_name_notification_w3 {
-  friend constexpr bool operator==(endpoint_name_notification_w3 const& a, endpoint_name_notification_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(endpoint_name_notification_w3)
   ump_bitfield<24, 8> name11;
   ump_bitfield<16, 8> name12;
   ump_bitfield<8, 8> name13;
@@ -417,10 +382,7 @@ union endpoint_name_notification_w3 {
 
 // 7.1.5 Product Instance Id Notification Message
 union product_instance_id_notification_w0 {
-  friend constexpr bool operator==(product_instance_id_notification_w0 const& a,
-                                   product_instance_id_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(product_instance_id_notification_w0)
   ump_bitfield<28, 4> mt;
   ump_bitfield<26, 2> format;
   ump_bitfield<16, 10> status;
@@ -428,30 +390,21 @@ union product_instance_id_notification_w0 {
   ump_bitfield<0, 8> pid2;
 };
 union product_instance_id_notification_w1 {
-  friend constexpr bool operator==(product_instance_id_notification_w1 const& a,
-                                   product_instance_id_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(product_instance_id_notification_w1)
   ump_bitfield<24, 8> pid3;
   ump_bitfield<16, 8> pid4;
   ump_bitfield<8, 8> pid5;
   ump_bitfield<0, 8> pid6;
 };
 union product_instance_id_notification_w2 {
-  friend constexpr bool operator==(product_instance_id_notification_w2 const& a,
-                                   product_instance_id_notification_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(product_instance_id_notification_w2)
   ump_bitfield<24, 8> pid7;
   ump_bitfield<16, 8> pid8;
   ump_bitfield<8, 8> pid9;
   ump_bitfield<0, 8> pid10;
 };
 union product_instance_id_notification_w3 {
-  friend constexpr bool operator==(product_instance_id_notification_w3 const& a,
-                                   product_instance_id_notification_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(product_instance_id_notification_w3)
   ump_bitfield<24, 8> pid11;
   ump_bitfield<16, 8> pid12;
   ump_bitfield<8, 8> pid13;
@@ -462,9 +415,7 @@ union product_instance_id_notification_w3 {
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
 union jr_configuration_request_w0 {
-  friend constexpr bool operator==(jr_configuration_request_w0 const& a, jr_configuration_request_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(jr_configuration_request_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x05
@@ -479,10 +430,7 @@ using jr_configuration_request_w3 = std::uint32_t;
 
 // 7.1.6.3 JR Stream Configuration Notification Message
 union jr_configuration_notification_w0 {
-  friend constexpr bool operator==(jr_configuration_notification_w0 const& a,
-                                   jr_configuration_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(jr_configuration_notification_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x06
@@ -497,9 +445,7 @@ using jr_configuration_notification_w3 = std::uint32_t;
 
 // 7.1.7 Function Block Discovery Message
 union function_block_discovery_w0 {
-  friend constexpr bool operator==(function_block_discovery_w0 const& a, function_block_discovery_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_discovery_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x10
@@ -512,10 +458,7 @@ using function_block_discovery_w3 = std::uint32_t;
 
 // 7.1.8 Function Block Info Notification
 union function_block_info_notification_w0 {
-  friend constexpr bool operator==(function_block_info_notification_w0 const& a,
-                                   function_block_info_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_info_notification_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x11
@@ -527,10 +470,7 @@ union function_block_info_notification_w0 {
   ump_bitfield<0, 2> direction;
 };
 union function_block_info_notification_w1 {
-  friend constexpr bool operator==(function_block_info_notification_w1 const& a,
-                                   function_block_info_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_info_notification_w1)
   ump_bitfield<24, 8> first_group;
   ump_bitfield<16, 8> num_spanned;
   ump_bitfield<8, 8> ci_message_version;
@@ -541,10 +481,7 @@ using function_block_info_notification_w3 = std::uint32_t;
 
 // 7.1.9 Function Block Name Notification
 union function_block_name_notification_w0 {
-  friend constexpr bool operator==(function_block_name_notification_w0 const& a,
-                                   function_block_name_notification_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_name_notification_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x12
@@ -552,30 +489,21 @@ union function_block_name_notification_w0 {
   ump_bitfield<0, 8> name0;
 };
 union function_block_name_notification_w1 {
-  friend constexpr bool operator==(function_block_name_notification_w1 const& a,
-                                   function_block_name_notification_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_name_notification_w1)
   ump_bitfield<24, 8> name1;
   ump_bitfield<16, 8> name2;
   ump_bitfield<8, 8> name3;
   ump_bitfield<0, 8> name4;
 };
 union function_block_name_notification_w2 {
-  friend constexpr bool operator==(function_block_name_notification_w2 const& a,
-                                   function_block_name_notification_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_name_notification_w2)
   ump_bitfield<24, 8> name5;
   ump_bitfield<16, 8> name6;
   ump_bitfield<8, 8> name7;
   ump_bitfield<0, 8> name8;
 };
 union function_block_name_notification_w3 {
-  friend constexpr bool operator==(function_block_name_notification_w3 const& a,
-                                   function_block_name_notification_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(function_block_name_notification_w3)
   ump_bitfield<24, 8> name9;
   ump_bitfield<16, 8> name10;
   ump_bitfield<8, 8> name11;
@@ -584,9 +512,7 @@ union function_block_name_notification_w3 {
 
 // 7.1.10 Start of Clip Message
 union start_of_clip_w0 {
-  friend constexpr bool operator==(start_of_clip_w0 const& a, start_of_clip_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(start_of_clip_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x20
@@ -598,9 +524,7 @@ using start_of_clip_w3 = std::uint32_t;
 
 // 7.1.11 End of Clip Message
 union end_of_clip_w0 {
-  friend constexpr bool operator==(end_of_clip_w0 const& a, end_of_clip_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(end_of_clip_w0)
   ump_bitfield<28, 4> mt;       // 0x0F
   ump_bitfield<26, 2> format;   // 0x00
   ump_bitfield<16, 10> status;  // 0x21
@@ -615,9 +539,7 @@ using end_of_clip_w3 = std::uint32_t;
 namespace flex_data {
 
 union flex_data_w0 {
-  friend constexpr bool operator==(flex_data_w0 const& a, flex_data_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(flex_data_w0)
   ump_bitfield<28, 4> mt;  // 0x0D
   ump_bitfield<24, 4> group;
   ump_bitfield<22, 2> form;
@@ -636,9 +558,7 @@ using set_tempo_w3 = std::uint32_t;
 // 7.5.4 Set Time Signature Message
 using set_time_signature_w0 = flex_data_w0;
 union set_time_signature_w1 {
-  friend constexpr bool operator==(set_time_signature_w1 const& a, set_time_signature_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_time_signature_w1)
   ump_bitfield<24, 8> numerator;
   ump_bitfield<16, 8> denominator;
   ump_bitfield<8, 8> number_of_32_notes;
@@ -651,19 +571,14 @@ using set_time_signature_w3 = std::uint32_t;
 
 using set_metronome_w0 = flex_data_w0;
 union set_metronome_w1 {
-  friend constexpr bool operator==(set_metronome_w1 const& a, set_metronome_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_metronome_w1)
   ump_bitfield<24, 8> num_clocks_per_primary_click;
   ump_bitfield<16, 8> bar_accent_part_1;
   ump_bitfield<8, 8> bar_accent_part_2;
   ump_bitfield<0, 8> bar_accent_part_3;
 };
 union set_metronome_w2 {
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(set_metronome_w2 const& a, set_metronome_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_metronome_w2)
   ump_bitfield<24, 8> num_subdivision_clicks_1;
   ump_bitfield<16, 8> num_subdivision_clicks_2;
   ump_bitfield<0, 16> reserved0;
@@ -673,10 +588,7 @@ using set_metronome_w3 = std::uint32_t;
 // 7.5.7 Set Key Signature Message
 using set_key_signature_w0 = flex_data_w0;
 union set_key_signature_w1 {
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(set_key_signature_w1 const& a, set_key_signature_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_key_signature_w1)
   ump_bitfield<28, 4> sharps_flats;
   ump_bitfield<24, 4> tonic_note;
   ump_bitfield<0, 24> reserved0;
@@ -740,10 +652,7 @@ enum class chord_type : std::uint8_t {
 };
 using set_chord_name_w0 = flex_data_w0;
 union set_chord_name_w1 {
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(set_chord_name_w1 const& a, set_chord_name_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_chord_name_w1)
   ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
   ump_bitfield<24, 4> chord_tonic;
   ump_bitfield<16, 8> chord_type;
@@ -753,10 +662,7 @@ union set_chord_name_w1 {
   ump_bitfield<0, 4> alter_2_degree;
 };
 union set_chord_name_w2 {
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(set_chord_name_w2 const& a, set_chord_name_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_chord_name_w2)
   ump_bitfield<28, 4> alter_3_type;
   ump_bitfield<24, 4> alter_3_degree;
   ump_bitfield<20, 4> alter_4_type;
@@ -764,10 +670,7 @@ union set_chord_name_w2 {
   ump_bitfield<0, 16> reserved;  // 0x0000
 };
 union set_chord_name_w3 {
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(set_chord_name_w3 const& a, set_chord_name_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(set_chord_name_w3)
   ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
   ump_bitfield<24, 4> bass_note;
   ump_bitfield<16, 8> bass_chord_type;
@@ -796,11 +699,7 @@ namespace data128 {
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
 union sysex8_w0 {
-  sysex8_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(sysex8_w0 const& a, sysex8_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(sysex8_w0)
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -809,42 +708,26 @@ union sysex8_w0 {
   ump_bitfield<0, 8> data0;
 };
 union sysex8_w1 {
-  sysex8_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(sysex8_w1 const& a, sysex8_w1 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(sysex8_w1)
   ump_bitfield<24, 8> data1;
   ump_bitfield<16, 8> data2;
   ump_bitfield<8, 8> data3;
   ump_bitfield<0, 8> data4;
 };
 union sysex8_w2 {
-  sysex8_w2() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(sysex8_w2 const& a, sysex8_w2 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(sysex8_w2)
   ump_bitfield<24, 8> data5;
   ump_bitfield<16, 8> data6;
   ump_bitfield<8, 8> data7;
   ump_bitfield<0, 8> data8;
 };
 union sysex8_w3 {
-  sysex8_w3() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(sysex8_w3 const& a, sysex8_w3 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(sysex8_w3)
   ump_bitfield<24, 8> data9;
   ump_bitfield<16, 8> data10;
   ump_bitfield<8, 8> data11;
   ump_bitfield<0, 8> data12;
 };
-static_assert(sizeof(sysex8_w0) == sizeof(std::uint32_t));
-static_assert(sizeof(sysex8_w1) == sizeof(std::uint32_t));
-static_assert(sizeof(sysex8_w2) == sizeof(std::uint32_t));
-static_assert(sizeof(sysex8_w3) == sizeof(std::uint32_t));
 struct sysex8 {
   sysex8_w0 w0;
   sysex8_w1 w1;
@@ -855,11 +738,7 @@ struct sysex8 {
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
 union mixed_data_set_w0 {
-  mixed_data_set_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
-  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
-  friend constexpr bool operator==(mixed_data_set_w0 const& a, mixed_data_set_w0 const& b) {
-    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
-  }
+  UMP_MEMBERS(mixed_data_set_w0)
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
@@ -869,41 +748,8 @@ union mixed_data_set_w0 {
 
 }  // end namespace data128
 
-// F.3.1 Message Type 0xD: Flex Data Messages
-// Table 32 128 bit UMP Formats for Message Type 0xD: Flex Data Messages
-
-// F.3.2 Message Type 0xF: UMP Stream Messages
-// Table 33 128 bit UMP Formats for Message Type 0xF: UMP Stream Messages
-
-// Function Block Info Notification (word 1)
-union function_block_info_w0 {
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
-  ump_bitfield<15, 1> a;
-  ump_bitfield<8, 7> block_number;
-  ump_bitfield<6, 2> reserv;
-  ump_bitfield<4, 2> ui_hint;
-  ump_bitfield<2, 2> m1;
-  ump_bitfield<0, 2> dir;
-};
-/// Function Block Info Notification (word 2)
-union function_block_info_w1 {
-  ump_bitfield<24, 8> first_group;
-  ump_bitfield<16, 8> groups_spanned;
-  ump_bitfield<8, 8> message_version;
-  ump_bitfield<0, 8> num_sysex8_streams;
-};
-
-// Function Block Name Notification (word1)
-union function_block_name_w0 {
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
-  ump_bitfield<8, 8> block_number;
-  ump_bitfield<0, 8> name;
-};
-
 }  // end namespace midi2::types
+
+#undef UMP_MEMBERS
 
 #endif  // MIDI2_UMP_TYPES_HPP
