@@ -232,11 +232,7 @@ public:
 
 namespace {
 
-using testing::AllOf;
 using testing::ElementsAre;
-using testing::ElementsAreArray;
-using testing::Eq;
-using testing::Field;
 using testing::InSequence;
 using testing::StrictMock;
 
