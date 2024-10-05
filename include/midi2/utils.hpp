@@ -93,6 +93,13 @@ enum control : std::uint8_t {
   nrpn_msb = 0x63,
 };
 
+enum class data64 : std::uint32_t {
+  sysex_in_1_packet = 0x00,
+  sysex_start = 0x01,
+  sysex_continue = 0x02,
+  sysex_end = 0x03,
+};
+
 enum class ump_utility : std::uint32_t {
   noop = 0b0000,
   jr_clock = 0b0001,
@@ -123,6 +130,15 @@ enum class ump_stream : std::uint32_t {
   function_block_name_notification = 0x12,
   start_of_clip = 0x20,
   end_of_clip = 0x21,
+};
+
+enum class data128 : std::uint8_t {
+  sysex8_in_1 = 0x00,
+  sysex8_start = 0x01,
+  sysex8_continue = 0x02,
+  sysex8_end = 0x03,
+  mixed_data_set_header = 0x08,
+  mixed_data_set_payload = 0x09,
 };
 
 enum class ci_message : std::uint8_t {
@@ -218,9 +234,9 @@ enum : std::uint32_t {
   X(utility, 0x00)        \
   X(system, 0x01)         \
   X(m1cvm, 0x02)          \
-  X(sysex7, 0x03)         \
+  X(data64, 0x03)         \
   X(m2cvm, 0x04)          \
-  X(data, 0x05)           \
+  X(data128, 0x05)        \
   X(reserved32_06, 0x06)  \
   X(reserved32_07, 0x07)  \
   X(reserved64_08, 0x08)  \

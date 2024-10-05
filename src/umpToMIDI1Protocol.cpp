@@ -54,13 +54,13 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       break;
 
       // 64-bit Data Messages (including System Exclusive)
-    case ump_message_type::sysex7:
+    case ump_message_type::data64:
       // MIDI2.0 Channel Voice Messages
     case ump_message_type::m2cvm:
       ump64word1 = UMP;
       UMPPos++;
       break;
-    case ump_message_type::data:
+    case ump_message_type::data128:
     case ump_message_type::flex_data:
     case ump_message_type::ump_stream:
     case ump_message_type::reserved128_0E:
@@ -81,7 +81,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       UMPPos = 0;
       break;
       // 64 bits Data Messages (including System Exclusive) part 2
-    case ump_message_type::sysex7: {
+    case ump_message_type::data64: {
       UMPPos = 0;
       output_.push_back(ump64word1);
       output_.push_back(UMP);
@@ -150,7 +150,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
       }
       break;
     }
-    case ump_message_type::data:
+    case ump_message_type::data128:
     case ump_message_type::flex_data:
     case ump_message_type::m1cvm:
     case ump_message_type::ump_stream:
@@ -171,7 +171,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     case ump_message_type::reserved96_0C:  // 96 Reserved
       UMPPos = 0;
       break;
-    case ump_message_type::data:
+    case ump_message_type::data128:
     case ump_message_type::flex_data:
     case ump_message_type::m1cvm:
     case ump_message_type::m2cvm:
@@ -182,7 +182,7 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
     case ump_message_type::reserved64_08:
     case ump_message_type::reserved64_09:
     case ump_message_type::reserved64_0A:
-    case ump_message_type::sysex7:
+    case ump_message_type::data64:
     case ump_message_type::system:
     case ump_message_type::utility:
     default: UMPPos++; break;

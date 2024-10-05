@@ -166,7 +166,7 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
     } else if (midi1int == status::sysex_stop) {
       using enum sysex7::status;
       types::sysex7_w0 w0{};
-      w0.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w0.mt = static_cast<std::uint8_t>(ump_message_type::data64);
       w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
       w0.status = static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
       w0.number_of_bytes = sysex7_.pos;
@@ -184,7 +184,7 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
              sysex7_.state == sysex7::status::end) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
       types::sysex7_w0 w0{};
-      w0.mt = static_cast<std::uint8_t>(ump_message_type::sysex7);
+      w0.mt = static_cast<std::uint8_t>(ump_message_type::data64);
       w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
       w0.status = static_cast<std::uint8_t>(sysex7_.state);
       w0.number_of_bytes = std::uint8_t{6};

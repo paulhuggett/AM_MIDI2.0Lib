@@ -96,21 +96,36 @@ union m1cvm_w0 {
 // F.2.1 Message Type 0x3: 8-Byte Data Messages
 // Table 29 8-Byte UMP Formats for Message Type 0x3: 8-Byte Data Messages
 
+// 7.7 System Exclusive (7-Bit) Messages
 union sysex7_w0 {
   ump_bitfield<28, 4> mt;  ///< Always 0x3
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  // 0b0000..0b0011
   ump_bitfield<16, 4> number_of_bytes;
-  ump_bitfield<8, 8> data0;
-  ump_bitfield<0, 8> data1;
+  ump_bitfield<15, 1> reserved0;
+  ump_bitfield<8, 7> data0;
+  ump_bitfield<7, 1> reserved1;
+  ump_bitfield<0, 7> data1;
+};
+union sysex7_w1 {
+  ump_bitfield<31, 1> reserved0;
+  ump_bitfield<24, 7> data0;
+  ump_bitfield<23, 1> reserved1;
+  ump_bitfield<16, 7> data1;
+  ump_bitfield<15, 1> reserved2;
+  ump_bitfield<8, 7> data2;
+  ump_bitfield<7, 1> reserved3;
+  ump_bitfield<0, 7> data3;
 };
 
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
 namespace m2cvm {
-// 7.4.1 MODI 2.0 Note Off Message
+// 7.4.1 MIDI 2.0 Note Off Message
 // 7.4.2 MIDI 2.0 Note On Message
 union note_w0 {
+  note_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(note_w0 const& a, note_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -119,20 +134,30 @@ union note_w0 {
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
   ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved;
+  ump_bitfield<15, 1> reserved0;
   ump_bitfield<8, 7> note;
   ump_bitfield<0, 8> attribute;
 };
+static_assert(sizeof(note_w0) == sizeof(std::uint32_t));
+
 union note_w1 {
+  note_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(note_w1 const& a, note_w1 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
   ump_bitfield<16, 16> velocity;
   ump_bitfield<0, 16> attribute;
 };
+static_assert(sizeof(note_w1) == sizeof(std::uint32_t));
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 union poly_pressure_w0 {
+  poly_pressure_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(poly_pressure_w0 const& a, poly_pressure_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;  ///< Always 0x4
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;  ///< Always 0xA
@@ -191,6 +216,8 @@ union controller_message_w0 {
 
 // 7.4.9 MIDI 2.0 Program Change Message
 union program_change_w0 {
+  program_change_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(program_change_w0 const& a, program_change_w0 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -204,6 +231,8 @@ union program_change_w0 {
   ump_bitfield<0, 1> bank_valid;    ///< Bank change is ignored if this bit is zero.
 };
 union program_change_w1 {
+  program_change_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(program_change_w1 const& a, program_change_w1 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -631,6 +660,7 @@ union set_metronome_w1 {
   ump_bitfield<0, 8> bar_accent_part_3;
 };
 union set_metronome_w2 {
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(set_metronome_w2 const& a, set_metronome_w2 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -643,6 +673,7 @@ using set_metronome_w3 = std::uint32_t;
 // 7.5.7 Set Key Signature Message
 using set_key_signature_w0 = flex_data_w0;
 union set_key_signature_w1 {
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(set_key_signature_w1 const& a, set_key_signature_w1 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -709,6 +740,7 @@ enum class chord_type : std::uint8_t {
 };
 using set_chord_name_w0 = flex_data_w0;
 union set_chord_name_w1 {
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(set_chord_name_w1 const& a, set_chord_name_w1 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -721,6 +753,7 @@ union set_chord_name_w1 {
   ump_bitfield<0, 4> alter_2_degree;
 };
 union set_chord_name_w2 {
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(set_chord_name_w2 const& a, set_chord_name_w2 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -731,6 +764,7 @@ union set_chord_name_w2 {
   ump_bitfield<0, 16> reserved;  // 0x0000
 };
 union set_chord_name_w3 {
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
   friend constexpr bool operator==(set_chord_name_w3 const& a, set_chord_name_w3 const& b) {
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
   }
@@ -751,6 +785,8 @@ using text_common_w3 = std::uint32_t;
 
 }  // end namespace flex_data
 
+namespace data128 {
+
 // F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
 // Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
 // 8 and Mixed Data Set
@@ -760,23 +796,78 @@ using text_common_w3 = std::uint32_t;
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
 union sysex8_w0 {
+  sysex8_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(sysex8_w0 const& a, sysex8_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
   ump_bitfield<16, 4> number_of_bytes;
   ump_bitfield<8, 8> stream_id;
-  ump_bitfield<0, 8> data;
+  ump_bitfield<0, 8> data0;
+};
+union sysex8_w1 {
+  sysex8_w1() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(sysex8_w1 const& a, sysex8_w1 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> data1;
+  ump_bitfield<16, 8> data2;
+  ump_bitfield<8, 8> data3;
+  ump_bitfield<0, 8> data4;
+};
+union sysex8_w2 {
+  sysex8_w2() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(sysex8_w2 const& a, sysex8_w2 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> data5;
+  ump_bitfield<16, 8> data6;
+  ump_bitfield<8, 8> data7;
+  ump_bitfield<0, 8> data8;
+};
+union sysex8_w3 {
+  sysex8_w3() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(sysex8_w3 const& a, sysex8_w3 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
+  ump_bitfield<24, 8> data9;
+  ump_bitfield<16, 8> data10;
+  ump_bitfield<8, 8> data11;
+  ump_bitfield<0, 8> data12;
+};
+static_assert(sizeof(sysex8_w0) == sizeof(std::uint32_t));
+static_assert(sizeof(sysex8_w1) == sizeof(std::uint32_t));
+static_assert(sizeof(sysex8_w2) == sizeof(std::uint32_t));
+static_assert(sizeof(sysex8_w3) == sizeof(std::uint32_t));
+struct sysex8 {
+  sysex8_w0 w0;
+  sysex8_w1 w1;
+  sysex8_w2 w2;
+  sysex8_w3 w3;
 };
 
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
 union mixed_data_set_w0 {
+  mixed_data_set_w0() { *std::bit_cast<std::uint32_t*>(this) = 0; }
+  constexpr auto word() const { return std::bit_cast<std::uint32_t>(*this); }
+  friend constexpr bool operator==(mixed_data_set_w0 const& a, mixed_data_set_w0 const& b) {
+    return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b);
+  }
   ump_bitfield<28, 4> mt;
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
   ump_bitfield<16, 4> mds_id;
   ump_bitfield<0, 16> data;
 };
+
+}  // end namespace data128
 
 // F.3.1 Message Type 0xD: Flex Data Messages
 // Table 32 128 bit UMP Formats for Message Type 0xD: Flex Data Messages

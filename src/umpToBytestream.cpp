@@ -52,13 +52,13 @@ void umpToBytestream::word1(std::uint32_t const ump) {
     break;
   }
     // 64 bits Data Messages (including System Exclusive)
-  case ump_message_type::sysex7:
+  case ump_message_type::data64:
     // MIDI2.0 Channel Voice Messages
   case ump_message_type::m2cvm:
     ump64word1_ = ump;
     UMPPos_++;
     break;
-  case ump_message_type::data:
+  case ump_message_type::data128:
   case ump_message_type::reserved64_08:
   case ump_message_type::reserved64_09:
   case ump_message_type::reserved64_0A:
@@ -75,7 +75,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
   switch (mType_) {
   case ump_message_type::utility:
   case ump_message_type::m1cvm:
-  case ump_message_type::data:
+  case ump_message_type::data128:
   case ump_message_type::reserved32_06:
   case ump_message_type::reserved32_07:
   case ump_message_type::reserved96_0B:
@@ -90,7 +90,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     UMPPos_ = 0;
     break;
 
-  case ump_message_type::sysex7: {
+  case ump_message_type::data64: {
     UMPPos_ = 0;
     auto const status = (ump64word1_ >> 20) & 0x0F;
     auto const numSysexBytes = (ump64word1_ >> 16) & 0x0F;
@@ -219,11 +219,11 @@ void umpToBytestream::word3(std::uint32_t /*UMP*/) {
   case ump_message_type::reserved64_09:
   case ump_message_type::reserved64_0A:
   case ump_message_type::utility:
-  case ump_message_type::sysex7:
+  case ump_message_type::data64:
   case ump_message_type::m2cvm:
   case ump_message_type::reserved64_08:
   case ump_message_type::m1cvm:
-  case ump_message_type::data:
+  case ump_message_type::data128:
   case ump_message_type::reserved32_06:
   case ump_message_type::reserved32_07:
   case ump_message_type::flex_data:

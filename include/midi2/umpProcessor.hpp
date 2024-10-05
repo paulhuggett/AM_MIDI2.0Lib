@@ -45,9 +45,9 @@ template <midi2::ump_message_type> struct message_size {};
 template <> struct message_size<midi2::ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
 template <> struct message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
 template <> struct message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::sysex7> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<midi2::ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
 template <> struct message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::data> : std::integral_constant<unsigned, 4> {};
+template <> struct message_size<midi2::ump_message_type::data128> : std::integral_constant<unsigned, 4> {};
 template <> struct message_size<midi2::ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
 template <> struct message_size<midi2::ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
 template <> struct message_size<midi2::ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
@@ -73,9 +73,16 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 // clang-format off
 template <typename T> concept backend = requires(T && v) {
   { v.system(midi2::types::system_general{}) } -> std::same_as<void>;
-  { v.send_out_sysex(ump_data{}) } -> std::same_as<void>;
 
   { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
+};
+template <typename T, typename Context>
+concept utility_backend = requires(T v, Context context) {
+  { v.noop(context) } -> std::same_as<void>;
+  { v.jr_clock(context, types::jr_clock{}) } -> std::same_as<void>;
+  { v.jr_timestamp(context, types::jr_clock{}) } -> std::same_as<void>;
+  { v.delta_clockstamp_tpqn(context, types::jr_clock{}) } -> std::same_as<void>;
+  { v.delta_clockstamp(context, types::delta_clockstamp{}) } -> std::same_as<void>;
 };
 template<typename T, typename Context>
 concept m1cvm_backend = requires(T v, Context context) {
@@ -86,6 +93,13 @@ concept m1cvm_backend = requires(T v, Context context) {
   { v.program_change(context, types::m1cvm_w0{}) } -> std::same_as<void>;
   { v.channel_pressure (context, types::m1cvm_w0{}) } -> std::same_as<void>;
   { v.pitch_bend (context, types::m1cvm_w0{}) } -> std::same_as<void>;
+};
+template <typename T, typename Context>
+concept data64_backend = requires(T v, Context context) {
+  { v.sysex_in_1(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex_start(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex_continue(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex_end(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
@@ -103,12 +117,29 @@ concept m2cvm_backend = requires(T v, Context context) {
   { v.per_note_pitch_bend(context, types::m2cvm::per_note_pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
-concept utility_backend = requires(T v, Context context) {
-  { v.noop (context) } -> std::same_as<void>;
-  { v.jr_clock (context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.jr_timestamp (context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.delta_clockstamp_tpqn(context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.delta_clockstamp(context, types::delta_clockstamp{}) } -> std::same_as<void>;
+concept data128_backend = requires(T v, Context context) {
+  { v.sysex8_in_1(context,
+      types::data128::sysex8_w0{},
+      types::data128::sysex8_w1{},
+      types::data128::sysex8_w2{},
+      types::data128::sysex8_w3{}) } -> std::same_as<void>;
+  { v.sysex8_start(context,
+      types::data128::sysex8_w0{},
+      types::data128::sysex8_w1{},
+      types::data128::sysex8_w2{},
+      types::data128::sysex8_w3{}) } -> std::same_as<void>;
+  { v.sysex8_continue(context,
+      types::data128::sysex8_w0{},
+      types::data128::sysex8_w1{},
+      types::data128::sysex8_w2{},
+      types::data128::sysex8_w3{}) } -> std::same_as<void>;
+  { v.sysex8_end(context,
+      types::data128::sysex8_w0{},
+      types::data128::sysex8_w1{},
+      types::data128::sysex8_w2{},
+      types::data128::sysex8_w3{}) } -> std::same_as<void>;
+  // TODO: mixed data set header
+  // TODO: mixed data set payload
 };
 template <typename T, typename Context>
 concept ump_stream_backend = requires(T v, Context context) {
@@ -211,11 +242,13 @@ template <typename T>
 concept ump_processor_config = requires (T v) {
   { v.context };
   { v.callbacks } -> backend;
-  { v.m1cvm } -> m1cvm_backend<decltype(v.context)>;
-  { v.m2cvm } -> m2cvm_backend<decltype(v.context)>;
   { v.utility } -> utility_backend<decltype(v.context)>;
-  { v.flex } -> flex_data_backend<decltype(v.context)>;
+  { v.m1cvm } -> m1cvm_backend<decltype(v.context)>;
+  { v.data64 } -> data64_backend<decltype(v.context)>;
+  { v.m2cvm } -> m2cvm_backend<decltype(v.context)>;
+  { v.data128 } -> data128_backend<decltype(v.context)>;
   { v.ump_stream } -> ump_stream_backend<decltype(v.context)>;
+  { v.flex } -> flex_data_backend<decltype(v.context)>;
 };
 // clang-format on
 
@@ -228,9 +261,19 @@ public:
   callbacks_base& operator=(callbacks_base const&) = default;
 
   virtual void system(types::system_general) { /* nop */ }
-  virtual void send_out_sysex(ump_data const& /*mess*/) { /* nop */ }
 
   virtual void unknown(std::span<std::uint32_t>) { /* nop */ }
+};
+template <typename Context> struct utility_base {
+  utility_base() = default;
+  utility_base(utility_base const&) = default;
+  virtual ~utility_base() noexcept = default;
+
+  virtual void noop(Context) { /* do nothing */ }
+  virtual void jr_clock(Context, types::jr_clock) { /* do nothing */ }
+  virtual void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
+  virtual void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
+  virtual void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
 };
 
 template <typename Context> struct m1cvm_base {
@@ -245,6 +288,16 @@ template <typename Context> struct m1cvm_base {
   virtual void program_change(Context, types::m1cvm_w0) { /* do nothing */ }
   virtual void channel_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
   virtual void pitch_bend(Context, types::m1cvm_w0) { /* do nothing */ }
+};
+template <typename Context> struct data64_base {
+  data64_base() = default;
+  data64_base(data64_base const&) = default;
+  virtual ~data64_base() noexcept = default;
+
+  virtual void sysex_in_1(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
+  virtual void sysex_start(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
+  virtual void sysex_continue(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
+  virtual void sysex_end(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_base {
   m2cvm_base() = default;
@@ -265,17 +318,23 @@ template <typename Context> struct m2cvm_base {
   virtual void pitch_bend(Context, types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
   virtual void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
 };
-template <typename Context> struct utility_base {
-  utility_base() = default;
-  utility_base(utility_base const&) = default;
-  virtual ~utility_base() noexcept = default;
+template <typename Context> struct data128_base {
+  data128_base() = default;
+  data128_base(data128_base const&) = default;
+  virtual ~data128_base() noexcept = default;
 
-  virtual void noop(Context) { /* do nothing */ }
-  virtual void jr_clock(Context, types::jr_clock) { /* do nothing */ }
-  virtual void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
-  virtual void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
-  virtual void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
+  virtual void sysex8_in_1(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                           types::data128::sysex8_w3) { /* do nothing */ }
+  virtual void sysex8_start(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                            types::data128::sysex8_w3) { /* do nothing */ }
+  virtual void sysex8_continue(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                               types::data128::sysex8_w3) { /* do nothing */ }
+  virtual void sysex8_end(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                          types::data128::sysex8_w3) { /* do nothing */ }
+  // TODO: mixed data set header
+  // TODO: mixed data set payload
 };
+
 template <typename Context> struct flex_data_base {
   flex_data_base() = default;
   flex_data_base(flex_data_base const&) = default;
@@ -356,11 +415,13 @@ struct default_config {
   struct empty {};
   [[no_unique_address]] empty context{};
   callbacks_base callbacks;
-  m1cvm_base<decltype(context)> m1cvm;
-  m2cvm_base<decltype(context)> m2cvm;
   utility_base<decltype(context)> utility;
-  flex_data_base<decltype(context)> flex;
+  m1cvm_base<decltype(context)> m1cvm;
+  data64_base<decltype(context)> data64;
+  m2cvm_base<decltype(context)> m2cvm;
+  data128_base<decltype(context)> data128;
   ump_stream_base<decltype(context)> ump_stream;
+  flex_data_base<decltype(context)> flex;
 };
 
 template <ump_processor_config Config = default_config> class umpProcessor {
@@ -373,65 +434,56 @@ public:
     pos_ = 0;
     std::ranges::fill(message_, std::uint8_t{0});
   }
-
-  void processUMP(std::uint32_t ump) {
+  void processUMP() {}
+  template <typename First, typename... Rest> void processUMP(First ump, Rest... rest) {
+    this->processUMP(ump.word(), std::forward<Rest>(rest)...);
+  }
+  template <typename... Rest> void processUMP(std::uint32_t ump, Rest... rest) {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
     message_[pos_++] = ump;
 
     auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
-    if (pos_ < ump_message_size(mt)) {
-      return;
+    if (pos_ >= ump_message_size(mt)) {
+      pos_ = 0;
+
+      switch (mt) {
+      case ump_message_type::utility: this->utility_message(); break;
+      case ump_message_type::system: this->system_message(); break;
+      case ump_message_type::m1cvm: this->m1cvm_message(); break;
+      case ump_message_type::m2cvm: this->m2cvm_message(); break;
+      case ump_message_type::flex_data: this->flex_data_message(); break;
+      case ump_message_type::ump_stream: this->ump_stream_message(); break;
+      case ump_message_type::data64: this->data64_message(); break;
+      case ump_message_type::data128: this->data128_message(); break;
+
+      case ump_message_type::reserved32_06:
+      case ump_message_type::reserved32_07:
+      case ump_message_type::reserved64_08:
+      case ump_message_type::reserved64_09:
+      case ump_message_type::reserved64_0A:
+      case ump_message_type::reserved96_0B:
+      case ump_message_type::reserved96_0C:
+      case ump_message_type::reserved128_0E: config_.callbacks.unknown(std::span{message_.data(), pos_}); break;
+      default:
+        assert(false);
+        unreachable();
+        break;
+      }
     }
-    pos_ = 0;
-
-    auto const group = static_cast<std::uint8_t>((message_[0] >> 24) & 0xF);
-    switch (mt) {
-    case ump_message_type::utility: this->utility_message(); break;
-    case ump_message_type::system: this->system_message(); break;
-    case ump_message_type::m1cvm: this->m1cvm_message(); break;
-    case ump_message_type::m2cvm: this->m2cvm_message(); break;
-    case ump_message_type::flex_data: this->flex_data_message(); break;
-    case ump_message_type::ump_stream: this->ump_stream_message(); break;
-
-    // TODO(pbh): move to the new style.
-    case ump_message_type::sysex7: this->sysex7_message(mt, group); break;
-    case ump_message_type::data: this->data_message(); break;
-
-    case ump_message_type::reserved32_06:
-    case ump_message_type::reserved32_07:
-    case ump_message_type::reserved64_08:
-    case ump_message_type::reserved64_09:
-    case ump_message_type::reserved64_0A:
-    case ump_message_type::reserved96_0B:
-    case ump_message_type::reserved96_0C:
-    case ump_message_type::reserved128_0E: config_.callbacks.unknown(std::span{message_.data(), pos_}); break;
-    default:
-      assert(false);
-      unreachable();
-      break;
-    }
+    this->processUMP(std::forward<Rest>(rest)...);
   }
 
 private:
   void utility_message();
   void system_message();
   void m1cvm_message();
-  void sysex7_message(ump_message_type mt, std::uint8_t group);
+  void data64_message();
   void m2cvm_message();
   void ump_stream_message();
-  void data_message();
+  void data128_message();
   void flex_data_message();
-
-  enum data_message_status : std::uint8_t {
-    sysex8_in_1_ump = 0b0000,
-    sysex8_start = 0b0001,
-    sysex8_continue = 0b0010,
-    sysex8_end = 0b0011,
-    mixed_data_set_header = 0b1000,
-    mixed_data_set_payload = 0b1001,
-  };
 
   template <std::output_iterator<std::uint8_t> OutputIterator>
   static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
@@ -508,36 +560,18 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
   }
 }
 
-// 64 bit System Exclusive Data Message
-template <ump_processor_config Config>
-void umpProcessor<Config>::sysex7_message(ump_message_type const mt, std::uint8_t const group) {
-  std::array<std::uint8_t, 7> sysex{};
-  auto const data_length = (message_[0] >> 16) & 0x7;
-  if (data_length > 0) {
-    sysex[0] = (message_[0] >> 8) & 0x7F;
+// data64 message
+// ~~~~~~~~~~~~~~
+template <ump_processor_config Config> void umpProcessor<Config>::data64_message() {
+  auto const w0 = std::bit_cast<types::sysex7_w0>(message_[0]);
+  auto const w1 = std::bit_cast<types::sysex7_w1>(message_[1]);
+  switch (static_cast<data64>(w0.status.value())) {
+  case data64::sysex_in_1_packet: config_.data64.sysex_in_1(config_.context, w0, w1); break;
+  case data64::sysex_start: config_.data64.sysex_start(config_.context, w0, w1); break;
+  case data64::sysex_continue: config_.data64.sysex_continue(config_.context, w0, w1); break;
+  case data64::sysex_end: config_.data64.sysex_end(config_.context, w0, w1); break;
+  default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
-  if (data_length > 1) {
-    sysex[1] = message_[0] & 0x7F;
-  }
-  if (data_length > 2) {
-    sysex[2] = (message_[1] >> 24) & 0x7F;
-  }
-  if (data_length > 3) {
-    sysex[3] = (message_[1] >> 16) & 0x7F;
-  }
-  if (data_length > 4) {
-    sysex[4] = (message_[1] >> 8) & 0x7F;
-  }
-  if (data_length > 5) {
-    sysex[5] = message_[1] & 0x7F;
-  }
-  ump_data mess;
-  mess.common.group = group;
-  mess.common.messageType = mt;
-  mess.form = (message_[0] >> 20) & 0xF;
-  mess.data = std::span{sysex.data(), data_length};
-  assert(mess.data.size() <= sysex.size());
-  config_.callbacks.send_out_sysex(mess);
 }
 
 // m2cvm message
@@ -728,47 +762,34 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
 }
 
 // 128 bit Data Messages (including System Exclusive 8)
-template <ump_processor_config Config> void umpProcessor<Config>::data_message() {
-  uint8_t const status = (message_[0] >> 20) & 0xF;
-  switch (status) {
-  case data_message_status::sysex8_in_1_ump:
-  case data_message_status::sysex8_start:
-  case data_message_status::sysex8_continue:
-  case data_message_status::sysex8_end: {
-    std::array<std::uint8_t, 13> sysex{};
-    auto const w0 = std::bit_cast<types::sysex8_w0>(message_[0]);
-    auto const data_length = std::min(std::size_t{w0.number_of_bytes}, sysex.size());
-    if (data_length >= 1) {
-      sysex[0] = w0.data;
-      umpProcessor::payload(message_, 0, data_length - 1, std::begin(sysex) + 1);
-    }
-    ump_data mess;
-    mess.common.group = w0.group;
-    mess.common.messageType = static_cast<ump_message_type>(w0.mt.value());
-    mess.streamId = w0.stream_id;
-    mess.form = w0.status;
-    assert(data_length <= sysex.size());
-    mess.data = std::span{sysex.data(), data_length};
-    config_.callbacks.send_out_sysex(mess);
-  } break;
-  case data_message_status::mixed_data_set_header:
-  case data_message_status::mixed_data_set_payload: {
-    // Beginning of Mixed Data Set
-    // uint8_t mdsId  = (umpMess[0] >> 16) & 0xF;
-
-    if (status == 8) {
-      /*uint16_t numValidBytes  = umpMess[0] & 0xFFFF;
-      uint16_t numChunk  = (umpMess[1] >> 16) & 0xFFFF;
-      uint16_t numOfChunk  = umpMess[1] & 0xFFFF;
-      uint16_t manuId  = (umpMess[2] >> 16) & 0xFFFF;
-      uint16_t deviceId  = umpMess[2] & 0xFFFF;
-      uint16_t subId1  = (umpMess[3] >> 16) & 0xFFFF;
-      uint16_t subId2  = umpMess[3] & 0xFFFF;*/
-    } else {
-      // MDS bytes?
-    }
-    config_.callbacks.unknown(std::span{message_.data(), 4});
-  } break;
+template <ump_processor_config Config> void umpProcessor<Config>::data128_message() {
+  switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
+  case data128::sysex8_in_1:
+    config_.data128.sysex8_in_1(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
+                                std::bit_cast<types::data128::sysex8_w1>(message_[1]),
+                                std::bit_cast<types::data128::sysex8_w2>(message_[2]),
+                                std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    break;
+  case data128::sysex8_start:
+    config_.data128.sysex8_start(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
+                                 std::bit_cast<types::data128::sysex8_w1>(message_[1]),
+                                 std::bit_cast<types::data128::sysex8_w2>(message_[2]),
+                                 std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    break;
+  case data128::sysex8_continue:
+    config_.data128.sysex8_continue(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
+                                    std::bit_cast<types::data128::sysex8_w1>(message_[1]),
+                                    std::bit_cast<types::data128::sysex8_w2>(message_[2]),
+                                    std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    break;
+  case data128::sysex8_end:
+    config_.data128.sysex8_end(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
+                               std::bit_cast<types::data128::sysex8_w1>(message_[1]),
+                               std::bit_cast<types::data128::sysex8_w2>(message_[2]),
+                               std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    break;
+  case data128::mixed_data_set_header: break;
+  case data128::mixed_data_set_payload: break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
 }
