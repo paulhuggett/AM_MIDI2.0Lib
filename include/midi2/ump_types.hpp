@@ -11,13 +11,14 @@
 
 #include <bit>
 #include <cstdint>
+#include <cstring>
 
 #include "midi2/bitfield.hpp"
 
 #define UMP_MEMBERS(name)                                                      \
   name() {                                                                     \
     static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
-    *std::bit_cast<std::uint32_t*>(this) = 0;                                  \
+    std::memset(this, 0, sizeof(*this));                                       \
   }                                                                            \
   [[nodiscard]] constexpr auto word() const {                                  \
     return std::bit_cast<std::uint32_t>(*this);                                \
