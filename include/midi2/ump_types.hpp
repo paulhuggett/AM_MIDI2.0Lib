@@ -734,10 +734,10 @@ union sysex8_w3 {
   ump_bitfield<0, 8> data12;
 };
 struct sysex8 {
-  sysex8_w0 w0;
-  sysex8_w1 w1;
-  sysex8_w2 w2;
-  sysex8_w3 w3;
+  sysex8_w0 w0{};
+  sysex8_w1 w1{};
+  sysex8_w2 w2{};
+  sysex8_w3 w3{};
 };
 
 // 7.9 Mixed Data Set Message
@@ -768,10 +768,10 @@ union mds_header_w3 {
 };
 
 struct mds_header {
-  mds_header_w0 w0;
-  mds_header_w1 w1;
-  mds_header_w2 w2;
-  mds_header_w3 w3;
+  mds_header_w0 w0{};
+  mds_header_w1 w1{};
+  mds_header_w2 w2{};
+  mds_header_w3 w3{};
 };
 
 union mds_payload_w0 {
@@ -787,10 +787,10 @@ using mds_payload_w2 = std::uint32_t;
 using mds_payload_w3 = std::uint32_t;
 
 struct mds_payload {
-  mds_payload_w0 w0;
-  mds_payload_w1 w1;
-  mds_payload_w2 w2;
-  mds_payload_w3 w3;
+  mds_payload_w0 w0{};
+  mds_payload_w1 w1{};
+  mds_payload_w2 w2{};
+  mds_payload_w3 w3{};
 };
 
 }  // end namespace data128
