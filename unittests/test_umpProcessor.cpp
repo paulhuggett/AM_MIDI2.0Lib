@@ -77,10 +77,14 @@ public:
 };
 class Data64Mocks : public midi2::data64_base<context_type> {
 public:
-  MOCK_METHOD(void, sysex_in_1, (context_type, midi2::types::sysex7_w0, midi2::types::sysex7_w1), (override));
-  MOCK_METHOD(void, sysex_start, (context_type, midi2::types::sysex7_w0, midi2::types::sysex7_w1), (override));
-  MOCK_METHOD(void, sysex_continue, (context_type, midi2::types::sysex7_w0, midi2::types::sysex7_w1), (override));
-  MOCK_METHOD(void, sysex_end, (context_type, midi2::types::sysex7_w0, midi2::types::sysex7_w1), (override));
+  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
+              (override));
+  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
+              (override));
+  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
+              (override));
+  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
+              (override));
 };
 class M2CVMMocks : public midi2::m2cvm_base<context_type> {
 public:
@@ -401,6 +405,72 @@ TEST_F(UMPProcessor, Midi1ControlChange) {
   w0.data_b = 127;
   EXPECT_CALL(config_.m1cvm, control_change(config_.context, w0)).Times(1);
   processor_.processUMP(w0);
+}
+
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, Data64SysExIn1) {
+  midi2::types::data64::sysex7_w0 w0;
+  w0.mt = to_underlying(midi2::ump_message_type::data64);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::data64::sysex7_in_1);
+  w0.number_of_bytes = 4;
+  w0.data0 = 2;
+  w0.data1 = 3;
+  midi2::types::data64::sysex7_w1 w1;
+  w1.data2 = 5;
+  w1.data3 = 7;
+  EXPECT_CALL(config_.data64, sysex7_in_1(config_.context, w0, w1)).Times(1);
+  processor_.processUMP(w0, w1);
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, Data64Sysex8StartAndEnd) {
+  constexpr auto group = std::uint8_t{0};
+
+  midi2::types::data64::sysex7_w0 w0;
+  w0.mt = to_underlying(midi2::ump_message_type::data64);
+  w0.group = group;
+  w0.status = to_underlying(midi2::data64::sysex7_start);
+  w0.number_of_bytes = 6;
+  w0.data0 = 2;
+  w0.data1 = 3;
+  midi2::types::data64::sysex7_w1 w1;
+  w1.data2 = 5;
+  w1.data3 = 7;
+  w1.data4 = 11;
+  w1.data5 = 13;
+
+  midi2::types::data64::sysex7_w0 w2;
+  w2.mt = to_underlying(midi2::ump_message_type::data64);
+  w2.group = group;
+  w2.status = to_underlying(midi2::data64::sysex7_continue);
+  w2.number_of_bytes = 6;
+  w2.data0 = 17;
+  w2.data1 = 19;
+  midi2::types::data64::sysex7_w1 w3;
+  w3.data2 = 23;
+  w3.data3 = 29;
+  w3.data4 = 31;
+  w3.data5 = 37;
+
+  midi2::types::data64::sysex7_w0 w4;
+  w4.mt = to_underlying(midi2::ump_message_type::data64);
+  w4.group = group;
+  w4.status = to_underlying(midi2::data64::sysex7_end);
+  w4.number_of_bytes = 4;
+  w4.data0 = 41;
+  w4.data1 = 43;
+  midi2::types::data64::sysex7_w1 w5;
+  w5.data2 = 47;
+  w5.data3 = 53;
+  {
+    InSequence _;
+    EXPECT_CALL(config_.data64, sysex7_start(config_.context, w0, w1)).Times(1);
+    EXPECT_CALL(config_.data64, sysex7_continue(config_.context, w2, w3)).Times(1);
+    EXPECT_CALL(config_.data64, sysex7_end(config_.context, w4, w5)).Times(1);
+  }
+  processor_.processUMP(w0, w1);
+  processor_.processUMP(w2, w3);
+  processor_.processUMP(w4, w5);
 }
 
 // NOLINTNEXTLINE
@@ -1017,34 +1087,6 @@ TEST_F(UMPProcessor, FlexDataText) {
   processor_.processUMP(w2);
   processor_.processUMP(w3);
 }
-#if 0
-
-// NOLINTNEXTLINE
-TEST_F(UMPProcessor, Sysex7) {
-  std::array data{std::uint8_t{1}, std::uint8_t{2}, std::uint8_t{3}, std::uint8_t{4}, std::uint8_t{5}};
-
-  midi2::types::sysex7_w0 word1{};
-  word1.mt = 3;
-  word1.group = 1;
-  word1.status = 0;           // complete sysex in one message
-  word1.number_of_bytes = 5;  // 0..6
-  word1.data0 = data[0];
-  word1.data1 = data[1];
-
-  midi2::ump_data mess;
-  mess.common.group = 1;
-  mess.common.messageType = midi2::ump_message_type::data64;
-  mess.streamId = 0;
-  mess.form = 0;
-  mess.data = data;
-
-  EXPECT_CALL(config_.callbacks,
-              send_out_sysex(UMPDataMatches(mess.common, mess.streamId, mess.form, std::begin(data), std::end(data))));
-
-  processor_.processUMP(word1);
-  processor_.processUMP(pack(data[2], data[3], data[4], 0));
-}
-#endif
 
 void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
   midi2::umpProcessor p;

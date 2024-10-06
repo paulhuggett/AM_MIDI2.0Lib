@@ -93,11 +93,11 @@ enum control : std::uint8_t {
   nrpn_msb = 0x63,
 };
 
-enum class data64 : std::uint32_t {
-  sysex_in_1_packet = 0x00,
-  sysex_start = 0x01,
-  sysex_continue = 0x02,
-  sysex_end = 0x03,
+enum class data64 : std::uint8_t {
+  sysex7_in_1 = 0x00,
+  sysex7_start = 0x01,
+  sysex7_continue = 0x02,
+  sysex7_end = 0x03,
 };
 
 enum class ump_utility : std::uint32_t {

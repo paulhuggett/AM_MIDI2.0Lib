@@ -96,10 +96,10 @@ concept m1cvm_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
-  { v.sysex_in_1(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex_start(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex_continue(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex_end(context, types::sysex7_w0{}, types::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex7_in_1(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex7_start(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex7_continue(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex7_end(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
@@ -294,10 +294,10 @@ template <typename Context> struct data64_base {
   data64_base(data64_base const&) = default;
   virtual ~data64_base() noexcept = default;
 
-  virtual void sysex_in_1(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
-  virtual void sysex_start(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
-  virtual void sysex_continue(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
-  virtual void sysex_end(Context, types::sysex7_w0, types::sysex7_w1) { /* do nothing */ }
+  virtual void sysex7_in_1(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  virtual void sysex7_start(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  virtual void sysex7_continue(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  virtual void sysex7_end(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_base {
   m2cvm_base() = default;
@@ -487,10 +487,6 @@ private:
   void data128_message();
   void flex_data_message();
 
-  template <std::output_iterator<std::uint8_t> OutputIterator>
-  static constexpr OutputIterator payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
-                                          std::size_t limit, OutputIterator out);
-
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 
@@ -565,13 +561,13 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
 // data64 message
 // ~~~~~~~~~~~~~~
 template <ump_processor_config Config> void umpProcessor<Config>::data64_message() {
-  auto const w0 = std::bit_cast<types::sysex7_w0>(message_[0]);
-  auto const w1 = std::bit_cast<types::sysex7_w1>(message_[1]);
+  auto const w0 = std::bit_cast<types::data64::sysex7_w0>(message_[0]);
+  auto const w1 = std::bit_cast<types::data64::sysex7_w1>(message_[1]);
   switch (static_cast<data64>(w0.status.value())) {
-  case data64::sysex_in_1_packet: config_.data64.sysex_in_1(config_.context, w0, w1); break;
-  case data64::sysex_start: config_.data64.sysex_start(config_.context, w0, w1); break;
-  case data64::sysex_continue: config_.data64.sysex_continue(config_.context, w0, w1); break;
-  case data64::sysex_end: config_.data64.sysex_end(config_.context, w0, w1); break;
+  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, w0, w1); break;
+  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, w0, w1); break;
+  case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, w0, w1); break;
+  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, w0, w1); break;
   default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
 }
@@ -646,22 +642,6 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
-}
-
-template <ump_processor_config Config>
-template <std::output_iterator<std::uint8_t> OutputIterator>
-constexpr OutputIterator umpProcessor<Config>::payload(std::array<std::uint32_t, 4> const& message, std::size_t index,
-                                                       std::size_t limit, OutputIterator out) {
-  assert(limit < message.size() * sizeof(std::uint32_t) && index <= limit);
-  if (index >= limit) {
-    return out;
-  }
-  // There are 4 bytes per packet and we start at packet #1.
-  auto const packet_num = (index >> 2) + 1U;
-  auto const rem4 = index & 0b11U;  // rem4 = index % 4
-  auto const shift = 24U - 8U * rem4;
-  *(out++) = (message[packet_num] >> shift) & 0xFF;
-  return umpProcessor::payload(message, index + 1U, limit, out);
 }
 
 // ump stream message

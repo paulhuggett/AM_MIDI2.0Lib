@@ -99,8 +99,7 @@ union m1cvm_w0 {
   ump_bitfield<0, 7> data_b;
 };
 
-// F.2.1 Message Type 0x3: 8-Byte Data Messages
-// Table 29 8-Byte UMP Formats for Message Type 0x3: 8-Byte Data Messages
+namespace data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
 union sysex7_w0 {
@@ -117,14 +116,16 @@ union sysex7_w0 {
 union sysex7_w1 {
   UMP_MEMBERS(sysex7_w1)
   ump_bitfield<31, 1> reserved0;
-  ump_bitfield<24, 7> data0;
+  ump_bitfield<24, 7> data2;
   ump_bitfield<23, 1> reserved1;
-  ump_bitfield<16, 7> data1;
+  ump_bitfield<16, 7> data3;
   ump_bitfield<15, 1> reserved2;
-  ump_bitfield<8, 7> data2;
+  ump_bitfield<8, 7> data4;
   ump_bitfield<7, 1> reserved3;
-  ump_bitfield<0, 7> data3;
+  ump_bitfield<0, 7> data5;
 };
+
+}  // end namespace data64
 
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
