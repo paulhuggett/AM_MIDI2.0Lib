@@ -127,6 +127,11 @@ union sysex7_w1 {
   ump_bitfield<7, 1> reserved3;
   ump_bitfield<0, 7> data5;
 };
+struct sysex7 {
+  friend bool operator==(sysex7 const &, sysex7 const &) = default;
+  sysex7_w0 w0{};
+  sysex7_w1 w1{};
+};
 
 }  // end namespace data64
 
@@ -149,6 +154,12 @@ union note_w1 {
   UMP_MEMBERS(note_w1)
   ump_bitfield<16, 16> velocity;
   ump_bitfield<0, 16> attribute;
+};
+
+struct note {
+  friend constexpr bool operator==(note const &a, note const &b) = default;
+  note_w0 w0{};
+  note_w1 w1{};
 };
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
@@ -274,270 +285,355 @@ union per_note_pitch_bend_w0 {
 namespace ump_stream {
 
 // 7.1.1 Endpoint Discovery Message
-union endpoint_discovery_w0 {
-  UMP_MEMBERS(endpoint_discovery_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x00
-  ump_bitfield<8, 8> version_major;
-  ump_bitfield<0, 8> version_minor;
+struct endpoint_discovery {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x00
+    ump_bitfield<8, 8> version_major;
+    ump_bitfield<0, 8> version_minor;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<8, 24> reserved;
+    ump_bitfield<0, 8> filter;
+  };
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  friend bool operator==(endpoint_discovery const &lhs, endpoint_discovery const &rhs) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-union endpoint_discovery_w1 {
-  UMP_MEMBERS(endpoint_discovery_w1)
-  ump_bitfield<8, 24> reserved;
-  ump_bitfield<0, 8> filter;
-};
-using endpoint_discovery_w2 = std::uint32_t;
-using endpoint_discovery_w3 = std::uint32_t;
 
 // 7.1.2 Endpoint Info Notification Message
-union endpoint_info_notification_w0 {
-  UMP_MEMBERS(endpoint_info_notification_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x01
-  ump_bitfield<8, 8> version_major;
-  ump_bitfield<0, 8> version_minor;
+struct endpoint_info_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x01
+    ump_bitfield<8, 8> version_major;
+    ump_bitfield<0, 8> version_minor;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<31, 1> static_function_blocks;
+    ump_bitfield<24, 7> number_function_blocks;
+    ump_bitfield<10, 14> reserved0;
+    ump_bitfield<9, 1> midi2_protocol_capability;
+    ump_bitfield<8, 1> midi1_protocol_capability;
+    ump_bitfield<2, 6> reserved1;
+    ump_bitfield<1, 1> receive_jr_timestamp_capability;
+    ump_bitfield<0, 1> transmit_jr_timestamp_capability;
+  };
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(endpoint_info_notification const &, endpoint_info_notification const &) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-union endpoint_info_notification_w1 {
-  UMP_MEMBERS(endpoint_info_notification_w1)
-  ump_bitfield<31, 1> static_function_blocks;
-  ump_bitfield<24, 7> number_function_blocks;
-  ump_bitfield<10, 14> reserved0;
-  ump_bitfield<9, 1> midi2_protocol_capability;
-  ump_bitfield<8, 1> midi1_protocol_capability;
-  ump_bitfield<2, 6> reserved1;
-  ump_bitfield<1, 1> receive_jr_timestamp_capability;
-  ump_bitfield<0, 1> transmit_jr_timestamp_capability;
-};
-using endpoint_info_notification_w2 = std::uint32_t;
-using endpoint_info_notification_w3 = std::uint32_t;
 
 // 7.1.3 Device Identity Notification Message
-union device_identity_notification_w0 {
-  UMP_MEMBERS(device_identity_notification_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x02
-  ump_bitfield<0, 16> reserved0;
-};
-union device_identity_notification_w1 {
-  UMP_MEMBERS(device_identity_notification_w1)
-  ump_bitfield<24, 8> reserved0;
-  ump_bitfield<23, 1> reserved1;
-  ump_bitfield<16, 7> dev_manuf_sysex_id_1;  // device manufacturer sysex id byte 1
-  ump_bitfield<15, 1> reserved2;
-  ump_bitfield<8, 7> dev_manuf_sysex_id_2;  // device manufacturer sysex id byte 2
-  ump_bitfield<7, 1> reserved3;
-  ump_bitfield<0, 7> dev_manuf_sysex_id_3;  // device manufacturer sysex id byte 3
-};
-union device_identity_notification_w2 {
-  UMP_MEMBERS(device_identity_notification_w2)
-  ump_bitfield<31, 1> reserved0;
-  ump_bitfield<24, 7> device_family_lsb;
-  ump_bitfield<23, 1> reserved1;
-  ump_bitfield<16, 7> device_family_msb;
-  ump_bitfield<15, 1> reserved2;
-  ump_bitfield<8, 7> device_family_model_lsb;
-  ump_bitfield<7, 1> reserved3;
-  ump_bitfield<0, 7> device_family_model_msb;
-};
-union device_identity_notification_w3 {
-  UMP_MEMBERS(device_identity_notification_w3)
-  ump_bitfield<31, 1> reserved0;
-  ump_bitfield<24, 7> sw_revision_1;  // Software revision level byte 1
-  ump_bitfield<23, 1> reserved1;
-  ump_bitfield<16, 7> sw_revision_2;  // Software revision level byte 2
-  ump_bitfield<15, 1> reserved2;
-  ump_bitfield<8, 7> sw_revision_3;  // Software revision level byte 3
-  ump_bitfield<7, 1> reserved3;
-  ump_bitfield<0, 7> sw_revision_4;  // Software revision level byte 4
+struct device_identity_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x02
+    ump_bitfield<0, 16> reserved0;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> reserved0;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> dev_manuf_sysex_id_1;  // device manufacturer sysex id byte 1
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> dev_manuf_sysex_id_2;  // device manufacturer sysex id byte 2
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> dev_manuf_sysex_id_3;  // device manufacturer sysex id byte 3
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> device_family_lsb;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> device_family_msb;
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> device_family_model_lsb;
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> device_family_model_msb;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> sw_revision_1;  // Software revision level byte 1
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> sw_revision_2;  // Software revision level byte 2
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> sw_revision_3;  // Software revision level byte 3
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> sw_revision_4;  // Software revision level byte 4
+  };
+  friend bool operator==(device_identity_notification const &, device_identity_notification const &) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
 
 // 7.1.4 Endpoint Name Notification
-union endpoint_name_notification_w0 {
-  UMP_MEMBERS(endpoint_name_notification_w0)
-  ump_bitfield<28, 4> mt;  // 0x0F
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;  // 0x03
-  ump_bitfield<8, 8> name1;
-  ump_bitfield<0, 8> name2;
-};
-union endpoint_name_notification_w1 {
-  UMP_MEMBERS(endpoint_name_notification_w1)
-  ump_bitfield<24, 8> name3;
-  ump_bitfield<16, 8> name4;
-  ump_bitfield<8, 8> name5;
-  ump_bitfield<0, 8> name6;
-};
-union endpoint_name_notification_w2 {
-  UMP_MEMBERS(endpoint_name_notification_w2)
-  ump_bitfield<24, 8> name7;
-  ump_bitfield<16, 8> name8;
-  ump_bitfield<8, 8> name9;
-  ump_bitfield<0, 8> name10;
-};
-union endpoint_name_notification_w3 {
-  UMP_MEMBERS(endpoint_name_notification_w3)
-  ump_bitfield<24, 8> name11;
-  ump_bitfield<16, 8> name12;
-  ump_bitfield<8, 8> name13;
-  ump_bitfield<0, 8> name14;
+struct endpoint_name_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // 0x0F
+    ump_bitfield<26, 2> format;
+    ump_bitfield<16, 10> status;  // 0x03
+    ump_bitfield<8, 8> name1;
+    ump_bitfield<0, 8> name2;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> name3;
+    ump_bitfield<16, 8> name4;
+    ump_bitfield<8, 8> name5;
+    ump_bitfield<0, 8> name6;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<24, 8> name7;
+    ump_bitfield<16, 8> name8;
+    ump_bitfield<8, 8> name9;
+    ump_bitfield<0, 8> name10;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<24, 8> name11;
+    ump_bitfield<16, 8> name12;
+    ump_bitfield<8, 8> name13;
+    ump_bitfield<0, 8> name14;
+  };
+  friend bool operator==(endpoint_name_notification const &, endpoint_name_notification const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
 
 // 7.1.5 Product Instance Id Notification Message
-union product_instance_id_notification_w0 {
-  UMP_MEMBERS(product_instance_id_notification_w0)
-  ump_bitfield<28, 4> mt;
-  ump_bitfield<26, 2> format;
-  ump_bitfield<16, 10> status;
-  ump_bitfield<8, 8> pid1;
-  ump_bitfield<0, 8> pid2;
-};
-union product_instance_id_notification_w1 {
-  UMP_MEMBERS(product_instance_id_notification_w1)
-  ump_bitfield<24, 8> pid3;
-  ump_bitfield<16, 8> pid4;
-  ump_bitfield<8, 8> pid5;
-  ump_bitfield<0, 8> pid6;
-};
-union product_instance_id_notification_w2 {
-  UMP_MEMBERS(product_instance_id_notification_w2)
-  ump_bitfield<24, 8> pid7;
-  ump_bitfield<16, 8> pid8;
-  ump_bitfield<8, 8> pid9;
-  ump_bitfield<0, 8> pid10;
-};
-union product_instance_id_notification_w3 {
-  UMP_MEMBERS(product_instance_id_notification_w3)
-  ump_bitfield<24, 8> pid11;
-  ump_bitfield<16, 8> pid12;
-  ump_bitfield<8, 8> pid13;
-  ump_bitfield<0, 8> pid14;
+struct product_instance_id_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;
+    ump_bitfield<26, 2> format;
+    ump_bitfield<16, 10> status;
+    ump_bitfield<8, 8> pid1;
+    ump_bitfield<0, 8> pid2;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> pid3;
+    ump_bitfield<16, 8> pid4;
+    ump_bitfield<8, 8> pid5;
+    ump_bitfield<0, 8> pid6;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<24, 8> pid7;
+    ump_bitfield<16, 8> pid8;
+    ump_bitfield<8, 8> pid9;
+    ump_bitfield<0, 8> pid10;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<24, 8> pid11;
+    ump_bitfield<16, 8> pid12;
+    ump_bitfield<8, 8> pid13;
+    ump_bitfield<0, 8> pid14;
+  };
+  friend bool operator==(product_instance_id_notification const &, product_instance_id_notification const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
-union jr_configuration_request_w0 {
-  UMP_MEMBERS(jr_configuration_request_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x05
-  ump_bitfield<8, 8> protocol;
-  ump_bitfield<2, 6> reserved0;
-  ump_bitfield<1, 1> rxjr;
-  ump_bitfield<0, 1> txjr;
+struct jr_configuration_request {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x05
+    ump_bitfield<8, 8> protocol;
+    ump_bitfield<2, 6> reserved0;
+    ump_bitfield<1, 1> rxjr;
+    ump_bitfield<0, 1> txjr;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(jr_configuration_request const &, jr_configuration_request const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-using jr_configuration_request_w1 = std::uint32_t;
-using jr_configuration_request_w2 = std::uint32_t;
-using jr_configuration_request_w3 = std::uint32_t;
 
 // 7.1.6.3 JR Stream Configuration Notification Message
-union jr_configuration_notification_w0 {
-  UMP_MEMBERS(jr_configuration_notification_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x06
-  ump_bitfield<8, 8> protocol;
-  ump_bitfield<2, 6> reserved0;
-  ump_bitfield<1, 1> rxjr;
-  ump_bitfield<0, 1> txjr;
+struct jr_configuration_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x06
+    ump_bitfield<8, 8> protocol;
+    ump_bitfield<2, 6> reserved0;
+    ump_bitfield<1, 1> rxjr;
+    ump_bitfield<0, 1> txjr;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(jr_configuration_notification const &, jr_configuration_notification const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-using jr_configuration_notification_w1 = std::uint32_t;
-using jr_configuration_notification_w2 = std::uint32_t;
-using jr_configuration_notification_w3 = std::uint32_t;
 
 // 7.1.7 Function Block Discovery Message
-union function_block_discovery_w0 {
-  UMP_MEMBERS(function_block_discovery_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x10
-  ump_bitfield<8, 8> block_num;
-  ump_bitfield<0, 8> filter;
+struct function_block_discovery {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x10
+    ump_bitfield<8, 8> block_num;
+    ump_bitfield<0, 8> filter;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(function_block_discovery const &, function_block_discovery const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-using function_block_discovery_w1 = std::uint32_t;
-using function_block_discovery_w2 = std::uint32_t;
-using function_block_discovery_w3 = std::uint32_t;
 
 // 7.1.8 Function Block Info Notification
-union function_block_info_notification_w0 {
-  UMP_MEMBERS(function_block_info_notification_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x11
-  ump_bitfield<15, 1> block_active;
-  ump_bitfield<8, 7> block_num;
-  ump_bitfield<6, 2> reserved0;
-  ump_bitfield<4, 2> ui_hint;
-  ump_bitfield<2, 2> midi1;
-  ump_bitfield<0, 2> direction;
+struct function_block_info_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x11
+    ump_bitfield<15, 1> block_active;
+    ump_bitfield<8, 7> block_num;
+    ump_bitfield<6, 2> reserved0;
+    ump_bitfield<4, 2> ui_hint;
+    ump_bitfield<2, 2> midi1;
+    ump_bitfield<0, 2> direction;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> first_group;
+    ump_bitfield<16, 8> num_spanned;
+    ump_bitfield<8, 8> ci_message_version;
+    ump_bitfield<0, 8> max_sys8_streams;
+  };
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(function_block_info_notification const &, function_block_info_notification const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-union function_block_info_notification_w1 {
-  UMP_MEMBERS(function_block_info_notification_w1)
-  ump_bitfield<24, 8> first_group;
-  ump_bitfield<16, 8> num_spanned;
-  ump_bitfield<8, 8> ci_message_version;
-  ump_bitfield<0, 8> max_sys8_streams;
-};
-using function_block_info_notification_w2 = std::uint32_t;
-using function_block_info_notification_w3 = std::uint32_t;
 
 // 7.1.9 Function Block Name Notification
-union function_block_name_notification_w0 {
-  UMP_MEMBERS(function_block_name_notification_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x12
-  ump_bitfield<8, 8> block_num;
-  ump_bitfield<0, 8> name0;
-};
-union function_block_name_notification_w1 {
-  UMP_MEMBERS(function_block_name_notification_w1)
-  ump_bitfield<24, 8> name1;
-  ump_bitfield<16, 8> name2;
-  ump_bitfield<8, 8> name3;
-  ump_bitfield<0, 8> name4;
-};
-union function_block_name_notification_w2 {
-  UMP_MEMBERS(function_block_name_notification_w2)
-  ump_bitfield<24, 8> name5;
-  ump_bitfield<16, 8> name6;
-  ump_bitfield<8, 8> name7;
-  ump_bitfield<0, 8> name8;
-};
-union function_block_name_notification_w3 {
-  UMP_MEMBERS(function_block_name_notification_w3)
-  ump_bitfield<24, 8> name9;
-  ump_bitfield<16, 8> name10;
-  ump_bitfield<8, 8> name11;
-  ump_bitfield<0, 8> name12;
+struct function_block_name_notification {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x12
+    ump_bitfield<8, 8> block_num;
+    ump_bitfield<0, 8> name0;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> name1;
+    ump_bitfield<16, 8> name2;
+    ump_bitfield<8, 8> name3;
+    ump_bitfield<0, 8> name4;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<24, 8> name5;
+    ump_bitfield<16, 8> name6;
+    ump_bitfield<8, 8> name7;
+    ump_bitfield<0, 8> name8;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<24, 8> name9;
+    ump_bitfield<16, 8> name10;
+    ump_bitfield<8, 8> name11;
+    ump_bitfield<0, 8> name12;
+  };
+  friend bool operator==(function_block_name_notification const &, function_block_name_notification const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
 
 // 7.1.10 Start of Clip Message
-union start_of_clip_w0 {
-  UMP_MEMBERS(start_of_clip_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x20
-  ump_bitfield<0, 16> reserved0;
+struct start_of_clip {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x20
+    ump_bitfield<0, 16> reserved0;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(start_of_clip const &, start_of_clip const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-using start_of_clip_w1 = std::uint32_t;
-using start_of_clip_w2 = std::uint32_t;
-using start_of_clip_w3 = std::uint32_t;
 
 // 7.1.11 End of Clip Message
-union end_of_clip_w0 {
-  UMP_MEMBERS(end_of_clip_w0)
-  ump_bitfield<28, 4> mt;       // 0x0F
-  ump_bitfield<26, 2> format;   // 0x00
-  ump_bitfield<16, 10> status;  // 0x21
-  ump_bitfield<0, 16> reserved0;
+struct end_of_clip {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;       // 0x0F
+    ump_bitfield<26, 2> format;   // 0x00
+    ump_bitfield<16, 10> status;  // 0x21
+    ump_bitfield<0, 16> reserved0;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+  friend bool operator==(end_of_clip const &, end_of_clip const &) = default;
+  word0 w0;
+  word1 w1;
+  word2 w2;
+  word3 w3;
 };
-using end_of_clip_w1 = std::uint32_t;
-using end_of_clip_w2 = std::uint32_t;
-using end_of_clip_w3 = std::uint32_t;
 
 };  // end namespace ump_stream
 
@@ -703,94 +799,97 @@ namespace data128 {
 // SysEx8 Start (word 1)
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
-union sysex8_w0 {
-  UMP_MEMBERS(sysex8_w0)
-  ump_bitfield<28, 4> mt;  // Always 0x05
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;
-  ump_bitfield<16, 4> number_of_bytes;
-  ump_bitfield<8, 8> stream_id;
-  ump_bitfield<0, 8> data0;
-};
-union sysex8_w1 {
-  UMP_MEMBERS(sysex8_w1)
-  ump_bitfield<24, 8> data1;
-  ump_bitfield<16, 8> data2;
-  ump_bitfield<8, 8> data3;
-  ump_bitfield<0, 8> data4;
-};
-union sysex8_w2 {
-  UMP_MEMBERS(sysex8_w2)
-  ump_bitfield<24, 8> data5;
-  ump_bitfield<16, 8> data6;
-  ump_bitfield<8, 8> data7;
-  ump_bitfield<0, 8> data8;
-};
-union sysex8_w3 {
-  UMP_MEMBERS(sysex8_w3)
-  ump_bitfield<24, 8> data9;
-  ump_bitfield<16, 8> data10;
-  ump_bitfield<8, 8> data11;
-  ump_bitfield<0, 8> data12;
-};
 struct sysex8 {
-  sysex8_w0 w0{};
-  sysex8_w1 w1{};
-  sysex8_w2 w2{};
-  sysex8_w3 w3{};
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x05
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;
+    ump_bitfield<16, 4> number_of_bytes;
+    ump_bitfield<8, 8> stream_id;
+    ump_bitfield<0, 8> data0;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> data1;
+    ump_bitfield<16, 8> data2;
+    ump_bitfield<8, 8> data3;
+    ump_bitfield<0, 8> data4;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<24, 8> data5;
+    ump_bitfield<16, 8> data6;
+    ump_bitfield<8, 8> data7;
+    ump_bitfield<0, 8> data8;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<24, 8> data9;
+    ump_bitfield<16, 8> data10;
+    ump_bitfield<8, 8> data11;
+    ump_bitfield<0, 8> data12;
+  };
+  friend bool operator==(sysex8 const &, sysex8 const &) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
 
 // 7.9 Mixed Data Set Message
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
-union mds_header_w0 {
-  UMP_MEMBERS(mds_header_w0)
-  ump_bitfield<28, 4> mt;  // Always 0x05
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  // Always 0x08
-  ump_bitfield<16, 4> mds_id;
-  ump_bitfield<0, 16> bytes_in_chunk;
-};
-union mds_header_w1 {
-  UMP_MEMBERS(mds_header_w1)
-  ump_bitfield<16, 16> chunks_in_mds;
-  ump_bitfield<0, 16> chunk_num;
-};
-union mds_header_w2 {
-  UMP_MEMBERS(mds_header_w2)
-  ump_bitfield<16, 16> manufacturer_id;
-  ump_bitfield<0, 16> device_id;
-};
-union mds_header_w3 {
-  UMP_MEMBERS(mds_header_w3)
-  ump_bitfield<16, 16> sub_id_1;
-  ump_bitfield<0, 16> sub_id_2;
-};
 
 struct mds_header {
-  mds_header_w0 w0{};
-  mds_header_w1 w1{};
-  mds_header_w2 w2{};
-  mds_header_w3 w3{};
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x05
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  // Always 0x08
+    ump_bitfield<16, 4> mds_id;
+    ump_bitfield<0, 16> bytes_in_chunk;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<16, 16> chunks_in_mds;
+    ump_bitfield<0, 16> chunk_num;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<16, 16> manufacturer_id;
+    ump_bitfield<0, 16> device_id;
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<16, 16> sub_id_1;
+    ump_bitfield<0, 16> sub_id_2;
+  };
+  friend bool operator==(mds_header const &, mds_header const &) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-
-union mds_payload_w0 {
-  UMP_MEMBERS(mds_payload_w0)
-  ump_bitfield<28, 4> mt;  // Always 0x05
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  // Always 0x09
-  ump_bitfield<16, 4> mds_id;
-  ump_bitfield<0, 16> data0;
-};
-using mds_payload_w1 = std::uint32_t;
-using mds_payload_w2 = std::uint32_t;
-using mds_payload_w3 = std::uint32_t;
 
 struct mds_payload {
-  mds_payload_w0 w0{};
-  mds_payload_w1 w1{};
-  mds_payload_w2 w2{};
-  mds_payload_w3 w3{};
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x05
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  // Always 0x09
+    ump_bitfield<16, 4> mds_id;
+    ump_bitfield<0, 16> data0;
+  };
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  friend bool operator==(mds_payload const &, mds_payload const &) = default;
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
 
 }  // end namespace data128

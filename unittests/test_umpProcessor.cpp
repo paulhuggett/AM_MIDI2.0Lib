@@ -82,29 +82,25 @@ struct data64_base {
   data64_base(data64_base const&) = default;
   virtual ~data64_base() noexcept = default;
 
-  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
-  virtual void sysex7_start(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
-  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
-  virtual void sysex7_end(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
+  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7) = 0;
+  virtual void sysex7_start(context_type, midi2::types::data64::sysex7) = 0;
+  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7) = 0;
+  virtual void sysex7_end(context_type, midi2::types::data64::sysex7) = 0;
 };
 class Data64Mocks : public data64_base {
 public:
-  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
-              (override));
-  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
-              (override));
-  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
-              (override));
-  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
-              (override));
+  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7), (override));
+  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7), (override));
+  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7), (override));
+  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7), (override));
 };
 struct m2cvm_base {
   m2cvm_base() = default;
   m2cvm_base(m2cvm_base const&) = default;
   virtual ~m2cvm_base() noexcept = default;
 
-  virtual void note_off(context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1) = 0;
-  virtual void note_on(context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1) = 0;
+  virtual void note_off(context_type, midi2::types::m2cvm::note) = 0;
+  virtual void note_on(context_type, midi2::types::m2cvm::note) = 0;
   virtual void poly_pressure(context_type, midi2::types::m2cvm::poly_pressure_w0, std::uint32_t) = 0;
   virtual void program_change(context_type, midi2::types::m2cvm::program_change_w0,
                               midi2::types::m2cvm::program_change_w1) = 0;
@@ -119,8 +115,8 @@ struct m2cvm_base {
 };
 class M2CVMMocks : public m2cvm_base {
 public:
-  MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
-  MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
+  MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note), (override));
+  MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note), (override));
   MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m2cvm::poly_pressure_w0, std::uint32_t), (override));
   MOCK_METHOD(void, program_change,
               (context_type, midi2::types::m2cvm::program_change_w0, midi2::types::m2cvm::program_change_w1),
@@ -143,176 +139,71 @@ struct data128_base {
   data128_base(data128_base const&) = default;
   virtual ~data128_base() noexcept = default;
 
-  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-                           midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
-  virtual void sysex8_start(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-                            midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
-  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-                               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
-  virtual void sysex8_end(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-                          midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
-  virtual void mds_header(context_type, midi2::types::data128::mds_header_w0, midi2::types::data128::mds_header_w1,
-                          midi2::types::data128::mds_header_w2, midi2::types::data128::mds_header_w3) = 0;
-  virtual void mds_payload(context_type, midi2::types::data128::mds_payload_w0, midi2::types::data128::mds_payload_w1,
-                           midi2::types::data128::mds_payload_w2, midi2::types::data128::mds_payload_w3) = 0;
+  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void sysex8_start(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void sysex8_end(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void mds_header(context_type, midi2::types::data128::mds_header const &) = 0;
+  virtual void mds_payload(context_type, midi2::types::data128::mds_payload const &) = 0;
 };
 class Data128Mocks : public data128_base {
 public:
-  MOCK_METHOD(void, sysex8_in_1,
-              (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3),
-              (override));
-  MOCK_METHOD(void, sysex8_start,
-              (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3),
-              (override));
-  MOCK_METHOD(void, sysex8_continue,
-              (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3),
-              (override));
-  MOCK_METHOD(void, sysex8_end,
-              (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
-               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3),
-              (override));
-  MOCK_METHOD(void, mds_header,
-              (context_type, midi2::types::data128::mds_header_w0, midi2::types::data128::mds_header_w1,
-               midi2::types::data128::mds_header_w2, midi2::types::data128::mds_header_w3),
-              (override));
-  MOCK_METHOD(void, mds_payload,
-              (context_type, midi2::types::data128::mds_payload_w0, midi2::types::data128::mds_payload_w1,
-               midi2::types::data128::mds_payload_w2, midi2::types::data128::mds_payload_w3),
-              (override));
+  MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, sysex8_start, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, sysex8_continue, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, sysex8_end, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, mds_header, (context_type, midi2::types::data128::mds_header const &), (override));
+  MOCK_METHOD(void, mds_payload, (context_type, midi2::types::data128::mds_payload const &), (override));
 };
 struct ump_stream_base {
   ump_stream_base() = default;
   ump_stream_base(ump_stream_base const&) = default;
   virtual ~ump_stream_base() noexcept = default;
 
-  virtual void endpoint_discovery(context_type, midi2::types::ump_stream::endpoint_discovery_w0,
-                                  midi2::types::ump_stream::endpoint_discovery_w1,
-                                  midi2::types::ump_stream::endpoint_discovery_w2,
-                                  midi2::types::ump_stream::endpoint_discovery_w3) = 0;
-  virtual void endpoint_info_notification(context_type, midi2::types::ump_stream::endpoint_info_notification_w0,
-                                          midi2::types::ump_stream::endpoint_info_notification_w1,
-                                          midi2::types::ump_stream::endpoint_info_notification_w2,
-                                          midi2::types::ump_stream::endpoint_info_notification_w3) = 0;
-  virtual void device_identity_notification(context_type, midi2::types::ump_stream::device_identity_notification_w0,
-                                            midi2::types::ump_stream::device_identity_notification_w1,
-                                            midi2::types::ump_stream::device_identity_notification_w2,
-                                            midi2::types::ump_stream::device_identity_notification_w3) = 0;
-  virtual void endpoint_name_notification(context_type, midi2::types::ump_stream::endpoint_name_notification_w0,
-                                          midi2::types::ump_stream::endpoint_name_notification_w1,
-                                          midi2::types::ump_stream::endpoint_name_notification_w2,
-                                          midi2::types::ump_stream::endpoint_name_notification_w3) = 0;
+  virtual void endpoint_discovery(context_type, midi2::types::ump_stream::endpoint_discovery) = 0;
+  virtual void endpoint_info_notification(context_type, midi2::types::ump_stream::endpoint_info_notification) = 0;
+  virtual void device_identity_notification(context_type, midi2::types::ump_stream::device_identity_notification) = 0;
+  virtual void endpoint_name_notification(context_type, midi2::types::ump_stream::endpoint_name_notification) = 0;
   virtual void product_instance_id_notification(context_type,
-                                                midi2::types::ump_stream::product_instance_id_notification_w0,
-                                                midi2::types::ump_stream::product_instance_id_notification_w1,
-                                                midi2::types::ump_stream::product_instance_id_notification_w2,
-                                                midi2::types::ump_stream::product_instance_id_notification_w3) = 0;
-  virtual void jr_configuration_request(context_type, midi2::types::ump_stream::jr_configuration_request_w0,
-                                        midi2::types::ump_stream::jr_configuration_request_w1,
-                                        midi2::types::ump_stream::jr_configuration_request_w2,
-                                        midi2::types::ump_stream::jr_configuration_request_w3) = 0;
-  virtual void jr_configuration_notification(context_type, midi2::types::ump_stream::jr_configuration_notification_w0,
-                                             midi2::types::ump_stream::jr_configuration_notification_w1,
-                                             midi2::types::ump_stream::jr_configuration_notification_w2,
-                                             midi2::types::ump_stream::jr_configuration_notification_w3) = 0;
+                                                midi2::types::ump_stream::product_instance_id_notification) = 0;
+  virtual void jr_configuration_request(context_type, midi2::types::ump_stream::jr_configuration_request) = 0;
+  virtual void jr_configuration_notification(context_type, midi2::types::ump_stream::jr_configuration_notification) = 0;
 
-  virtual void function_block_discovery(context_type, midi2::types::ump_stream::function_block_discovery_w0,
-                                        midi2::types::ump_stream::function_block_discovery_w1,
-                                        midi2::types::ump_stream::function_block_discovery_w2,
-                                        midi2::types::ump_stream::function_block_discovery_w3) = 0;
+  virtual void function_block_discovery(context_type, midi2::types::ump_stream::function_block_discovery) = 0;
   virtual void function_block_info_notification(context_type,
-                                                midi2::types::ump_stream::function_block_info_notification_w0,
-                                                midi2::types::ump_stream::function_block_info_notification_w1,
-                                                midi2::types::ump_stream::function_block_info_notification_w2,
-                                                midi2::types::ump_stream::function_block_info_notification_w3) = 0;
+                                                midi2::types::ump_stream::function_block_info_notification) = 0;
   virtual void function_block_name_notification(context_type,
-                                                midi2::types::ump_stream::function_block_name_notification_w0,
-                                                midi2::types::ump_stream::function_block_name_notification_w1,
-                                                midi2::types::ump_stream::function_block_name_notification_w2,
-                                                midi2::types::ump_stream::function_block_name_notification_w3) = 0;
+                                                midi2::types::ump_stream::function_block_name_notification) = 0;
 
-  virtual void start_of_clip(context_type, midi2::types::ump_stream::start_of_clip_w0,
-                             midi2::types::ump_stream::start_of_clip_w1, midi2::types::ump_stream::start_of_clip_w2,
-                             midi2::types::ump_stream::start_of_clip_w3) = 0;
-
-  virtual void end_of_clip(context_type, midi2::types::ump_stream::end_of_clip_w0,
-                           midi2::types::ump_stream::end_of_clip_w1, midi2::types::ump_stream::end_of_clip_w2,
-                           midi2::types::ump_stream::end_of_clip_w3) = 0;
+  virtual void start_of_clip(context_type, midi2::types::ump_stream::start_of_clip) = 0;
+  virtual void end_of_clip(context_type, midi2::types::ump_stream::end_of_clip) = 0;
 };
 class UMPStreamMocks : public ump_stream_base {
 public:
-  MOCK_METHOD(void, endpoint_discovery,
-              (context_type, midi2::types::ump_stream::endpoint_discovery_w0,
-               midi2::types::ump_stream::endpoint_discovery_w1, midi2::types::ump_stream::endpoint_discovery_w2,
-               midi2::types::ump_stream::endpoint_discovery_w3),
-              (override));
-  MOCK_METHOD(void, endpoint_info_notification,
-              (context_type, midi2::types::ump_stream::endpoint_info_notification_w0,
-               midi2::types::ump_stream::endpoint_info_notification_w1,
-               midi2::types::ump_stream::endpoint_info_notification_w2,
-               midi2::types::ump_stream::endpoint_info_notification_w3),
+  MOCK_METHOD(void, endpoint_discovery, (context_type, midi2::types::ump_stream::endpoint_discovery), (override));
+  MOCK_METHOD(void, endpoint_info_notification, (context_type, midi2::types::ump_stream::endpoint_info_notification),
               (override));
   MOCK_METHOD(void, device_identity_notification,
-              (context_type, midi2::types::ump_stream::device_identity_notification_w0,
-               midi2::types::ump_stream::device_identity_notification_w1,
-               midi2::types::ump_stream::device_identity_notification_w2,
-               midi2::types::ump_stream::device_identity_notification_w3),
-              (override));
-  MOCK_METHOD(void, endpoint_name_notification,
-              (context_type, midi2::types::ump_stream::endpoint_name_notification_w0,
-               midi2::types::ump_stream::endpoint_name_notification_w1,
-               midi2::types::ump_stream::endpoint_name_notification_w2,
-               midi2::types::ump_stream::endpoint_name_notification_w3),
+              (context_type, midi2::types::ump_stream::device_identity_notification), (override));
+  MOCK_METHOD(void, endpoint_name_notification, (context_type, midi2::types::ump_stream::endpoint_name_notification),
               (override));
   MOCK_METHOD(void, product_instance_id_notification,
-              (context_type, midi2::types::ump_stream::product_instance_id_notification_w0,
-               midi2::types::ump_stream::product_instance_id_notification_w1,
-               midi2::types::ump_stream::product_instance_id_notification_w2,
-               midi2::types::ump_stream::product_instance_id_notification_w3),
-              (override));
+              (context_type, midi2::types::ump_stream::product_instance_id_notification), (override));
 
-  MOCK_METHOD(void, jr_configuration_request,
-              (context_type, midi2::types::ump_stream::jr_configuration_request_w0,
-               midi2::types::ump_stream::jr_configuration_request_w1,
-               midi2::types::ump_stream::jr_configuration_request_w2,
-               midi2::types::ump_stream::jr_configuration_request_w3),
+  MOCK_METHOD(void, jr_configuration_request, (context_type, midi2::types::ump_stream::jr_configuration_request),
               (override));
   MOCK_METHOD(void, jr_configuration_notification,
-              (context_type, midi2::types::ump_stream::jr_configuration_notification_w0,
-               midi2::types::ump_stream::jr_configuration_notification_w1,
-               midi2::types::ump_stream::jr_configuration_notification_w2,
-               midi2::types::ump_stream::jr_configuration_notification_w3),
-              (override));
+              (context_type, midi2::types::ump_stream::jr_configuration_notification), (override));
 
-  MOCK_METHOD(void, function_block_discovery,
-              (context_type, midi2::types::ump_stream::function_block_discovery_w0,
-               midi2::types::ump_stream::function_block_discovery_w1,
-               midi2::types::ump_stream::function_block_discovery_w2,
-               midi2::types::ump_stream::function_block_discovery_w3),
+  MOCK_METHOD(void, function_block_discovery, (context_type, midi2::types::ump_stream::function_block_discovery),
               (override));
   MOCK_METHOD(void, function_block_info_notification,
-              (context_type, midi2::types::ump_stream::function_block_info_notification_w0,
-               midi2::types::ump_stream::function_block_info_notification_w1,
-               midi2::types::ump_stream::function_block_info_notification_w2,
-               midi2::types::ump_stream::function_block_info_notification_w3),
-              (override));
+              (context_type, midi2::types::ump_stream::function_block_info_notification), (override));
   MOCK_METHOD(void, function_block_name_notification,
-              (context_type, midi2::types::ump_stream::function_block_name_notification_w0,
-               midi2::types::ump_stream::function_block_name_notification_w1,
-               midi2::types::ump_stream::function_block_name_notification_w2,
-               midi2::types::ump_stream::function_block_name_notification_w3),
-              (override));
+              (context_type, midi2::types::ump_stream::function_block_name_notification), (override));
 
-  MOCK_METHOD(void, start_of_clip,
-              (context_type, midi2::types::ump_stream::start_of_clip_w0, midi2::types::ump_stream::start_of_clip_w1,
-               midi2::types::ump_stream::start_of_clip_w2, midi2::types::ump_stream::start_of_clip_w3),
-              (override));
-  MOCK_METHOD(void, end_of_clip,
-              (context_type, midi2::types::ump_stream::end_of_clip_w0, midi2::types::ump_stream::end_of_clip_w1,
-               midi2::types::ump_stream::end_of_clip_w2, midi2::types::ump_stream::end_of_clip_w3),
-              (override));
+  MOCK_METHOD(void, start_of_clip, (context_type, midi2::types::ump_stream::start_of_clip), (override));
+  MOCK_METHOD(void, end_of_clip, (context_type, midi2::types::ump_stream::end_of_clip), (override));
 };
 struct flex_data_base {
   flex_data_base() = default;
@@ -408,7 +299,7 @@ TEST_F(UMPProcessor, Noop) {
   midi2::types::noop w0{};
   w0.mt = ump_mt(midi2::ump_message_type::utility);
   w0.reserved = 0;
-  w0.status = to_underlying(midi2::ump_utility::jr_clock);
+  w0.status = to_underlying(midi2::ump_utility::noop);
   w0.data = 0;
   processor_.processUMP(w0);
 }
@@ -545,87 +436,80 @@ TEST_F(UMPProcessor, Midi1ControlChange) {
 
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Data64SysExIn1) {
-  midi2::types::data64::sysex7_w0 w0;
-  w0.mt = to_underlying(midi2::ump_message_type::data64);
-  w0.group = 0;
-  w0.status = to_underlying(midi2::data64::sysex7_in_1);
-  w0.number_of_bytes = 4;
-  w0.data0 = 2;
-  w0.data1 = 3;
-  midi2::types::data64::sysex7_w1 w1;
-  w1.data2 = 5;
-  w1.data3 = 7;
-  EXPECT_CALL(config_.data64, sysex7_in_1(config_.context, w0, w1)).Times(1);
-  processor_.processUMP(w0, w1);
+  midi2::types::data64::sysex7 m0;
+  m0.w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m0.w0.group = 0;
+  m0.w0.status = to_underlying(midi2::data64::sysex7_in_1);
+  m0.w0.number_of_bytes = 4;
+  m0.w0.data0 = 2;
+  m0.w0.data1 = 3;
+  m0.w1.data2 = 5;
+  m0.w1.data3 = 7;
+  EXPECT_CALL(config_.data64, sysex7_in_1(config_.context, m0)).Times(1);
+  processor_.processUMP(m0.w0, m0.w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Data64Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
+  using midi2::types::data64::sysex7;
 
-  midi2::types::data64::sysex7_w0 w0;
-  w0.mt = to_underlying(midi2::ump_message_type::data64);
-  w0.group = group;
-  w0.status = to_underlying(midi2::data64::sysex7_start);
-  w0.number_of_bytes = 6;
-  w0.data0 = 2;
-  w0.data1 = 3;
-  midi2::types::data64::sysex7_w1 w1;
-  w1.data2 = 5;
-  w1.data3 = 7;
-  w1.data4 = 11;
-  w1.data5 = 13;
+  sysex7 m0;
+  m0.w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m0.w0.group = group;
+  m0.w0.status = to_underlying(midi2::data64::sysex7_start);
+  m0.w0.number_of_bytes = 6;
+  m0.w0.data0 = 2;
+  m0.w0.data1 = 3;
+  m0.w1.data2 = 5;
+  m0.w1.data3 = 7;
+  m0.w1.data4 = 11;
+  m0.w1.data5 = 13;
 
-  midi2::types::data64::sysex7_w0 w2;
-  w2.mt = to_underlying(midi2::ump_message_type::data64);
-  w2.group = group;
-  w2.status = to_underlying(midi2::data64::sysex7_continue);
-  w2.number_of_bytes = 6;
-  w2.data0 = 17;
-  w2.data1 = 19;
-  midi2::types::data64::sysex7_w1 w3;
-  w3.data2 = 23;
-  w3.data3 = 29;
-  w3.data4 = 31;
-  w3.data5 = 37;
+  sysex7 m1;
+  m1.w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m1.w0.group = group;
+  m1.w0.status = to_underlying(midi2::data64::sysex7_continue);
+  m1.w0.number_of_bytes = 6;
+  m1.w0.data0 = 17;
+  m1.w0.data1 = 19;
+  m1.w1.data2 = 23;
+  m1.w1.data3 = 29;
+  m1.w1.data4 = 31;
+  m1.w1.data5 = 37;
 
-  midi2::types::data64::sysex7_w0 w4;
-  w4.mt = to_underlying(midi2::ump_message_type::data64);
-  w4.group = group;
-  w4.status = to_underlying(midi2::data64::sysex7_end);
-  w4.number_of_bytes = 4;
-  w4.data0 = 41;
-  w4.data1 = 43;
-  midi2::types::data64::sysex7_w1 w5;
-  w5.data2 = 47;
-  w5.data3 = 53;
+  sysex7 m2;
+  m2.w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m2.w0.group = group;
+  m2.w0.status = to_underlying(midi2::data64::sysex7_end);
+  m2.w0.number_of_bytes = 4;
+  m2.w0.data0 = 41;
+  m2.w0.data1 = 43;
+  m2.w1.data2 = 47;
+  m2.w1.data3 = 53;
   {
     InSequence _;
-    EXPECT_CALL(config_.data64, sysex7_start(config_.context, w0, w1)).Times(1);
-    EXPECT_CALL(config_.data64, sysex7_continue(config_.context, w2, w3)).Times(1);
-    EXPECT_CALL(config_.data64, sysex7_end(config_.context, w4, w5)).Times(1);
+    EXPECT_CALL(config_.data64, sysex7_start(config_.context, m0)).Times(1);
+    EXPECT_CALL(config_.data64, sysex7_continue(config_.context, m1)).Times(1);
+    EXPECT_CALL(config_.data64, sysex7_end(config_.context, m2)).Times(1);
   }
-  processor_.processUMP(w0, w1);
-  processor_.processUMP(w2, w3);
-  processor_.processUMP(w4, w5);
+  processor_.processUMP(m0.w0, m0.w1);
+  processor_.processUMP(m1.w0, m1.w1);
+  processor_.processUMP(m2.w0, m2.w1);
 }
 
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, Midi2NoteOn) {
-  midi2::types::m2cvm::note_w0 w0;
-  w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
-  w0.group = std::uint8_t{0};
-  w0.status = 0x9;
-  w0.channel = std::uint8_t{3};
-  w0.note = std::uint8_t{60};
-  w0.attribute = 0;
-
-  midi2::types::m2cvm::note_w1 w1;
-  w1.velocity = std::uint16_t{0x432};
-  w1.attribute = 0;
-
-  EXPECT_CALL(config_.m2cvm, note_on(config_.context, w0, w1)).Times(1);
-
-  processor_.processUMP(w0, w1);
+  midi2::types::m2cvm::note n;
+  n.w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
+  n.w0.group = std::uint8_t{0};
+  n.w0.status = 0x9;
+  n.w0.channel = std::uint8_t{3};
+  n.w0.note = std::uint8_t{60};
+  n.w0.attribute = 0;
+  n.w1.velocity = std::uint16_t{0x432};
+  n.w1.attribute = 0;
+  EXPECT_CALL(config_.m2cvm, note_on(config_.context, n)).Times(1);
+  processor_.processUMP(n.w0, n.w1);
 }
 
 // NOLINTNEXTLINE
@@ -673,8 +557,7 @@ TEST_F(UMPProcessor, Data128Sysex8In1) {
   part0.w2.data7 = 19;
   part0.w2.data8 = 23;
   part0.w3.data9 = 29;
-  EXPECT_CALL(config_.data128, sysex8_in_1(config_.context, part0.w0, part0.w1, part0.w2, part0.w3)).Times(1);
-
+  EXPECT_CALL(config_.data128, sysex8_in_1(config_.context, part0)).Times(1);
   processor_.processUMP(part0.w0, part0.w1, part0.w2, part0.w3);
 }
 // NOLINTNEXTLINE
@@ -701,7 +584,6 @@ TEST_F(UMPProcessor, Data128Sysex8StartAndEnd) {
   part0.w3.data10 = 31;
   part0.w3.data11 = 37;
   part0.w3.data12 = 41;
-
   midi2::types::data128::sysex8 part1;
   part1.w0.mt = to_underlying(midi2::ump_message_type::data128);
   part1.w0.group = group;
@@ -721,7 +603,6 @@ TEST_F(UMPProcessor, Data128Sysex8StartAndEnd) {
   part1.w3.data10 = 89;
   part1.w3.data11 = 97;
   part1.w3.data12 = 101;
-
   midi2::types::data128::sysex8 part2;
   part2.w0.mt = to_underlying(midi2::ump_message_type::data128);
   part2.w0.group = group;
@@ -735,9 +616,9 @@ TEST_F(UMPProcessor, Data128Sysex8StartAndEnd) {
 
   {
     InSequence _;
-    EXPECT_CALL(config_.data128, sysex8_start(config_.context, part0.w0, part0.w1, part0.w2, part0.w3)).Times(1);
-    EXPECT_CALL(config_.data128, sysex8_continue(config_.context, part1.w0, part1.w1, part1.w2, part1.w3)).Times(1);
-    EXPECT_CALL(config_.data128, sysex8_end(config_.context, part2.w0, part2.w1, part2.w2, part2.w3)).Times(1);
+    EXPECT_CALL(config_.data128, sysex8_start(config_.context, part0)).Times(1);
+    EXPECT_CALL(config_.data128, sysex8_continue(config_.context, part1)).Times(1);
+    EXPECT_CALL(config_.data128, sysex8_end(config_.context, part2)).Times(1);
   }
 
   // Send 13 bytes
@@ -777,8 +658,8 @@ TEST_F(UMPProcessor, Data128MixedDatSet) {
 
   {
     InSequence _;
-    EXPECT_CALL(config_.data128, mds_header(config_.context, header.w0, header.w1, header.w2, header.w3)).Times(1);
-    EXPECT_CALL(config_.data128, mds_payload(config_.context, payload.w0, payload.w1, payload.w2, payload.w3)).Times(1);
+    EXPECT_CALL(config_.data128, mds_header(config_.context, header)).Times(1);
+    EXPECT_CALL(config_.data128, mds_payload(config_.context, payload)).Times(1);
   }
 
   processor_.processUMP(header.w0, header.w1, header.w2, header.w3);
@@ -816,278 +697,193 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
 //*                                                 *
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointDiscovery) {
-  midi2::types::ump_stream::endpoint_discovery_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x03;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_discovery));
-  w0.version_major = 0x01;
-  w0.version_minor = 0x01;
-  midi2::types::ump_stream::endpoint_discovery_w1 w1{};
-  w1.filter = 0b00011111;
-  midi2::types::ump_stream::endpoint_discovery_w2 w2{};
-  midi2::types::ump_stream::endpoint_discovery_w3 w3{};
-
-  EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::endpoint_discovery message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x03;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_discovery));
+  message.w0.version_major = 0x01;
+  message.w0.version_minor = 0x01;
+  message.w1.filter = 0b00011111;
+  EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointInfoNotification) {
-  midi2::types::ump_stream::endpoint_info_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_info_notification));
-  w0.version_major = 0x01;
-  w0.version_minor = 0x01;
-  midi2::types::ump_stream::endpoint_info_notification_w1 w1{};
-  w1.static_function_blocks = 1;
-  w1.number_function_blocks = 0b0101010;
-  w1.midi2_protocol_capability = 1;
-  w1.midi1_protocol_capability = 0;
-  w1.receive_jr_timestamp_capability = 1;
-  w1.transmit_jr_timestamp_capability = 0;
-  midi2::types::ump_stream::endpoint_info_notification_w2 w2{};
-  midi2::types::ump_stream::endpoint_info_notification_w3 w3{};
-
-  EXPECT_CALL(config_.ump_stream, endpoint_info_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::endpoint_info_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_info_notification));
+  message.w0.version_major = 0x01;
+  message.w0.version_minor = 0x01;
+  message.w1.static_function_blocks = 1;
+  message.w1.number_function_blocks = 0b0101010;
+  message.w1.midi2_protocol_capability = 1;
+  message.w1.midi1_protocol_capability = 0;
+  message.w1.receive_jr_timestamp_capability = 1;
+  message.w1.transmit_jr_timestamp_capability = 0;
+  EXPECT_CALL(config_.ump_stream, endpoint_info_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamDeviceIdentityNotification) {
-  midi2::types::ump_stream::device_identity_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::device_identity_notification));
-  midi2::types::ump_stream::device_identity_notification_w1 w1{};
-  w1.dev_manuf_sysex_id_1 = 1;
-  w1.dev_manuf_sysex_id_2 = 1;
-  w1.dev_manuf_sysex_id_3 = 0;
-  midi2::types::ump_stream::device_identity_notification_w2 w2{};
-  w2.device_family_lsb = 0x79;
-  w2.device_family_msb = 0x7B;
-  w2.device_family_model_lsb = 0x7D;
-  w2.device_family_model_msb = 0x7F;
-  midi2::types::ump_stream::device_identity_notification_w3 w3{};
-  w3.sw_revision_1 = 0x7F;
-  w3.sw_revision_2 = 0x7D;
-  w3.sw_revision_3 = 0x7B;
-  w3.sw_revision_4 = 0x79;
-  EXPECT_CALL(config_.ump_stream, device_identity_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::device_identity_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::device_identity_notification));
+  message.w1.dev_manuf_sysex_id_1 = 1;
+  message.w1.dev_manuf_sysex_id_2 = 1;
+  message.w1.dev_manuf_sysex_id_3 = 0;
+  message.w2.device_family_lsb = 0x79;
+  message.w2.device_family_msb = 0x7B;
+  message.w2.device_family_model_lsb = 0x7D;
+  message.w2.device_family_model_msb = 0x7F;
+  message.w3.sw_revision_1 = 0x7F;
+  message.w3.sw_revision_2 = 0x7D;
+  message.w3.sw_revision_3 = 0x7B;
+  message.w3.sw_revision_4 = 0x79;
+  EXPECT_CALL(config_.ump_stream, device_identity_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndpointNameNotification) {
-  midi2::types::ump_stream::endpoint_name_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_name_notification));
-  w0.name1 = std::uint8_t{'a'};
-  w0.name2 = std::uint8_t{'b'};
-  midi2::types::ump_stream::endpoint_name_notification_w1 w1{};
-  w1.name3 = std::uint8_t{'c'};
-  w1.name4 = std::uint8_t{'d'};
-  w1.name5 = std::uint8_t{'e'};
-  w1.name6 = std::uint8_t{'f'};
-  midi2::types::ump_stream::endpoint_name_notification_w2 w2{};
-  w2.name7 = std::uint8_t{'g'};
-  w2.name8 = std::uint8_t{'h'};
-  w2.name9 = std::uint8_t{'i'};
-  w2.name10 = std::uint8_t{'j'};
-  midi2::types::ump_stream::endpoint_name_notification_w3 w3{};
-  w3.name11 = std::uint8_t{'k'};
-  w3.name12 = std::uint8_t{'l'};
-  w3.name13 = std::uint8_t{'m'};
-  w3.name14 = std::uint8_t{'m'};
-  EXPECT_CALL(config_.ump_stream, endpoint_name_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::endpoint_name_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::endpoint_name_notification));
+  message.w0.name1 = std::uint8_t{'a'};
+  message.w0.name2 = std::uint8_t{'b'};
+  message.w1.name3 = std::uint8_t{'c'};
+  message.w1.name4 = std::uint8_t{'d'};
+  message.w1.name5 = std::uint8_t{'e'};
+  message.w1.name6 = std::uint8_t{'f'};
+  message.w2.name7 = std::uint8_t{'g'};
+  message.w2.name8 = std::uint8_t{'h'};
+  message.w2.name9 = std::uint8_t{'i'};
+  message.w2.name10 = std::uint8_t{'j'};
+  message.w3.name11 = std::uint8_t{'k'};
+  message.w3.name12 = std::uint8_t{'l'};
+  message.w3.name13 = std::uint8_t{'m'};
+  message.w3.name14 = std::uint8_t{'m'};
+  EXPECT_CALL(config_.ump_stream, endpoint_name_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamProductInstanceIdNotification) {
-  midi2::types::ump_stream::product_instance_id_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::product_instance_id_notification));
-  w0.pid1 = 0x22;
-  w0.pid2 = 0x33;
-  midi2::types::ump_stream::product_instance_id_notification_w1 w1{};
-  w1.pid3 = 0x44;
-  w1.pid4 = 0x55;
-  w1.pid5 = 0x66;
-  w1.pid6 = 0x77;
-  midi2::types::ump_stream::product_instance_id_notification_w2 w2{};
-  w2.pid7 = 0x88;
-  w2.pid8 = 0x99;
-  w2.pid9 = 0xAA;
-  w2.pid10 = 0xBB;
-  midi2::types::ump_stream::product_instance_id_notification_w3 w3{};
-  w3.pid11 = 0xCC;
-  w3.pid12 = 0xDD;
-  w3.pid13 = 0xEE;
-  w3.pid14 = 0xFF;
-  EXPECT_CALL(config_.ump_stream, product_instance_id_notification(config_.context, w0, w1, w2, w3)).Times(1);
+  midi2::types::ump_stream::product_instance_id_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::product_instance_id_notification));
+  message.w0.pid1 = 0x22;
+  message.w0.pid2 = 0x33;
+  message.w1.pid3 = 0x44;
+  message.w1.pid4 = 0x55;
+  message.w1.pid5 = 0x66;
+  message.w1.pid6 = 0x77;
+  message.w2.pid7 = 0x88;
+  message.w2.pid8 = 0x99;
+  message.w2.pid9 = 0xAA;
+  message.w2.pid10 = 0xBB;
+  message.w3.pid11 = 0xCC;
+  message.w3.pid12 = 0xDD;
+  message.w3.pid13 = 0xEE;
+  message.w3.pid14 = 0xFF;
+  EXPECT_CALL(config_.ump_stream, product_instance_id_notification(config_.context, message)).Times(1);
 
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamJRConfigurationRequest) {
-  midi2::types::ump_stream::jr_configuration_request_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_request));
-  w0.protocol = 0x02;
-  w0.rxjr = 1;
-  w0.txjr = 0;
-  midi2::types::ump_stream::jr_configuration_request_w1 w1{};
-  midi2::types::ump_stream::jr_configuration_request_w2 w2{};
-  midi2::types::ump_stream::jr_configuration_request_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, jr_configuration_request(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::jr_configuration_request message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_request));
+  message.w0.protocol = 0x02;
+  message.w0.rxjr = 1;
+  message.w0.txjr = 0;
+  EXPECT_CALL(config_.ump_stream, jr_configuration_request(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamJRConfigurationNotification) {
-  midi2::types::ump_stream::jr_configuration_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_notification));
-  w0.protocol = 0x02;
-  w0.rxjr = 1;
-  w0.txjr = 0;
-  midi2::types::ump_stream::jr_configuration_notification_w1 w1{};
-  midi2::types::ump_stream::jr_configuration_notification_w2 w2{};
-  midi2::types::ump_stream::jr_configuration_notification_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::jr_configuration_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::jr_configuration_notification));
+  message.w0.protocol = 0x02;
+  message.w0.rxjr = 1;
+  message.w0.txjr = 0;
+  EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamFunctionBlockDiscovery) {
-  midi2::types::ump_stream::function_block_discovery_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_discovery));
-  w0.block_num = 0xFF;
-  w0.filter = 0x03;
-  midi2::types::ump_stream::function_block_discovery_w1 w1{};
-  midi2::types::ump_stream::function_block_discovery_w2 w2{};
-  midi2::types::ump_stream::function_block_discovery_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::function_block_discovery message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_discovery));
+  message.w0.block_num = 0xFF;
+  message.w0.filter = 0x03;
+  EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamFunctionBlockInfoNotification) {
-  midi2::types::ump_stream::function_block_info_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_info_notification));
-  w0.block_active = 1;
-  w0.block_num = 0x1F;
-  w0.ui_hint = 0b10;
-  w0.midi1 = 0;
-  w0.direction = 0b10;
-  midi2::types::ump_stream::function_block_info_notification_w1 w1{};
-  w1.first_group = 0b10101010;
-  w1.num_spanned = 0x10;
-  w1.ci_message_version = 0x1;
-  w1.max_sys8_streams = 2;
-  midi2::types::ump_stream::function_block_info_notification_w2 w2{};
-  midi2::types::ump_stream::function_block_info_notification_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, function_block_info_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::function_block_info_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_info_notification));
+  message.w0.block_active = 1;
+  message.w0.block_num = 0x1F;
+  message.w0.ui_hint = 0b10;
+  message.w0.midi1 = 0;
+  message.w0.direction = 0b10;
+  message.w1.first_group = 0b10101010;
+  message.w1.num_spanned = 0x10;
+  message.w1.ci_message_version = 0x1;
+  message.w1.max_sys8_streams = 2;
+  EXPECT_CALL(config_.ump_stream, function_block_info_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamFunctionBlockNameNotification) {
-  midi2::types::ump_stream::function_block_name_notification_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_name_notification));
-  w0.block_num = 0x1F;
-  w0.name0 = 'a';
-  midi2::types::ump_stream::function_block_name_notification_w1 w1{};
-  w1.name1 = 'b';
-  w1.name2 = 'c';
-  w1.name3 = 'd';
-  w1.name4 = 'e';
-  midi2::types::ump_stream::function_block_name_notification_w2 w2{};
-  w2.name5 = 'f';
-  w2.name6 = 'g';
-  w2.name7 = 'h';
-  w2.name8 = 'i';
-  midi2::types::ump_stream::function_block_name_notification_w3 w3{};
-  w3.name9 = 'k';
-  w3.name10 = 'l';
-  w3.name11 = 'm';
-  w3.name12 = 'n';
-  EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::function_block_name_notification message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::function_block_name_notification));
+  message.w0.block_num = 0x1F;
+  message.w0.name0 = 'a';
+  message.w1.name1 = 'b';
+  message.w1.name2 = 'c';
+  message.w1.name3 = 'd';
+  message.w1.name4 = 'e';
+  message.w2.name5 = 'f';
+  message.w2.name6 = 'g';
+  message.w2.name7 = 'h';
+  message.w2.name8 = 'i';
+  message.w3.name9 = 'k';
+  message.w3.name10 = 'l';
+  message.w3.name11 = 'm';
+  message.w3.name12 = 'n';
+  EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamStartOfClip) {
-  midi2::types::ump_stream::start_of_clip_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::start_of_clip));
-  midi2::types::ump_stream::start_of_clip_w1 w1{};
-  midi2::types::ump_stream::start_of_clip_w2 w2{};
-  midi2::types::ump_stream::start_of_clip_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::start_of_clip message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::start_of_clip));
+  EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessor, StreamEndOfClip) {
-  midi2::types::ump_stream::end_of_clip_w0 w0{};
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
-  w0.format = 0x00;
-  w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::end_of_clip));
-  midi2::types::ump_stream::end_of_clip_w1 w1{};
-  midi2::types::ump_stream::end_of_clip_w2 w2{};
-  midi2::types::ump_stream::end_of_clip_w3 w3{};
-  EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, w0, w1, w2, w3)).Times(1);
-
-  processor_.processUMP(w0);
-  processor_.processUMP(w1);
-  processor_.processUMP(w2);
-  processor_.processUMP(w3);
+  midi2::types::ump_stream::end_of_clip message{};
+  message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
+  message.w0.format = 0x00;
+  message.w0.status = static_cast<std::uint16_t>(to_underlying(midi2::ump_stream::end_of_clip));
+  EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 
 //*  ___ _           ___       _         *

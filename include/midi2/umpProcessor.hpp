@@ -59,7 +59,6 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 // clang-format off
 template <typename T> concept backend = requires(T && v) {
   { v.system(midi2::types::system_general{}) } -> std::same_as<void>;
-
   { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
@@ -82,15 +81,15 @@ concept m1cvm_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
-  { v.sysex7_in_1(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex7_start(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex7_continue(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
-  { v.sysex7_end(context, types::data64::sysex7_w0{}, types::data64::sysex7_w1{}) } -> std::same_as<void>;
+  { v.sysex7_in_1(context, types::data64::sysex7{}) } -> std::same_as<void>;
+  { v.sysex7_start(context, types::data64::sysex7{}) } -> std::same_as<void>;
+  { v.sysex7_continue(context, types::data64::sysex7{}) } -> std::same_as<void>;
+  { v.sysex7_end(context, types::data64::sysex7{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
-  { v.note_off(context, types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
-  { v.note_on(context, types::m2cvm::note_w0{}, types::m2cvm::note_w1{}) } -> std::same_as<void>;
+  { v.note_off(context, types::m2cvm::note{}) } -> std::same_as<void>;
+  { v.note_on(context, types::m2cvm::note{}) } -> std::same_as<void>;
   { v.poly_pressure(context, types::m2cvm::poly_pressure_w0{}, std::uint32_t{}) } -> std::same_as<void>;
   { v.program_change(context, types::m2cvm::program_change_w0{}, types::m2cvm::program_change_w1{}) } -> std::same_as<void>;
   { v.channel_pressure(context, types::m2cvm::channel_pressure_w0{}, std::uint32_t{}) } -> std::same_as<void>;
@@ -105,100 +104,28 @@ concept m2cvm_backend = requires(T v, Context context) {
 template <typename T, typename Context>
 concept data128_backend = requires(T v, Context context) {
   // 7.8 System Exclusive 8 (8-Bit) Messages
-  { v.sysex8_in_1(context,
-      types::data128::sysex8_w0{},
-      types::data128::sysex8_w1{},
-      types::data128::sysex8_w2{},
-      types::data128::sysex8_w3{}) } -> std::same_as<void>;
-  { v.sysex8_start(context,
-      types::data128::sysex8_w0{},
-      types::data128::sysex8_w1{},
-      types::data128::sysex8_w2{},
-      types::data128::sysex8_w3{}) } -> std::same_as<void>;
-  { v.sysex8_continue(context,
-      types::data128::sysex8_w0{},
-      types::data128::sysex8_w1{},
-      types::data128::sysex8_w2{},
-      types::data128::sysex8_w3{}) } -> std::same_as<void>;
-  { v.sysex8_end(context,
-      types::data128::sysex8_w0{},
-      types::data128::sysex8_w1{},
-      types::data128::sysex8_w2{},
-      types::data128::sysex8_w3{}) } -> std::same_as<void>;
+  { v.sysex8_in_1(context, types::data128::sysex8{}) } -> std::same_as<void>;
+  { v.sysex8_start(context, types::data128::sysex8{}) } -> std::same_as<void>;
+  { v.sysex8_continue(context, types::data128::sysex8{}) } -> std::same_as<void>;
+  { v.sysex8_end(context, types::data128::sysex8{}) } -> std::same_as<void>;
   // 7.9 Mixed Data Set Message
-  { v.mds_header(context,
-      types::data128::mds_header_w0{},
-      types::data128::mds_header_w1{},
-      types::data128::mds_header_w2{},
-      types::data128::mds_header_w3{}) } -> std::same_as<void>;
-  { v.mds_payload(context,
-      types::data128::mds_payload_w0{},
-      types::data128::mds_payload_w1{},
-      types::data128::mds_payload_w2{},
-      types::data128::mds_payload_w3{}) } -> std::same_as<void>;
+  { v.mds_header(context, types::data128::mds_header{}) } -> std::same_as<void>;
+  { v.mds_payload(context, types::data128::mds_payload{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept ump_stream_backend = requires(T v, Context context) {
-  { v.endpoint_discovery(context,
-      types::ump_stream::endpoint_discovery_w0{},
-      types::ump_stream::endpoint_discovery_w1{},
-      types::ump_stream::endpoint_discovery_w2{},
-      types::ump_stream::endpoint_discovery_w3{}) } -> std::same_as<void>;
-  { v.endpoint_info_notification(context,
-      types::ump_stream::endpoint_info_notification_w0{},
-      types::ump_stream::endpoint_info_notification_w1{},
-      types::ump_stream::endpoint_info_notification_w2{},
-      types::ump_stream::endpoint_info_notification_w3{}) } -> std::same_as<void>;
-  { v.device_identity_notification(context,
-      types::ump_stream::device_identity_notification_w0{},
-      types::ump_stream::device_identity_notification_w1{},
-      types::ump_stream::device_identity_notification_w2{},
-      types::ump_stream::device_identity_notification_w3{}) } -> std::same_as<void>;
-  { v.endpoint_name_notification(context,
-      types::ump_stream::endpoint_name_notification_w0{},
-      types::ump_stream::endpoint_name_notification_w1{},
-      types::ump_stream::endpoint_name_notification_w2{},
-      types::ump_stream::endpoint_name_notification_w3{}) } -> std::same_as<void>;
-  { v.product_instance_id_notification(context,
-      types::ump_stream::product_instance_id_notification_w0{},
-      types::ump_stream::product_instance_id_notification_w1{},
-      types::ump_stream::product_instance_id_notification_w2{},
-      types::ump_stream::product_instance_id_notification_w3{}) } -> std::same_as<void>;
-  { v.jr_configuration_request(context,
-      types::ump_stream::jr_configuration_request_w0{},
-      types::ump_stream::jr_configuration_request_w1{},
-      types::ump_stream::jr_configuration_request_w2{},
-      types::ump_stream::jr_configuration_request_w3{}) } -> std::same_as<void>;
-  { v.jr_configuration_notification(context,
-      types::ump_stream::jr_configuration_notification_w0{},
-      types::ump_stream::jr_configuration_notification_w1{},
-      types::ump_stream::jr_configuration_notification_w2{},
-      types::ump_stream::jr_configuration_notification_w3{}) } -> std::same_as<void>;
-  { v.function_block_discovery(context,
-      types::ump_stream::function_block_discovery_w0{},
-      types::ump_stream::function_block_discovery_w1{},
-      types::ump_stream::function_block_discovery_w2{},
-      types::ump_stream::function_block_discovery_w3{}) } -> std::same_as<void>;
-  { v.function_block_info_notification(context,
-      types::ump_stream::function_block_info_notification_w0{},
-      types::ump_stream::function_block_info_notification_w1{},
-      types::ump_stream::function_block_info_notification_w2{},
-      types::ump_stream::function_block_info_notification_w3{}) } -> std::same_as<void>;
-  { v.function_block_name_notification(context,
-      types::ump_stream::function_block_name_notification_w0{},
-      types::ump_stream::function_block_name_notification_w1{},
-      types::ump_stream::function_block_name_notification_w2{},
-      types::ump_stream::function_block_name_notification_w3{}) } -> std::same_as<void>;
-  { v.start_of_clip(context,
-      types::ump_stream::start_of_clip_w0{},
-      types::ump_stream::start_of_clip_w1{},
-      types::ump_stream::start_of_clip_w2{},
-      types::ump_stream::start_of_clip_w3{}) } -> std::same_as<void>;
-  { v.end_of_clip(context,
-      types::ump_stream::end_of_clip_w0{},
-      types::ump_stream::end_of_clip_w1{},
-      types::ump_stream::end_of_clip_w2{},
-      types::ump_stream::end_of_clip_w3{}) } -> std::same_as<void>;
+  { v.endpoint_discovery(context, types::ump_stream::endpoint_discovery{}) } -> std::same_as<void>;
+  { v.endpoint_info_notification(context, types::ump_stream::endpoint_info_notification{}) } -> std::same_as<void>;
+  { v.device_identity_notification(context, types::ump_stream::device_identity_notification{}) } -> std::same_as<void>;
+  { v.endpoint_name_notification(context, types::ump_stream::endpoint_name_notification{}) } -> std::same_as<void>;
+  { v.product_instance_id_notification(context, types::ump_stream::product_instance_id_notification{}) } -> std::same_as<void>;
+  { v.jr_configuration_request(context, types::ump_stream::jr_configuration_request{}) } -> std::same_as<void>;
+  { v.jr_configuration_notification(context, types::ump_stream::jr_configuration_notification{}) } -> std::same_as<void>;
+  { v.function_block_discovery(context, types::ump_stream::function_block_discovery{}) } -> std::same_as<void>;
+  { v.function_block_info_notification(context, types::ump_stream::function_block_info_notification{}) } -> std::same_as<void>;
+  { v.function_block_name_notification(context, types::ump_stream::function_block_name_notification{}) } -> std::same_as<void>;
+  { v.start_of_clip(context, types::ump_stream::start_of_clip{}) } -> std::same_as<void>;
+  { v.end_of_clip(context, types::ump_stream::end_of_clip{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept flex_data_backend = requires(T v, Context context) {
@@ -277,14 +204,14 @@ template <typename Context> struct m1cvm_null {
   void pitch_bend(Context, types::m1cvm_w0) { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
-  void sysex7_in_1(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  void sysex7_start(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  void sysex7_continue(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  void sysex7_end(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  void sysex7_in_1(Context, types::data64::sysex7) { /* do nothing */ }
+  void sysex7_start(Context, types::data64::sysex7) { /* do nothing */ }
+  void sysex7_continue(Context, types::data64::sysex7) { /* do nothing */ }
+  void sysex7_end(Context, types::data64::sysex7) { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_null {
-  void note_off(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
-  void note_on(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
+  void note_off(Context, types::m2cvm::note) { /* do nothing */ }
+  void note_on(Context, types::m2cvm::note) { /* do nothing */ }
   void poly_pressure(Context, types::m2cvm::poly_pressure_w0, std::uint32_t) { /* do nothing */ }
   void program_change(Context, types::m2cvm::program_change_w0, types::m2cvm::program_change_w1) { /* do nothing */ }
   void channel_pressure(Context, types::m2cvm::channel_pressure_w0, std::uint32_t) { /* do nothing */ }
@@ -297,66 +224,34 @@ template <typename Context> struct m2cvm_null {
   void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
 };
 template <typename Context> struct data128_null {
-  void sysex8_in_1(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                   types::data128::sysex8_w3) { /* do nothing */ }
-  void sysex8_start(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                    types::data128::sysex8_w3) { /* do nothing */ }
-  void sysex8_continue(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                       types::data128::sysex8_w3) { /* do nothing */ }
-  void sysex8_end(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                  types::data128::sysex8_w3) { /* do nothing */ }
-  void mds_header(Context, types::data128::mds_header_w0, types::data128::mds_header_w1, types::data128::mds_header_w2,
-                  types::data128::mds_header_w3) { /* do nothing */ }
-  void mds_payload(Context, types::data128::mds_payload_w0, types::data128::mds_payload_w1,
-                   types::data128::mds_payload_w2, types::data128::mds_payload_w3) { /* do nothing */ }
+  void sysex8_in_1(Context, types::data128::sysex8) { /* do nothing */ }
+  void sysex8_start(Context, types::data128::sysex8) { /* do nothing */ }
+  void sysex8_continue(Context, types::data128::sysex8) { /* do nothing */ }
+  void sysex8_end(Context, types::data128::sysex8) { /* do nothing */ }
+  void mds_header(Context, types::data128::mds_header) { /* do nothing */ }
+  void mds_payload(Context, types::data128::mds_payload) { /* do nothing */ }
 };
 template <typename Context> struct ump_stream_null {
-  void endpoint_discovery(Context, types::ump_stream::endpoint_discovery_w0, types::ump_stream::endpoint_discovery_w1,
-                          types::ump_stream::endpoint_discovery_w2,
-                          types::ump_stream::endpoint_discovery_w3) { /* do nothing */ }
-  void endpoint_info_notification(Context, types::ump_stream::endpoint_info_notification_w0,
-                                  types::ump_stream::endpoint_info_notification_w1,
-                                  types::ump_stream::endpoint_info_notification_w2,
-                                  types::ump_stream::endpoint_info_notification_w3) { /* do nothing */ }
-  void device_identity_notification(Context, types::ump_stream::device_identity_notification_w0,
-                                    types::ump_stream::device_identity_notification_w1,
-                                    types::ump_stream::device_identity_notification_w2,
-                                    types::ump_stream::device_identity_notification_w3) { /* do nothing */ }
-  void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification_w0,
-                                  types::ump_stream::endpoint_name_notification_w1,
-                                  types::ump_stream::endpoint_name_notification_w2,
-                                  types::ump_stream::endpoint_name_notification_w3) { /* do nothing */ }
-  void product_instance_id_notification(Context, types::ump_stream::product_instance_id_notification_w0,
-                                        types::ump_stream::product_instance_id_notification_w1,
-                                        types::ump_stream::product_instance_id_notification_w2,
-                                        types::ump_stream::product_instance_id_notification_w3) { /* do nothing */ }
-  void jr_configuration_request(Context, types::ump_stream::jr_configuration_request_w0,
-                                types::ump_stream::jr_configuration_request_w1,
-                                types::ump_stream::jr_configuration_request_w2,
-                                types::ump_stream::jr_configuration_request_w3) { /* do nothing */ }
-  void jr_configuration_notification(Context, types::ump_stream::jr_configuration_notification_w0,
-                                     types::ump_stream::jr_configuration_notification_w1,
-                                     types::ump_stream::jr_configuration_notification_w2,
-                                     types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
+  void endpoint_discovery(Context, types::ump_stream::endpoint_discovery const &) { /* do nothing */ }
+  void endpoint_info_notification(Context, types::ump_stream::endpoint_info_notification const &) { /* do nothing */ }
+  void device_identity_notification(Context, types::ump_stream::device_identity_notification const &) { /* do nothing */
+  }
+  void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification const &) { /* do nothing */ }
+  void product_instance_id_notification(Context,
+                                        types::ump_stream::product_instance_id_notification const &) { /* do nothing */
+  }
+  void jr_configuration_request(Context, types::ump_stream::jr_configuration_request const &) { /* do nothing */ }
+  void jr_configuration_notification(Context,
+                                     types::ump_stream::jr_configuration_notification const &) { /* do nothing */ }
 
-  void function_block_discovery(Context, types::ump_stream::function_block_discovery_w0,
-                                types::ump_stream::function_block_discovery_w1,
-                                types::ump_stream::function_block_discovery_w2,
-                                types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
-  void function_block_info_notification(Context, types::ump_stream::function_block_info_notification_w0,
-                                        types::ump_stream::function_block_info_notification_w1,
-                                        types::ump_stream::function_block_info_notification_w2,
-                                        types::ump_stream::function_block_info_notification_w3) { /* do nothing */ }
-  void function_block_name_notification(Context, types::ump_stream::function_block_name_notification_w0,
-                                        types::ump_stream::function_block_name_notification_w1,
-                                        types::ump_stream::function_block_name_notification_w2,
-                                        types::ump_stream::function_block_name_notification_w3) { /* do nothing */ }
+  void function_block_discovery(Context, types::ump_stream::function_block_discovery) { /* do nothing */ }
+  void function_block_info_notification(Context, types::ump_stream::function_block_info_notification) { /* do nothing */
+  }
+  void function_block_name_notification(Context, types::ump_stream::function_block_name_notification) { /* do nothing */
+  }
 
-  void start_of_clip(Context, types::ump_stream::start_of_clip_w0, types::ump_stream::start_of_clip_w1,
-                     types::ump_stream::start_of_clip_w2, types::ump_stream::start_of_clip_w3) { /* do nothing */ }
-
-  void end_of_clip(Context, types::ump_stream::end_of_clip_w0, types::ump_stream::end_of_clip_w1,
-                   types::ump_stream::end_of_clip_w2, types::ump_stream::end_of_clip_w3) { /* do nothing */ }
+  void start_of_clip(Context, types::ump_stream::start_of_clip) { /* do nothing */ }
+  void end_of_clip(Context, types::ump_stream::end_of_clip) { /* do nothing */ }
 };
 template <typename Context> struct flex_data_null {
   void set_tempo(Context, types::flex_data::set_tempo_w0, types::flex_data::set_tempo_w1,
@@ -523,10 +418,10 @@ template <ump_processor_config Config> void umpProcessor<Config>::data64_message
   auto const w0 = types::data64::sysex7_w0{message_[0]};
   auto const w1 = types::data64::sysex7_w1{message_[1]};
   switch (static_cast<data64>(w0.status.value())) {
-  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, w0, w1); break;
-  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, w0, w1); break;
-  case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, w0, w1); break;
-  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, w0, w1); break;
+  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, types::data64::sysex7{w0, w1}); break;
+  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, types::data64::sysex7{w0, w1}); break;
+  case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, types::data64::sysex7{w0, w1}); break;
+  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, types::data64::sysex7{w0, w1}); break;
   default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
 }
@@ -539,11 +434,13 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
   switch ((message_[0] >> 16) & 0xF0) {
   // 7.4.1 MIDI 2.0 Note Off Message
   case status::note_off:
-    config_.m2cvm.note_off(config_.context, types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]});
+    config_.m2cvm.note_off(config_.context,
+                           types::m2cvm::note{types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]}});
     break;
   // 7.4.2 MIDI 2.0 Note On Message
   case status::note_on:
-    config_.m2cvm.note_on(config_.context, types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]});
+    config_.m2cvm.note_on(config_.context,
+                          types::m2cvm::note{types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]}});
     break;
   // 7.4.3 MIDI 2.0 Poly Pressure Message
   case status::key_pressure:  // Polyphonic pressure
@@ -597,96 +494,111 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
 // ump stream message
 // ~~~~~~~~~~~~~~~~~~
 template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_message() {
+  using types::ump_stream::device_identity_notification;
+  using types::ump_stream::end_of_clip;
+  using types::ump_stream::endpoint_discovery;
+  using types::ump_stream::endpoint_info_notification;
+  using types::ump_stream::endpoint_name_notification;
+  using types::ump_stream::function_block_discovery;
+  using types::ump_stream::function_block_info_notification;
+  using types::ump_stream::function_block_name_notification;
+  using types::ump_stream::jr_configuration_notification;
+  using types::ump_stream::jr_configuration_request;
+  using types::ump_stream::product_instance_id_notification;
+  using types::ump_stream::start_of_clip;
+
   switch (static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
   case ump_stream::endpoint_discovery:
-    config_.ump_stream.endpoint_discovery(config_.context, types::ump_stream::endpoint_discovery_w0{message_[0]},
-                                          types::ump_stream::endpoint_discovery_w1{message_[1]}, message_[2],
-                                          message_[3]);
+    config_.ump_stream.endpoint_discovery(
+        config_.context,
+        endpoint_discovery{endpoint_discovery::word0{message_[0]}, endpoint_discovery::word1{message_[1]},
+                           endpoint_discovery::word2{message_[2]}, endpoint_discovery::word3{message_[3]}});
     break;
 
   // 7.1.2 Endpoint Info Notification Message
   case ump_stream::endpoint_info_notification:
     config_.ump_stream.endpoint_info_notification(
-        config_.context, types::ump_stream::endpoint_info_notification_w0{message_[0]},
-        types::ump_stream::endpoint_info_notification_w1{message_[1]}, message_[2], message_[3]);
+        config_.context, endpoint_info_notification{endpoint_info_notification::word0{message_[0]},
+                                                    endpoint_info_notification::word1{message_[1]},
+                                                    endpoint_info_notification::word2{message_[2]},
+                                                    endpoint_info_notification::word3{message_[3]}});
     break;
 
   // 7.1.3 Device Identity Notification Message
   case ump_stream::device_identity_notification:
-    config_.ump_stream.device_identity_notification(config_.context,
-                                                    types::ump_stream::device_identity_notification_w0{message_[0]},
-                                                    types::ump_stream::device_identity_notification_w1{message_[1]},
-                                                    types::ump_stream::device_identity_notification_w2{message_[2]},
-                                                    types::ump_stream::device_identity_notification_w3{message_[3]});
+    config_.ump_stream.device_identity_notification(
+        config_.context, device_identity_notification{device_identity_notification::word0{message_[0]},
+                                                      device_identity_notification::word1{message_[1]},
+                                                      device_identity_notification::word2{message_[2]},
+                                                      device_identity_notification::word3{message_[3]}});
     break;
 
   // 7.1.4 Endpoint Name Notification
   case ump_stream::endpoint_name_notification:
-    config_.ump_stream.endpoint_name_notification(config_.context,
-                                                  types::ump_stream::endpoint_name_notification_w0{message_[0]},
-                                                  types::ump_stream::endpoint_name_notification_w1{message_[1]},
-                                                  types::ump_stream::endpoint_name_notification_w2{message_[2]},
-                                                  types::ump_stream::endpoint_name_notification_w3{message_[3]});
+    config_.ump_stream.endpoint_name_notification(
+        config_.context, endpoint_name_notification{endpoint_name_notification::word0{message_[0]},
+                                                    endpoint_name_notification::word1{message_[1]},
+                                                    endpoint_name_notification::word2{message_[2]},
+                                                    endpoint_name_notification::word3{message_[3]}});
     break;
   // 7.1.5 Product Instance Id Notification Message
   case ump_stream::product_instance_id_notification:
     config_.ump_stream.product_instance_id_notification(
-        config_.context, types::ump_stream::product_instance_id_notification_w0{message_[0]},
-        types::ump_stream::product_instance_id_notification_w1{message_[1]},
-        types::ump_stream::product_instance_id_notification_w2{message_[2]},
-        types::ump_stream::product_instance_id_notification_w3{message_[3]});
+        config_.context, product_instance_id_notification{product_instance_id_notification::word0{message_[0]},
+                                                          product_instance_id_notification::word1{message_[1]},
+                                                          product_instance_id_notification::word2{message_[2]},
+                                                          product_instance_id_notification::word3{message_[3]}});
     break;
   // 7.1.6.2 Stream Configuration Request
   case ump_stream::jr_configuration_request:
     config_.ump_stream.jr_configuration_request(config_.context,
-                                                types::ump_stream::jr_configuration_request_w0{message_[0]},
-                                                types::ump_stream::jr_configuration_request_w1{message_[1]},
-                                                types::ump_stream::jr_configuration_request_w2{message_[2]},
-                                                types::ump_stream::jr_configuration_request_w3{message_[3]});
+                                                jr_configuration_request{jr_configuration_request::word0{message_[0]},
+                                                                         jr_configuration_request::word1{message_[1]},
+                                                                         jr_configuration_request::word2{message_[2]},
+                                                                         jr_configuration_request::word3{message_[3]}});
     break;
   // 7.1.6.3 Stream Configuration Notification Message
   case ump_stream::jr_configuration_notification:
-    config_.ump_stream.jr_configuration_notification(config_.context,
-                                                     types::ump_stream::jr_configuration_notification_w0{message_[0]},
-                                                     types::ump_stream::jr_configuration_notification_w1{message_[1]},
-                                                     types::ump_stream::jr_configuration_notification_w2{message_[2]},
-                                                     types::ump_stream::jr_configuration_notification_w3{message_[3]});
+    config_.ump_stream.jr_configuration_notification(
+        config_.context, jr_configuration_notification{jr_configuration_notification::word0{message_[0]},
+                                                       jr_configuration_notification::word1{message_[1]},
+                                                       jr_configuration_notification::word2{message_[2]},
+                                                       jr_configuration_notification::word3{message_[3]}});
     break;
   // 7.1.7 Function Block Discovery Message
   case ump_stream::function_block_discovery:
     config_.ump_stream.function_block_discovery(config_.context,
-                                                types::ump_stream::function_block_discovery_w0{message_[0]},
-                                                types::ump_stream::function_block_discovery_w1{message_[1]},
-                                                types::ump_stream::function_block_discovery_w2{message_[2]},
-                                                types::ump_stream::function_block_discovery_w3{message_[3]});
+                                                function_block_discovery{function_block_discovery::word0{message_[0]},
+                                                                         function_block_discovery::word1{message_[1]},
+                                                                         function_block_discovery::word2{message_[2]},
+                                                                         function_block_discovery::word3{message_[3]}});
     break;
   // 7.1.8 Function Block Info Notification
   case ump_stream::function_block_info_notification:
     config_.ump_stream.function_block_info_notification(
-        config_.context, types::ump_stream::function_block_info_notification_w0{message_[0]},
-        types::ump_stream::function_block_info_notification_w1{message_[1]},
-        types::ump_stream::function_block_info_notification_w2{message_[2]},
-        types::ump_stream::function_block_info_notification_w3{message_[3]});
+        config_.context, function_block_info_notification{function_block_info_notification::word0{message_[0]},
+                                                          function_block_info_notification::word1{message_[1]},
+                                                          function_block_info_notification::word2{message_[2]},
+                                                          function_block_info_notification::word3{message_[3]}});
     break;
   // 7.1.9 Function Block Name Notification
   case ump_stream::function_block_name_notification:
     config_.ump_stream.function_block_name_notification(
-        config_.context, types::ump_stream::function_block_name_notification_w0{message_[0]},
-        types::ump_stream::function_block_name_notification_w1{message_[1]},
-        types::ump_stream::function_block_name_notification_w2{message_[2]},
-        types::ump_stream::function_block_name_notification_w3{message_[3]});
+        config_.context, function_block_name_notification{function_block_name_notification::word0{message_[0]},
+                                                          function_block_name_notification::word1{message_[1]},
+                                                          function_block_name_notification::word2{message_[2]},
+                                                          function_block_name_notification::word3{message_[3]}});
     break;
   case ump_stream::start_of_clip:
-    config_.ump_stream.start_of_clip(config_.context, types::ump_stream::start_of_clip_w0{message_[0]},
-                                     types::ump_stream::start_of_clip_w1{message_[1]},
-                                     types::ump_stream::start_of_clip_w2{message_[2]},
-                                     types::ump_stream::start_of_clip_w3{message_[3]});
+    config_.ump_stream.start_of_clip(
+        config_.context, start_of_clip{start_of_clip::word0{message_[0]}, start_of_clip::word1{message_[1]},
+                                       start_of_clip::word2{message_[2]}, start_of_clip::word3{message_[3]}});
     break;
   case ump_stream::end_of_clip:
-    config_.ump_stream.end_of_clip(
-        config_.context, types::ump_stream::end_of_clip_w0{message_[0]}, types::ump_stream::end_of_clip_w1{message_[1]},
-        types::ump_stream::end_of_clip_w2{message_[2]}, types::ump_stream::end_of_clip_w3{message_[3]});
+    config_.ump_stream.end_of_clip(config_.context,
+                                   end_of_clip{end_of_clip::word0{message_[0]}, end_of_clip::word1{message_[1]},
+                                               end_of_clip::word2{message_[2]}, end_of_clip::word3{message_[3]}});
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
@@ -694,36 +606,35 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
 
 // 128 bit Data Messages (including System Exclusive 8)
 template <ump_processor_config Config> void umpProcessor<Config>::data128_message() {
+  using types::data128::mds_header;
+  using types::data128::mds_payload;
+  using types::data128::sysex8;
   switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
   case data128::sysex8_in_1:
-    config_.data128.sysex8_in_1(config_.context, types::data128::sysex8_w0{message_[0]},
-                                types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
-                                types::data128::sysex8_w3{message_[3]});
+    config_.data128.sysex8_in_1(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
+                                                        sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
     break;
   case data128::sysex8_start:
-    config_.data128.sysex8_start(config_.context, types::data128::sysex8_w0{message_[0]},
-                                 types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
-                                 types::data128::sysex8_w3{message_[3]});
+    config_.data128.sysex8_start(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
+                                                         sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
     break;
   case data128::sysex8_continue:
-    config_.data128.sysex8_continue(config_.context, types::data128::sysex8_w0{message_[0]},
-                                    types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
-                                    types::data128::sysex8_w3{message_[3]});
+    config_.data128.sysex8_continue(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
+                                                            sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
     break;
   case data128::sysex8_end:
-    config_.data128.sysex8_end(config_.context, types::data128::sysex8_w0{message_[0]},
-                               types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
-                               types::data128::sysex8_w3{message_[3]});
+    config_.data128.sysex8_end(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
+                                                       sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
     break;
   case data128::mixed_data_set_header:
-    config_.data128.mds_header(config_.context, types::data128::mds_header_w0{message_[0]},
-                               types::data128::mds_header_w1{message_[1]}, types::data128::mds_header_w2{message_[2]},
-                               types::data128::mds_header_w3{message_[3]});
+    config_.data128.mds_header(config_.context,
+                               mds_header{mds_header::word0{message_[0]}, mds_header::word1{message_[1]},
+                                          mds_header::word2{message_[2]}, mds_header::word3{message_[3]}});
     break;
   case data128::mixed_data_set_payload:
     config_.data128.mds_payload(
-        config_.context, types::data128::mds_payload_w0{message_[0]}, types::data128::mds_payload_w1{message_[1]},
-        types::data128::mds_payload_w2{message_[2]}, types::data128::mds_payload_w3{message_[3]});
+        config_.context, types::data128::mds_payload{mds_payload::word0{message_[0]}, mds_payload::word1{message_[1]},
+                                                     mds_payload::word2{message_[2]}, mds_payload::word3{message_[3]}});
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
