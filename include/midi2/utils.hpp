@@ -100,7 +100,7 @@ enum class data64 : std::uint8_t {
   sysex7_end = 0x03,
 };
 
-enum class ump_utility : std::uint32_t {
+enum class ump_utility : std::uint8_t {
   noop = 0b0000,
   jr_clock = 0b0001,
   jr_ts = 0b0010,

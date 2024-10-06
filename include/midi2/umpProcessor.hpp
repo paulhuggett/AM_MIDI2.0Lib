@@ -25,20 +25,6 @@
 
 namespace midi2 {
 
-struct ump_common {
-  constexpr bool operator==(ump_common const&) const = default;
-
-  uint8_t group = 255;
-  ump_message_type messageType = ump_message_type::utility;
-  uint8_t status = 0;
-};
-struct ump_data {
-  ump_common common;
-  uint8_t streamId = 0;
-  uint8_t form = 0;
-  std::span<std::uint8_t> data;
-};
-
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 template <midi2::ump_message_type> struct message_size {};

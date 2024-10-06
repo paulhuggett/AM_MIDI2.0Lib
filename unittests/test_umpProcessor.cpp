@@ -24,28 +24,6 @@
 #include <fuzztest/fuzztest.h>
 #endif
 
-namespace midi2 {
-
-std::ostream& operator<<(std::ostream& os, ump_common const& common);
-std::ostream& operator<<(std::ostream& os, ump_common const& common) {
-  return os << "{ group=" << static_cast<unsigned>(common.group)
-            << ", messageType=" << static_cast<unsigned>(common.messageType)
-            << ", status=" << static_cast<unsigned>(common.status) << " }";
-};
-
-std::ostream& operator<<(std::ostream& os, ump_data const& data);
-std::ostream& operator<<(std::ostream& os, ump_data const& data) {
-  os << "{ common:" << data.common
-     << ", streamId=" << static_cast<unsigned>(data.streamId)
-     << ", form=" << static_cast<unsigned>(data.form) << ", data=[";
-  std::copy(std::begin(data.data), std::end(data.data),
-            std::ostream_iterator<unsigned>(os, ","));
-  os << "] }";
-  return os;
-}
-
-}  // end namespace midi2
-
 namespace {
 
 using midi2::pack;
@@ -360,7 +338,6 @@ struct flex_data_base {
   virtual void text(context_type, midi2::types::flex_data::text_common_w0, midi2::types::flex_data::text_common_w1,
                     midi2::types::flex_data::text_common_w2, midi2::types::flex_data::text_common_w3) = 0;
 };
-
 class FlexDataMocks : public flex_data_base {
 public:
   MOCK_METHOD(void, set_tempo,
@@ -431,7 +408,7 @@ TEST_F(UMPProcessor, Noop) {
   midi2::types::noop w0{};
   w0.mt = ump_mt(midi2::ump_message_type::utility);
   w0.reserved = 0;
-  w0.status = 0b0000;
+  w0.status = to_underlying(midi2::ump_utility::jr_clock);
   w0.data = 0;
   processor_.processUMP(w0);
 }
@@ -439,7 +416,7 @@ TEST_F(UMPProcessor, Noop) {
 TEST_F(UMPProcessor, JRClock) {
   midi2::types::jr_clock message{};
   message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_clock);
+  message.status = to_underlying(midi2::ump_utility::jr_clock);
   message.sender_clock_time = 0b1010101010101010;
   EXPECT_CALL(config_.utility, jr_clock(config_.context, message)).Times(1);
   processor_.processUMP(message);
@@ -448,7 +425,7 @@ TEST_F(UMPProcessor, JRClock) {
 TEST_F(UMPProcessor, JRTimestamp) {
   midi2::types::jr_clock message{};
   message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = static_cast<std::uint8_t>(midi2::ump_utility::jr_ts);
+  message.status = to_underlying(midi2::ump_utility::jr_ts);
   message.sender_clock_time = (1U << 16) - 1U;
   EXPECT_CALL(config_.utility, jr_timestamp(config_.context, message)).Times(1);
   processor_.processUMP(message);
@@ -457,7 +434,7 @@ TEST_F(UMPProcessor, JRTimestamp) {
 TEST_F(UMPProcessor, DeltaClockstampTqpn) {
   midi2::types::jr_clock message{};
   message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_tick);
+  message.status = to_underlying(midi2::ump_utility::delta_clock_tick);
   message.sender_clock_time = 0b1010101010101010;
   EXPECT_CALL(config_.utility, delta_clockstamp_tpqn(config_.context, message)).Times(1);
   processor_.processUMP(message);
@@ -466,7 +443,7 @@ TEST_F(UMPProcessor, DeltaClockstampTqpn) {
 TEST_F(UMPProcessor, DeltaClockstamp) {
   midi2::types::delta_clockstamp message{};
   message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = static_cast<std::uint8_t>(midi2::ump_utility::delta_clock_since);
+  message.status = to_underlying(midi2::ump_utility::delta_clock_since);
   message.ticks_per_quarter_note = (1U << 20) - 1U;
   EXPECT_CALL(config_.utility, delta_clockstamp(config_.context, message)).Times(1);
   processor_.processUMP(message);
