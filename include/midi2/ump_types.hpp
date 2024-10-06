@@ -20,6 +20,9 @@
     static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
     std::memset(this, 0, sizeof(*this));                                       \
   }                                                                            \
+  explicit name(std::uint32_t value) {                                         \
+    std::memcpy(this, &value, sizeof(*this));                                  \
+  }                                                                            \
   [[nodiscard]] constexpr auto word() const {                                  \
     return std::bit_cast<std::uint32_t>(*this);                                \
   }                                                                            \
@@ -702,7 +705,7 @@ namespace data128 {
 // SysEx8 End (word 1)
 union sysex8_w0 {
   UMP_MEMBERS(sysex8_w0)
-  ump_bitfield<28, 4> mt;
+  ump_bitfield<28, 4> mt;  // Always 0x05
   ump_bitfield<24, 4> group;
   ump_bitfield<20, 4> status;
   ump_bitfield<16, 4> number_of_bytes;
@@ -737,15 +740,57 @@ struct sysex8 {
   sysex8_w3 w3;
 };
 
+// 7.9 Mixed Data Set Message
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
-union mixed_data_set_w0 {
-  UMP_MEMBERS(mixed_data_set_w0)
-  ump_bitfield<28, 4> mt;
+union mds_header_w0 {
+  UMP_MEMBERS(mds_header_w0)
+  ump_bitfield<28, 4> mt;  // Always 0x05
   ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;
+  ump_bitfield<20, 4> status;  // Always 0x08
   ump_bitfield<16, 4> mds_id;
-  ump_bitfield<0, 16> data;
+  ump_bitfield<0, 16> bytes_in_chunk;
+};
+union mds_header_w1 {
+  UMP_MEMBERS(mds_header_w1)
+  ump_bitfield<16, 16> chunks_in_mds;
+  ump_bitfield<0, 16> chunk_num;
+};
+union mds_header_w2 {
+  UMP_MEMBERS(mds_header_w2)
+  ump_bitfield<16, 16> manufacturer_id;
+  ump_bitfield<0, 16> device_id;
+};
+union mds_header_w3 {
+  UMP_MEMBERS(mds_header_w3)
+  ump_bitfield<16, 16> sub_id_1;
+  ump_bitfield<0, 16> sub_id_2;
+};
+
+struct mds_header {
+  mds_header_w0 w0;
+  mds_header_w1 w1;
+  mds_header_w2 w2;
+  mds_header_w3 w3;
+};
+
+union mds_payload_w0 {
+  UMP_MEMBERS(mds_payload_w0)
+  ump_bitfield<28, 4> mt;  // Always 0x05
+  ump_bitfield<24, 4> group;
+  ump_bitfield<20, 4> status;  // Always 0x09
+  ump_bitfield<16, 4> mds_id;
+  ump_bitfield<0, 16> data0;
+};
+using mds_payload_w1 = std::uint32_t;
+using mds_payload_w2 = std::uint32_t;
+using mds_payload_w3 = std::uint32_t;
+
+struct mds_payload {
+  mds_payload_w0 w0;
+  mds_payload_w1 w1;
+  mds_payload_w2 w2;
+  mds_payload_w3 w3;
 };
 
 }  // end namespace data128

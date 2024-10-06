@@ -118,6 +118,7 @@ concept m2cvm_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept data128_backend = requires(T v, Context context) {
+  // 7.8 System Exclusive 8 (8-Bit) Messages
   { v.sysex8_in_1(context,
       types::data128::sysex8_w0{},
       types::data128::sysex8_w1{},
@@ -138,8 +139,17 @@ concept data128_backend = requires(T v, Context context) {
       types::data128::sysex8_w1{},
       types::data128::sysex8_w2{},
       types::data128::sysex8_w3{}) } -> std::same_as<void>;
-  // TODO: mixed data set header
-  // TODO: mixed data set payload
+  // 7.9 Mixed Data Set Message
+  { v.mds_header(context,
+      types::data128::mds_header_w0{},
+      types::data128::mds_header_w1{},
+      types::data128::mds_header_w2{},
+      types::data128::mds_header_w3{}) } -> std::same_as<void>;
+  { v.mds_payload(context,
+      types::data128::mds_payload_w0{},
+      types::data128::mds_payload_w1{},
+      types::data128::mds_payload_w2{},
+      types::data128::mds_payload_w3{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept ump_stream_backend = requires(T v, Context context) {
@@ -331,8 +341,10 @@ template <typename Context> struct data128_base {
                                types::data128::sysex8_w3) { /* do nothing */ }
   virtual void sysex8_end(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
                           types::data128::sysex8_w3) { /* do nothing */ }
-  // TODO: mixed data set header
-  // TODO: mixed data set payload
+  virtual void mds_header(Context, types::data128::mds_header_w0, types::data128::mds_header_w1,
+                          types::data128::mds_header_w2, types::data128::mds_header_w3) { /* do nothing */ }
+  virtual void mds_payload(Context, types::data128::mds_payload_w0, types::data128::mds_payload_w1,
+                           types::data128::mds_payload_w2, types::data128::mds_payload_w3) { /* do nothing */ }
 };
 
 template <typename Context> struct flex_data_base {
@@ -502,20 +514,16 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
   // 7.2.1 NOOP
   case ump_utility::noop: config_.utility.noop(config_.context); break;
   // 7.2.2.1 JR Clock
-  case ump_utility::jr_clock:
-    config_.utility.jr_clock(config_.context, std::bit_cast<types::jr_clock>(message_[0]));
-    break;
+  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, types::jr_clock{message_[0]}); break;
   // 7.2.2.2 JR Timestamp
-  case ump_utility::jr_ts:
-    config_.utility.jr_timestamp(config_.context, std::bit_cast<types::jr_clock>(message_[0]));
-    break;
+  case ump_utility::jr_ts: config_.utility.jr_timestamp(config_.context, types::jr_clock{message_[0]}); break;
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
   case ump_utility::delta_clock_tick:
-    config_.utility.delta_clockstamp_tpqn(config_.context, std::bit_cast<types::jr_clock>(message_[0]));
+    config_.utility.delta_clockstamp_tpqn(config_.context, types::jr_clock{message_[0]});
     break;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   case ump_utility::delta_clock_since:
-    config_.utility.delta_clockstamp(config_.context, std::bit_cast<types::delta_clockstamp>(message_[0]));
+    config_.utility.delta_clockstamp(config_.context, types::delta_clockstamp{message_[0]});
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 1}); break;
   }
@@ -525,7 +533,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
 template <ump_processor_config Config> void umpProcessor<Config>::system_message() {
   static_assert(message_size<midi2::ump_message_type::system>() == 1);
   // 7.6 System Common and System Real Time Messages
-  auto const sg = std::bit_cast<types::system_general>(message_[0]);
+  auto const sg = types::system_general{message_[0]};
   if (sg.status >= 0xF0) {
     config_.callbacks.system(sg);
   } else {
@@ -538,7 +546,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
 // 32 Bit MIDI 1.0 Channel Voice Messages
 template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m1cvm>() == 1);
-  auto const w0 = std::bit_cast<types::m1cvm_w0>(message_[0]);
+  auto const w0 = types::m1cvm_w0{message_[0]};
   switch ((message_[0] >> 16) & 0xF0) {
   // 7.3.1 MIDI 1.0 Note Off Message
   case status::note_off: config_.m1cvm.note_off(config_.context, w0); break;
@@ -561,8 +569,8 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
 // data64 message
 // ~~~~~~~~~~~~~~
 template <ump_processor_config Config> void umpProcessor<Config>::data64_message() {
-  auto const w0 = std::bit_cast<types::data64::sysex7_w0>(message_[0]);
-  auto const w1 = std::bit_cast<types::data64::sysex7_w1>(message_[1]);
+  auto const w0 = types::data64::sysex7_w0{message_[0]};
+  auto const w1 = types::data64::sysex7_w1{message_[1]};
   switch (static_cast<data64>(w0.status.value())) {
   case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, w0, w1); break;
   case data64::sysex7_start: config_.data64.sysex7_start(config_.context, w0, w1); break;
@@ -580,37 +588,31 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
   switch ((message_[0] >> 16) & 0xF0) {
   // 7.4.1 MIDI 2.0 Note Off Message
   case status::note_off:
-    config_.m2cvm.note_off(config_.context, std::bit_cast<types::m2cvm::note_w0>(message_[0]),
-                           std::bit_cast<types::m2cvm::note_w1>(message_[1]));
+    config_.m2cvm.note_off(config_.context, types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]});
     break;
   // 7.4.2 MIDI 2.0 Note On Message
   case status::note_on:
-    config_.m2cvm.note_on(config_.context, std::bit_cast<types::m2cvm::note_w0>(message_[0]),
-                          std::bit_cast<types::m2cvm::note_w1>(message_[1]));
+    config_.m2cvm.note_on(config_.context, types::m2cvm::note_w0{message_[0]}, types::m2cvm::note_w1{message_[1]});
     break;
   // 7.4.3 MIDI 2.0 Poly Pressure Message
   case status::key_pressure:  // Polyphonic pressure
-    config_.m2cvm.poly_pressure(config_.context, std::bit_cast<types::m2cvm::poly_pressure_w0>(message_[0]),
-                                message_[1]);
+    config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure_w0{message_[0]}, message_[1]);
     break;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
   case midi2status::rpn_pernote:
-    config_.m2cvm.rpn_controller(config_.context, std::bit_cast<types::m2cvm::controller_w0>(message_[0]), message_[1]);
+    config_.m2cvm.rpn_controller(config_.context, types::m2cvm::controller_w0{message_[0]}, message_[1]);
     break;
   // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
   case midi2status::nrpn_pernote:
-    config_.m2cvm.nrpn_controller(config_.context, std::bit_cast<types::m2cvm::controller_w0>(message_[0]),
-                                  message_[1]);
+    config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::controller_w0{message_[0]}, message_[1]);
     break;
   // 7.4.5 MIDI 2.0 Per-Note Management Message
   case midi2status::pernote_manage:
-    config_.m2cvm.per_note_management(config_.context, std::bit_cast<types::m2cvm::per_note_management_w0>(message_[0]),
-                                      message_[1]);
+    config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management_w0{message_[0]}, message_[1]);
     break;
   // 7.4.6 MIDI 2.0 Control Change Message
   case status::cc:
-    config_.m2cvm.control_change(config_.context, std::bit_cast<types::m2cvm::control_change_w0>(message_[0]),
-                                 message_[1]);
+    config_.m2cvm.control_change(config_.context, types::m2cvm::control_change_w0{message_[0]}, message_[1]);
     break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
@@ -618,27 +620,24 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
   case midi2status::nrpn:
   case midi2status::rpn_relative:
   case midi2status::nrpn_relative:
-    config_.m2cvm.controller_message(config_.context, std::bit_cast<types::m2cvm::controller_message_w0>(message_[0]),
-                                     message_[1]);
+    config_.m2cvm.controller_message(config_.context, types::m2cvm::controller_message_w0{message_[0]}, message_[1]);
     break;
   // 7.4.9 MIDI 2.0 Program Change Message
   case status::program_change:  // Program Change Message
-    config_.m2cvm.program_change(config_.context, std::bit_cast<types::m2cvm::program_change_w0>(message_[0]),
-                                 std::bit_cast<types::m2cvm::program_change_w1>(message_[1]));
+    config_.m2cvm.program_change(config_.context, types::m2cvm::program_change_w0{message_[0]},
+                                 types::m2cvm::program_change_w1{message_[1]});
     break;
   // 7.4.10 MIDI 2.0 Channel Pressure Message
   case status::channel_pressure:
-    config_.m2cvm.channel_pressure(config_.context, std::bit_cast<types::m2cvm::channel_pressure_w0>(message_[0]),
-                                   message_[1]);
+    config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure_w0{message_[0]}, message_[1]);
     break;
   // 7.4.11 MIDI 2.0 Pitch Bend Message
   case status::pitch_bend:
-    config_.m2cvm.pitch_bend(config_.context, std::bit_cast<types::m2cvm::pitch_bend_w0>(message_[0]), message_[1]);
+    config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend_w0{message_[0]}, message_[1]);
     break;
   // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
   case midi2status::pitch_bend_pernote:
-    config_.m2cvm.per_note_pitch_bend(config_.context, std::bit_cast<types::m2cvm::per_note_pitch_bend_w0>(message_[0]),
-                                      message_[1]);
+    config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend_w0{message_[0]}, message_[1]);
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
   }
@@ -650,94 +649,93 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
   switch (static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
   case ump_stream::endpoint_discovery:
-    config_.ump_stream.endpoint_discovery(
-        config_.context, std::bit_cast<types::ump_stream::endpoint_discovery_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::endpoint_discovery_w1>(message_[1]), message_[2], message_[3]);
+    config_.ump_stream.endpoint_discovery(config_.context, types::ump_stream::endpoint_discovery_w0{message_[0]},
+                                          types::ump_stream::endpoint_discovery_w1{message_[1]}, message_[2],
+                                          message_[3]);
     break;
 
   // 7.1.2 Endpoint Info Notification Message
   case ump_stream::endpoint_info_notification:
     config_.ump_stream.endpoint_info_notification(
-        config_.context, std::bit_cast<types::ump_stream::endpoint_info_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::endpoint_info_notification_w1>(message_[1]), message_[2], message_[3]);
+        config_.context, types::ump_stream::endpoint_info_notification_w0{message_[0]},
+        types::ump_stream::endpoint_info_notification_w1{message_[1]}, message_[2], message_[3]);
     break;
 
   // 7.1.3 Device Identity Notification Message
   case ump_stream::device_identity_notification:
-    config_.ump_stream.device_identity_notification(
-        config_.context, std::bit_cast<types::ump_stream::device_identity_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::device_identity_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::device_identity_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::device_identity_notification_w3>(message_[3]));
+    config_.ump_stream.device_identity_notification(config_.context,
+                                                    types::ump_stream::device_identity_notification_w0{message_[0]},
+                                                    types::ump_stream::device_identity_notification_w1{message_[1]},
+                                                    types::ump_stream::device_identity_notification_w2{message_[2]},
+                                                    types::ump_stream::device_identity_notification_w3{message_[3]});
     break;
 
   // 7.1.4 Endpoint Name Notification
   case ump_stream::endpoint_name_notification:
-    config_.ump_stream.endpoint_name_notification(
-        config_.context, std::bit_cast<types::ump_stream::endpoint_name_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::endpoint_name_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::endpoint_name_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::endpoint_name_notification_w3>(message_[3]));
+    config_.ump_stream.endpoint_name_notification(config_.context,
+                                                  types::ump_stream::endpoint_name_notification_w0{message_[0]},
+                                                  types::ump_stream::endpoint_name_notification_w1{message_[1]},
+                                                  types::ump_stream::endpoint_name_notification_w2{message_[2]},
+                                                  types::ump_stream::endpoint_name_notification_w3{message_[3]});
     break;
   // 7.1.5 Product Instance Id Notification Message
   case ump_stream::product_instance_id_notification:
     config_.ump_stream.product_instance_id_notification(
-        config_.context, std::bit_cast<types::ump_stream::product_instance_id_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::product_instance_id_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::product_instance_id_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::product_instance_id_notification_w3>(message_[3]));
+        config_.context, types::ump_stream::product_instance_id_notification_w0{message_[0]},
+        types::ump_stream::product_instance_id_notification_w1{message_[1]},
+        types::ump_stream::product_instance_id_notification_w2{message_[2]},
+        types::ump_stream::product_instance_id_notification_w3{message_[3]});
     break;
   // 7.1.6.2 Stream Configuration Request
   case ump_stream::jr_configuration_request:
-    config_.ump_stream.jr_configuration_request(
-        config_.context, std::bit_cast<types::ump_stream::jr_configuration_request_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::jr_configuration_request_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::jr_configuration_request_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::jr_configuration_request_w3>(message_[3]));
+    config_.ump_stream.jr_configuration_request(config_.context,
+                                                types::ump_stream::jr_configuration_request_w0{message_[0]},
+                                                types::ump_stream::jr_configuration_request_w1{message_[1]},
+                                                types::ump_stream::jr_configuration_request_w2{message_[2]},
+                                                types::ump_stream::jr_configuration_request_w3{message_[3]});
     break;
   // 7.1.6.3 Stream Configuration Notification Message
   case ump_stream::jr_configuration_notification:
-    config_.ump_stream.jr_configuration_notification(
-        config_.context, std::bit_cast<types::ump_stream::jr_configuration_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::jr_configuration_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::jr_configuration_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::jr_configuration_notification_w3>(message_[3]));
+    config_.ump_stream.jr_configuration_notification(config_.context,
+                                                     types::ump_stream::jr_configuration_notification_w0{message_[0]},
+                                                     types::ump_stream::jr_configuration_notification_w1{message_[1]},
+                                                     types::ump_stream::jr_configuration_notification_w2{message_[2]},
+                                                     types::ump_stream::jr_configuration_notification_w3{message_[3]});
     break;
   // 7.1.7 Function Block Discovery Message
   case ump_stream::function_block_discovery:
-    config_.ump_stream.function_block_discovery(
-        config_.context, std::bit_cast<types::ump_stream::function_block_discovery_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::function_block_discovery_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::function_block_discovery_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::function_block_discovery_w3>(message_[3]));
+    config_.ump_stream.function_block_discovery(config_.context,
+                                                types::ump_stream::function_block_discovery_w0{message_[0]},
+                                                types::ump_stream::function_block_discovery_w1{message_[1]},
+                                                types::ump_stream::function_block_discovery_w2{message_[2]},
+                                                types::ump_stream::function_block_discovery_w3{message_[3]});
     break;
   // 7.1.8 Function Block Info Notification
   case ump_stream::function_block_info_notification:
     config_.ump_stream.function_block_info_notification(
-        config_.context, std::bit_cast<types::ump_stream::function_block_info_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::function_block_info_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::function_block_info_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::function_block_info_notification_w3>(message_[3]));
+        config_.context, types::ump_stream::function_block_info_notification_w0{message_[0]},
+        types::ump_stream::function_block_info_notification_w1{message_[1]},
+        types::ump_stream::function_block_info_notification_w2{message_[2]},
+        types::ump_stream::function_block_info_notification_w3{message_[3]});
     break;
   // 7.1.9 Function Block Name Notification
   case ump_stream::function_block_name_notification:
     config_.ump_stream.function_block_name_notification(
-        config_.context, std::bit_cast<types::ump_stream::function_block_name_notification_w0>(message_[0]),
-        std::bit_cast<types::ump_stream::function_block_name_notification_w1>(message_[1]),
-        std::bit_cast<types::ump_stream::function_block_name_notification_w2>(message_[2]),
-        std::bit_cast<types::ump_stream::function_block_name_notification_w3>(message_[3]));
+        config_.context, types::ump_stream::function_block_name_notification_w0{message_[0]},
+        types::ump_stream::function_block_name_notification_w1{message_[1]},
+        types::ump_stream::function_block_name_notification_w2{message_[2]},
+        types::ump_stream::function_block_name_notification_w3{message_[3]});
     break;
   case ump_stream::start_of_clip:
-    config_.ump_stream.start_of_clip(config_.context, std::bit_cast<types::ump_stream::start_of_clip_w0>(message_[0]),
-                                     std::bit_cast<types::ump_stream::start_of_clip_w1>(message_[1]),
-                                     std::bit_cast<types::ump_stream::start_of_clip_w2>(message_[2]),
-                                     std::bit_cast<types::ump_stream::start_of_clip_w3>(message_[3]));
+    config_.ump_stream.start_of_clip(config_.context, types::ump_stream::start_of_clip_w0{message_[0]},
+                                     types::ump_stream::start_of_clip_w1{message_[1]},
+                                     types::ump_stream::start_of_clip_w2{message_[2]},
+                                     types::ump_stream::start_of_clip_w3{message_[3]});
     break;
   case ump_stream::end_of_clip:
-    config_.ump_stream.end_of_clip(config_.context, std::bit_cast<types::ump_stream::end_of_clip_w0>(message_[0]),
-                                   std::bit_cast<types::ump_stream::end_of_clip_w1>(message_[1]),
-                                   std::bit_cast<types::ump_stream::end_of_clip_w2>(message_[2]),
-                                   std::bit_cast<types::ump_stream::end_of_clip_w3>(message_[3]));
+    config_.ump_stream.end_of_clip(
+        config_.context, types::ump_stream::end_of_clip_w0{message_[0]}, types::ump_stream::end_of_clip_w1{message_[1]},
+        types::ump_stream::end_of_clip_w2{message_[2]}, types::ump_stream::end_of_clip_w3{message_[3]});
     break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
@@ -747,31 +745,35 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
 template <ump_processor_config Config> void umpProcessor<Config>::data128_message() {
   switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
   case data128::sysex8_in_1:
-    config_.data128.sysex8_in_1(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
-                                std::bit_cast<types::data128::sysex8_w1>(message_[1]),
-                                std::bit_cast<types::data128::sysex8_w2>(message_[2]),
-                                std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    config_.data128.sysex8_in_1(config_.context, types::data128::sysex8_w0{message_[0]},
+                                types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
+                                types::data128::sysex8_w3{message_[3]});
     break;
   case data128::sysex8_start:
-    config_.data128.sysex8_start(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
-                                 std::bit_cast<types::data128::sysex8_w1>(message_[1]),
-                                 std::bit_cast<types::data128::sysex8_w2>(message_[2]),
-                                 std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    config_.data128.sysex8_start(config_.context, types::data128::sysex8_w0{message_[0]},
+                                 types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
+                                 types::data128::sysex8_w3{message_[3]});
     break;
   case data128::sysex8_continue:
-    config_.data128.sysex8_continue(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
-                                    std::bit_cast<types::data128::sysex8_w1>(message_[1]),
-                                    std::bit_cast<types::data128::sysex8_w2>(message_[2]),
-                                    std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    config_.data128.sysex8_continue(config_.context, types::data128::sysex8_w0{message_[0]},
+                                    types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
+                                    types::data128::sysex8_w3{message_[3]});
     break;
   case data128::sysex8_end:
-    config_.data128.sysex8_end(config_.context, std::bit_cast<types::data128::sysex8_w0>(message_[0]),
-                               std::bit_cast<types::data128::sysex8_w1>(message_[1]),
-                               std::bit_cast<types::data128::sysex8_w2>(message_[2]),
-                               std::bit_cast<types::data128::sysex8_w3>(message_[3]));
+    config_.data128.sysex8_end(config_.context, types::data128::sysex8_w0{message_[0]},
+                               types::data128::sysex8_w1{message_[1]}, types::data128::sysex8_w2{message_[2]},
+                               types::data128::sysex8_w3{message_[3]});
     break;
-  case data128::mixed_data_set_header: break;
-  case data128::mixed_data_set_payload: break;
+  case data128::mixed_data_set_header:
+    config_.data128.mds_header(config_.context, types::data128::mds_header_w0{message_[0]},
+                               types::data128::mds_header_w1{message_[1]}, types::data128::mds_header_w2{message_[2]},
+                               types::data128::mds_header_w3{message_[3]});
+    break;
+  case data128::mixed_data_set_payload:
+    config_.data128.mds_payload(
+        config_.context, types::data128::mds_payload_w0{message_[0]}, types::data128::mds_payload_w1{message_[1]},
+        types::data128::mds_payload_w2{message_[2]}, types::data128::mds_payload_w3{message_[3]});
+    break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
 }
@@ -780,54 +782,50 @@ template <ump_processor_config Config> void umpProcessor<Config>::data128_messag
 // ~~~~~~~~~~~~~~~~~
 // 128 bit Data Messages (including System Exclusive 8)
 template <ump_processor_config Config> void umpProcessor<Config>::flex_data_message() {
-  auto const m0 = std::bit_cast<types::flex_data::flex_data_w0>(message_[0]);
+  auto const m0 = types::flex_data::flex_data_w0{message_[0]};
   auto const status = static_cast<flex_data>(m0.status.value());
   if (m0.status_bank == 0) {
     switch (status) {
     // 7.5.3 Set Tempo Message
     case flex_data::set_tempo:
-      config_.flex.set_tempo(config_.context, std::bit_cast<types::flex_data::set_tempo_w0>(message_[0]),
-                             std::bit_cast<types::flex_data::set_tempo_w1>(message_[1]),
-                             std::bit_cast<types::flex_data::set_tempo_w2>(message_[2]),
-                             std::bit_cast<types::flex_data::set_tempo_w3>(message_[3]));
+      config_.flex.set_tempo(config_.context, types::flex_data::set_tempo_w0{message_[0]},
+                             types::flex_data::set_tempo_w1{message_[1]}, types::flex_data::set_tempo_w2{message_[2]},
+                             types::flex_data::set_tempo_w3{message_[3]});
       break;
     // 7.5.4 Set Time Signature Message
     case flex_data::set_time_signature:
-      config_.flex.set_time_signature(config_.context,
-                                      std::bit_cast<types::flex_data::set_time_signature_w0>(message_[0]),
-                                      std::bit_cast<types::flex_data::set_time_signature_w1>(message_[1]),
-                                      std::bit_cast<types::flex_data::set_time_signature_w2>(message_[2]),
-                                      std::bit_cast<types::flex_data::set_time_signature_w3>(message_[3]));
+      config_.flex.set_time_signature(config_.context, types::flex_data::set_time_signature_w0{message_[0]},
+                                      types::flex_data::set_time_signature_w1{message_[1]},
+                                      types::flex_data::set_time_signature_w2{message_[2]},
+                                      types::flex_data::set_time_signature_w3{message_[3]});
       break;
     // 7.5.5 Set Metronome Message
     case flex_data::set_metronome:
-      config_.flex.set_metronome(config_.context, std::bit_cast<types::flex_data::set_metronome_w0>(message_[0]),
-                                 std::bit_cast<types::flex_data::set_metronome_w1>(message_[1]),
-                                 std::bit_cast<types::flex_data::set_metronome_w2>(message_[2]),
-                                 std::bit_cast<types::flex_data::set_metronome_w3>(message_[3]));
+      config_.flex.set_metronome(config_.context, types::flex_data::set_metronome_w0{message_[0]},
+                                 types::flex_data::set_metronome_w1{message_[1]},
+                                 types::flex_data::set_metronome_w2{message_[2]},
+                                 types::flex_data::set_metronome_w3{message_[3]});
       break;
     // 7.5.7 Set Key Signature Message
     case flex_data::set_key_signature:
-      config_.flex.set_key_signature(config_.context,
-                                     std::bit_cast<types::flex_data::set_key_signature_w0>(message_[0]),
-                                     std::bit_cast<types::flex_data::set_key_signature_w1>(message_[1]),
-                                     std::bit_cast<types::flex_data::set_key_signature_w2>(message_[2]),
-                                     std::bit_cast<types::flex_data::set_key_signature_w3>(message_[3]));
+      config_.flex.set_key_signature(config_.context, types::flex_data::set_key_signature_w0{message_[0]},
+                                     types::flex_data::set_key_signature_w1{message_[1]},
+                                     types::flex_data::set_key_signature_w2{message_[2]},
+                                     types::flex_data::set_key_signature_w3{message_[3]});
       break;
     // 7.5.8 Set Chord Name Message
     case flex_data::set_chord_name:
-      config_.flex.set_chord_name(config_.context, std::bit_cast<types::flex_data::set_chord_name_w0>(message_[0]),
-                                  std::bit_cast<types::flex_data::set_chord_name_w1>(message_[1]),
-                                  std::bit_cast<types::flex_data::set_chord_name_w2>(message_[2]),
-                                  std::bit_cast<types::flex_data::set_chord_name_w3>(message_[3]));
+      config_.flex.set_chord_name(config_.context, types::flex_data::set_chord_name_w0{message_[0]},
+                                  types::flex_data::set_chord_name_w1{message_[1]},
+                                  types::flex_data::set_chord_name_w2{message_[2]},
+                                  types::flex_data::set_chord_name_w3{message_[3]});
       break;
     default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
     }
   } else {
-    config_.flex.text(config_.context, std::bit_cast<types::flex_data::text_common_w0>(message_[0]),
-                      std::bit_cast<types::flex_data::text_common_w1>(message_[1]),
-                      std::bit_cast<types::flex_data::text_common_w2>(message_[2]),
-                      std::bit_cast<types::flex_data::text_common_w3>(message_[3]));
+    config_.flex.text(config_.context, types::flex_data::text_common_w0{message_[0]},
+                      types::flex_data::text_common_w1{message_[1]}, types::flex_data::text_common_w2{message_[2]},
+                      types::flex_data::text_common_w3{message_[3]});
   }
 }
 

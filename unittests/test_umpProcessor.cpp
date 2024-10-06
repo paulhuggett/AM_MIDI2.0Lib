@@ -125,8 +125,14 @@ public:
               (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
                midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3),
               (override));
-  // TODO: mixed data set header
-  // TODO: mixed data set payload
+  MOCK_METHOD(void, mds_header,
+              (context_type, midi2::types::data128::mds_header_w0, midi2::types::data128::mds_header_w1,
+               midi2::types::data128::mds_header_w2, midi2::types::data128::mds_header_w3),
+              (override));
+  MOCK_METHOD(void, mds_payload,
+              (context_type, midi2::types::data128::mds_payload_w0, midi2::types::data128::mds_payload_w1,
+               midi2::types::data128::mds_payload_w2, midi2::types::data128::mds_payload_w3),
+              (override));
 };
 class UMPStreamMocks : public midi2::ump_stream_base<context_type> {
 public:
@@ -610,6 +616,44 @@ TEST_F(UMPProcessor, Data128Sysex8StartAndEnd) {
   processor_.processUMP(part2.w0, part2.w1, part2.w2, part2.w3);
 }
 
+// NOLINTNEXTLINE
+TEST_F(UMPProcessor, Data128MixedDatSet) {
+  constexpr auto group = std::uint8_t{0};
+  constexpr auto mds_id = std::uint8_t{0b1010};
+
+  midi2::types::data128::mds_header header;
+  header.w0.mt = to_underlying(midi2::ump_message_type::data128);
+  header.w0.group = group;
+  header.w0.status = to_underlying(midi2::data128::mixed_data_set_header);
+  header.w0.mds_id = mds_id;
+  header.w0.bytes_in_chunk = 2;
+
+  header.w1.chunks_in_mds = 1;
+  header.w1.chunk_num = 1;
+  header.w2.manufacturer_id = 43;
+  header.w2.device_id = 61;
+  header.w3.sub_id_1 = 19;
+  header.w3.sub_id_2 = 23;
+
+  midi2::types::data128::mds_payload payload;
+  payload.w0.mt = to_underlying(midi2::ump_message_type::data128);
+  payload.w0.group = group;
+  payload.w0.status = to_underlying(midi2::data128::mixed_data_set_payload);
+  payload.w0.mds_id = mds_id;
+  payload.w0.data0 = std::uint16_t{0xFFFF};
+  payload.w1 = 0xFFFFFFFF;
+  payload.w2 = 0xFFFFFFFF;
+  payload.w3 = 0xFFFFFFFF;
+
+  {
+    InSequence _;
+    EXPECT_CALL(config_.data128, mds_header(config_.context, header.w0, header.w1, header.w2, header.w3)).Times(1);
+    EXPECT_CALL(config_.data128, mds_payload(config_.context, payload.w0, payload.w1, payload.w2, payload.w3)).Times(1);
+  }
+
+  processor_.processUMP(header.w0, header.w1, header.w2, header.w3);
+  processor_.processUMP(payload.w0, payload.w1, payload.w2, payload.w3);
+}
 TEST_F(UMPProcessor, PartialMessageThenClear) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
