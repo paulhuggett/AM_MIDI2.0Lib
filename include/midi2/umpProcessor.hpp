@@ -274,166 +274,131 @@ public:
 
   virtual void unknown(std::span<std::uint32_t>) { /* nop */ }
 };
-template <typename Context> struct utility_base {
-  utility_base() = default;
-  utility_base(utility_base const&) = default;
-  virtual ~utility_base() noexcept = default;
-
-  virtual void noop(Context) { /* do nothing */ }
-  virtual void jr_clock(Context, types::jr_clock) { /* do nothing */ }
-  virtual void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
-  virtual void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
-  virtual void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
+template <typename Context> struct utility_null {
+  void noop(Context) { /* do nothing */ }
+  void jr_clock(Context, types::jr_clock) { /* do nothing */ }
+  void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
+  void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
+  void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
 };
-
-template <typename Context> struct m1cvm_base {
-  m1cvm_base() = default;
-  m1cvm_base(m1cvm_base const&) = default;
-  virtual ~m1cvm_base() noexcept = default;
-
-  virtual void note_off(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void note_on(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void poly_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void control_change(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void program_change(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void channel_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
-  virtual void pitch_bend(Context, types::m1cvm_w0) { /* do nothing */ }
+template <typename Context> struct m1cvm_null {
+  void note_off(Context, types::m1cvm_w0) { /* do nothing */ }
+  void note_on(Context, types::m1cvm_w0) { /* do nothing */ }
+  void poly_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
+  void control_change(Context, types::m1cvm_w0) { /* do nothing */ }
+  void program_change(Context, types::m1cvm_w0) { /* do nothing */ }
+  void channel_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
+  void pitch_bend(Context, types::m1cvm_w0) { /* do nothing */ }
 };
-template <typename Context> struct data64_base {
-  data64_base() = default;
-  data64_base(data64_base const&) = default;
-  virtual ~data64_base() noexcept = default;
-
-  virtual void sysex7_in_1(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  virtual void sysex7_start(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  virtual void sysex7_continue(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
-  virtual void sysex7_end(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+template <typename Context> struct data64_null {
+  void sysex7_in_1(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  void sysex7_start(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  void sysex7_continue(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
+  void sysex7_end(Context, types::data64::sysex7_w0, types::data64::sysex7_w1) { /* do nothing */ }
 };
-template <typename Context> struct m2cvm_base {
-  m2cvm_base() = default;
-  m2cvm_base(m2cvm_base const&) = default;
-  virtual ~m2cvm_base() noexcept = default;
-
-  virtual void note_off(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
-  virtual void note_on(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
-  virtual void poly_pressure(Context, types::m2cvm::poly_pressure_w0, std::uint32_t) { /* do nothing */ }
-  virtual void program_change(Context, types::m2cvm::program_change_w0,
-                              types::m2cvm::program_change_w1) { /* do nothing */ }
-  virtual void channel_pressure(Context, types::m2cvm::channel_pressure_w0, std::uint32_t) { /* do nothing */ }
-  virtual void rpn_controller(Context, types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
-  virtual void nrpn_controller(Context, types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
-  virtual void per_note_management(Context, types::m2cvm::per_note_management_w0, std::uint32_t) { /* do nothing */ }
-  virtual void control_change(Context, types::m2cvm::control_change_w0, std::uint32_t) { /* do nothing */ }
-  virtual void controller_message(Context, types::m2cvm::controller_message_w0, std::uint32_t) { /* do nothing */ }
-  virtual void pitch_bend(Context, types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
-  virtual void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
+template <typename Context> struct m2cvm_null {
+  void note_off(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
+  void note_on(Context, types::m2cvm::note_w0, types::m2cvm::note_w1) { /* do nothing */ }
+  void poly_pressure(Context, types::m2cvm::poly_pressure_w0, std::uint32_t) { /* do nothing */ }
+  void program_change(Context, types::m2cvm::program_change_w0, types::m2cvm::program_change_w1) { /* do nothing */ }
+  void channel_pressure(Context, types::m2cvm::channel_pressure_w0, std::uint32_t) { /* do nothing */ }
+  void rpn_controller(Context, types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
+  void nrpn_controller(Context, types::m2cvm::controller_w0, std::uint32_t) { /* do nothing */ }
+  void per_note_management(Context, types::m2cvm::per_note_management_w0, std::uint32_t) { /* do nothing */ }
+  void control_change(Context, types::m2cvm::control_change_w0, std::uint32_t) { /* do nothing */ }
+  void controller_message(Context, types::m2cvm::controller_message_w0, std::uint32_t) { /* do nothing */ }
+  void pitch_bend(Context, types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
+  void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
 };
-template <typename Context> struct data128_base {
-  data128_base() = default;
-  data128_base(data128_base const&) = default;
-  virtual ~data128_base() noexcept = default;
-
-  virtual void sysex8_in_1(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                           types::data128::sysex8_w3) { /* do nothing */ }
-  virtual void sysex8_start(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                            types::data128::sysex8_w3) { /* do nothing */ }
-  virtual void sysex8_continue(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                               types::data128::sysex8_w3) { /* do nothing */ }
-  virtual void sysex8_end(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
-                          types::data128::sysex8_w3) { /* do nothing */ }
-  virtual void mds_header(Context, types::data128::mds_header_w0, types::data128::mds_header_w1,
-                          types::data128::mds_header_w2, types::data128::mds_header_w3) { /* do nothing */ }
-  virtual void mds_payload(Context, types::data128::mds_payload_w0, types::data128::mds_payload_w1,
-                           types::data128::mds_payload_w2, types::data128::mds_payload_w3) { /* do nothing */ }
+template <typename Context> struct data128_null {
+  void sysex8_in_1(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                   types::data128::sysex8_w3) { /* do nothing */ }
+  void sysex8_start(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                    types::data128::sysex8_w3) { /* do nothing */ }
+  void sysex8_continue(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                       types::data128::sysex8_w3) { /* do nothing */ }
+  void sysex8_end(Context, types::data128::sysex8_w0, types::data128::sysex8_w1, types::data128::sysex8_w2,
+                  types::data128::sysex8_w3) { /* do nothing */ }
+  void mds_header(Context, types::data128::mds_header_w0, types::data128::mds_header_w1, types::data128::mds_header_w2,
+                  types::data128::mds_header_w3) { /* do nothing */ }
+  void mds_payload(Context, types::data128::mds_payload_w0, types::data128::mds_payload_w1,
+                   types::data128::mds_payload_w2, types::data128::mds_payload_w3) { /* do nothing */ }
 };
+template <typename Context> struct ump_stream_null {
+  void endpoint_discovery(Context, types::ump_stream::endpoint_discovery_w0, types::ump_stream::endpoint_discovery_w1,
+                          types::ump_stream::endpoint_discovery_w2,
+                          types::ump_stream::endpoint_discovery_w3) { /* do nothing */ }
+  void endpoint_info_notification(Context, types::ump_stream::endpoint_info_notification_w0,
+                                  types::ump_stream::endpoint_info_notification_w1,
+                                  types::ump_stream::endpoint_info_notification_w2,
+                                  types::ump_stream::endpoint_info_notification_w3) { /* do nothing */ }
+  void device_identity_notification(Context, types::ump_stream::device_identity_notification_w0,
+                                    types::ump_stream::device_identity_notification_w1,
+                                    types::ump_stream::device_identity_notification_w2,
+                                    types::ump_stream::device_identity_notification_w3) { /* do nothing */ }
+  void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification_w0,
+                                  types::ump_stream::endpoint_name_notification_w1,
+                                  types::ump_stream::endpoint_name_notification_w2,
+                                  types::ump_stream::endpoint_name_notification_w3) { /* do nothing */ }
+  void product_instance_id_notification(Context, types::ump_stream::product_instance_id_notification_w0,
+                                        types::ump_stream::product_instance_id_notification_w1,
+                                        types::ump_stream::product_instance_id_notification_w2,
+                                        types::ump_stream::product_instance_id_notification_w3) { /* do nothing */ }
+  void jr_configuration_request(Context, types::ump_stream::jr_configuration_request_w0,
+                                types::ump_stream::jr_configuration_request_w1,
+                                types::ump_stream::jr_configuration_request_w2,
+                                types::ump_stream::jr_configuration_request_w3) { /* do nothing */ }
+  void jr_configuration_notification(Context, types::ump_stream::jr_configuration_notification_w0,
+                                     types::ump_stream::jr_configuration_notification_w1,
+                                     types::ump_stream::jr_configuration_notification_w2,
+                                     types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
 
-template <typename Context> struct flex_data_base {
-  flex_data_base() = default;
-  flex_data_base(flex_data_base const&) = default;
-  virtual ~flex_data_base() noexcept = default;
+  void function_block_discovery(Context, types::ump_stream::function_block_discovery_w0,
+                                types::ump_stream::function_block_discovery_w1,
+                                types::ump_stream::function_block_discovery_w2,
+                                types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
+  void function_block_info_notification(Context, types::ump_stream::function_block_info_notification_w0,
+                                        types::ump_stream::function_block_info_notification_w1,
+                                        types::ump_stream::function_block_info_notification_w2,
+                                        types::ump_stream::function_block_info_notification_w3) { /* do nothing */ }
+  void function_block_name_notification(Context, types::ump_stream::function_block_name_notification_w0,
+                                        types::ump_stream::function_block_name_notification_w1,
+                                        types::ump_stream::function_block_name_notification_w2,
+                                        types::ump_stream::function_block_name_notification_w3) { /* do nothing */ }
 
-  virtual void set_tempo(Context, types::flex_data::set_tempo_w0, types::flex_data::set_tempo_w1,
-                         types::flex_data::set_tempo_w2, types::flex_data::set_tempo_w3) { /* do nothing */ }
-  virtual void set_time_signature(Context, types::flex_data::set_time_signature_w0,
-                                  types::flex_data::set_time_signature_w1, types::flex_data::set_time_signature_w2,
-                                  types::flex_data::set_time_signature_w3) { /* do nothing */ }
-  virtual void set_metronome(Context, types::flex_data::set_metronome_w0, types::flex_data::set_metronome_w1,
-                             types::flex_data::set_metronome_w2, types::flex_data::set_metronome_w3) { /* do nothing */
-  }
-  virtual void set_key_signature(Context, types::flex_data::set_key_signature_w0,
-                                 types::flex_data::set_key_signature_w1, types::flex_data::set_key_signature_w2,
-                                 types::flex_data::set_key_signature_w3) { /* do nothing */ }
-  virtual void set_chord_name(Context, types::flex_data::set_chord_name_w0, types::flex_data::set_chord_name_w1,
-                              types::flex_data::set_chord_name_w2,
-                              types::flex_data::set_chord_name_w3) { /* do nothing */ }
-  virtual void text(Context, types::flex_data::text_common_w0, types::flex_data::text_common_w1,
-                    types::flex_data::text_common_w2, types::flex_data::text_common_w3) { /* do nothing */ }
+  void start_of_clip(Context, types::ump_stream::start_of_clip_w0, types::ump_stream::start_of_clip_w1,
+                     types::ump_stream::start_of_clip_w2, types::ump_stream::start_of_clip_w3) { /* do nothing */ }
+
+  void end_of_clip(Context, types::ump_stream::end_of_clip_w0, types::ump_stream::end_of_clip_w1,
+                   types::ump_stream::end_of_clip_w2, types::ump_stream::end_of_clip_w3) { /* do nothing */ }
 };
-template <typename Context> struct ump_stream_base {
-  ump_stream_base() = default;
-  ump_stream_base(ump_stream_base const&) = default;
-  virtual ~ump_stream_base() noexcept = default;
-
-  virtual void endpoint_discovery(Context, types::ump_stream::endpoint_discovery_w0,
-                                  types::ump_stream::endpoint_discovery_w1, types::ump_stream::endpoint_discovery_w2,
-                                  types::ump_stream::endpoint_discovery_w3) { /* do nothing */ }
-  virtual void endpoint_info_notification(Context, types::ump_stream::endpoint_info_notification_w0,
-                                          types::ump_stream::endpoint_info_notification_w1,
-                                          types::ump_stream::endpoint_info_notification_w2,
-                                          types::ump_stream::endpoint_info_notification_w3) { /* do nothing */ }
-  virtual void device_identity_notification(Context, types::ump_stream::device_identity_notification_w0,
-                                            types::ump_stream::device_identity_notification_w1,
-                                            types::ump_stream::device_identity_notification_w2,
-                                            types::ump_stream::device_identity_notification_w3) { /* do nothing */ }
-  virtual void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification_w0,
-                                          types::ump_stream::endpoint_name_notification_w1,
-                                          types::ump_stream::endpoint_name_notification_w2,
-                                          types::ump_stream::endpoint_name_notification_w3) { /* do nothing */ }
-  virtual void product_instance_id_notification(
-      Context, types::ump_stream::product_instance_id_notification_w0,
-      types::ump_stream::product_instance_id_notification_w1, types::ump_stream::product_instance_id_notification_w2,
-      types::ump_stream::product_instance_id_notification_w3) { /* do nothing */ }
-  virtual void jr_configuration_request(Context, types::ump_stream::jr_configuration_request_w0,
-                                        types::ump_stream::jr_configuration_request_w1,
-                                        types::ump_stream::jr_configuration_request_w2,
-                                        types::ump_stream::jr_configuration_request_w3) { /* do nothing */ }
-  virtual void jr_configuration_notification(Context, types::ump_stream::jr_configuration_notification_w0,
-                                             types::ump_stream::jr_configuration_notification_w1,
-                                             types::ump_stream::jr_configuration_notification_w2,
-                                             types::ump_stream::jr_configuration_notification_w3) { /* do nothing */ }
-
-  virtual void function_block_discovery(Context, types::ump_stream::function_block_discovery_w0,
-                                        types::ump_stream::function_block_discovery_w1,
-                                        types::ump_stream::function_block_discovery_w2,
-                                        types::ump_stream::function_block_discovery_w3) { /* do nothing */ }
-  virtual void function_block_info_notification(
-      Context, types::ump_stream::function_block_info_notification_w0,
-      types::ump_stream::function_block_info_notification_w1, types::ump_stream::function_block_info_notification_w2,
-      types::ump_stream::function_block_info_notification_w3) { /* do nothing */ }
-  virtual void function_block_name_notification(
-      Context, types::ump_stream::function_block_name_notification_w0,
-      types::ump_stream::function_block_name_notification_w1, types::ump_stream::function_block_name_notification_w2,
-      types::ump_stream::function_block_name_notification_w3) { /* do nothing */ }
-
-  virtual void start_of_clip(Context, types::ump_stream::start_of_clip_w0, types::ump_stream::start_of_clip_w1,
-                             types::ump_stream::start_of_clip_w2,
-                             types::ump_stream::start_of_clip_w3) { /* do nothing */ }
-
-  virtual void end_of_clip(Context, types::ump_stream::end_of_clip_w0, types::ump_stream::end_of_clip_w1,
-                           types::ump_stream::end_of_clip_w2, types::ump_stream::end_of_clip_w3) { /* do nothing */ }
+template <typename Context> struct flex_data_null {
+  void set_tempo(Context, types::flex_data::set_tempo_w0, types::flex_data::set_tempo_w1,
+                 types::flex_data::set_tempo_w2, types::flex_data::set_tempo_w3) { /* do nothing */ }
+  void set_time_signature(Context, types::flex_data::set_time_signature_w0, types::flex_data::set_time_signature_w1,
+                          types::flex_data::set_time_signature_w2,
+                          types::flex_data::set_time_signature_w3) { /* do nothing */ }
+  void set_metronome(Context, types::flex_data::set_metronome_w0, types::flex_data::set_metronome_w1,
+                     types::flex_data::set_metronome_w2, types::flex_data::set_metronome_w3) { /* do nothing */ }
+  void set_key_signature(Context, types::flex_data::set_key_signature_w0, types::flex_data::set_key_signature_w1,
+                         types::flex_data::set_key_signature_w2,
+                         types::flex_data::set_key_signature_w3) { /* do nothing */ }
+  void set_chord_name(Context, types::flex_data::set_chord_name_w0, types::flex_data::set_chord_name_w1,
+                      types::flex_data::set_chord_name_w2, types::flex_data::set_chord_name_w3) { /* do nothing */ }
+  void text(Context, types::flex_data::text_common_w0, types::flex_data::text_common_w1,
+            types::flex_data::text_common_w2, types::flex_data::text_common_w3) { /* do nothing */ }
 };
-
 struct default_config {
   struct empty {};
   [[no_unique_address]] empty context{};
   callbacks_base callbacks;
-  utility_base<decltype(context)> utility;
-  m1cvm_base<decltype(context)> m1cvm;
-  data64_base<decltype(context)> data64;
-  m2cvm_base<decltype(context)> m2cvm;
-  data128_base<decltype(context)> data128;
-  ump_stream_base<decltype(context)> ump_stream;
-  flex_data_base<decltype(context)> flex;
+  utility_null<decltype(context)> utility;
+  m1cvm_null<decltype(context)> m1cvm;
+  data64_null<decltype(context)> data64;
+  m2cvm_null<decltype(context)> m2cvm;
+  data128_null<decltype(context)> data128;
+  ump_stream_null<decltype(context)> ump_stream;
+  flex_data_null<decltype(context)> flex;
 };
 
 template <ump_processor_config Config = default_config> class umpProcessor {

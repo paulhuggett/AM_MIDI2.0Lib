@@ -57,7 +57,18 @@ public:
   MOCK_METHOD(void, system, (midi2::types::system_general), (override));
   MOCK_METHOD(void, unknown, (std::span<std::uint32_t>), (override));
 };
-class UtilityMocks : public midi2::utility_base<context_type> {
+struct utility_base {
+  utility_base() = default;
+  utility_base(utility_base const&) = default;
+  virtual ~utility_base() noexcept = default;
+
+  virtual void noop(context_type) = 0;
+  virtual void jr_clock(context_type, midi2::types::jr_clock) = 0;
+  virtual void jr_timestamp(context_type, midi2::types::jr_clock) = 0;
+  virtual void delta_clockstamp_tpqn(context_type, midi2::types::jr_clock) = 0;
+  virtual void delta_clockstamp(context_type, midi2::types::delta_clockstamp) = 0;
+};
+class UtilityMocks : public utility_base {
 public:
   MOCK_METHOD(void, noop, (context_type), (override));
   MOCK_METHOD(void, jr_clock, (context_type, midi2::types::jr_clock), (override));
@@ -65,7 +76,20 @@ public:
   MOCK_METHOD(void, delta_clockstamp_tpqn, (context_type, midi2::types::jr_clock), (override));
   MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::delta_clockstamp), (override));
 };
-class M1CVMMocks : public midi2::m1cvm_base<context_type> {
+struct m1cvm_base {
+  m1cvm_base() = default;
+  m1cvm_base(m1cvm_base const&) = default;
+  virtual ~m1cvm_base() noexcept = default;
+
+  virtual void note_off(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void note_on(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void poly_pressure(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void control_change(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void program_change(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void channel_pressure(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void pitch_bend(context_type, midi2::types::m1cvm_w0) = 0;
+};
+class M1CVMMocks : public m1cvm_base {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::types::m1cvm_w0), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm_w0), (override));
@@ -75,7 +99,17 @@ public:
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm_w0), (override));
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm_w0), (override));
 };
-class Data64Mocks : public midi2::data64_base<context_type> {
+struct data64_base {
+  data64_base() = default;
+  data64_base(data64_base const&) = default;
+  virtual ~data64_base() noexcept = default;
+
+  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
+  virtual void sysex7_start(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
+  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
+  virtual void sysex7_end(context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1) = 0;
+};
+class Data64Mocks : public data64_base {
 public:
   MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
               (override));
@@ -86,7 +120,26 @@ public:
   MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7_w0, midi2::types::data64::sysex7_w1),
               (override));
 };
-class M2CVMMocks : public midi2::m2cvm_base<context_type> {
+struct m2cvm_base {
+  m2cvm_base() = default;
+  m2cvm_base(m2cvm_base const&) = default;
+  virtual ~m2cvm_base() noexcept = default;
+
+  virtual void note_off(context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1) = 0;
+  virtual void note_on(context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1) = 0;
+  virtual void poly_pressure(context_type, midi2::types::m2cvm::poly_pressure_w0, std::uint32_t) = 0;
+  virtual void program_change(context_type, midi2::types::m2cvm::program_change_w0,
+                              midi2::types::m2cvm::program_change_w1) = 0;
+  virtual void channel_pressure(context_type, midi2::types::m2cvm::channel_pressure_w0, std::uint32_t) = 0;
+  virtual void rpn_controller(context_type, midi2::types::m2cvm::controller_w0, std::uint32_t) = 0;
+  virtual void nrpn_controller(context_type, midi2::types::m2cvm::controller_w0, std::uint32_t) = 0;
+  virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management_w0, std::uint32_t) = 0;
+  virtual void control_change(context_type, midi2::types::m2cvm::control_change_w0, std::uint32_t) = 0;
+  virtual void controller_message(context_type, midi2::types::m2cvm::controller_message_w0, std::uint32_t) = 0;
+  virtual void pitch_bend(context_type, midi2::types::m2cvm::pitch_bend_w0, std::uint32_t) = 0;
+  virtual void per_note_pitch_bend(context_type, midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) = 0;
+};
+class M2CVMMocks : public m2cvm_base {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note_w0, midi2::types::m2cvm::note_w1), (override));
@@ -107,7 +160,25 @@ public:
   MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t),
               (override));
 };
-class Data128Mocks : public midi2::data128_base<context_type> {
+struct data128_base {
+  data128_base() = default;
+  data128_base(data128_base const&) = default;
+  virtual ~data128_base() noexcept = default;
+
+  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
+                           midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
+  virtual void sysex8_start(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
+                            midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
+  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
+                               midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
+  virtual void sysex8_end(context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
+                          midi2::types::data128::sysex8_w2, midi2::types::data128::sysex8_w3) = 0;
+  virtual void mds_header(context_type, midi2::types::data128::mds_header_w0, midi2::types::data128::mds_header_w1,
+                          midi2::types::data128::mds_header_w2, midi2::types::data128::mds_header_w3) = 0;
+  virtual void mds_payload(context_type, midi2::types::data128::mds_payload_w0, midi2::types::data128::mds_payload_w1,
+                           midi2::types::data128::mds_payload_w2, midi2::types::data128::mds_payload_w3) = 0;
+};
+class Data128Mocks : public data128_base {
 public:
   MOCK_METHOD(void, sysex8_in_1,
               (context_type, midi2::types::data128::sysex8_w0, midi2::types::data128::sysex8_w1,
@@ -134,7 +205,65 @@ public:
                midi2::types::data128::mds_payload_w2, midi2::types::data128::mds_payload_w3),
               (override));
 };
-class UMPStreamMocks : public midi2::ump_stream_base<context_type> {
+struct ump_stream_base {
+  ump_stream_base() = default;
+  ump_stream_base(ump_stream_base const&) = default;
+  virtual ~ump_stream_base() noexcept = default;
+
+  virtual void endpoint_discovery(context_type, midi2::types::ump_stream::endpoint_discovery_w0,
+                                  midi2::types::ump_stream::endpoint_discovery_w1,
+                                  midi2::types::ump_stream::endpoint_discovery_w2,
+                                  midi2::types::ump_stream::endpoint_discovery_w3) = 0;
+  virtual void endpoint_info_notification(context_type, midi2::types::ump_stream::endpoint_info_notification_w0,
+                                          midi2::types::ump_stream::endpoint_info_notification_w1,
+                                          midi2::types::ump_stream::endpoint_info_notification_w2,
+                                          midi2::types::ump_stream::endpoint_info_notification_w3) = 0;
+  virtual void device_identity_notification(context_type, midi2::types::ump_stream::device_identity_notification_w0,
+                                            midi2::types::ump_stream::device_identity_notification_w1,
+                                            midi2::types::ump_stream::device_identity_notification_w2,
+                                            midi2::types::ump_stream::device_identity_notification_w3) = 0;
+  virtual void endpoint_name_notification(context_type, midi2::types::ump_stream::endpoint_name_notification_w0,
+                                          midi2::types::ump_stream::endpoint_name_notification_w1,
+                                          midi2::types::ump_stream::endpoint_name_notification_w2,
+                                          midi2::types::ump_stream::endpoint_name_notification_w3) = 0;
+  virtual void product_instance_id_notification(context_type,
+                                                midi2::types::ump_stream::product_instance_id_notification_w0,
+                                                midi2::types::ump_stream::product_instance_id_notification_w1,
+                                                midi2::types::ump_stream::product_instance_id_notification_w2,
+                                                midi2::types::ump_stream::product_instance_id_notification_w3) = 0;
+  virtual void jr_configuration_request(context_type, midi2::types::ump_stream::jr_configuration_request_w0,
+                                        midi2::types::ump_stream::jr_configuration_request_w1,
+                                        midi2::types::ump_stream::jr_configuration_request_w2,
+                                        midi2::types::ump_stream::jr_configuration_request_w3) = 0;
+  virtual void jr_configuration_notification(context_type, midi2::types::ump_stream::jr_configuration_notification_w0,
+                                             midi2::types::ump_stream::jr_configuration_notification_w1,
+                                             midi2::types::ump_stream::jr_configuration_notification_w2,
+                                             midi2::types::ump_stream::jr_configuration_notification_w3) = 0;
+
+  virtual void function_block_discovery(context_type, midi2::types::ump_stream::function_block_discovery_w0,
+                                        midi2::types::ump_stream::function_block_discovery_w1,
+                                        midi2::types::ump_stream::function_block_discovery_w2,
+                                        midi2::types::ump_stream::function_block_discovery_w3) = 0;
+  virtual void function_block_info_notification(context_type,
+                                                midi2::types::ump_stream::function_block_info_notification_w0,
+                                                midi2::types::ump_stream::function_block_info_notification_w1,
+                                                midi2::types::ump_stream::function_block_info_notification_w2,
+                                                midi2::types::ump_stream::function_block_info_notification_w3) = 0;
+  virtual void function_block_name_notification(context_type,
+                                                midi2::types::ump_stream::function_block_name_notification_w0,
+                                                midi2::types::ump_stream::function_block_name_notification_w1,
+                                                midi2::types::ump_stream::function_block_name_notification_w2,
+                                                midi2::types::ump_stream::function_block_name_notification_w3) = 0;
+
+  virtual void start_of_clip(context_type, midi2::types::ump_stream::start_of_clip_w0,
+                             midi2::types::ump_stream::start_of_clip_w1, midi2::types::ump_stream::start_of_clip_w2,
+                             midi2::types::ump_stream::start_of_clip_w3) = 0;
+
+  virtual void end_of_clip(context_type, midi2::types::ump_stream::end_of_clip_w0,
+                           midi2::types::ump_stream::end_of_clip_w1, midi2::types::ump_stream::end_of_clip_w2,
+                           midi2::types::ump_stream::end_of_clip_w3) = 0;
+};
+class UMPStreamMocks : public ump_stream_base {
 public:
   MOCK_METHOD(void, endpoint_discovery,
               (context_type, midi2::types::ump_stream::endpoint_discovery_w0,
@@ -207,8 +336,32 @@ public:
                midi2::types::ump_stream::end_of_clip_w2, midi2::types::ump_stream::end_of_clip_w3),
               (override));
 };
+struct flex_data_base {
+  flex_data_base() = default;
+  flex_data_base(flex_data_base const&) = default;
+  virtual ~flex_data_base() noexcept = default;
 
-class FlexDataMocks : public midi2::flex_data_base<context_type> {
+  virtual void set_tempo(context_type, midi2::types::flex_data::set_tempo_w0, midi2::types::flex_data::set_tempo_w1,
+                         midi2::types::flex_data::set_tempo_w2, midi2::types::flex_data::set_tempo_w3) = 0;
+  virtual void set_time_signature(context_type, midi2::types::flex_data::set_time_signature_w0,
+                                  midi2::types::flex_data::set_time_signature_w1,
+                                  midi2::types::flex_data::set_time_signature_w2,
+                                  midi2::types::flex_data::set_time_signature_w3) = 0;
+  virtual void set_metronome(context_type, midi2::types::flex_data::set_metronome_w0,
+                             midi2::types::flex_data::set_metronome_w1, midi2::types::flex_data::set_metronome_w2,
+                             midi2::types::flex_data::set_metronome_w3) = 0;
+  virtual void set_key_signature(context_type, midi2::types::flex_data::set_key_signature_w0,
+                                 midi2::types::flex_data::set_key_signature_w1,
+                                 midi2::types::flex_data::set_key_signature_w2,
+                                 midi2::types::flex_data::set_key_signature_w3) = 0;
+  virtual void set_chord_name(context_type, midi2::types::flex_data::set_chord_name_w0,
+                              midi2::types::flex_data::set_chord_name_w1, midi2::types::flex_data::set_chord_name_w2,
+                              midi2::types::flex_data::set_chord_name_w3) = 0;
+  virtual void text(context_type, midi2::types::flex_data::text_common_w0, midi2::types::flex_data::text_common_w1,
+                    midi2::types::flex_data::text_common_w2, midi2::types::flex_data::text_common_w3) = 0;
+};
+
+class FlexDataMocks : public flex_data_base {
 public:
   MOCK_METHOD(void, set_tempo,
               (context_type, midi2::types::flex_data::set_tempo_w0, midi2::types::flex_data::set_tempo_w1,
