@@ -12,6 +12,7 @@
 #include <bit>
 #include <cstdint>
 #include <cstring>
+#include <span>
 
 #include "midi2/bitfield.hpp"
 
@@ -79,6 +80,182 @@ union system_general {
   ump_bitfield<0, 8> byte3;
 };
 
+//*             _              *
+//*  ____  _ __| |_ ___ _ __   *
+//* (_-< || (_-<  _/ -_) '  \  *
+//* /__/\_, /__/\__\___|_|_|_| *
+//*     |__/                   *
+namespace system {
+
+struct midi_time_code {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xF1
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> time_code;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> reeserved2;
+  };
+  midi_time_code() = default;
+  midi_time_code(midi_time_code const &) = default;
+  explicit midi_time_code(word0 const w0_) : w0{w0_} {}
+  explicit midi_time_code(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(midi_time_code const &, midi_time_code const &) = default;
+  word0 w0;
+};
+struct song_position_pointer {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xF2
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> position_lsb;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> position_msb;
+  };
+  song_position_pointer() = default;
+  song_position_pointer(song_position_pointer const &) = default;
+  explicit song_position_pointer(word0 const w0_) : w0{w0_} {}
+  explicit song_position_pointer(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
+  word0 w0;
+};
+struct song_select {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xF3
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> song;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> reserved2;
+  };
+  song_select() = default;
+  song_select(song_select const &) = default;
+  explicit song_select(word0 const w0_) : w0{w0_} {}
+  explicit song_select(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(song_select const &, song_select const &) = default;
+  word0 w0;
+};
+struct tune_request {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xF6
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  tune_request() = default;
+  tune_request(tune_request const &) = default;
+  explicit tune_request(word0 const w0_) : w0{w0_} {}
+  explicit tune_request(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(tune_request const &, tune_request const &) = default;
+  word0 w0;
+};
+struct timing_clock {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xF8
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  timing_clock() = default;
+  timing_clock(timing_clock const &) = default;
+  explicit timing_clock(word0 const w0_) : w0{w0_} {}
+  explicit timing_clock(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(timing_clock const &, timing_clock const &) = default;
+  word0 w0;
+};
+struct seq_start {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xFA
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  seq_start() = default;
+  seq_start(seq_start const &) = default;
+  explicit seq_start(word0 const w0_) : w0{w0_} {}
+  explicit seq_start(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(seq_start const &, seq_start const &) = default;
+  word0 w0;
+};
+struct seq_continue {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xFB
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  seq_continue() = default;
+  seq_continue(seq_continue const &) = default;
+  explicit seq_continue(word0 const w0_) : w0{w0_} {}
+  explicit seq_continue(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(seq_continue const &, seq_continue const &) = default;
+  word0 w0;
+};
+struct seq_stop {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xFC
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  seq_stop() = default;
+  seq_stop(seq_stop const &) = default;
+  explicit seq_stop(word0 const w0_) : w0{w0_} {}
+  explicit seq_stop(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(seq_stop const &, seq_stop const &) = default;
+  word0 w0;
+};
+struct active_sensing {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xFE
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  active_sensing() = default;
+  active_sensing(active_sensing const &) = default;
+  explicit active_sensing(word0 const w0_) : w0{w0_} {}
+  explicit active_sensing(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(active_sensing const &, active_sensing const &) = default;
+  word0 w0;
+};
+struct reset {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<24, 4> group;
+    ump_bitfield<16, 8> status;  // Always 0xFF
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  reset() = default;
+  reset(reset const &) = default;
+  explicit reset(word0 const w0_) : w0{w0_} {}
+  explicit reset(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(reset const &, reset const &) = default;
+  word0 w0;
+};
+
+}  // end namespace system
+
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
@@ -102,88 +279,128 @@ union m1cvm_w0 {
   ump_bitfield<0, 7> data_b;
 };
 
+//*     _      _         __ _ _   *
+//*  __| |__ _| |_ __ _ / /| | |  *
+//* / _` / _` |  _/ _` / _ \_  _| *
+//* \__,_\__,_|\__\__,_\___/ |_|  *
+//*                               *
 namespace data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
-union sysex7_w0 {
-  UMP_MEMBERS(sysex7_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x3
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  // 0b0000..0b0011
-  ump_bitfield<16, 4> number_of_bytes;
-  ump_bitfield<15, 1> reserved0;
-  ump_bitfield<8, 7> data0;
-  ump_bitfield<7, 1> reserved1;
-  ump_bitfield<0, 7> data1;
-};
-union sysex7_w1 {
-  UMP_MEMBERS(sysex7_w1)
-  ump_bitfield<31, 1> reserved0;
-  ump_bitfield<24, 7> data2;
-  ump_bitfield<23, 1> reserved1;
-  ump_bitfield<16, 7> data3;
-  ump_bitfield<15, 1> reserved2;
-  ump_bitfield<8, 7> data4;
-  ump_bitfield<7, 1> reserved3;
-  ump_bitfield<0, 7> data5;
-};
 struct sysex7 {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x3
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  // 0b0000..0b0011
+    ump_bitfield<16, 4> number_of_bytes;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> data0;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> data1;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> data2;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> data3;
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> data4;
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> data5;
+  };
+
+  sysex7() = default;
+  sysex7(sysex7 const &) = default;
+  sysex7(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit sysex7(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+
   friend bool operator==(sysex7 const &, sysex7 const &) = default;
-  sysex7_w0 w0{};
-  sysex7_w1 w1{};
+  word0 w0{};
+  word1 w1{};
 };
 
 }  // end namespace data64
 
+//*        ___               *
+//*  _ __ |_  )____ ___ __   *
+//* | '  \ / // _\ V / '  \  *
+//* |_|_|_/___\__|\_/|_|_|_| *
+//*                          *
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
 namespace m2cvm {
+
 // 7.4.1 MIDI 2.0 Note Off Message
 // 7.4.2 MIDI 2.0 Note On Message
-union note_w0 {
-  UMP_MEMBERS(note_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved0;
-  ump_bitfield<8, 7> note;
-  ump_bitfield<0, 8> attribute;
-};
-union note_w1 {
-  UMP_MEMBERS(note_w1)
-  ump_bitfield<16, 16> velocity;
-  ump_bitfield<0, 16> attribute;
-};
-
 struct note {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 8> attribute;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<16, 16> velocity;
+    ump_bitfield<0, 16> attribute;
+  };
+  note() = default;
+  note(note const &) = default;
+  note(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit note(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(note const &a, note const &b) = default;
-  note_w0 w0{};
-  note_w1 w1{};
+  word0 w0{};
+  word1 w1{};
 };
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
-union poly_pressure_w0 {
-  UMP_MEMBERS(poly_pressure_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0xA
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved0;
-  ump_bitfield<8, 7> note;
-  ump_bitfield<0, 8> reserved1;
+struct poly_pressure {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0xA
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 8> reserved1;
+  };
+  using word1 = std::uint32_t;
+  poly_pressure() = default;
+  poly_pressure(poly_pressure const &) = default;
+  poly_pressure(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit poly_pressure(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) = default;
+  word0 w0{};
+  word1 w1{};
 };
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller and Assignable Per-Note Controller Messages
-union controller_w0 {
-  UMP_MEMBERS(controller_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Registered Controller=0x0, Assignable Controller=0x1
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved;
-  ump_bitfield<8, 7> note;
-  ump_bitfield<0, 8> index;
+struct per_note_controller {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Registered Controller=0x0, Assignable Controller=0x1
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 8> index;
+  };
+  using word1 = std::uint32_t;
+  per_note_controller() = default;
+  per_note_controller(per_note_controller const &) = default;
+  per_note_controller(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit per_note_controller(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(per_note_controller const &a, per_note_controller const &b) = default;
+  word0 w0;
+  word1 w1;
 };
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
@@ -213,48 +430,77 @@ union control_change_w0 {
 
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-union controller_message_w0 {
-  UMP_MEMBERS(controller_message_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Absolute RPN=0x2, NRPN=0x3; relative RPN=0x4, NRPN=0x5
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved0;
-  ump_bitfield<8, 7> bank;
-  ump_bitfield<7, 1> reserved1;
-  ump_bitfield<0, 7> index;
+struct controller_message {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Absolute RPN=0x2, NRPN=0x3; relative RPN=0x4, NRPN=0x5
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> bank;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> index;
+  };
+  using word1 = std::uint32_t;
+  controller_message() = default;
+  controller_message(controller_message const &) = default;
+  controller_message(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit controller_message(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(controller_message const &a, controller_message const &b) = default;
+  word0 w0;
+  word1 w1;
 };
 
 // 7.4.9 MIDI 2.0 Program Change Message
-union program_change_w0 {
-  UMP_MEMBERS(program_change_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0xC
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<8, 8> reserved;
-  ump_bitfield<1, 7> option_flags;  ///< Reserved option flags
-  ump_bitfield<0, 1> bank_valid;    ///< Bank change is ignored if this bit is zero.
-};
-union program_change_w1 {
-  UMP_MEMBERS(program_change_w1)
-  ump_bitfield<24, 8> program;
-  ump_bitfield<16, 8> reserved;
-  ump_bitfield<15, 1> r0;  // reserved
-  ump_bitfield<8, 7> bank_msb;
-  ump_bitfield<7, 1> r1;  // reserved
-  ump_bitfield<0, 7> bank_lsb;
+struct program_change {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0xC
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> reserved;
+    ump_bitfield<1, 7> option_flags;  ///< Reserved option flags
+    ump_bitfield<0, 1> bank_valid;    ///< Bank change is ignored if this bit is zero.
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> program;
+    ump_bitfield<16, 8> reserved0;
+    ump_bitfield<15, 1> reserved1;
+    ump_bitfield<8, 7> bank_msb;
+    ump_bitfield<7, 1> reserved2;
+    ump_bitfield<0, 7> bank_lsb;
+  };
+  program_change() = default;
+  program_change(program_change const &) = default;
+  program_change(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit program_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(program_change const &a, program_change const &b) = default;
+  word0 w0;
+  word1 w1;
 };
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
-union channel_pressure_w0 {
-  UMP_MEMBERS(channel_pressure_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0xA
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<8, 8> reserved0;
-  ump_bitfield<0, 8> reserved1;
+struct channel_pressure {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0xD
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  using word1 = std::uint32_t;
+  channel_pressure() = default;
+  channel_pressure(channel_pressure const &) = default;
+  channel_pressure(word0 w0_, word1 w1_) : w0{w0_}, w1{w1_} {}
+  explicit channel_pressure(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(channel_pressure const &a, channel_pressure const &b) = default;
+  word0 w0;
+  word1 w1;
 };
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
@@ -302,6 +548,10 @@ struct endpoint_discovery {
   using word2 = std::uint32_t;
   using word3 = std::uint32_t;
 
+  endpoint_discovery() = default;
+  endpoint_discovery(endpoint_discovery const &) = default;
+  endpoint_discovery(word0 w0_, word1 w1_, word2 w2_, word3 w3_) : w0{w0_}, w1{w1_}, w2{w2_}, w3{w3_} {}
+  explicit endpoint_discovery(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(endpoint_discovery const &lhs, endpoint_discovery const &rhs) = default;
   word0 w0{};
   word1 w1{};

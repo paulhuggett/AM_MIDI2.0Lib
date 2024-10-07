@@ -400,44 +400,37 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
       static_cast<std::byte>(stop),  // end sysex
   };
 
-  enum class sysex7_status : std::uint8_t {
-    single_ump = 0x0,
-    start = 0x1,
-    cont = 0x02,
-    end = 0x03,
-  };
-
   constexpr auto group = std::uint32_t{0};
   auto in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
-    midi2::types::data64::sysex7_w0 w0{};
+    midi2::types::data64::sysex7::word0 w0{};
     w0.mt = to_underlying(midi2::ump_message_type::data64);
     w0.group = group;
-    w0.status = static_cast<std::uint8_t>(sysex7_status::single_ump);
+    w0.status = to_underlying(midi2::data64::sysex7_in_1);
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;
-    return std::bit_cast<std::uint32_t>(w0);
+    return w0.word();
   };
   auto start_message = [](u8 data0, u8 data1) {
-    midi2::types::data64::sysex7_w0 w0{};
+    midi2::types::data64::sysex7::word0 w0{};
     w0.mt = to_underlying(midi2::ump_message_type::data64);
     w0.group = group;
-    w0.status = static_cast<std::uint8_t>(sysex7_status::start);
+    w0.status = to_underlying(midi2::data64::sysex7_start);
     w0.number_of_bytes = std::uint8_t{6};
     w0.data0 = data0;
     w0.data1 = data1;
-    return std::bit_cast<std::uint32_t>(w0);
+    return w0.word();
   };
   auto end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
-    midi2::types::data64::sysex7_w0 w0{};
+    midi2::types::data64::sysex7::word0 w0{};
     w0.mt = to_underlying(midi2::ump_message_type::data64);
     w0.group = group;
-    w0.status = static_cast<std::uint8_t>(sysex7_status::end);
+    w0.status = to_underlying(midi2::data64::sysex7_end);
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;
-    return std::bit_cast<std::uint32_t>(w0);
+    return w0.word();
   };
 
   std::array const expected{

@@ -108,7 +108,7 @@ enum class ump_utility : std::uint8_t {
   delta_clock_since = 0b0100,
 };
 
-enum class flex_data : std::uint32_t {
+enum class flex_data : std::uint8_t {
   // status bank == 0
   set_tempo = 0x00,
   set_time_signature = 0x01,
@@ -117,7 +117,7 @@ enum class flex_data : std::uint32_t {
   set_chord_name = 0x06,
 };
 
-enum class ump_stream : std::uint32_t {
+enum class ump_stream : std::uint16_t {
   endpoint_discovery = 0x00,
   endpoint_info_notification = 0x01,
   device_identity_notification = 0x02,

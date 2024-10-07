@@ -165,17 +165,19 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
       sysex7_.pos = 0;
     } else if (midi1int == status::sysex_stop) {
       using enum sysex7::status;
-      types::data64::sysex7_w0 w0{};
-      w0.mt = static_cast<std::uint8_t>(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = static_cast<std::uint8_t>(sysex7_.state == start ? single_ump : end);
-      w0.number_of_bytes = sysex7_.pos;
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      static_assert(sizeof(w0) == sizeof(std::uint32_t));
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3], sysex7_.bytes[4], sysex7_.bytes[5]));
+      types::data64::sysex7 message;
+      message.w0.mt = to_underlying(ump_message_type::data64);
+      message.w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
+      message.w0.status = to_underlying(sysex7_.state == start ? data64::sysex7_in_1 : data64::sysex7_end);
+      message.w0.number_of_bytes = sysex7_.pos;
+      message.w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
+      message.w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
+      message.w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
+      message.w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
+      message.w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
+      message.w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
+      output_.push_back(message.w0.word());
+      output_.push_back(message.w1.word());
 
       sysex7_.reset();
       sysex7_.state = single_ump;
@@ -183,17 +185,19 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
   } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont ||
              sysex7_.state == sysex7::status::end) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      types::data64::sysex7_w0 w0{};
-      w0.mt = static_cast<std::uint8_t>(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = static_cast<std::uint8_t>(sysex7_.state);
-      w0.number_of_bytes = std::uint8_t{6};
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      static_assert(sizeof(w0) == sizeof(std::uint32_t));
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      output_.push_back(pack(sysex7_.bytes[2], sysex7_.bytes[3], sysex7_.bytes[4], sysex7_.bytes[5]));
+      types::data64::sysex7 message;
+      message.w0.mt = to_underlying(ump_message_type::data64);
+      message.w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
+      message.w0.status = static_cast<std::uint8_t>(sysex7_.state);
+      message.w0.number_of_bytes = std::uint8_t{6};
+      message.w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
+      message.w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
+      message.w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
+      message.w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
+      message.w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
+      message.w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
+      output_.push_back(message.w0.word());
+      output_.push_back(message.w1.word());
 
       sysex7_.reset();
       sysex7_.state = sysex7::status::cont;
