@@ -99,7 +99,6 @@ struct midi_time_code {
     ump_bitfield<0, 7> reeserved2;
   };
   midi_time_code() = default;
-  midi_time_code(midi_time_code const &) = default;
   explicit midi_time_code(word0 const w0_) : w0{w0_} {}
   explicit midi_time_code(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(midi_time_code const &, midi_time_code const &) = default;
@@ -117,7 +116,6 @@ struct song_position_pointer {
     ump_bitfield<0, 7> position_msb;
   };
   song_position_pointer() = default;
-  song_position_pointer(song_position_pointer const &) = default;
   explicit song_position_pointer(word0 const w0_) : w0{w0_} {}
   explicit song_position_pointer(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
@@ -135,7 +133,6 @@ struct song_select {
     ump_bitfield<0, 7> reserved2;
   };
   song_select() = default;
-  song_select(song_select const &) = default;
   explicit song_select(word0 const w0_) : w0{w0_} {}
   explicit song_select(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(song_select const &, song_select const &) = default;
@@ -151,8 +148,6 @@ struct tune_request {
     ump_bitfield<0, 8> reserved1;
   };
   tune_request() = default;
-  tune_request(tune_request const &) = default;
-  explicit tune_request(word0 const w0_) : w0{w0_} {}
   explicit tune_request(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(tune_request const &, tune_request const &) = default;
   word0 w0{};
@@ -167,8 +162,6 @@ struct timing_clock {
     ump_bitfield<0, 8> reserved1;
   };
   timing_clock() = default;
-  timing_clock(timing_clock const &) = default;
-  explicit timing_clock(word0 const w0_) : w0{w0_} {}
   explicit timing_clock(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(timing_clock const &, timing_clock const &) = default;
   word0 w0{};
@@ -183,8 +176,6 @@ struct seq_start {
     ump_bitfield<0, 8> reserved1;
   };
   seq_start() = default;
-  seq_start(seq_start const &) = default;
-  explicit seq_start(word0 const w0_) : w0{w0_} {}
   explicit seq_start(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(seq_start const &, seq_start const &) = default;
   word0 w0{};
@@ -199,8 +190,6 @@ struct seq_continue {
     ump_bitfield<0, 8> reserved1;
   };
   seq_continue() = default;
-  seq_continue(seq_continue const &) = default;
-  explicit seq_continue(word0 const w0_) : w0{w0_} {}
   explicit seq_continue(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(seq_continue const &, seq_continue const &) = default;
   word0 w0{};
@@ -215,8 +204,6 @@ struct seq_stop {
     ump_bitfield<0, 8> reserved1;
   };
   seq_stop() = default;
-  seq_stop(seq_stop const &) = default;
-  explicit seq_stop(word0 const w0_) : w0{w0_} {}
   explicit seq_stop(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(seq_stop const &, seq_stop const &) = default;
   word0 w0{};
@@ -231,8 +218,6 @@ struct active_sensing {
     ump_bitfield<0, 8> reserved1;
   };
   active_sensing() = default;
-  active_sensing(active_sensing const &) = default;
-  explicit active_sensing(word0 const w0_) : w0{w0_} {}
   explicit active_sensing(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(active_sensing const &, active_sensing const &) = default;
   word0 w0{};
@@ -247,8 +232,6 @@ struct reset {
     ump_bitfield<0, 8> reserved1;
   };
   reset() = default;
-  reset(reset const &) = default;
-  explicit reset(word0 const w0_) : w0{w0_} {}
   explicit reset(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(reset const &, reset const &) = default;
   word0 w0{};
@@ -312,10 +295,9 @@ struct sysex7 {
   };
 
   sysex7() = default;
-  sysex7(sysex7 const &) = default;
   explicit sysex7(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
-
   friend bool operator==(sysex7 const &, sysex7 const &) = default;
+
   word0 w0{};
   word1 w1{};
 };
@@ -349,10 +331,11 @@ struct note {
     ump_bitfield<16, 16> velocity;
     ump_bitfield<0, 16> attribute;
   };
+
   note() = default;
-  note(note const &) = default;
   explicit note(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(note const &a, note const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
@@ -370,10 +353,11 @@ struct poly_pressure {
     ump_bitfield<0, 8> reserved1;
   };
   using word1 = std::uint32_t;
+
   poly_pressure() = default;
-  poly_pressure(poly_pressure const &) = default;
   explicit poly_pressure(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
@@ -393,7 +377,6 @@ struct per_note_controller {
   using word1 = std::uint32_t;
 
   per_note_controller() = default;
-  per_note_controller(per_note_controller const &) = default;
   explicit per_note_controller(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(per_note_controller const &a, per_note_controller const &b) = default;
 
@@ -418,7 +401,6 @@ struct per_note_management {
   using word1 = std::uint32_t;
 
   per_note_management() = default;
-  per_note_management(per_note_management const &) = default;
   explicit per_note_management(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(per_note_management const &a, per_note_management const &b) = default;
 
@@ -440,7 +422,6 @@ struct control_change {
   using word1 = std::uint32_t;
 
   control_change() = default;
-  control_change(control_change const &) = default;
   explicit control_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
 
@@ -463,10 +444,11 @@ struct controller_message {
     ump_bitfield<0, 7> index;
   };
   using word1 = std::uint32_t;
+
   controller_message() = default;
-  controller_message(controller_message const &) = default;
   explicit controller_message(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(controller_message const &a, controller_message const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
@@ -492,10 +474,11 @@ struct program_change {
     ump_bitfield<7, 1> reserved2;
     ump_bitfield<0, 7> bank_lsb;
   };
+
   program_change() = default;
-  program_change(program_change const &) = default;
   explicit program_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(program_change const &a, program_change const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
@@ -514,7 +497,6 @@ struct channel_pressure {
   using word1 = std::uint32_t;
 
   channel_pressure() = default;
-  channel_pressure(channel_pressure const &) = default;
   explicit channel_pressure(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(channel_pressure const &a, channel_pressure const &b) = default;
 
@@ -536,7 +518,6 @@ struct pitch_bend {
   using word1 = std::uint32_t;
 
   pitch_bend() = default;
-  pitch_bend(pitch_bend const &) = default;
   explicit pitch_bend(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) = default;
 
@@ -559,7 +540,6 @@ struct per_note_pitch_bend {
   using word1 = std::uint32_t;
 
   per_note_pitch_bend() = default;
-  per_note_pitch_bend(per_note_pitch_bend const &) = default;
   explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(per_note_pitch_bend const &a, per_note_pitch_bend const &b) = default;
 
@@ -590,9 +570,9 @@ struct endpoint_discovery {
   using word3 = std::uint32_t;
 
   endpoint_discovery() = default;
-  endpoint_discovery(endpoint_discovery const &) = default;
   explicit endpoint_discovery(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(endpoint_discovery const &lhs, endpoint_discovery const &rhs) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -624,9 +604,9 @@ struct endpoint_info_notification {
   using word3 = std::uint32_t;
 
   endpoint_info_notification() = default;
-  endpoint_info_notification(endpoint_info_notification const &) = default;
   explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(endpoint_info_notification const &, endpoint_info_notification const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -675,9 +655,9 @@ struct device_identity_notification {
     ump_bitfield<0, 7> sw_revision_4;  // Software revision level byte 4
   };
   device_identity_notification() = default;
-  device_identity_notification(device_identity_notification const &) = default;
   explicit device_identity_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(device_identity_notification const &, device_identity_notification const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -716,9 +696,9 @@ struct endpoint_name_notification {
     ump_bitfield<0, 8> name14;
   };
   endpoint_name_notification() = default;
-  endpoint_name_notification(endpoint_name_notification const &) = default;
   explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(endpoint_name_notification const &, endpoint_name_notification const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -757,9 +737,9 @@ struct product_instance_id_notification {
     ump_bitfield<0, 8> pid14;
   };
   product_instance_id_notification() = default;
-  product_instance_id_notification(product_instance_id_notification const &) = default;
   explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(product_instance_id_notification const &, product_instance_id_notification const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -785,7 +765,6 @@ struct jr_configuration_request {
   using word3 = std::uint32_t;
 
   jr_configuration_request() = default;
-  jr_configuration_request(jr_configuration_request const &) = default;
   explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(jr_configuration_request const &, jr_configuration_request const &) = default;
 
@@ -812,7 +791,6 @@ struct jr_configuration_notification {
   using word3 = std::uint32_t;
 
   jr_configuration_notification() = default;
-  jr_configuration_notification(jr_configuration_notification const &) = default;
   explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(jr_configuration_notification const &, jr_configuration_notification const &) = default;
 
@@ -837,7 +815,6 @@ struct function_block_discovery {
   using word3 = std::uint32_t;
 
   function_block_discovery() = default;
-  function_block_discovery(function_block_discovery const &) = default;
   explicit function_block_discovery(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(function_block_discovery const &, function_block_discovery const &) = default;
 
@@ -872,7 +849,6 @@ struct function_block_info_notification {
   using word3 = std::uint32_t;
 
   function_block_info_notification() = default;
-  function_block_info_notification(function_block_info_notification const &) = default;
   explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(function_block_info_notification const &, function_block_info_notification const &) = default;
 
@@ -915,7 +891,6 @@ struct function_block_name_notification {
   };
 
   function_block_name_notification() = default;
-  function_block_name_notification(function_block_name_notification const &) = default;
   explicit function_block_name_notification(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(function_block_name_notification const &, function_block_name_notification const &) = default;
 
@@ -939,7 +914,6 @@ struct start_of_clip {
   using word3 = std::uint32_t;
 
   start_of_clip() = default;
-  start_of_clip(start_of_clip const &) = default;
   explicit start_of_clip(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(start_of_clip const &, start_of_clip const &) = default;
 
@@ -963,7 +937,6 @@ struct end_of_clip {
   using word3 = std::uint32_t;
 
   end_of_clip() = default;
-  end_of_clip(end_of_clip const &) = default;
   explicit end_of_clip(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(end_of_clip const &, end_of_clip const &) = default;
 
@@ -996,7 +969,6 @@ struct set_tempo {
   using word3 = std::uint32_t;
 
   set_tempo() = default;
-  set_tempo(set_tempo const &) = default;
   explicit set_tempo(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(set_tempo const &, set_tempo const &) = default;
 
@@ -1020,7 +992,6 @@ struct set_time_signature {
   using word3 = std::uint32_t;
 
   set_time_signature() = default;
-  set_time_signature(set_time_signature const &) = default;
   explicit set_time_signature(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(set_time_signature const &, set_time_signature const &) = default;
 
@@ -1050,7 +1021,6 @@ struct set_metronome {
   using word3 = std::uint32_t;
 
   set_metronome() = default;
-  set_metronome(set_metronome const &) = default;
   explicit set_metronome(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(set_metronome const &, set_metronome const &) = default;
 
@@ -1073,7 +1043,6 @@ struct set_key_signature {
   using word3 = std::uint32_t;
 
   set_key_signature() = default;
-  set_key_signature(set_key_signature const &) = default;
   explicit set_key_signature(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(set_key_signature const &, set_key_signature const &) = default;
 
@@ -1170,7 +1139,6 @@ struct set_chord_name {
   };
 
   set_chord_name() = default;
-  set_chord_name(set_chord_name const &) = default;
   explicit set_chord_name(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(set_chord_name const &, set_chord_name const &) = default;
 
@@ -1188,7 +1156,6 @@ struct text_common {
   using word3 = std::uint32_t;
 
   text_common() = default;
-  text_common(text_common const &) = default;
   explicit text_common(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(text_common const &, text_common const &) = default;
 
@@ -1243,7 +1210,6 @@ struct sysex8 {
   };
 
   sysex8() = default;
-  sysex8(sysex8 const &) = default;
   explicit sysex8(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(sysex8 const &, sysex8 const &) = default;
 
@@ -1283,7 +1249,6 @@ struct mds_header {
   };
 
   mds_header() = default;
-  mds_header(mds_header const &) = default;
   explicit mds_header(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(mds_header const &, mds_header const &) = default;
 
@@ -1307,7 +1272,6 @@ struct mds_payload {
   using word3 = std::uint32_t;
 
   mds_payload() = default;
-  mds_payload(mds_payload const &) = default;
   explicit mds_payload(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(mds_payload const &, mds_payload const &) = default;
 
