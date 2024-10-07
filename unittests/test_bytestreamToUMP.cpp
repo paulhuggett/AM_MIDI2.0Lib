@@ -409,7 +409,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;
-    return w0.word();
+    return std::bit_cast<std::uint32_t>(w0);
   };
   auto start_message = [](u8 data0, u8 data1) {
     midi2::types::data64::sysex7::word0 w0{};
@@ -419,7 +419,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.number_of_bytes = std::uint8_t{6};
     w0.data0 = data0;
     w0.data1 = data1;
-    return w0.word();
+    return std::bit_cast<std::uint32_t>(w0);
   };
   auto end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
@@ -430,7 +430,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;
-    return w0.word();
+    return std::bit_cast<std::uint32_t>(w0);
   };
 
   std::array const expected{
