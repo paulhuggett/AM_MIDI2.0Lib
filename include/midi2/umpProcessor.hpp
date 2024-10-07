@@ -551,99 +551,54 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
   using types::ump_stream::product_instance_id_notification;
   using types::ump_stream::start_of_clip;
 
+  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+  auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   switch (static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
   case ump_stream::endpoint_discovery:
-    config_.ump_stream.endpoint_discovery(
-        config_.context,
-        endpoint_discovery{endpoint_discovery::word0{message_[0]}, endpoint_discovery::word1{message_[1]},
-                           endpoint_discovery::word2{message_[2]}, endpoint_discovery::word3{message_[3]}});
+    config_.ump_stream.endpoint_discovery(config_.context, endpoint_discovery{span});
     break;
-
   // 7.1.2 Endpoint Info Notification Message
   case ump_stream::endpoint_info_notification:
-    config_.ump_stream.endpoint_info_notification(
-        config_.context, endpoint_info_notification{endpoint_info_notification::word0{message_[0]},
-                                                    endpoint_info_notification::word1{message_[1]},
-                                                    endpoint_info_notification::word2{message_[2]},
-                                                    endpoint_info_notification::word3{message_[3]}});
+    config_.ump_stream.endpoint_info_notification(config_.context, endpoint_info_notification{span});
     break;
-
   // 7.1.3 Device Identity Notification Message
   case ump_stream::device_identity_notification:
-    config_.ump_stream.device_identity_notification(
-        config_.context, device_identity_notification{device_identity_notification::word0{message_[0]},
-                                                      device_identity_notification::word1{message_[1]},
-                                                      device_identity_notification::word2{message_[2]},
-                                                      device_identity_notification::word3{message_[3]}});
+    config_.ump_stream.device_identity_notification(config_.context, device_identity_notification{span});
     break;
-
   // 7.1.4 Endpoint Name Notification
   case ump_stream::endpoint_name_notification:
-    config_.ump_stream.endpoint_name_notification(
-        config_.context, endpoint_name_notification{endpoint_name_notification::word0{message_[0]},
-                                                    endpoint_name_notification::word1{message_[1]},
-                                                    endpoint_name_notification::word2{message_[2]},
-                                                    endpoint_name_notification::word3{message_[3]}});
+    config_.ump_stream.endpoint_name_notification(config_.context, endpoint_name_notification{span});
     break;
   // 7.1.5 Product Instance Id Notification Message
   case ump_stream::product_instance_id_notification:
-    config_.ump_stream.product_instance_id_notification(
-        config_.context, product_instance_id_notification{product_instance_id_notification::word0{message_[0]},
-                                                          product_instance_id_notification::word1{message_[1]},
-                                                          product_instance_id_notification::word2{message_[2]},
-                                                          product_instance_id_notification::word3{message_[3]}});
+    config_.ump_stream.product_instance_id_notification(config_.context, product_instance_id_notification{span});
     break;
   // 7.1.6.2 Stream Configuration Request
   case ump_stream::jr_configuration_request:
-    config_.ump_stream.jr_configuration_request(config_.context,
-                                                jr_configuration_request{jr_configuration_request::word0{message_[0]},
-                                                                         jr_configuration_request::word1{message_[1]},
-                                                                         jr_configuration_request::word2{message_[2]},
-                                                                         jr_configuration_request::word3{message_[3]}});
+    config_.ump_stream.jr_configuration_request(config_.context, jr_configuration_request{span});
     break;
   // 7.1.6.3 Stream Configuration Notification Message
   case ump_stream::jr_configuration_notification:
-    config_.ump_stream.jr_configuration_notification(
-        config_.context, jr_configuration_notification{jr_configuration_notification::word0{message_[0]},
-                                                       jr_configuration_notification::word1{message_[1]},
-                                                       jr_configuration_notification::word2{message_[2]},
-                                                       jr_configuration_notification::word3{message_[3]}});
+    config_.ump_stream.jr_configuration_notification(config_.context, jr_configuration_notification{span});
     break;
   // 7.1.7 Function Block Discovery Message
   case ump_stream::function_block_discovery:
-    config_.ump_stream.function_block_discovery(config_.context,
-                                                function_block_discovery{function_block_discovery::word0{message_[0]},
-                                                                         function_block_discovery::word1{message_[1]},
-                                                                         function_block_discovery::word2{message_[2]},
-                                                                         function_block_discovery::word3{message_[3]}});
+    config_.ump_stream.function_block_discovery(config_.context, function_block_discovery{span});
     break;
   // 7.1.8 Function Block Info Notification
   case ump_stream::function_block_info_notification:
-    config_.ump_stream.function_block_info_notification(
-        config_.context, function_block_info_notification{function_block_info_notification::word0{message_[0]},
-                                                          function_block_info_notification::word1{message_[1]},
-                                                          function_block_info_notification::word2{message_[2]},
-                                                          function_block_info_notification::word3{message_[3]}});
+    config_.ump_stream.function_block_info_notification(config_.context, function_block_info_notification{span});
     break;
   // 7.1.9 Function Block Name Notification
   case ump_stream::function_block_name_notification:
-    config_.ump_stream.function_block_name_notification(
-        config_.context, function_block_name_notification{function_block_name_notification::word0{message_[0]},
-                                                          function_block_name_notification::word1{message_[1]},
-                                                          function_block_name_notification::word2{message_[2]},
-                                                          function_block_name_notification::word3{message_[3]}});
+    config_.ump_stream.function_block_name_notification(config_.context, function_block_name_notification{span});
     break;
-  case ump_stream::start_of_clip:
-    config_.ump_stream.start_of_clip(
-        config_.context, start_of_clip{start_of_clip::word0{message_[0]}, start_of_clip::word1{message_[1]},
-                                       start_of_clip::word2{message_[2]}, start_of_clip::word3{message_[3]}});
-    break;
-  case ump_stream::end_of_clip:
-    config_.ump_stream.end_of_clip(config_.context,
-                                   end_of_clip{end_of_clip::word0{message_[0]}, end_of_clip::word1{message_[1]},
-                                               end_of_clip::word2{message_[2]}, end_of_clip::word3{message_[3]}});
-    break;
+  // 7.1.10 Start of Clip Message
+  case ump_stream::start_of_clip: config_.ump_stream.start_of_clip(config_.context, start_of_clip{span}); break;
+  // 7.1.11 End of Clip Message
+  case ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
   default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
   }
 }
