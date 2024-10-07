@@ -941,51 +941,99 @@ union flex_data_w0 {
 };
 
 // 7.5.3 Set Tempo Message
-using set_tempo_w0 = flex_data_w0;
-using set_tempo_w1 = std::uint32_t;
-using set_tempo_w2 = std::uint32_t;
-using set_tempo_w3 = std::uint32_t;
+struct set_tempo {
+  using word0 = flex_data_w0;
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  set_tempo() = default;
+  set_tempo(set_tempo const &) = default;
+  explicit set_tempo(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(set_tempo const &, set_tempo const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
+};
 
 // 7.5.4 Set Time Signature Message
-using set_time_signature_w0 = flex_data_w0;
-union set_time_signature_w1 {
-  UMP_MEMBERS(set_time_signature_w1)
-  ump_bitfield<24, 8> numerator;
-  ump_bitfield<16, 8> denominator;
-  ump_bitfield<8, 8> number_of_32_notes;
-  ump_bitfield<0, 8> reserved0;
+struct set_time_signature {
+  using word0 = flex_data_w0;
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> numerator;
+    ump_bitfield<16, 8> denominator;
+    ump_bitfield<8, 8> number_of_32_notes;
+    ump_bitfield<0, 8> reserved0;
+  };
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  set_time_signature() = default;
+  set_time_signature(set_time_signature const &) = default;
+  explicit set_time_signature(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(set_time_signature const &, set_time_signature const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-using set_time_signature_w2 = std::uint32_t;
-using set_time_signature_w3 = std::uint32_t;
 
 // 7.5.5 Set Metronome Message
 
-using set_metronome_w0 = flex_data_w0;
-union set_metronome_w1 {
-  UMP_MEMBERS(set_metronome_w1)
-  ump_bitfield<24, 8> num_clocks_per_primary_click;
-  ump_bitfield<16, 8> bar_accent_part_1;
-  ump_bitfield<8, 8> bar_accent_part_2;
-  ump_bitfield<0, 8> bar_accent_part_3;
+struct set_metronome {
+  using word0 = flex_data_w0;
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<24, 8> num_clocks_per_primary_click;
+    ump_bitfield<16, 8> bar_accent_part_1;
+    ump_bitfield<8, 8> bar_accent_part_2;
+    ump_bitfield<0, 8> bar_accent_part_3;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<24, 8> num_subdivision_clicks_1;
+    ump_bitfield<16, 8> num_subdivision_clicks_2;
+    ump_bitfield<0, 16> reserved0;
+  };
+  using word3 = std::uint32_t;
+
+  set_metronome() = default;
+  set_metronome(set_metronome const &) = default;
+  explicit set_metronome(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(set_metronome const &, set_metronome const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-union set_metronome_w2 {
-  UMP_MEMBERS(set_metronome_w2)
-  ump_bitfield<24, 8> num_subdivision_clicks_1;
-  ump_bitfield<16, 8> num_subdivision_clicks_2;
-  ump_bitfield<0, 16> reserved0;
-};
-using set_metronome_w3 = std::uint32_t;
 
 // 7.5.7 Set Key Signature Message
-using set_key_signature_w0 = flex_data_w0;
-union set_key_signature_w1 {
-  UMP_MEMBERS(set_key_signature_w1)
-  ump_bitfield<28, 4> sharps_flats;
-  ump_bitfield<24, 4> tonic_note;
-  ump_bitfield<0, 24> reserved0;
+struct set_key_signature {
+  using word0 = flex_data_w0;
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<28, 4> sharps_flats;
+    ump_bitfield<24, 4> tonic_note;
+    ump_bitfield<0, 24> reserved0;
+  };
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  set_key_signature() = default;
+  set_key_signature(set_key_signature const &) = default;
+  explicit set_key_signature(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(set_key_signature const &, set_key_signature const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
-using set_key_signature_w2 = std::uint32_t;
-using set_key_signature_w3 = std::uint32_t;
 
 // 7.5.8 Set Chord Name Message
 enum class sharps_flats : std::int8_t {
@@ -1041,41 +1089,66 @@ enum class chord_type : std::uint8_t {
   suspended_4th = 0x1A,
   seven_suspended_4th = 0x1B,
 };
-using set_chord_name_w0 = flex_data_w0;
-union set_chord_name_w1 {
-  UMP_MEMBERS(set_chord_name_w1)
-  ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
-  ump_bitfield<24, 4> chord_tonic;
-  ump_bitfield<16, 8> chord_type;
-  ump_bitfield<12, 4> alter_1_type;
-  ump_bitfield<8, 4> alter_1_degree;
-  ump_bitfield<4, 4> alter_2_type;
-  ump_bitfield<0, 4> alter_2_degree;
-};
-union set_chord_name_w2 {
-  UMP_MEMBERS(set_chord_name_w2)
-  ump_bitfield<28, 4> alter_3_type;
-  ump_bitfield<24, 4> alter_3_degree;
-  ump_bitfield<20, 4> alter_4_type;
-  ump_bitfield<16, 4> alter_4_degree;
-  ump_bitfield<0, 16> reserved;  // 0x0000
-};
-union set_chord_name_w3 {
-  UMP_MEMBERS(set_chord_name_w3)
-  ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
-  ump_bitfield<24, 4> bass_note;
-  ump_bitfield<16, 8> bass_chord_type;
-  ump_bitfield<12, 4> alter_1_type;
-  ump_bitfield<8, 4> alter_1_degree;
-  ump_bitfield<4, 4> alter_2_type;
-  ump_bitfield<0, 4> alter_2_degree;
+
+struct set_chord_name {
+  using word0 = flex_data_w0;
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
+    ump_bitfield<24, 4> chord_tonic;
+    ump_bitfield<16, 8> chord_type;
+    ump_bitfield<12, 4> alter_1_type;
+    ump_bitfield<8, 4> alter_1_degree;
+    ump_bitfield<4, 4> alter_2_type;
+    ump_bitfield<0, 4> alter_2_degree;
+  };
+  union word2 {
+    UMP_MEMBERS(word2)
+    ump_bitfield<28, 4> alter_3_type;
+    ump_bitfield<24, 4> alter_3_degree;
+    ump_bitfield<20, 4> alter_4_type;
+    ump_bitfield<16, 4> alter_4_degree;
+    ump_bitfield<0, 16> reserved;  // 0x0000
+  };
+  union word3 {
+    UMP_MEMBERS(word3)
+    ump_bitfield<28, 4> bass_sharps_flats;  // 2's compl
+    ump_bitfield<24, 4> bass_note;
+    ump_bitfield<16, 8> bass_chord_type;
+    ump_bitfield<12, 4> alter_1_type;
+    ump_bitfield<8, 4> alter_1_degree;
+    ump_bitfield<4, 4> alter_2_type;
+    ump_bitfield<0, 4> alter_2_degree;
+  };
+
+  set_chord_name() = default;
+  set_chord_name(set_chord_name const &) = default;
+  explicit set_chord_name(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(set_chord_name const &, set_chord_name const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
 };
 
 // 7.5.9 Text Messages Common Format
-using text_common_w0 = flex_data_w0;
-using text_common_w1 = std::uint32_t;
-using text_common_w2 = std::uint32_t;
-using text_common_w3 = std::uint32_t;
+struct text_common {
+  using word0 = flex_data_w0;
+  using word1 = std::uint32_t;
+  using word2 = std::uint32_t;
+  using word3 = std::uint32_t;
+
+  text_common() = default;
+  text_common(text_common const &) = default;
+  explicit text_common(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
+  friend bool operator==(text_common const &, text_common const &) = default;
+
+  word0 w0{};
+  word1 w1{};
+  word2 w2{};
+  word3 w3{};
+};
 
 }  // end namespace flex_data
 
@@ -1120,7 +1193,12 @@ struct sysex8 {
     ump_bitfield<8, 8> data11;
     ump_bitfield<0, 8> data12;
   };
+
+  sysex8() = default;
+  sysex8(sysex8 const &) = default;
+  explicit sysex8(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(sysex8 const &, sysex8 const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -1155,7 +1233,12 @@ struct mds_header {
     ump_bitfield<16, 16> sub_id_1;
     ump_bitfield<0, 16> sub_id_2;
   };
+
+  mds_header() = default;
+  mds_header(mds_header const &) = default;
+  explicit mds_header(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(mds_header const &, mds_header const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};
@@ -1175,7 +1258,11 @@ struct mds_payload {
   using word2 = std::uint32_t;
   using word3 = std::uint32_t;
 
+  mds_payload() = default;
+  mds_payload(mds_payload const &) = default;
+  explicit mds_payload(std::span<std::uint32_t, 4> m) : w0{m[0]}, w1{m[1]}, w2{m[2]}, w3{m[3]} {}
   friend bool operator==(mds_payload const &, mds_payload const &) = default;
+
   word0 w0{};
   word1 w1{};
   word2 w2{};

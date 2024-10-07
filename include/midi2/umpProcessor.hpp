@@ -57,9 +57,6 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 }
 
 // clang-format off
-template <typename T> concept backend = requires(T && v) {
-  { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
-};
 template <typename T, typename Context>
 concept utility_backend = requires(T v, Context context) {
   { v.noop(context) } -> std::same_as<void>;
@@ -67,6 +64,8 @@ concept utility_backend = requires(T v, Context context) {
   { v.jr_timestamp(context, types::jr_clock{}) } -> std::same_as<void>;
   { v.delta_clockstamp_tpqn(context, types::jr_clock{}) } -> std::same_as<void>;
   { v.delta_clockstamp(context, types::delta_clockstamp{}) } -> std::same_as<void>;
+
+  { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept system_backend = requires(T v, Context context) {
@@ -89,8 +88,8 @@ concept m1cvm_backend = requires(T v, Context context) {
   { v.poly_pressure(context, types::m1cvm_w0{}) } -> std::same_as<void>;
   { v.control_change(context, types::m1cvm_w0{}) } -> std::same_as<void>;
   { v.program_change(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.channel_pressure (context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.pitch_bend (context, types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.channel_pressure(context, types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.pitch_bend(context, types::m1cvm_w0{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
@@ -142,42 +141,17 @@ concept ump_stream_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept flex_data_backend = requires(T v, Context context) {
-  { v.set_tempo(context,
-      types::flex_data::set_tempo_w0{},
-      types::flex_data::set_tempo_w1{},
-      types::flex_data::set_tempo_w2{},
-      types::flex_data::set_tempo_w3{}) } -> std::same_as<void>;
-  { v.set_time_signature(context,
-      types::flex_data::set_time_signature_w0{},
-      types::flex_data::set_time_signature_w1{},
-      types::flex_data::set_time_signature_w2{},
-      types::flex_data::set_time_signature_w3{}) } -> std::same_as<void>;
-  { v.set_metronome(context,
-      types::flex_data::set_metronome_w0{},
-      types::flex_data::set_metronome_w1{},
-      types::flex_data::set_metronome_w2{},
-      types::flex_data::set_metronome_w3{}) } -> std::same_as<void>;
-  { v.set_key_signature(context,
-      types::flex_data::set_key_signature_w0{},
-      types::flex_data::set_key_signature_w1{},
-      types::flex_data::set_key_signature_w2{},
-      types::flex_data::set_key_signature_w3{}) } -> std::same_as<void>;
-  { v.set_chord_name(context,
-      types::flex_data::set_chord_name_w0{},
-      types::flex_data::set_chord_name_w1{},
-      types::flex_data::set_chord_name_w2{},
-      types::flex_data::set_chord_name_w3{}) } -> std::same_as<void>;
-  { v.text (context,
-      types::flex_data::text_common_w0{},
-      types::flex_data::text_common_w1{},
-      types::flex_data::text_common_w2{},
-      types::flex_data::text_common_w3{}) } -> std::same_as<void>;
+  { v.set_tempo(context, types::flex_data::set_tempo{}) } -> std::same_as<void>;
+  { v.set_time_signature(context, types::flex_data::set_time_signature{}) } -> std::same_as<void>;
+  { v.set_metronome(context, types::flex_data::set_metronome{}) } -> std::same_as<void>;
+  { v.set_key_signature(context, types::flex_data::set_key_signature{}) } -> std::same_as<void>;
+  { v.set_chord_name(context, types::flex_data::set_chord_name{}) } -> std::same_as<void>;
+  { v.text(context, types::flex_data::text_common{}) } -> std::same_as<void>;
 };
 
 template <typename T>
 concept ump_processor_config = requires (T v) {
   { v.context };
-  { v.callbacks } -> backend;
   { v.utility } -> utility_backend<decltype(v.context)>;
   { v.system } -> system_backend<decltype(v.context)>;
   { v.m1cvm } -> m1cvm_backend<decltype(v.context)>;
@@ -189,22 +163,19 @@ concept ump_processor_config = requires (T v) {
 };
 // clang-format on
 
-class callbacks_base {
-public:
-  callbacks_base() = default;
-  callbacks_base(callbacks_base const&) = default;
-  virtual ~callbacks_base() = default;
-
-  callbacks_base& operator=(callbacks_base const&) = default;
-
-  virtual void unknown(std::span<std::uint32_t>) { /* nop */ }
-};
 template <typename Context> struct utility_null {
+  // 7.2.1 NOOP
   void noop(Context) { /* do nothing */ }
+  // 7.2.2.1 JR Clock Message
   void jr_clock(Context, types::jr_clock) { /* do nothing */ }
+  // 7.2.2.2 JR Timestamp Message
   void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
   void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
+  // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
+
+  void unknown(std::span<std::uint32_t>) { /* do nothing */ }
 };
 template <typename Context> struct system_null {
   // 7.6 System Common and System Real Time Messages
@@ -279,33 +250,24 @@ template <typename Context> struct ump_stream_null {
   void end_of_clip(Context, types::ump_stream::end_of_clip) { /* do nothing */ }
 };
 template <typename Context> struct flex_data_null {
-  void set_tempo(Context, types::flex_data::set_tempo_w0, types::flex_data::set_tempo_w1,
-                 types::flex_data::set_tempo_w2, types::flex_data::set_tempo_w3) { /* do nothing */ }
-  void set_time_signature(Context, types::flex_data::set_time_signature_w0, types::flex_data::set_time_signature_w1,
-                          types::flex_data::set_time_signature_w2,
-                          types::flex_data::set_time_signature_w3) { /* do nothing */ }
-  void set_metronome(Context, types::flex_data::set_metronome_w0, types::flex_data::set_metronome_w1,
-                     types::flex_data::set_metronome_w2, types::flex_data::set_metronome_w3) { /* do nothing */ }
-  void set_key_signature(Context, types::flex_data::set_key_signature_w0, types::flex_data::set_key_signature_w1,
-                         types::flex_data::set_key_signature_w2,
-                         types::flex_data::set_key_signature_w3) { /* do nothing */ }
-  void set_chord_name(Context, types::flex_data::set_chord_name_w0, types::flex_data::set_chord_name_w1,
-                      types::flex_data::set_chord_name_w2, types::flex_data::set_chord_name_w3) { /* do nothing */ }
-  void text(Context, types::flex_data::text_common_w0, types::flex_data::text_common_w1,
-            types::flex_data::text_common_w2, types::flex_data::text_common_w3) { /* do nothing */ }
+  void set_tempo(Context, types::flex_data::set_tempo) { /* do nothing */ }
+  void set_time_signature(Context, types::flex_data::set_time_signature) { /* do nothing */ }
+  void set_metronome(Context, types::flex_data::set_metronome) { /* do nothing */ }
+  void set_key_signature(Context, types::flex_data::set_key_signature) { /* do nothing */ }
+  void set_chord_name(Context, types::flex_data::set_chord_name) { /* do nothing */ }
+  void text(Context, types::flex_data::text_common) { /* do nothing */ }
 };
 struct default_config {
   struct empty {};
   [[no_unique_address]] empty context{};
-  callbacks_base callbacks;
-  utility_null<decltype(context)> utility;
-  system_null<decltype(context)> system;
-  m1cvm_null<decltype(context)> m1cvm;
-  data64_null<decltype(context)> data64;
-  m2cvm_null<decltype(context)> m2cvm;
-  data128_null<decltype(context)> data128;
-  ump_stream_null<decltype(context)> ump_stream;
-  flex_data_null<decltype(context)> flex;
+  [[no_unique_address]] utility_null<decltype(context)> utility;
+  [[no_unique_address]] system_null<decltype(context)> system;
+  [[no_unique_address]] m1cvm_null<decltype(context)> m1cvm;
+  [[no_unique_address]] data64_null<decltype(context)> data64;
+  [[no_unique_address]] m2cvm_null<decltype(context)> m2cvm;
+  [[no_unique_address]] data128_null<decltype(context)> data128;
+  [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream;
+  [[no_unique_address]] flex_data_null<decltype(context)> flex;
 };
 
 template <typename T> concept word_memfun = requires(T a) {
@@ -353,7 +315,7 @@ public:
       case ump_message_type::reserved64_0A:
       case ump_message_type::reserved96_0B:
       case ump_message_type::reserved96_0C:
-      case ump_message_type::reserved128_0E: config_.callbacks.unknown(std::span{message_.data(), pos_}); break;
+      case ump_message_type::reserved128_0E: config_.utility.unknown(std::span{message_.data(), pos_}); break;
       default:
         assert(false);
         unreachable();
@@ -400,7 +362,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
   case ump_utility::delta_clock_since:
     config_.utility.delta_clockstamp(config_.context, types::delta_clockstamp{message_[0]});
     break;
-  default: config_.callbacks.unknown(std::span{message_.data(), 1}); break;
+  default: config_.utility.unknown(std::span{message_.data(), 1}); break;
   }
 }
 
@@ -430,9 +392,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
     config_.system.active_sensing(config_.context, types::system::active_sensing{message_[0]});
     break;
   case status::systemreset: config_.system.reset(config_.context, types::system::reset{message_[0]}); break;
-  default:
-    config_.callbacks.unknown(std::span{message_.data(), message_size<midi2::ump_message_type::system>()});
-    break;
+  default: config_.utility.unknown(std::span{message_.data(), message_size<midi2::ump_message_type::system>()}); break;
   }
 }
 
@@ -459,7 +419,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
   case status::channel_pressure: config_.m1cvm.channel_pressure(config_.context, w0); break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
   case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, w0); break;
-  default: config_.callbacks.unknown(std::span{message_.data(), 1}); break;
+  default: config_.utility.unknown(std::span{message_.data(), 1}); break;
   }
 }
 
@@ -476,7 +436,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::data64_message
   case data64::sysex7_start: config_.data64.sysex7_start(config_.context, message); break;
   case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, message); break;
   case data64::sysex7_end: config_.data64.sysex7_end(config_.context, message); break;
-  default: config_.callbacks.unknown(span); break;
+  default: config_.utility.unknown(span); break;
   }
 }
 
@@ -531,7 +491,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
   case midi2status::pitch_bend_pernote:
     config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend_w0{message_[0]}, message_[1]);
     break;
-  default: config_.callbacks.unknown(std::span{message_.data(), 2}); break;
+  default: config_.utility.unknown(std::span{message_.data(), 2}); break;
   }
 }
 
@@ -599,94 +559,66 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
   case ump_stream::start_of_clip: config_.ump_stream.start_of_clip(config_.context, start_of_clip{span}); break;
   // 7.1.11 End of Clip Message
   case ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
-  default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
+  default: config_.utility.unknown(std::span{message_.data(), 4}); break;
   }
 }
 
-// 128 bit Data Messages (including System Exclusive 8)
+// data128 message
+// ~~~~~~~~~~~~~~~
 template <ump_processor_config Config> void umpProcessor<Config>::data128_message() {
   using types::data128::mds_header;
   using types::data128::mds_payload;
   using types::data128::sysex8;
+  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+
+  auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
-  case data128::sysex8_in_1:
-    config_.data128.sysex8_in_1(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
-                                                        sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
-    break;
-  case data128::sysex8_start:
-    config_.data128.sysex8_start(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
-                                                         sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
-    break;
-  case data128::sysex8_continue:
-    config_.data128.sysex8_continue(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
-                                                            sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
-    break;
-  case data128::sysex8_end:
-    config_.data128.sysex8_end(config_.context, sysex8{sysex8::word0{message_[0]}, sysex8::word1{message_[1]},
-                                                       sysex8::word2{message_[2]}, sysex8::word3{message_[3]}});
-    break;
-  case data128::mixed_data_set_header:
-    config_.data128.mds_header(config_.context,
-                               mds_header{mds_header::word0{message_[0]}, mds_header::word1{message_[1]},
-                                          mds_header::word2{message_[2]}, mds_header::word3{message_[3]}});
-    break;
+  case data128::sysex8_in_1: config_.data128.sysex8_in_1(config_.context, sysex8{span}); break;
+  case data128::sysex8_start: config_.data128.sysex8_start(config_.context, sysex8{span}); break;
+  case data128::sysex8_continue: config_.data128.sysex8_continue(config_.context, sysex8{span}); break;
+  case data128::sysex8_end: config_.data128.sysex8_end(config_.context, sysex8{span}); break;
+  case data128::mixed_data_set_header: config_.data128.mds_header(config_.context, mds_header{span}); break;
   case data128::mixed_data_set_payload:
-    config_.data128.mds_payload(
-        config_.context, types::data128::mds_payload{mds_payload::word0{message_[0]}, mds_payload::word1{message_[1]},
-                                                     mds_payload::word2{message_[2]}, mds_payload::word3{message_[3]}});
+    config_.data128.mds_payload(config_.context, types::data128::mds_payload{span});
     break;
-  default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
+  default: config_.utility.unknown(span); break;
   }
 }
 
 // flex data message
 // ~~~~~~~~~~~~~~~~~
-// 128 bit Data Messages (including System Exclusive 8)
 template <ump_processor_config Config> void umpProcessor<Config>::flex_data_message() {
+  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+
+  auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   auto const m0 = types::flex_data::flex_data_w0{message_[0]};
   auto const status = static_cast<flex_data>(m0.status.value());
   if (m0.status_bank == 0) {
     switch (status) {
     // 7.5.3 Set Tempo Message
-    case flex_data::set_tempo:
-      config_.flex.set_tempo(config_.context, types::flex_data::set_tempo_w0{message_[0]},
-                             types::flex_data::set_tempo_w1{message_[1]}, types::flex_data::set_tempo_w2{message_[2]},
-                             types::flex_data::set_tempo_w3{message_[3]});
-      break;
+    case flex_data::set_tempo: config_.flex.set_tempo(config_.context, types::flex_data::set_tempo{span}); break;
     // 7.5.4 Set Time Signature Message
     case flex_data::set_time_signature:
-      config_.flex.set_time_signature(config_.context, types::flex_data::set_time_signature_w0{message_[0]},
-                                      types::flex_data::set_time_signature_w1{message_[1]},
-                                      types::flex_data::set_time_signature_w2{message_[2]},
-                                      types::flex_data::set_time_signature_w3{message_[3]});
+      config_.flex.set_time_signature(config_.context, types::flex_data::set_time_signature{span});
       break;
     // 7.5.5 Set Metronome Message
     case flex_data::set_metronome:
-      config_.flex.set_metronome(config_.context, types::flex_data::set_metronome_w0{message_[0]},
-                                 types::flex_data::set_metronome_w1{message_[1]},
-                                 types::flex_data::set_metronome_w2{message_[2]},
-                                 types::flex_data::set_metronome_w3{message_[3]});
+      config_.flex.set_metronome(config_.context, types::flex_data::set_metronome{span});
       break;
     // 7.5.7 Set Key Signature Message
     case flex_data::set_key_signature:
-      config_.flex.set_key_signature(config_.context, types::flex_data::set_key_signature_w0{message_[0]},
-                                     types::flex_data::set_key_signature_w1{message_[1]},
-                                     types::flex_data::set_key_signature_w2{message_[2]},
-                                     types::flex_data::set_key_signature_w3{message_[3]});
+      config_.flex.set_key_signature(config_.context, types::flex_data::set_key_signature{span});
       break;
     // 7.5.8 Set Chord Name Message
     case flex_data::set_chord_name:
-      config_.flex.set_chord_name(config_.context, types::flex_data::set_chord_name_w0{message_[0]},
-                                  types::flex_data::set_chord_name_w1{message_[1]},
-                                  types::flex_data::set_chord_name_w2{message_[2]},
-                                  types::flex_data::set_chord_name_w3{message_[3]});
+      config_.flex.set_chord_name(config_.context, types::flex_data::set_chord_name{span});
       break;
-    default: config_.callbacks.unknown(std::span{message_.data(), 4}); break;
+    default: config_.utility.unknown(span); break;
     }
   } else {
-    config_.flex.text(config_.context, types::flex_data::text_common_w0{message_[0]},
-                      types::flex_data::text_common_w1{message_[1]}, types::flex_data::text_common_w2{message_[2]},
-                      types::flex_data::text_common_w3{message_[3]});
+    config_.flex.text(config_.context, types::flex_data::text_common{span});
   }
 }
 
