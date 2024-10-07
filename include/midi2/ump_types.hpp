@@ -391,37 +391,61 @@ struct per_note_controller {
     ump_bitfield<0, 8> index;
   };
   using word1 = std::uint32_t;
+
   per_note_controller() = default;
   per_note_controller(per_note_controller const &) = default;
   explicit per_note_controller(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(per_note_controller const &a, per_note_controller const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
-union per_note_management_w0 {
-  UMP_MEMBERS(per_note_management_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved;
-  ump_bitfield<8, 7> note;
-  ump_bitfield<0, 1> option_flags;
-  ump_bitfield<1, 1> detach;  ///< Detach per-note controllers from previously received note(s)
-  ump_bitfield<0, 1> set;     ///< Reset (set) per-note controllers to default values
+struct per_note_management {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 1> option_flags;
+    ump_bitfield<1, 1> detach;  ///< Detach per-note controllers from previously received note(s)
+    ump_bitfield<0, 1> set;     ///< Reset (set) per-note controllers to default values
+  };
+  using word1 = std::uint32_t;
+
+  per_note_management() = default;
+  per_note_management(per_note_management const &) = default;
+  explicit per_note_management(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(per_note_management const &a, per_note_management const &b) = default;
+
+  word0 w0{};
+  word1 w1{};
 };
 
 // 7.4.6 MIDI 2.0 Control Change Message
-union control_change_w0 {
-  UMP_MEMBERS(control_change_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0xB
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved;
-  ump_bitfield<8, 7> note;
+struct control_change {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0xB
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved;
+    ump_bitfield<8, 7> note;
+  };
+  using word1 = std::uint32_t;
+
+  control_change() = default;
+  control_change(control_change const &) = default;
+  explicit control_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
+
+  word0 w0{};
+  word1 w1{};
 };
 
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
@@ -488,35 +512,59 @@ struct channel_pressure {
     ump_bitfield<0, 8> reserved1;
   };
   using word1 = std::uint32_t;
+
   channel_pressure() = default;
   channel_pressure(channel_pressure const &) = default;
   explicit channel_pressure(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
   friend constexpr bool operator==(channel_pressure const &a, channel_pressure const &b) = default;
+
   word0 w0{};
   word1 w1{};
 };
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
-union pitch_bend_w0 {
-  UMP_MEMBERS(pitch_bend_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0xE
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<8, 8> reserved0;
-  ump_bitfield<0, 8> reserved1;
+struct pitch_bend {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0xE
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> reserved0;
+    ump_bitfield<0, 8> reserved1;
+  };
+  using word1 = std::uint32_t;
+
+  pitch_bend() = default;
+  pitch_bend(pitch_bend const &) = default;
+  explicit pitch_bend(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) = default;
+
+  word0 w0{};
+  word1 w1{};
 };
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-union per_note_pitch_bend_w0 {
-  UMP_MEMBERS(per_note_pitch_bend_w0)
-  ump_bitfield<28, 4> mt;  ///< Always 0x4
-  ump_bitfield<24, 4> group;
-  ump_bitfield<20, 4> status;  ///< Always 0x6
-  ump_bitfield<16, 4> channel;
-  ump_bitfield<15, 1> reserved0;
-  ump_bitfield<8, 7> note;
-  ump_bitfield<0, 8> reserved1;
+struct per_note_pitch_bend {
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0x6
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 8> reserved1;
+  };
+  using word1 = std::uint32_t;
+
+  per_note_pitch_bend() = default;
+  per_note_pitch_bend(per_note_pitch_bend const &) = default;
+  explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  friend constexpr bool operator==(per_note_pitch_bend const &a, per_note_pitch_bend const &b) = default;
+
+  word0 w0{};
+  word1 w1{};
 };
 
 }  // end namespace m2cvm

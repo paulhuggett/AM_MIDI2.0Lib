@@ -107,11 +107,11 @@ concept m2cvm_backend = requires(T v, Context context) {
   { v.channel_pressure(context, types::m2cvm::channel_pressure{}) } -> std::same_as<void>;
   { v.rpn_controller(context, types::m2cvm::per_note_controller{}) } -> std::same_as<void>;
   { v.nrpn_controller(context, types::m2cvm::per_note_controller{}) } -> std::same_as<void>;
-  { v.per_note_management(context, types::m2cvm::per_note_management_w0{}, std::uint32_t{}) } -> std::same_as<void>;
-  { v.control_change(context, types::m2cvm::control_change_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.per_note_management(context, types::m2cvm::per_note_management{}) } -> std::same_as<void>;
+  { v.control_change(context, types::m2cvm::control_change{}) } -> std::same_as<void>;
   { v.controller_message(context, types::m2cvm::controller_message{}) } -> std::same_as<void>;
-  { v.pitch_bend(context, types::m2cvm::pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
-  { v.per_note_pitch_bend(context, types::m2cvm::per_note_pitch_bend_w0{}, std::uint32_t{}) } -> std::same_as<void>;
+  { v.pitch_bend(context, types::m2cvm::pitch_bend{}) } -> std::same_as<void>;
+  { v.per_note_pitch_bend(context, types::m2cvm::per_note_pitch_bend{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept data128_backend = requires(T v, Context context) {
@@ -165,97 +165,102 @@ concept ump_processor_config = requires (T v) {
 
 template <typename Context> struct utility_null {
   // 7.2.1 NOOP
-  void noop(Context) { /* do nothing */ }
+  constexpr void noop(Context) const { /* do nothing */ }
   // 7.2.2.1 JR Clock Message
-  void jr_clock(Context, types::jr_clock) { /* do nothing */ }
+  constexpr void jr_clock(Context, types::jr_clock const &) const { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
-  void jr_timestamp(Context, types::jr_clock) { /* do nothing */ }
+  constexpr void jr_timestamp(Context, types::jr_clock const &) const { /* do nothing */ }
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  void delta_clockstamp_tpqn(Context, types::jr_clock) { /* do nothing */ }
+  constexpr void delta_clockstamp_tpqn(Context, types::jr_clock const &) const { /* do nothing */ }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  void delta_clockstamp(Context, types::delta_clockstamp) { /* do nothing */ }
+  constexpr void delta_clockstamp(Context, types::delta_clockstamp const &) const { /* do nothing */ }
 
-  void unknown(std::span<std::uint32_t>) { /* do nothing */ }
+  constexpr void unknown(std::span<std::uint32_t>) const { /* do nothing */ }
 };
 template <typename Context> struct system_null {
   // 7.6 System Common and System Real Time Messages
-  void midi_time_code(Context, types::system::midi_time_code) { /* do nothing */ }
-  void song_position_pointer(Context, types::system::song_position_pointer) { /* do nothing */ }
-  void song_select(Context, types::system::song_select) { /* do nothing */ }
-  void tune_request(Context, types::system::tune_request) { /* do nothing */ }
-  void timing_clock(Context, types::system::timing_clock) { /* do nothing */ }
-  void seq_start(Context, types::system::seq_start) { /* do nothing */ }
-  void seq_continue(Context, types::system::seq_continue) { /* do nothing */ }
-  void seq_stop(Context, types::system::seq_stop) { /* do nothing */ }
-  void active_sensing(Context, types::system::active_sensing) { /* do nothing */ }
-  void reset(Context, types::system::reset) { /* do nothing */ }
+  constexpr void midi_time_code(Context, types::system::midi_time_code const &) const { /* do nothing */ }
+  constexpr void song_position_pointer(Context, types::system::song_position_pointer const &) const { /* do nothing */ }
+  constexpr void song_select(Context, types::system::song_select const &) const { /* do nothing */ }
+  constexpr void tune_request(Context, types::system::tune_request const &) const { /* do nothing */ }
+  constexpr void timing_clock(Context, types::system::timing_clock const &) const { /* do nothing */ }
+  constexpr void seq_start(Context, types::system::seq_start const &) const { /* do nothing */ }
+  constexpr void seq_continue(Context, types::system::seq_continue const &) const { /* do nothing */ }
+  constexpr void seq_stop(Context, types::system::seq_stop const &) const { /* do nothing */ }
+  constexpr void active_sensing(Context, types::system::active_sensing const &) const { /* do nothing */ }
+  constexpr void reset(Context, types::system::reset const &) const { /* do nothing */ }
 };
 template <typename Context> struct m1cvm_null {
-  void note_off(Context, types::m1cvm_w0) { /* do nothing */ }
-  void note_on(Context, types::m1cvm_w0) { /* do nothing */ }
-  void poly_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
-  void control_change(Context, types::m1cvm_w0) { /* do nothing */ }
-  void program_change(Context, types::m1cvm_w0) { /* do nothing */ }
-  void channel_pressure(Context, types::m1cvm_w0) { /* do nothing */ }
-  void pitch_bend(Context, types::m1cvm_w0) { /* do nothing */ }
+  constexpr void note_off(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void note_on(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void poly_pressure(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void control_change(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void program_change(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void channel_pressure(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void pitch_bend(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
-  void sysex7_in_1(Context, types::data64::sysex7) { /* do nothing */ }
-  void sysex7_start(Context, types::data64::sysex7) { /* do nothing */ }
-  void sysex7_continue(Context, types::data64::sysex7) { /* do nothing */ }
-  void sysex7_end(Context, types::data64::sysex7) { /* do nothing */ }
+  constexpr void sysex7_in_1(Context, types::data64::sysex7 const &) const { /* do nothing */ }
+  constexpr void sysex7_start(Context, types::data64::sysex7 const &) const { /* do nothing */ }
+  constexpr void sysex7_continue(Context, types::data64::sysex7 const &) const { /* do nothing */ }
+  constexpr void sysex7_end(Context, types::data64::sysex7 const &) const { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_null {
-  void note_off(Context, types::m2cvm::note) { /* do nothing */ }
-  void note_on(Context, types::m2cvm::note) { /* do nothing */ }
-  void poly_pressure(Context, types::m2cvm::poly_pressure) { /* do nothing */ }
-  void program_change(Context, types::m2cvm::program_change) { /* do nothing */ }
-  void channel_pressure(Context, types::m2cvm::channel_pressure) { /* do nothing */ }
-  void rpn_controller(Context, types::m2cvm::per_note_controller) { /* do nothing */ }
-  void nrpn_controller(Context, types::m2cvm::per_note_controller) { /* do nothing */ }
-  void per_note_management(Context, types::m2cvm::per_note_management_w0, std::uint32_t) { /* do nothing */ }
-  void control_change(Context, types::m2cvm::control_change_w0, std::uint32_t) { /* do nothing */ }
-  void controller_message(Context, types::m2cvm::controller_message) { /* do nothing */ }
-  void pitch_bend(Context, types::m2cvm::pitch_bend_w0, std::uint32_t) { /* do nothing */ }
-  void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) { /* do nothing */ }
+  constexpr void note_off(Context, types::m2cvm::note const &) const { /* do nothing */ }
+  constexpr void note_on(Context, types::m2cvm::note const &) const { /* do nothing */ }
+  constexpr void poly_pressure(Context, types::m2cvm::poly_pressure const &) const { /* do nothing */ }
+  constexpr void program_change(Context, types::m2cvm::program_change const &) const { /* do nothing */ }
+  constexpr void channel_pressure(Context, types::m2cvm::channel_pressure const &) const { /* do nothing */ }
+  constexpr void rpn_controller(Context, types::m2cvm::per_note_controller const &) const { /* do nothing */ }
+  constexpr void nrpn_controller(Context, types::m2cvm::per_note_controller const &) const { /* do nothing */ }
+  constexpr void per_note_management(Context, types::m2cvm::per_note_management const &) const { /* do nothing */ }
+  constexpr void control_change(Context, types::m2cvm::control_change const &) const { /* do nothing */ }
+  constexpr void controller_message(Context, types::m2cvm::controller_message const &) const { /* do nothing */ }
+  constexpr void pitch_bend(Context, types::m2cvm::pitch_bend const &) const { /* do nothing */ }
+  constexpr void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend const &) const { /* do nothing */ }
 };
 template <typename Context> struct data128_null {
-  void sysex8_in_1(Context, types::data128::sysex8) { /* do nothing */ }
-  void sysex8_start(Context, types::data128::sysex8) { /* do nothing */ }
-  void sysex8_continue(Context, types::data128::sysex8) { /* do nothing */ }
-  void sysex8_end(Context, types::data128::sysex8) { /* do nothing */ }
-  void mds_header(Context, types::data128::mds_header) { /* do nothing */ }
-  void mds_payload(Context, types::data128::mds_payload) { /* do nothing */ }
+  constexpr void sysex8_in_1(Context, types::data128::sysex8 const &) const { /* do nothing */ }
+  constexpr void sysex8_start(Context, types::data128::sysex8 const &) const { /* do nothing */ }
+  constexpr void sysex8_continue(Context, types::data128::sysex8 const &) const { /* do nothing */ }
+  constexpr void sysex8_end(Context, types::data128::sysex8 const &) const { /* do nothing */ }
+  constexpr void mds_header(Context, types::data128::mds_header const &) const { /* do nothing */ }
+  constexpr void mds_payload(Context, types::data128::mds_payload const &) const { /* do nothing */ }
 };
 template <typename Context> struct ump_stream_null {
-  void endpoint_discovery(Context, types::ump_stream::endpoint_discovery const &) { /* do nothing */ }
-  void endpoint_info_notification(Context, types::ump_stream::endpoint_info_notification const &) { /* do nothing */ }
-  void device_identity_notification(Context, types::ump_stream::device_identity_notification const &) { /* do nothing */
+  constexpr void endpoint_discovery(Context, types::ump_stream::endpoint_discovery const &) const { /* do nothing */ }
+  constexpr void endpoint_info_notification(
+      Context, types::ump_stream::endpoint_info_notification const &) const { /* do nothing */ }
+  constexpr void device_identity_notification(
+      Context, types::ump_stream::device_identity_notification const &) const { /* do nothing */ }
+  constexpr void endpoint_name_notification(
+      Context, types::ump_stream::endpoint_name_notification const &) const { /* do nothing */ }
+  constexpr void product_instance_id_notification(
+      Context, types::ump_stream::product_instance_id_notification const &) const { /* do nothing */ }
+  constexpr void jr_configuration_request(Context,
+                                          types::ump_stream::jr_configuration_request const &) const { /* do nothing */
   }
-  void endpoint_name_notification(Context, types::ump_stream::endpoint_name_notification const &) { /* do nothing */ }
-  void product_instance_id_notification(Context,
-                                        types::ump_stream::product_instance_id_notification const &) { /* do nothing */
-  }
-  void jr_configuration_request(Context, types::ump_stream::jr_configuration_request const &) { /* do nothing */ }
-  void jr_configuration_notification(Context,
-                                     types::ump_stream::jr_configuration_notification const &) { /* do nothing */ }
+  constexpr void jr_configuration_notification(
+      Context, types::ump_stream::jr_configuration_notification const &) const { /* do nothing */ }
 
-  void function_block_discovery(Context, types::ump_stream::function_block_discovery) { /* do nothing */ }
-  void function_block_info_notification(Context, types::ump_stream::function_block_info_notification) { /* do nothing */
+  constexpr void function_block_discovery(Context,
+                                          types::ump_stream::function_block_discovery const &) const { /* do nothing */
   }
-  void function_block_name_notification(Context, types::ump_stream::function_block_name_notification) { /* do nothing */
-  }
+  constexpr void function_block_info_notification(
+      Context, types::ump_stream::function_block_info_notification const &) const { /* do nothing */ }
+  constexpr void function_block_name_notification(
+      Context, types::ump_stream::function_block_name_notification const &) const { /* do nothing */ }
 
-  void start_of_clip(Context, types::ump_stream::start_of_clip) { /* do nothing */ }
-  void end_of_clip(Context, types::ump_stream::end_of_clip) { /* do nothing */ }
+  constexpr void start_of_clip(Context, types::ump_stream::start_of_clip const &) const { /* do nothing */ }
+  constexpr void end_of_clip(Context, types::ump_stream::end_of_clip const &) const { /* do nothing */ }
 };
 template <typename Context> struct flex_data_null {
-  void set_tempo(Context, types::flex_data::set_tempo) { /* do nothing */ }
-  void set_time_signature(Context, types::flex_data::set_time_signature) { /* do nothing */ }
-  void set_metronome(Context, types::flex_data::set_metronome) { /* do nothing */ }
-  void set_key_signature(Context, types::flex_data::set_key_signature) { /* do nothing */ }
-  void set_chord_name(Context, types::flex_data::set_chord_name) { /* do nothing */ }
-  void text(Context, types::flex_data::text_common) { /* do nothing */ }
+  constexpr void set_tempo(Context, types::flex_data::set_tempo const &) const { /* do nothing */ }
+  constexpr void set_time_signature(Context, types::flex_data::set_time_signature const &) const { /* do nothing */ }
+  constexpr void set_metronome(Context, types::flex_data::set_metronome const &) const { /* do nothing */ }
+  constexpr void set_key_signature(Context, types::flex_data::set_key_signature const &) const { /* do nothing */ }
+  constexpr void set_chord_name(Context, types::flex_data::set_chord_name const &) const { /* do nothing */ }
+  constexpr void text(Context, types::flex_data::text_common const &) const { /* do nothing */ }
 };
 struct default_config {
   struct empty {};
@@ -463,12 +468,10 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     break;
   // 7.4.5 MIDI 2.0 Per-Note Management Message
   case midi2status::pernote_manage:
-    config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management_w0{message_[0]}, message_[1]);
+    config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management{span});
     break;
   // 7.4.6 MIDI 2.0 Control Change Message
-  case status::cc:
-    config_.m2cvm.control_change(config_.context, types::m2cvm::control_change_w0{message_[0]}, message_[1]);
-    break;
+  case status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
   case midi2status::rpn:
@@ -484,12 +487,10 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure{span});
     break;
   // 7.4.11 MIDI 2.0 Pitch Bend Message
-  case status::pitch_bend:
-    config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend_w0{message_[0]}, message_[1]);
-    break;
+  case status::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
   // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
   case midi2status::pitch_bend_pernote:
-    config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend_w0{message_[0]}, message_[1]);
+    config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend{span});
     break;
   default: config_.utility.unknown(std::span{message_.data(), 2}); break;
   }

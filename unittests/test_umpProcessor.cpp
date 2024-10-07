@@ -133,11 +133,11 @@ struct m2cvm_base {
   virtual void channel_pressure(context_type, midi2::types::m2cvm::channel_pressure) = 0;
   virtual void rpn_controller(context_type, midi2::types::m2cvm::per_note_controller) = 0;
   virtual void nrpn_controller(context_type, midi2::types::m2cvm::per_note_controller) = 0;
-  virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management_w0, std::uint32_t) = 0;
-  virtual void control_change(context_type, midi2::types::m2cvm::control_change_w0, std::uint32_t) = 0;
+  virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management) = 0;
+  virtual void control_change(context_type, midi2::types::m2cvm::control_change) = 0;
   virtual void controller_message(context_type, midi2::types::m2cvm::controller_message) = 0;
-  virtual void pitch_bend(context_type, midi2::types::m2cvm::pitch_bend_w0, std::uint32_t) = 0;
-  virtual void per_note_pitch_bend(context_type, midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t) = 0;
+  virtual void pitch_bend(context_type, midi2::types::m2cvm::pitch_bend) = 0;
+  virtual void per_note_pitch_bend(context_type, midi2::types::m2cvm::per_note_pitch_bend) = 0;
 };
 class M2CVMMocks : public m2cvm_base {
 public:
@@ -148,13 +148,11 @@ public:
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m2cvm::channel_pressure), (override));
   MOCK_METHOD(void, rpn_controller, (context_type, midi2::types::m2cvm::per_note_controller), (override));
   MOCK_METHOD(void, nrpn_controller, (context_type, midi2::types::m2cvm::per_note_controller), (override));
-  MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management_w0, std::uint32_t),
-              (override));
-  MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change_w0, std::uint32_t), (override));
+  MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management), (override));
+  MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change), (override));
   MOCK_METHOD(void, controller_message, (context_type, midi2::types::m2cvm::controller_message), (override));
-  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m2cvm::pitch_bend_w0, std::uint32_t), (override));
-  MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::types::m2cvm::per_note_pitch_bend_w0, std::uint32_t),
-              (override));
+  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m2cvm::pitch_bend), (override));
+  MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::types::m2cvm::per_note_pitch_bend), (override));
 };
 struct data128_base {
   data128_base() = default;
