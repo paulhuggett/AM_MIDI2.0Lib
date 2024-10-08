@@ -35,6 +35,103 @@
 
 namespace midi2 {
 
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ctxt,
+                                                          types::m2cvm::note_off const &in) const {
+  types::m1cvm::note_off out;
+  out.w0.group = in.w0.group.value();
+  out.w0.channel = in.w0.channel.value();
+  out.w0.note = in.w0.note.value();
+  out.w0.velocity = static_cast<std::uint8_t>(scaleDown(in.w1.velocity.value(),
+                                                        static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
+                                                        static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
+  ctxt->push1(out);
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
+                                                         types::m2cvm::note_on const &in) const {
+  types::m1cvm::note_on out;
+  out.w0.group = in.w0.group.value();
+  out.w0.channel = in.w0.channel.value();
+  out.w0.note = in.w0.note.value();
+  out.w0.velocity =
+      static_cast<std::uint8_t>(scaleDown(in.w1.velocity, static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
+                                          static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
+  ctxt->push1(out);
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
+                                                               types::m2cvm::poly_pressure const &in) const {
+  types::m1cvm::poly_pressure out;
+  out.w0.group = in.w0.group.value();
+  out.w0.channel = in.w0.channel.value();
+  out.w0.note = in.w0.note.value();
+  out.w0.pressure =
+      static_cast<std::uint8_t>(scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.pressure)::bits())));
+  ctxt->push1(out);
+}
+
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
+                                                                types::m2cvm::program_change const &in) const {
+  auto const group = in.w0.group.value();
+  auto const channel = in.w0.channel.value();
+  if (in.w0.bank_valid) {
+    // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
+    // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
+    types::m1cvm::control_change cc;
+    cc.w0.group = group;
+    cc.w0.channel = channel;
+    cc.w0.index = control::bank_select;
+    cc.w0.data = in.w1.bank_msb.value();
+    ctxt->push1(cc);
+
+    cc.w0.index = control::bank_select_lsb;
+    cc.w0.data = in.w1.bank_lsb.value();
+    ctxt->push1(cc);
+  }
+  types::m1cvm::program_change out;
+  out.w0.group = group;
+  out.w0.channel = channel;
+  out.w0.program = in.w1.program.value();
+  ctxt->push1(out);
+}
+
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
+                                                                  types::m2cvm::channel_pressure const &in) const {
+  types::m1cvm::channel_pressure out;
+  out.w0.group = in.w0.group.value();
+  out.w0.channel = in.w0.channel.value();
+  out.w0.data =
+      static_cast<std::uint8_t>(scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.data)::bits())));
+  ctxt->push1(out);
+}
+
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
+                                                                types::m2cvm::per_note_controller const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
+                                                                 types::m2cvm::per_note_controller const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_management(context_type *const ctxt,
+                                                                     types::m2cvm::per_note_management const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
+                                                                types::m2cvm::control_change const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::controller_message(context_type *const ctxt,
+                                                                    types::m2cvm::controller_message const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
+                                                            types::m2cvm::pitch_bend const &) const {
+  (void)ctxt;
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_pitch_bend(context_type *const ctxt,
+                                                                     types::m2cvm::per_note_pitch_bend const &) const {
+  (void)ctxt; /* message dropped */
+}
+
 #if 0
 void umpToMIDI1Protocol::UMPStreamParse(uint32_t ump) {
   switch (UMPPos) {

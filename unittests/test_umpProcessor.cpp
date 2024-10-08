@@ -91,7 +91,7 @@ struct m1cvm_base {
   virtual void poly_pressure(context_type, midi2::types::m1cvm::poly_pressure) = 0;
   virtual void control_change(context_type, midi2::types::m1cvm::control_change) = 0;
   virtual void program_change(context_type, midi2::types::m1cvm::m1cvm) = 0;
-  virtual void channel_pressure(context_type, midi2::types::m1cvm::m1cvm) = 0;
+  virtual void channel_pressure(context_type, midi2::types::m1cvm::channel_pressure) = 0;
   virtual void pitch_bend(context_type, midi2::types::m1cvm::m1cvm) = 0;
 };
 class M1CVMMocks : public m1cvm_base {
@@ -101,7 +101,7 @@ public:
   MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m1cvm::poly_pressure), (override));
   MOCK_METHOD(void, control_change, (context_type, midi2::types::m1cvm::control_change), (override));
   MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm::m1cvm), (override));
-  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm::m1cvm), (override));
+  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm::channel_pressure), (override));
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm::m1cvm), (override));
 };
 struct data64_base {
@@ -450,7 +450,7 @@ constexpr std::uint8_t ump_cvm(midi2::status s) {
 
 class UMPProcessorMIDI1 : public UMPProcessor {};
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, Midi1NoteOn) {
+TEST_F(UMPProcessorMIDI1, NoteOn) {
   midi2::types::m1cvm::note_on message;
   message.w0.group = 0;
   message.w0.channel = 3;
@@ -460,7 +460,7 @@ TEST_F(UMPProcessorMIDI1, Midi1NoteOn) {
   processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, Midi1NoteOff) {
+TEST_F(UMPProcessorMIDI1, NoteOff) {
   midi2::types::m1cvm::note_off message;
   message.w0.group = 0;
   message.w0.channel = 3;
@@ -470,7 +470,7 @@ TEST_F(UMPProcessorMIDI1, Midi1NoteOff) {
   processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, Midi1PolyPressure) {
+TEST_F(UMPProcessorMIDI1, PolyPressure) {
   midi2::types::m1cvm::poly_pressure message;
   message.w0.group = std::uint8_t{0};
   message.w0.channel = std::uint8_t{3};
@@ -480,13 +480,22 @@ TEST_F(UMPProcessorMIDI1, Midi1PolyPressure) {
   processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, Midi1ControlChange) {
+TEST_F(UMPProcessorMIDI1, ControlChange) {
   midi2::types::m1cvm::control_change message;
   message.w0.group = 0;
   message.w0.channel = 3;
   message.w0.index = 60;
   message.w0.data = 127;
   EXPECT_CALL(config_.m1cvm, control_change(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0);
+}
+// NOLINTNEXTLINE
+TEST_F(UMPProcessorMIDI1, ChannelPressure) {
+  midi2::types::m1cvm::channel_pressure message;
+  message.w0.group = 0;
+  message.w0.channel = 3;
+  message.w0.data = 0b01010101;
+  EXPECT_CALL(config_.m1cvm, channel_pressure(config_.context, message)).Times(1);
   processor_.processUMP(message.w0);
 }
 

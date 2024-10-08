@@ -80,7 +80,9 @@ private:
       void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) const { ctxt->push1(in); }
       void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) const { ctxt->push1(in); }
       void program_change(context_type *const ctxt, types::m1cvm::m1cvm const &in) const { ctxt->push1(in); }
-      void channel_pressure(context_type *const ctxt, types::m1cvm::m1cvm const &in) const { ctxt->push1(in); }
+      void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) const {
+        ctxt->push1(in);
+      }
       void pitch_bend(context_type *const ctxt, types::m1cvm::m1cvm const &in) const { ctxt->push1(in); }
     };
     struct data64 {
@@ -90,70 +92,18 @@ private:
       void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push2(in); }
     };
     struct m2cvm {
-      void note_off(context_type *const ctxt, types::m2cvm::note_off const &in) const {
-        types::m1cvm::note_off out;
-        out.w0.group = in.w0.group.value();
-        out.w0.channel = in.w0.channel.value();
-        out.w0.note = in.w0.note.value();
-        out.w0.velocity = static_cast<std::uint8_t>(
-            scaleDown(in.w1.velocity.value(), static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
-                      static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
-        ctxt->push1(out);
-      }
-      void note_on(context_type *const ctxt, types::m2cvm::note_on const &in) const {
-        types::m1cvm::note_on out;
-        out.w0.group = in.w0.group.value();
-        out.w0.channel = in.w0.channel.value();
-        out.w0.note = in.w0.note.value();
-        out.w0.velocity = static_cast<std::uint8_t>(
-            scaleDown(in.w1.velocity, static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
-                      static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
-        ctxt->push1(out);
-      }
-      void poly_pressure(context_type *const ctxt, types::m2cvm::poly_pressure const &in) const {
-        types::m1cvm::poly_pressure out;
-        out.w0.group = in.w0.group.value();
-        out.w0.channel = in.w0.channel.value();
-        out.w0.note = in.w0.note.value();
-        out.w0.pressure = static_cast<std::uint8_t>(
-            scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.pressure)::bits())));
-        ctxt->push1(out);
-      }
-      void program_change(context_type *const ctxt, types::m2cvm::program_change const &in) const {
-        auto const group = in.w0.group.value();
-        auto const channel = in.w0.channel.value();
-        if (in.w0.bank_valid) {
-          // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
-          // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
-          types::m1cvm::control_change cc;
-          cc.w0.group = group;
-          cc.w0.channel = channel;
-          cc.w0.index = control::bank_select;
-          cc.w0.data = in.w1.bank_msb.value();
-          ctxt->push1(cc);
-
-          cc.w0.index = control::bank_select_lsb;
-          cc.w0.data = in.w1.bank_lsb.value();
-          ctxt->push1(cc);
-        }
-        types::m1cvm::program_change out;
-        out.w0.group = group;
-        out.w0.channel = channel;
-        out.w0.program = in.w1.program.value();
-        ctxt->push1(out);
-      }
-      void channel_pressure(context_type *const ctxt, types::m2cvm::channel_pressure const &) const { (void)ctxt; }
-      void rpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const { (void)ctxt; }
-      void nrpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const { (void)ctxt; }
-      void per_note_management(context_type *const ctxt, types::m2cvm::per_note_management const &) const {
-        (void)ctxt;
-      }
-      void control_change(context_type *const ctxt, types::m2cvm::control_change const &) const { (void)ctxt; }
-      void controller_message(context_type *const ctxt, types::m2cvm::controller_message const &) const { (void)ctxt; }
-      void pitch_bend(context_type *const ctxt, types::m2cvm::pitch_bend const &) const { (void)ctxt; }
-      void per_note_pitch_bend(context_type *const ctxt, types::m2cvm::per_note_pitch_bend const &) const {
-        (void)ctxt;
-      }
+      void note_off(context_type *ctxt, types::m2cvm::note_off const &in) const;
+      void note_on(context_type *ctxt, types::m2cvm::note_on const &in) const;
+      void poly_pressure(context_type *ctxt, types::m2cvm::poly_pressure const &in) const;
+      void program_change(context_type *ctxt, types::m2cvm::program_change const &in) const;
+      void channel_pressure(context_type *ctxt, types::m2cvm::channel_pressure const &) const;
+      void rpn_controller(context_type *ctxt, types::m2cvm::per_note_controller const &) const;
+      void nrpn_controller(context_type *ctxt, types::m2cvm::per_note_controller const &) const;
+      void per_note_management(context_type *ctxt, types::m2cvm::per_note_management const &) const;
+      void control_change(context_type *ctxt, types::m2cvm::control_change const &) const;
+      void controller_message(context_type *ctxt, types::m2cvm::controller_message const &) const;
+      void pitch_bend(context_type *ctxt, types::m2cvm::pitch_bend const &) const;
+      void per_note_pitch_bend(context_type *ctxt, types::m2cvm::per_note_pitch_bend const &) const;
     };
     struct data128 {
       void sysex8_in_1(context_type *const ctxt, types::data128::sysex8 const &in) const { ctxt->push4(in); }
@@ -225,7 +175,7 @@ private:
       }
       void text(context_type *const ctxt, types::flex_data::text_common const &in) const { ctxt->push4(in); }
     };
-    context_type *context;
+    context_type *context = nullptr;
     [[no_unique_address]] struct utility utility{};
     [[no_unique_address]] struct system system{};
     [[no_unique_address]] struct m1cvm m1cvm{};

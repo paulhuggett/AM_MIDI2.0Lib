@@ -34,11 +34,13 @@ auto convert(InputIterator first, InputIterator last) {
 using testing::ElementsAre;
 using testing::ElementsAreArray;
 
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, Foo) {
   std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(convert(std::begin(input), std::end(input)),
               ElementsAreArray(input));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, Sysex) {
   std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B},
                          std::uint32_t{0x3026607A}, std::uint32_t{0x737F7F7F},
@@ -48,12 +50,14 @@ TEST(UMPToMIDI1, Sysex) {
   EXPECT_THAT(convert(std::begin(input), std::end(input)),
               ElementsAreArray(input));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, SystemMessageOneByte) {
   std::array const input{std::uint32_t{0x10F80000}};
   EXPECT_THAT(convert(std::begin(input), std::end(input)),
               ElementsAreArray(input));
 }
-TEST(UMPToMIDI1, NoteOn) {
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2NoteOn) {
   midi2::types::m2cvm::note_on ump;
   ump.w0.group = 0;
   ump.w0.channel = 0;
@@ -71,7 +75,8 @@ TEST(UMPToMIDI1, NoteOn) {
   std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
 }
-TEST(UMPToMIDI1, NoteOff) {
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2NoteOff) {
   midi2::types::m2cvm::note_off ump;
   ump.w0.group = 0;
   ump.w0.channel = 0;
@@ -89,7 +94,8 @@ TEST(UMPToMIDI1, NoteOff) {
   std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
 }
-TEST(UMPToMIDI1, PolyPressure) {
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2PolyPressure) {
   constexpr auto note = std::uint8_t{60};
   midi2::types::m2cvm::poly_pressure ump;
   ump.w0.group = 0;
@@ -106,7 +112,8 @@ TEST(UMPToMIDI1, PolyPressure) {
   std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
 }
-TEST(UMPToMIDI1, ProgramChangeNoBank) {
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2ProgramChangeNoBank) {
   constexpr auto program = std::uint8_t{60};
   midi2::types::m2cvm::program_change ump;
   ump.w0.group = 0;
@@ -123,7 +130,8 @@ TEST(UMPToMIDI1, ProgramChangeNoBank) {
   std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
 }
-TEST(UMPToMIDI1, ProgramChangeWithBank) {
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2ProgramChangeWithBank) {
   constexpr auto group = std::uint8_t{0x01};
   constexpr auto channel = std::uint8_t{0x02};
   constexpr auto program = std::uint8_t{60};
@@ -157,6 +165,31 @@ TEST(UMPToMIDI1, ProgramChangeWithBank) {
   EXPECT_THAT(convert(std::begin(input), std::end(input)),
               ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1),
                           std::bit_cast<std::uint32_t>(expected2)));
+}
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2ChannelPressure) {
+  midi2::types::m2cvm::channel_pressure ump;
+  ump.w0.group = 0;
+  ump.w0.channel = 0;
+  ump.w1 = 0xF000F000;
+  midi2::types::m1cvm::channel_pressure expected;
+  expected.w0.group = 0;
+  expected.w0.channel = 0;
+  expected.w0.data = 0x78;
+
+  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
+}
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, M2PerNotePitchBend) {
+  midi2::types::m2cvm::per_note_pitch_bend ump;
+  ump.w0.group = 0;
+  ump.w0.channel = 0;
+  ump.w0.note = 60;
+  ump.w1 = 0x80000000;
+
+  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre());
 }
 
 }  // end anonymous namespace

@@ -93,7 +93,7 @@ concept m1cvm_backend = requires(T v, Context context) {
   { v.poly_pressure(context, types::m1cvm::poly_pressure{}) } -> std::same_as<void>;
   { v.control_change(context, types::m1cvm::control_change{}) } -> std::same_as<void>;
   { v.program_change(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
-  { v.channel_pressure(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
+  { v.channel_pressure(context, types::m1cvm::channel_pressure{}) } -> std::same_as<void>;
   { v.pitch_bend(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
@@ -202,7 +202,7 @@ template <typename Context> struct m1cvm_null {
   constexpr void poly_pressure(Context, types::m1cvm::poly_pressure const &) const { /* do nothing */ }
   constexpr void control_change(Context, types::m1cvm::control_change const &) const { /* do nothing */ }
   constexpr void program_change(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
-  constexpr void channel_pressure(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
+  constexpr void channel_pressure(Context, types::m1cvm::channel_pressure const &) const { /* do nothing */ }
   constexpr void pitch_bend(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
@@ -438,7 +438,9 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
   // 7.3.5 MIDI 1.0 Program Change Message
   case status::program_change: config_.m1cvm.program_change(config_.context, w0); break;
   // 7.3.6 MIDI 1.0 Channel Pressure Message
-  case status::channel_pressure: config_.m1cvm.channel_pressure(config_.context, w0); break;
+  case status::channel_pressure:
+    config_.m1cvm.channel_pressure(config_.context, types::m1cvm::channel_pressure{message_[0]});
+    break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
   case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, w0); break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;

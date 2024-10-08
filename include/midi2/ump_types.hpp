@@ -464,7 +464,7 @@ struct program_change {
     UMP_MEMBERS0(word0, status::program_change)
     ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  /// Always 0x0C.
+    ump_bitfield<20, 4> status;  ///< Always 0x0C.
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> program;
@@ -474,6 +474,25 @@ struct program_change {
   program_change() = default;
   explicit program_change(std::uint32_t const w0_) : w0{w0_} {}
   friend bool operator==(program_change const &, program_change const &) = default;
+
+  word0 w0{};
+};
+
+struct channel_pressure {
+  union word0 {
+    UMP_MEMBERS0(word0, status::channel_pressure)
+    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0x0D.
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> data;
+    ump_bitfield<0, 8> reserved1;
+  };
+
+  channel_pressure() = default;
+  explicit channel_pressure(std::uint32_t const w0_) : w0{w0_} {}
+  friend bool operator==(channel_pressure const &, channel_pressure const &) = default;
 
   word0 w0{};
 };
@@ -748,7 +767,7 @@ struct program_change {
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 struct channel_pressure {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2status::channel_pressure)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xD
@@ -769,7 +788,7 @@ struct channel_pressure {
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 struct pitch_bend {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2status::pitch_bend)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xE
@@ -790,7 +809,7 @@ struct pitch_bend {
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 struct per_note_pitch_bend {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2status::pitch_bend_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0x6
