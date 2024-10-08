@@ -96,7 +96,8 @@ private:
         out.w0.channel = in.w0.channel.value();
         out.w0.note = in.w0.note.value();
         out.w0.velocity = static_cast<std::uint8_t>(
-            scaleDown(in.w1.velocity, decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()));
+            scaleDown(in.w1.velocity.value(), static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
+                      static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
         ctxt->push1(out);
       }
       void note_on(context_type *const ctxt, types::m2cvm::note_on const &in) const {
@@ -105,7 +106,8 @@ private:
         out.w0.channel = in.w0.channel.value();
         out.w0.note = in.w0.note.value();
         out.w0.velocity = static_cast<std::uint8_t>(
-            scaleDown(in.w1.velocity, decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()));
+            scaleDown(in.w1.velocity, static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
+                      static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
         ctxt->push1(out);
       }
       void poly_pressure(context_type *const ctxt, types::m2cvm::poly_pressure const &in) const {
@@ -113,7 +115,8 @@ private:
         out.w0.group = in.w0.group.value();
         out.w0.channel = in.w0.channel.value();
         out.w0.note = in.w0.note.value();
-        out.w0.pressure = static_cast<std::uint8_t>(scaleDown(in.w1, 32, decltype(out.w0.pressure)::bits()));
+        out.w0.pressure = static_cast<std::uint8_t>(
+            scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.pressure)::bits())));
         ctxt->push1(out);
       }
       void program_change(context_type *const ctxt, types::m2cvm::program_change const &in) const {

@@ -87,6 +87,7 @@ function (setup_target target)
     -U_FORTIFY_SOURCE
     -D_FORTIFY_SOURCE=3
   )
+  set (msvc_options /bigobj)
 
   if (LINUX)
     # TODO: On AArch64 use -mbranch-protection=standard?

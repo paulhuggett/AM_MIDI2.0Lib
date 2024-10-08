@@ -82,11 +82,11 @@ template <typename T> constexpr auto status_to_ump_status(T t) {
 }
 template <> constexpr auto status_to_ump_status(midi2status status) {
   auto const s = to_underlying(status);
-  return s < to_underlying(midi2status::pernote_manage) ? s >> 4 : s;
+  return static_cast<std::uint8_t>(s < to_underlying(midi2status::pernote_manage) ? s >> 4 : s);
 }
 template <> constexpr auto status_to_ump_status(status status) {
   auto const s = to_underlying(status);
-  return s < to_underlying(status::sysex_start) ? s >> 4 : s;
+  return static_cast<std::uint8_t>(s < to_underlying(status::sysex_start) ? s >> 4 : s);
 }
 
 //*       _   _ _ _ _         *
