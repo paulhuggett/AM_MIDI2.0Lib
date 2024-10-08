@@ -139,14 +139,18 @@ private:
         out.w0.program = in.w1.program.value();
         ctxt->push1(out);
       }
-      void channel_pressure(context_type *const ctxt, types::m2cvm::channel_pressure const &) const {}
-      void rpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const {}
-      void nrpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const {}
-      void per_note_management(context_type *const ctxt, types::m2cvm::per_note_management const &) const {}
-      void control_change(context_type *const ctxt, types::m2cvm::control_change const &) const {}
-      void controller_message(context_type *const ctxt, types::m2cvm::controller_message const &) const {}
-      void pitch_bend(context_type *const ctxt, types::m2cvm::pitch_bend const &) const {}
-      void per_note_pitch_bend(context_type *const ctxt, types::m2cvm::per_note_pitch_bend const &) const {}
+      void channel_pressure(context_type *const ctxt, types::m2cvm::channel_pressure const &) const { (void)ctxt; }
+      void rpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const { (void)ctxt; }
+      void nrpn_controller(context_type *const ctxt, types::m2cvm::per_note_controller const &) const { (void)ctxt; }
+      void per_note_management(context_type *const ctxt, types::m2cvm::per_note_management const &) const {
+        (void)ctxt;
+      }
+      void control_change(context_type *const ctxt, types::m2cvm::control_change const &) const { (void)ctxt; }
+      void controller_message(context_type *const ctxt, types::m2cvm::controller_message const &) const { (void)ctxt; }
+      void pitch_bend(context_type *const ctxt, types::m2cvm::pitch_bend const &) const { (void)ctxt; }
+      void per_note_pitch_bend(context_type *const ctxt, types::m2cvm::per_note_pitch_bend const &) const {
+        (void)ctxt;
+      }
     };
     struct data128 {
       void sysex8_in_1(context_type *const ctxt, types::data128::sysex8 const &in) const { ctxt->push4(in); }
