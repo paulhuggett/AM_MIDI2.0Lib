@@ -59,13 +59,18 @@ constexpr unsigned ump_message_size(ump_message_type const mt) {
 // clang-format off
 template <typename T, typename Context>
 concept utility_backend = requires(T v, Context context) {
+  // 7.2.1 NOOP
   { v.noop(context) } -> std::same_as<void>;
-  { v.jr_clock(context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.jr_timestamp(context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.delta_clockstamp_tpqn(context, types::jr_clock{}) } -> std::same_as<void>;
-  { v.delta_clockstamp(context, types::delta_clockstamp{}) } -> std::same_as<void>;
+  // 7.2.2.1 JR Clock Message
+  { v.jr_clock(context, types::utility::jr_clock{}) } -> std::same_as<void>;
+  // 7.2.2.2 JR Timestamp Message
+  { v.jr_timestamp(context, types::utility::jr_timestamp{}) } -> std::same_as<void>;
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  { v.delta_clockstamp_tpqn(context, types::utility::delta_clockstamp_tpqn{}) } -> std::same_as<void>;
+  // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
+  { v.delta_clockstamp(context, types::utility::delta_clockstamp{}) } -> std::same_as<void>;
 
-  { v.unknown(std::span<std::uint32_t>{}) } -> std::same_as<void>;
+  { v.unknown(context, std::span<std::uint32_t>{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept system_backend = requires(T v, Context context) {
@@ -83,13 +88,13 @@ concept system_backend = requires(T v, Context context) {
 };
 template<typename T, typename Context>
 concept m1cvm_backend = requires(T v, Context context) {
-  { v.note_off(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.note_on(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.poly_pressure(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.control_change(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.program_change(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.channel_pressure(context, types::m1cvm_w0{}) } -> std::same_as<void>;
-  { v.pitch_bend(context, types::m1cvm_w0{}) } -> std::same_as<void>;
+  { v.note_off(context, types::m1cvm::note_off{}) } -> std::same_as<void>;
+  { v.note_on(context, types::m1cvm::note_on{}) } -> std::same_as<void>;
+  { v.poly_pressure(context, types::m1cvm::poly_pressure{}) } -> std::same_as<void>;
+  { v.control_change(context, types::m1cvm::control_change{}) } -> std::same_as<void>;
+  { v.program_change(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
+  { v.channel_pressure(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
+  { v.pitch_bend(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
@@ -100,8 +105,8 @@ concept data64_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
-  { v.note_off(context, types::m2cvm::note{}) } -> std::same_as<void>;
-  { v.note_on(context, types::m2cvm::note{}) } -> std::same_as<void>;
+  { v.note_off(context, types::m2cvm::note_off{}) } -> std::same_as<void>;
+  { v.note_on(context, types::m2cvm::note_on{}) } -> std::same_as<void>;
   { v.poly_pressure(context, types::m2cvm::poly_pressure{}) } -> std::same_as<void>;
   { v.program_change(context, types::m2cvm::program_change{}) } -> std::same_as<void>;
   { v.channel_pressure(context, types::m2cvm::channel_pressure{}) } -> std::same_as<void>;
@@ -167,15 +172,16 @@ template <typename Context> struct utility_null {
   // 7.2.1 NOOP
   constexpr void noop(Context) const { /* do nothing */ }
   // 7.2.2.1 JR Clock Message
-  constexpr void jr_clock(Context, types::jr_clock const &) const { /* do nothing */ }
+  constexpr void jr_clock(Context, types::utility::jr_clock const &) const { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
-  constexpr void jr_timestamp(Context, types::jr_clock const &) const { /* do nothing */ }
+  constexpr void jr_timestamp(Context, types::utility::jr_timestamp const &) const { /* do nothing */ }
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  constexpr void delta_clockstamp_tpqn(Context, types::jr_clock const &) const { /* do nothing */ }
+  constexpr void delta_clockstamp_tpqn(Context, types::utility::delta_clockstamp_tpqn const &) const { /* do nothing */
+  }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  constexpr void delta_clockstamp(Context, types::delta_clockstamp const &) const { /* do nothing */ }
+  constexpr void delta_clockstamp(Context, types::utility::delta_clockstamp const &) const { /* do nothing */ }
 
-  constexpr void unknown(std::span<std::uint32_t>) const { /* do nothing */ }
+  constexpr void unknown(Context, std::span<std::uint32_t>) const { /* do nothing */ }
 };
 template <typename Context> struct system_null {
   // 7.6 System Common and System Real Time Messages
@@ -191,13 +197,13 @@ template <typename Context> struct system_null {
   constexpr void reset(Context, types::system::reset const &) const { /* do nothing */ }
 };
 template <typename Context> struct m1cvm_null {
-  constexpr void note_off(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void note_on(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void poly_pressure(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void control_change(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void program_change(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void channel_pressure(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
-  constexpr void pitch_bend(Context, types::m1cvm_w0 const &) const { /* do nothing */ }
+  constexpr void note_off(Context, types::m1cvm::note_off const &) const { /* do nothing */ }
+  constexpr void note_on(Context, types::m1cvm::note_on const &) const { /* do nothing */ }
+  constexpr void poly_pressure(Context, types::m1cvm::poly_pressure const &) const { /* do nothing */ }
+  constexpr void control_change(Context, types::m1cvm::control_change const &) const { /* do nothing */ }
+  constexpr void program_change(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
+  constexpr void channel_pressure(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
+  constexpr void pitch_bend(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
   constexpr void sysex7_in_1(Context, types::data64::sysex7 const &) const { /* do nothing */ }
@@ -206,8 +212,8 @@ template <typename Context> struct data64_null {
   constexpr void sysex7_end(Context, types::data64::sysex7 const &) const { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_null {
-  constexpr void note_off(Context, types::m2cvm::note const &) const { /* do nothing */ }
-  constexpr void note_on(Context, types::m2cvm::note const &) const { /* do nothing */ }
+  constexpr void note_off(Context, types::m2cvm::note_off const &) const { /* do nothing */ }
+  constexpr void note_on(Context, types::m2cvm::note_on const &) const { /* do nothing */ }
   constexpr void poly_pressure(Context, types::m2cvm::poly_pressure const &) const { /* do nothing */ }
   constexpr void program_change(Context, types::m2cvm::program_change const &) const { /* do nothing */ }
   constexpr void channel_pressure(Context, types::m2cvm::channel_pressure const &) const { /* do nothing */ }
@@ -320,7 +326,9 @@ public:
       case ump_message_type::reserved64_0A:
       case ump_message_type::reserved96_0B:
       case ump_message_type::reserved96_0C:
-      case ump_message_type::reserved128_0E: config_.utility.unknown(std::span{message_.data(), pos_}); break;
+      case ump_message_type::reserved128_0E:
+        config_.utility.unknown(config_.context, std::span{message_.data(), pos_});
+        break;
       default:
         assert(false);
         unreachable();
@@ -347,6 +355,8 @@ private:
   [[no_unique_address]] Config config_;
 };
 
+template <typename T> umpProcessor(T) -> umpProcessor<T>;
+
 // utility message
 // ~~~~~~~~~~~~~~~
 // 32 bit utility messages
@@ -356,18 +366,20 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
   // 7.2.1 NOOP
   case ump_utility::noop: config_.utility.noop(config_.context); break;
   // 7.2.2.1 JR Clock
-  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, types::jr_clock{message_[0]}); break;
+  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, types::utility::jr_clock{message_[0]}); break;
   // 7.2.2.2 JR Timestamp
-  case ump_utility::jr_ts: config_.utility.jr_timestamp(config_.context, types::jr_clock{message_[0]}); break;
+  case ump_utility::jr_ts:
+    config_.utility.jr_timestamp(config_.context, types::utility::jr_timestamp{message_[0]});
+    break;
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
   case ump_utility::delta_clock_tick:
-    config_.utility.delta_clockstamp_tpqn(config_.context, types::jr_clock{message_[0]});
+    config_.utility.delta_clockstamp_tpqn(config_.context, types::utility::delta_clockstamp_tpqn{message_[0]});
     break;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   case ump_utility::delta_clock_since:
-    config_.utility.delta_clockstamp(config_.context, types::delta_clockstamp{message_[0]});
+    config_.utility.delta_clockstamp(config_.context, types::utility::delta_clockstamp{message_[0]});
     break;
-  default: config_.utility.unknown(std::span{message_.data(), 1}); break;
+  default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;
   }
 }
 
@@ -397,7 +409,10 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
     config_.system.active_sensing(config_.context, types::system::active_sensing{message_[0]});
     break;
   case status::systemreset: config_.system.reset(config_.context, types::system::reset{message_[0]}); break;
-  default: config_.utility.unknown(std::span{message_.data(), message_size<midi2::ump_message_type::system>()}); break;
+  default:
+    config_.utility.unknown(config_.context,
+                            std::span{message_.data(), message_size<midi2::ump_message_type::system>()});
+    break;
   }
 }
 
@@ -408,23 +423,25 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
   static_assert(ump_message_size(midi2::ump_message_type::m1cvm) == 1);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::m1cvm));
 
-  auto const w0 = types::m1cvm_w0{message_[0]};
-  switch ((message_[0] >> 16) & 0xF0) {
+  auto const w0 = types::m1cvm::m1cvm{message_[0]};
+  switch (static_cast<status>((message_[0] >> 16) & 0xF0)) {
   // 7.3.1 MIDI 1.0 Note Off Message
-  case status::note_off: config_.m1cvm.note_off(config_.context, w0); break;
+  case status::note_off: config_.m1cvm.note_off(config_.context, types::m1cvm::note_off{message_[0]}); break;
   // 7.3.2 MIDI 1.0 Note On Message
-  case status::note_on: config_.m1cvm.note_on(config_.context, w0); break;
+  case status::note_on: config_.m1cvm.note_on(config_.context, types::m1cvm::note_on{message_[0]}); break;
   // 7.3.3 MIDI 1.0 Poly Pressure Message
-  case status::key_pressure: config_.m1cvm.poly_pressure(config_.context, w0); break;
+  case status::poly_pressure:
+    config_.m1cvm.poly_pressure(config_.context, types::m1cvm::poly_pressure{message_[0]});
+    break;
   // 7.3.4 MIDI 1.0 Control Change Message
-  case status::cc: config_.m1cvm.control_change(config_.context, w0); break;
+  case status::cc: config_.m1cvm.control_change(config_.context, types::m1cvm::control_change{message_[0]}); break;
   // 7.3.5 MIDI 1.0 Program Change Message
   case status::program_change: config_.m1cvm.program_change(config_.context, w0); break;
   // 7.3.6 MIDI 1.0 Channel Pressure Message
   case status::channel_pressure: config_.m1cvm.channel_pressure(config_.context, w0); break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
   case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, w0); break;
-  default: config_.utility.unknown(std::span{message_.data(), 1}); break;
+  default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;
   }
 }
 
@@ -441,7 +458,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::data64_message
   case data64::sysex7_start: config_.data64.sysex7_start(config_.context, message); break;
   case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, message); break;
   case data64::sysex7_end: config_.data64.sysex7_end(config_.context, message); break;
-  default: config_.utility.unknown(span); break;
+  default: config_.utility.unknown(config_.context, span); break;
   }
 }
 
@@ -451,13 +468,15 @@ template <ump_processor_config Config> void umpProcessor<Config>::data64_message
 template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
-  switch ((message_[0] >> 16) & 0xF0) {
+  switch (static_cast<midi2status>((message_[0] >> 16) & 0xF0)) {
   // 7.4.1 MIDI 2.0 Note Off Message
-  case status::note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note{span}); break;
+  case midi2status::note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note_off{span}); break;
   // 7.4.2 MIDI 2.0 Note On Message
-  case status::note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note{span}); break;
+  case midi2status::note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note_on{span}); break;
   // 7.4.3 MIDI 2.0 Poly Pressure Message
-  case status::key_pressure: config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span}); break;
+  case midi2status::poly_pressure:
+    config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span});
+    break;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
   case midi2status::rpn_pernote:
     config_.m2cvm.rpn_controller(config_.context, types::m2cvm::per_note_controller{span});
@@ -471,7 +490,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management{span});
     break;
   // 7.4.6 MIDI 2.0 Control Change Message
-  case status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
+  case midi2status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
   case midi2status::rpn:
@@ -481,18 +500,20 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
     config_.m2cvm.controller_message(config_.context, types::m2cvm::controller_message{span});
     break;
   // 7.4.9 MIDI 2.0 Program Change Message
-  case status::program_change: config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span}); break;
+  case midi2status::program_change:
+    config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span});
+    break;
   // 7.4.10 MIDI 2.0 Channel Pressure Message
-  case status::channel_pressure:
+  case midi2status::channel_pressure:
     config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure{span});
     break;
   // 7.4.11 MIDI 2.0 Pitch Bend Message
-  case status::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
+  case midi2status::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
   // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
   case midi2status::pitch_bend_pernote:
     config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend{span});
     break;
-  default: config_.utility.unknown(std::span{message_.data(), 2}); break;
+  default: config_.utility.unknown(config_.context, std::span{message_.data(), 2}); break;
   }
 }
 
@@ -560,7 +581,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
   case ump_stream::start_of_clip: config_.ump_stream.start_of_clip(config_.context, start_of_clip{span}); break;
   // 7.1.11 End of Clip Message
   case ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
-  default: config_.utility.unknown(std::span{message_.data(), 4}); break;
+  default: config_.utility.unknown(config_.context, std::span{message_.data(), 4}); break;
   }
 }
 
@@ -583,7 +604,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::data128_messag
   case data128::mixed_data_set_payload:
     config_.data128.mds_payload(config_.context, types::data128::mds_payload{span});
     break;
-  default: config_.utility.unknown(span); break;
+  default: config_.utility.unknown(config_.context, span); break;
   }
 }
 
@@ -616,7 +637,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::flex_data_mess
     case flex_data::set_chord_name:
       config_.flex.set_chord_name(config_.context, types::flex_data::set_chord_name{span});
       break;
-    default: config_.utility.unknown(span); break;
+    default: config_.utility.unknown(config_.context, span); break;
     }
   } else {
     config_.flex.text(config_.context, types::flex_data::text_common{span});

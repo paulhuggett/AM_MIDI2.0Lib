@@ -35,7 +35,8 @@
 
 namespace midi2 {
 
-void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
+#if 0
+void umpToMIDI1Protocol::UMPStreamParse(uint32_t ump) {
   switch (UMPPos) {
   case 0: {  // First UMP Packet
     // First part of a UMP Message
@@ -196,5 +197,6 @@ void umpToMIDI1Protocol::UMPStreamParse(uint32_t UMP) {
   default: assert(false); break;
   }
 }
+#endif
 
 }  // end namespace midi2

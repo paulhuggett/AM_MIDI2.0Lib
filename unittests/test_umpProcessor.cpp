@@ -35,22 +35,22 @@ struct utility_base {
   virtual ~utility_base() noexcept = default;
 
   virtual void noop(context_type) = 0;
-  virtual void jr_clock(context_type, midi2::types::jr_clock) = 0;
-  virtual void jr_timestamp(context_type, midi2::types::jr_clock) = 0;
-  virtual void delta_clockstamp_tpqn(context_type, midi2::types::jr_clock) = 0;
-  virtual void delta_clockstamp(context_type, midi2::types::delta_clockstamp) = 0;
+  virtual void jr_clock(context_type, midi2::types::utility::jr_clock) = 0;
+  virtual void jr_timestamp(context_type, midi2::types::utility::jr_timestamp) = 0;
+  virtual void delta_clockstamp_tpqn(context_type, midi2::types::utility::delta_clockstamp_tpqn) = 0;
+  virtual void delta_clockstamp(context_type, midi2::types::utility::delta_clockstamp) = 0;
 
-  virtual void unknown(std::span<std::uint32_t>) = 0;
+  virtual void unknown(context_type, std::span<std::uint32_t>) = 0;
 };
 class UtilityMocks : public utility_base {
 public:
   MOCK_METHOD(void, noop, (context_type), (override));
-  MOCK_METHOD(void, jr_clock, (context_type, midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, jr_timestamp, (context_type, midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, delta_clockstamp_tpqn, (context_type, midi2::types::jr_clock), (override));
-  MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::delta_clockstamp), (override));
+  MOCK_METHOD(void, jr_clock, (context_type, midi2::types::utility::jr_clock), (override));
+  MOCK_METHOD(void, jr_timestamp, (context_type, midi2::types::utility::jr_timestamp), (override));
+  MOCK_METHOD(void, delta_clockstamp_tpqn, (context_type, midi2::types::utility::delta_clockstamp_tpqn), (override));
+  MOCK_METHOD(void, delta_clockstamp, (context_type, midi2::types::utility::delta_clockstamp), (override));
 
-  MOCK_METHOD(void, unknown, (std::span<std::uint32_t>), (override));
+  MOCK_METHOD(void, unknown, (context_type, std::span<std::uint32_t>), (override));
 };
 struct system_base {
   system_base() = default;
@@ -86,23 +86,23 @@ struct m1cvm_base {
   m1cvm_base(m1cvm_base const&) = default;
   virtual ~m1cvm_base() noexcept = default;
 
-  virtual void note_off(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void note_on(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void poly_pressure(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void control_change(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void program_change(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void channel_pressure(context_type, midi2::types::m1cvm_w0) = 0;
-  virtual void pitch_bend(context_type, midi2::types::m1cvm_w0) = 0;
+  virtual void note_off(context_type, midi2::types::m1cvm::note_off) = 0;
+  virtual void note_on(context_type, midi2::types::m1cvm::note_on) = 0;
+  virtual void poly_pressure(context_type, midi2::types::m1cvm::poly_pressure) = 0;
+  virtual void control_change(context_type, midi2::types::m1cvm::control_change) = 0;
+  virtual void program_change(context_type, midi2::types::m1cvm::m1cvm) = 0;
+  virtual void channel_pressure(context_type, midi2::types::m1cvm::m1cvm) = 0;
+  virtual void pitch_bend(context_type, midi2::types::m1cvm::m1cvm) = 0;
 };
 class M1CVMMocks : public m1cvm_base {
 public:
-  MOCK_METHOD(void, note_off, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, control_change, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm_w0), (override));
-  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm_w0), (override));
+  MOCK_METHOD(void, note_off, (context_type, midi2::types::m1cvm::note_off), (override));
+  MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm::note_on), (override));
+  MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m1cvm::poly_pressure), (override));
+  MOCK_METHOD(void, control_change, (context_type, midi2::types::m1cvm::control_change), (override));
+  MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm::m1cvm), (override));
+  MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm::m1cvm), (override));
+  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm::m1cvm), (override));
 };
 struct data64_base {
   data64_base() = default;
@@ -126,8 +126,8 @@ struct m2cvm_base {
   m2cvm_base(m2cvm_base const&) = default;
   virtual ~m2cvm_base() noexcept = default;
 
-  virtual void note_off(context_type, midi2::types::m2cvm::note) = 0;
-  virtual void note_on(context_type, midi2::types::m2cvm::note) = 0;
+  virtual void note_off(context_type, midi2::types::m2cvm::note_off) = 0;
+  virtual void note_on(context_type, midi2::types::m2cvm::note_on) = 0;
   virtual void poly_pressure(context_type, midi2::types::m2cvm::poly_pressure) = 0;
   virtual void program_change(context_type, midi2::types::m2cvm::program_change) = 0;
   virtual void channel_pressure(context_type, midi2::types::m2cvm::channel_pressure) = 0;
@@ -141,8 +141,8 @@ struct m2cvm_base {
 };
 class M2CVMMocks : public m2cvm_base {
 public:
-  MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note), (override));
-  MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note), (override));
+  MOCK_METHOD(void, note_off, (context_type, midi2::types::m2cvm::note_off), (override));
+  MOCK_METHOD(void, note_on, (context_type, midi2::types::m2cvm::note_on), (override));
   MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m2cvm::poly_pressure), (override));
   MOCK_METHOD(void, program_change, (context_type, midi2::types::m2cvm::program_change), (override));
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m2cvm::channel_pressure), (override));
@@ -280,60 +280,55 @@ constexpr std::uint8_t ump_mt(midi2::ump_message_type mt) {
   return result;
 }
 
+//*       _   _ _ _ _         *
+//*  _  _| |_(_) (_) |_ _  _  *
+//* | || |  _| | | |  _| || | *
+//*  \_,_|\__|_|_|_|\__|\_, | *
+//*                     |__/  *
+class UMPProcessorUtility : public UMPProcessor {};
+
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, Noop) {
+TEST_F(UMPProcessorUtility, Noop) {
   EXPECT_CALL(config_.utility, noop(config_.context)).Times(1);
 
-  midi2::types::noop w0{};
-  w0.mt = ump_mt(midi2::ump_message_type::utility);
-  w0.reserved = 0;
-  w0.status = to_underlying(midi2::ump_utility::noop);
-  w0.data = 0;
+  midi2::types::utility::noop w0{};
   processor_.processUMP(w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, JRClock) {
-  midi2::types::jr_clock message{};
-  message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = to_underlying(midi2::ump_utility::jr_clock);
-  message.sender_clock_time = 0b1010101010101010;
+TEST_F(UMPProcessorUtility, JRClock) {
+  midi2::types::utility::jr_clock message;
+  message.w0.sender_clock_time = 0b1010101010101010;
   EXPECT_CALL(config_.utility, jr_clock(config_.context, message)).Times(1);
-  processor_.processUMP(message);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, JRTimestamp) {
-  midi2::types::jr_clock message{};
-  message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = to_underlying(midi2::ump_utility::jr_ts);
-  message.sender_clock_time = (1U << 16) - 1U;
+TEST_F(UMPProcessorUtility, JRTimestamp) {
+  midi2::types::utility::jr_timestamp message{};
+  message.w0.timestamp = (1U << 16) - 1U;
   EXPECT_CALL(config_.utility, jr_timestamp(config_.context, message)).Times(1);
-  processor_.processUMP(message);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, DeltaClockstampTqpn) {
-  midi2::types::jr_clock message{};
-  message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = to_underlying(midi2::ump_utility::delta_clock_tick);
-  message.sender_clock_time = 0b1010101010101010;
+TEST_F(UMPProcessorUtility, DeltaClockstampTqpn) {
+  midi2::types::utility::delta_clockstamp_tpqn message{};
+  message.w0.ticks_pqn = 0b1010101010101010;
   EXPECT_CALL(config_.utility, delta_clockstamp_tpqn(config_.context, message)).Times(1);
-  processor_.processUMP(message);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, DeltaClockstamp) {
-  midi2::types::delta_clockstamp message{};
-  message.mt = ump_mt(midi2::ump_message_type::utility);
-  message.status = to_underlying(midi2::ump_utility::delta_clock_since);
-  message.ticks_per_quarter_note = (1U << 20) - 1U;
+TEST_F(UMPProcessorUtility, DeltaClockstamp) {
+  midi2::types::utility::delta_clockstamp message{};
+  message.w0.ticks_per_quarter_note = (1U << 20) - 1U;
   EXPECT_CALL(config_.utility, delta_clockstamp(config_.context, message)).Times(1);
-  processor_.processUMP(message);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, BadUtility) {
-  midi2::types::delta_clockstamp message;
-  message.mt = to_underlying(midi2::ump_message_type::utility);
-  message.status = std::uint8_t{0b1111};
-  EXPECT_CALL(config_.utility, unknown(ElementsAre(std::bit_cast<std::uint32_t>(message))));
-  processor_.processUMP(message);
+TEST_F(UMPProcessorUtility, BadMessage) {
+  midi2::types::utility::delta_clockstamp message;
+  message.w0.mt = to_underlying(midi2::ump_message_type::utility);
+  message.w0.status = std::uint8_t{0b1111};
+  EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(std::bit_cast<std::uint32_t>(message))));
+  processor_.processUMP(message.w0);
 }
 
 //*  ___         _              *
@@ -347,7 +342,7 @@ TEST_F(UMPProcessorSystem, MIDITimeCode) {
   midi2::types::system::midi_time_code message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::timing_code;
+  message.w0.status = to_underlying(midi2::status::timing_code);
   message.w0.time_code = 0b1010101;
   EXPECT_CALL(config_.system, midi_time_code(config_.context, message));
   processor_.processUMP(message.w0);
@@ -357,7 +352,7 @@ TEST_F(UMPProcessorSystem, SongPositionPointer) {
   midi2::types::system::song_position_pointer message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::spp;
+  message.w0.status = to_underlying(midi2::status::spp);
   message.w0.position_lsb = 0b1010101;
   message.w0.position_msb = 0b1111111;
   EXPECT_CALL(config_.system, song_position_pointer(config_.context, message));
@@ -368,7 +363,7 @@ TEST_F(UMPProcessorSystem, SongSelect) {
   midi2::types::system::song_select message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::song_select;
+  message.w0.status = to_underlying(midi2::status::song_select);
   message.w0.song = 0b1010101;
   EXPECT_CALL(config_.system, song_select(config_.context, message));
   processor_.processUMP(message.w0);
@@ -378,7 +373,7 @@ TEST_F(UMPProcessorSystem, TuneRequest) {
   midi2::types::system::tune_request message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::tunerequest;
+  message.w0.status = to_underlying(midi2::status::tunerequest);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -387,7 +382,7 @@ TEST_F(UMPProcessorSystem, TimingClock) {
   midi2::types::system::tune_request message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::tunerequest;
+  message.w0.status = to_underlying(midi2::status::tunerequest);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -396,7 +391,7 @@ TEST_F(UMPProcessorSystem, Start) {
   midi2::types::system::seq_start message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::seqstart;
+  message.w0.status = to_underlying(midi2::status::seqstart);
   EXPECT_CALL(config_.system, seq_start(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -405,7 +400,7 @@ TEST_F(UMPProcessorSystem, Continue) {
   midi2::types::system::seq_continue message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::seqcont;
+  message.w0.status = to_underlying(midi2::status::seqcont);
   EXPECT_CALL(config_.system, seq_continue(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -414,7 +409,7 @@ TEST_F(UMPProcessorSystem, Stop) {
   midi2::types::system::seq_stop message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::seqstop;
+  message.w0.status = to_underlying(midi2::status::seqstop);
   EXPECT_CALL(config_.system, seq_stop(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -423,7 +418,7 @@ TEST_F(UMPProcessorSystem, ActiveSensing) {
   midi2::types::system::active_sensing message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::activesense;
+  message.w0.status = to_underlying(midi2::status::activesense);
   EXPECT_CALL(config_.system, active_sensing(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -432,7 +427,7 @@ TEST_F(UMPProcessorSystem, Reset) {
   midi2::types::system::reset message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
-  message.w0.status = midi2::status::systemreset;
+  message.w0.status = to_underlying(midi2::status::systemreset);
   EXPECT_CALL(config_.system, reset(config_.context, message));
   processor_.processUMP(message.w0);
 }
@@ -442,7 +437,7 @@ TEST_F(UMPProcessorSystem, BadStatus) {
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = 0x00;
-  EXPECT_CALL(config_.utility, unknown(ElementsAre(message.w0.word())));
+  EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message.w0.word())));
   processor_.processUMP(message.w0);
 }
 
@@ -455,65 +450,50 @@ constexpr std::uint8_t ump_cvm(midi2::status s) {
   static_assert(
       std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
       "status type must be a std::uint8_t");
-  assert((s & 0x0F) == 0 &&
-         "Bottom 4 bits of a channel voice message status enum must be 0");
-  return std::uint8_t{s} >> 4;
+  assert((to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum must be 0");
+  return to_underlying(s) >> 4;
 }
 
-constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
 class UMPProcessorMIDI1 : public UMPProcessor {};
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI1, Midi1NoteOn) {
-  constexpr auto channel = std::uint8_t{3};
-  constexpr auto note_number = std::uint8_t{60};
-  constexpr auto velocity = std::uint16_t{0x43};
-  constexpr auto group = std::uint8_t{0};
-
-  midi2::types::m1cvm_w0 w0{};
-  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
-  w0.group = group;
-  w0.status = ump_cvm(midi2::status::note_on);
-  w0.channel = channel;
-  w0.data_a = note_number;
-  w0.data_b = velocity;
-  EXPECT_CALL(config_.m1cvm, note_on(config_.context, w0)).Times(1);
-  processor_.processUMP(w0);
+  midi2::types::m1cvm::note_on message;
+  message.w0.group = 0;
+  message.w0.channel = 3;
+  message.w0.note = 60;
+  message.w0.velocity = 0x43;
+  EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI1, Midi1NoteOff) {
-  midi2::types::m1cvm_w0 w0{};
-  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
-  w0.group = std::uint8_t{0};
-  w0.status = ump_cvm(midi2::status::note_off);
-  w0.channel = std::uint8_t{3};
-  w0.data_a = std::uint8_t{60};
-  w0.data_b = std::uint16_t{0x43};
-  EXPECT_CALL(config_.m1cvm, note_off(config_.context, w0)).Times(1);
-  processor_.processUMP(w0);
+  midi2::types::m1cvm::note_off message;
+  message.w0.group = 0;
+  message.w0.channel = 3;
+  message.w0.note = 60;
+  message.w0.velocity = 0x43;
+  EXPECT_CALL(config_.m1cvm, note_off(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI1, Midi1PolyPressure) {
-  midi2::types::m1cvm_w0 w0{};
-  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
-  w0.group = std::uint8_t{0};
-  w0.status = ump_cvm(midi2::status::key_pressure);
-  w0.channel = std::uint8_t{3};
-  w0.data_a = std::uint8_t{60};
-  w0.data_b = std::uint8_t{0x43};
-  EXPECT_CALL(config_.m1cvm, poly_pressure(config_.context, w0)).Times(1);
-  processor_.processUMP(w0);
+  midi2::types::m1cvm::poly_pressure message;
+  message.w0.group = std::uint8_t{0};
+  message.w0.channel = std::uint8_t{3};
+  message.w0.note = std::uint8_t{60};
+  message.w0.pressure = std::uint8_t{0x43};
+  EXPECT_CALL(config_.m1cvm, poly_pressure(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI1, Midi1ControlChange) {
-  midi2::types::m1cvm_w0 w0{};
-  w0.mt = ump_mt(midi2::ump_message_type::m1cvm);
-  w0.group = 0;
-  w0.status = ump_cvm(midi2::status::cc);
-  w0.channel = 3;
-  w0.data_a = 60;
-  w0.data_b = 127;
-  EXPECT_CALL(config_.m1cvm, control_change(config_.context, w0)).Times(1);
-  processor_.processUMP(w0);
+  midi2::types::m1cvm::control_change message;
+  message.w0.group = 0;
+  message.w0.channel = 3;
+  message.w0.index = 60;
+  message.w0.data = 127;
+  EXPECT_CALL(config_.m1cvm, control_change(config_.context, message)).Times(1);
+  processor_.processUMP(message.w0);
 }
 
 //*     _      _           __ _ _   *
@@ -593,10 +573,8 @@ class UMPProcessorMIDI2CVM : public UMPProcessor {};
 
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI2CVM, NoteOn) {
-  midi2::types::m2cvm::note message;
-  message.w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
+  midi2::types::m2cvm::note_on message;
   message.w0.group = std::uint8_t{0};
-  message.w0.status = ump_cvm(midi2::status::note_on);
   message.w0.channel = std::uint8_t{3};
   message.w0.note = std::uint8_t{60};
   message.w0.attribute = 0;
@@ -607,10 +585,8 @@ TEST_F(UMPProcessorMIDI2CVM, NoteOn) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPProcessorMIDI2CVM, NoteOff) {
-  midi2::types::m2cvm::note n;
-  n.w0.mt = ump_mt(midi2::ump_message_type::m2cvm);
+  midi2::types::m2cvm::note_off n;
   n.w0.group = std::uint8_t{0};
-  n.w0.status = ump_cvm(midi2::status::note_off);
   n.w0.channel = std::uint8_t{3};
   n.w0.note = std::uint8_t{60};
   n.w0.attribute = 0;
@@ -811,31 +787,28 @@ TEST_F(UMPProcessorData128, MixedDatSet) {
   payload.w1 = 0xFFFFFFFF;
   payload.w2 = 0xFFFFFFFF;
   payload.w3 = 0xFFFFFFFF;
-
   {
     InSequence _;
     EXPECT_CALL(config_.data128, mds_header(config_.context, header)).Times(1);
     EXPECT_CALL(config_.data128, mds_payload(config_.context, payload)).Times(1);
   }
-
   processor_.processUMP(header.w0, header.w1, header.w2, header.w3);
   processor_.processUMP(payload.w0, payload.w1, payload.w2, payload.w3);
 }
 
 // NOLINTNEXTLINE
+constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
 TEST_F(UMPProcessor, PartialMessageThenClear) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
   constexpr auto velocity = std::uint16_t{0x43};  // 7 bits
   constexpr auto group = std::uint8_t{0};
 
-  midi2::types::m1cvm_w0 message{};
-  message.mt = to_underlying(midi2::ump_message_type::m1cvm);
-  message.group = group;
-  message.status = midi2::status::note_on >> 4;
-  message.channel = channel;
-  message.data_a = note_number;
-  message.data_b = velocity;
+  midi2::types::m1cvm::note_on message;
+  message.w0.group = group;
+  message.w0.channel = channel;
+  message.w0.note = note_number;
+  message.w0.velocity = velocity;
 
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
 

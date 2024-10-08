@@ -27,15 +27,17 @@ void umpToBytestream::word1(std::uint32_t const ump) {
   // Exclusive)
   case ump_message_type::system: {
     auto const sysByte = static_cast<std::byte>((ump >> 16) & 0xFF);
-    if (sysByte == std::byte{status::reserved1} || sysByte == std::byte{status::reserved2} ||
-        sysByte == std::byte{status::reserved3} || sysByte == std::byte{status::reserved4}) {
+    if (sysByte == std::byte{to_underlying(status::reserved1)} ||
+        sysByte == std::byte{to_underlying(status::reserved2)} ||
+        sysByte == std::byte{to_underlying(status::reserved3)} ||
+        sysByte == std::byte{to_underlying(status::reserved4)}) {
       break;
     }
     output_.push_back(sysByte);
-    if (sysByte == std::byte{status::timing_code} || sysByte == std::byte{status::spp} ||
-        sysByte == std::byte{status::song_select}) {
+    if (sysByte == std::byte{to_underlying(status::timing_code)} || sysByte == std::byte{to_underlying(status::spp)} ||
+        sysByte == std::byte{to_underlying(status::song_select)}) {
       output_.push_back(static_cast<std::byte>((ump >> 8) & 0x7F));
-      if (sysByte == std::byte{status::spp}) {
+      if (sysByte == std::byte{to_underlying(status::spp)}) {
         output_.push_back(static_cast<std::byte>(ump & 0x7F));
       }
     }
@@ -96,7 +98,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     auto const numSysexBytes = (ump64word1_ >> 16) & 0x0F;
 
     if (status <= 1) {
-      output_.push_back(std::byte{sysex_start});
+      output_.push_back(std::byte{to_underlying(status::sysex_start)});
     }
     if (numSysexBytes > 0) {
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 8) & 0x7F));
@@ -117,22 +119,22 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(static_cast<std::byte>(UMP & 0x7F));
     }
     if (status == 0 || status == 3) {
-      output_.push_back(std::byte{sysex_stop});
+      output_.push_back(std::byte{to_underlying(status::sysex_stop)});
     }
     break;
   }
   case ump_message_type::m2cvm: {
     UMPPos_ = 0;
-    std::uint8_t const status = (ump64word1_ >> 16) & 0xF0;
+    auto const status = static_cast<midi2status>((ump64word1_ >> 16) & 0xF0);
     auto const channel = static_cast<std::byte>((ump64word1_ >> 16) & 0x0F);
     auto const val1 = static_cast<std::byte>((ump64word1_ >> 8) & 0xFF);
     auto const val2 = static_cast<std::byte>(ump64word1_ & 0xFF);
 
     switch (status) {
-    case note_off:
-    case note_on: {
+    case midi2status::note_off:
+    case midi2status::note_on: {
       auto velocity = static_cast<std::byte>(scaleDown((UMP >> 16), 16, 7));
-      if (velocity == std::byte{0} && status == note_on) {
+      if (velocity == std::byte{0} && status == midi2status::note_on) {
         velocity = std::byte{1};
       }
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
@@ -140,64 +142,64 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(velocity);
       break;
     }
-    case status::key_pressure:
-    case status::cc:
+    case midi2status::poly_pressure:
+    case midi2status::cc:
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
       output_.push_back(val1);
       output_.push_back(static_cast<std::byte>(scaleDown(UMP, 32, 7)));
       break;
-    case status::channel_pressure:
+    case midi2status::channel_pressure:
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
       output_.push_back(static_cast<std::byte>(scaleDown(UMP, 32, 7)));
       break;
     case midi2status::rpn: {
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{101});
       output_.push_back(val1);
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{100});
       output_.push_back(val2);
 
       auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{6});
       output_.push_back(static_cast<std::byte>((val14bit >> 7) & 0x7F));
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{38});
       output_.push_back(static_cast<std::byte>(val14bit & 0x7F));
       break;
     }
     case midi2status::nrpn: {  // nrpn
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{99});
       output_.push_back(val1);
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{98});
       output_.push_back(val2);
 
       auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{6});
       output_.push_back(static_cast<std::byte>((val14bit >> 7) & 0x7F));
-      output_.push_back(std::byte{status::cc} | channel);
+      output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{38});
       output_.push_back(static_cast<std::byte>(val14bit & 0x7F));
       break;
     }
-    case status::program_change:
+    case midi2status::program_change:
       if (ump64word1_ & 0x1) {
-        output_.push_back(std::byte{status::cc} | channel);
+        output_.push_back(std::byte{to_underlying(status::cc)} | channel);
         output_.push_back(std::byte{0});
         output_.push_back(static_cast<std::byte>((UMP >> 8) & 0x7F));
 
-        output_.push_back(std::byte{status::cc} | channel);
+        output_.push_back(std::byte{to_underlying(status::cc)} | channel);
         output_.push_back(std::byte{32});
         output_.push_back(static_cast<std::byte>(UMP & 0x7F));
       }
-      output_.push_back(std::byte{status::program_change} | channel);
+      output_.push_back(std::byte{to_underlying(status::program_change)} | channel);
       output_.push_back(static_cast<std::byte>((UMP >> 24) & 0x7F));
       break;
-    case status::pitch_bend:
+    case midi2status::pitch_bend:
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
       output_.push_back(static_cast<std::byte>((UMP >> 18) & 0x7F));
       output_.push_back(static_cast<std::byte>((UMP >> 25) & 0x7F));

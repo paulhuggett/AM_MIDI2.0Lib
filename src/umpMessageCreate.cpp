@@ -35,18 +35,23 @@ using namespace midi2;
 
 namespace {
 
-uint32_t m1Create(uint8_t group, uint8_t status, uint8_t val1, uint8_t val2) {
+uint32_t m1Create(uint8_t group, status status, uint8_t val1, uint8_t val2) {
   return (((static_cast<std::uint32_t>(ump_message_type::system) << 4) | group) << 24) |
          (static_cast<std::uint32_t>(status) << 16) | (static_cast<std::uint32_t>(val1) << 8) |
          static_cast<std::uint32_t>(val2);
 }
 
-uint32_t mt2Create(uint8_t group, uint8_t status, uint8_t channel, uint8_t val1, uint8_t val2) {
+uint32_t mt2Create(uint8_t group, status status, uint8_t channel, uint8_t val1, uint8_t val2) {
   return (((static_cast<std::uint32_t>(ump_message_type::m1cvm) << 4) | group) << 24) |
-         (static_cast<std::uint32_t>(status | channel) << 16) | (static_cast<std::uint32_t>(val1) << 8) | val2;
+         ((static_cast<std::uint32_t>(to_underlying(status)) | channel) << 16) |
+         (static_cast<std::uint32_t>(val1) << 8) | val2;
 }
 
-uint32_t mt4CreateFirstWord(uint8_t group, uint8_t status, uint8_t channel, uint8_t val1, uint8_t val2) {
+uint32_t mt4CreateFirstWord(uint8_t group, status status, uint8_t channel, uint8_t val1, uint8_t val2) {
+  return (((static_cast<std::uint32_t>(ump_message_type::m2cvm) << 4) | group) << 24) |
+         ((static_cast<std::uint32_t>(status) | channel) << 16) | (static_cast<std::uint32_t>(val1) << 8) | val2;
+}
+uint32_t mt4CreateFirstWord(uint8_t group, midi2status status, uint8_t channel, uint8_t val1, uint8_t val2) {
   return (((static_cast<std::uint32_t>(ump_message_type::m2cvm) << 4) | group) << 24) |
          ((static_cast<std::uint32_t>(status) | channel) << 16) | (static_cast<std::uint32_t>(val1) << 8) | val2;
 }
@@ -76,34 +81,34 @@ uint32_t UMPMessage::mt0DeltaTicksSinceLast(uint16_t noTicksSince) {
 }
 
 uint32_t UMPMessage::mt1MTC(uint8_t group, uint8_t timeCode) {
-  return m1Create(group, timing_code, timeCode, 0);
+  return m1Create(group, status::timing_code, timeCode, 0);
 }
 uint32_t UMPMessage::mt1SPP(uint8_t group, uint16_t position) {
-  return m1Create(group, spp, position & 0x7F, (position >> 7) & 0x7F);
+  return m1Create(group, status::spp, position & 0x7F, (position >> 7) & 0x7F);
 }
 uint32_t UMPMessage::mt1SongSelect(uint8_t group, uint8_t song) {
-  return m1Create(group, song_select, song, 0);
+  return m1Create(group, status::song_select, song, 0);
 }
 uint32_t UMPMessage::mt1TuneRequest(uint8_t group) {
-  return m1Create(group, tunerequest, 0, 0);
+  return m1Create(group, status::tunerequest, 0, 0);
 }
 uint32_t UMPMessage::mt1TimingClock(uint8_t group) {
-  return m1Create(group, timingclock, 0, 0);
+  return m1Create(group, status::timingclock, 0, 0);
 }
 uint32_t UMPMessage::mt1SeqStart(uint8_t group) {
-  return m1Create(group, seqstart, 0, 0);
+  return m1Create(group, status::seqstart, 0, 0);
 }
 uint32_t UMPMessage::mt1SeqCont(uint8_t group) {
-  return m1Create(group, seqcont, 0, 0);
+  return m1Create(group, status::seqcont, 0, 0);
 }
 uint32_t UMPMessage::mt1SeqStop(uint8_t group) {
-  return m1Create(group, seqstop, 0, 0);
+  return m1Create(group, status::seqstop, 0, 0);
 }
 uint32_t UMPMessage::mt1ActiveSense(uint8_t group) {
-  return m1Create(group, activesense, 0, 0);
+  return m1Create(group, status::activesense, 0, 0);
 }
 uint32_t UMPMessage::mt1SystemReset(uint8_t group) {
-  return m1Create(group, systemreset, 0, 0);
+  return m1Create(group, status::systemreset, 0, 0);
 }
 
 uint32_t UMPMessage::mt2NoteOn(uint8_t group, uint8_t channel, uint8_t noteNumber, uint8_t velocity) {
@@ -114,7 +119,7 @@ uint32_t UMPMessage::mt2NoteOff(uint8_t group, uint8_t channel, uint8_t noteNumb
 }
 
 uint32_t UMPMessage::mt2PolyPressure(uint8_t group, uint8_t channel, uint8_t noteNumber, uint8_t pressure) {
-  return mt2Create(group, status::key_pressure, channel, noteNumber, pressure);
+  return mt2Create(group, status::poly_pressure, channel, noteNumber, pressure);
 }
 uint32_t UMPMessage::mt2CC(uint8_t group, uint8_t channel, uint8_t index, uint8_t value) {
   return mt2Create(group, status::cc, channel, index, value);
@@ -176,7 +181,7 @@ std::array<uint32_t, 2> UMPMessage::mt4NoteOff(uint8_t group, uint8_t channel, u
 std::array<uint32_t, 2> UMPMessage::mt4CPolyPressure(uint8_t group, uint8_t channel, uint8_t noteNumber,
                                                      uint32_t pressure) {
   std::array<uint32_t, 2> umpMess = {0, 0};
-  umpMess[0] = mt4CreateFirstWord(group, status::key_pressure, channel, noteNumber, 0);
+  umpMess[0] = mt4CreateFirstWord(group, status::poly_pressure, channel, noteNumber, 0);
   umpMess[1] = pressure;
   return umpMess;
 }

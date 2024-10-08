@@ -12,6 +12,8 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
+#include <version>
 
 namespace midi2 {
 
@@ -28,16 +30,19 @@ namespace midi2 {
 template <typename Enum>
   requires std::is_enum_v<Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
+#if defined(__cpp_lib_to_underlying) && __cpp_lib_to_underlying > 202102L
+  return std::to_underlying(e);
+#else
   return static_cast<std::underlying_type_t<Enum>>(e);
+#endif
 }
 
-
-enum status : std::uint8_t {
+enum class status : std::uint8_t {
   // Channel voice messages
   note_off = 0x80,
   note_on = 0x90,
-  key_pressure = 0xA0,  // Polyphonic Key Pressure (Aftertouch).
-  cc = 0xB0,            // Continuous Controller
+  poly_pressure = 0xA0,  // Polyphonic Key Pressure (Aftertouch).
+  cc = 0xB0,             // Continuous Controller
   program_change = 0xC0,
   channel_pressure = 0xD0,  // Channel Pressure (Aftertouch).
   pitch_bend = 0xE0,
@@ -67,7 +72,6 @@ constexpr auto S7MIDICI = std::byte{0x0D};
 
 // Status codes added in MIDI 2.
 enum midi2status : std::uint8_t {
-  pernote_manage = 0xF0,
   rpn_pernote = 0x00,
   nrpn_pernote = 0x10,
   rpn = 0x20,  // Registered Parameter Number
@@ -75,6 +79,33 @@ enum midi2status : std::uint8_t {
   rpn_relative = 0x40,
   nrpn_relative = 0x50,
   pitch_bend_pernote = 0x60,
+
+  // Channel voice messages
+  note_off = 0x80,
+  note_on = 0x90,
+  poly_pressure = 0xA0,
+  cc = 0xB0,  // Continuous Controller
+  program_change = 0xC0,
+  channel_pressure = 0xD0,  // Channel Pressure (Aftertouch).
+  pitch_bend = 0xE0,
+
+  // System Common Messages
+  pernote_manage = 0xF0,  // MIDI 1.0 sysex_start = 0xF0,
+  timing_code = 0xF1,
+  spp = 0xF2,  // Song Position Pointer
+  song_select = 0xF3,
+  reserved1 = 0xF4,
+  reserved2 = 0xF5,
+  tunerequest = 0xF6,
+  sysex_stop = 0xF7,  // End of system exclusive
+  timingclock = 0xF8,
+  reserved3 = 0xF9,
+  seqstart = 0xFA,  // Start the current sequence playing
+  seqcont = 0xFB,   // Continue at the point the sequence was stopped
+  seqstop = 0xFC,   // Stop the current sequence
+  reserved4 = 0xFD,
+  activesense = 0xFE,
+  systemreset = 0xFF,
 };
 
 // The MIDI 1.0 Specification defines Control Change indexes 98, 99, 100, and

@@ -47,6 +47,8 @@ public:
   [[nodiscard]] static constexpr small_type min() noexcept { return 0; }
   /// Returns the largest value that can be stored.
   [[nodiscard]] static constexpr small_type max() noexcept { return mask_; }
+  // Returns the number of bits that can be stored.
+  [[nodiscard]] static constexpr unsigned bits() noexcept { return Bits; }
 
   /// Returns the value stored in the bitfield.
   [[nodiscard]] constexpr small_type value() const noexcept { return (value_ >> Index) & mask_; }

@@ -63,7 +63,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   auto const channel = b0 & std::byte{0x0F};
   auto status = static_cast<enum status>(b0 & std::byte{0xF0});
 
-  if (to_underlying(b0) >= status::timing_code) {
+  if (to_underlying(b0) >= to_underlying(status::timing_code)) {
     output_.push_back(pack(ump_message_type::system, b0, b1, b2));
     return;
   }
@@ -84,7 +84,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   switch (status) {
   case status::note_on:
   case status::note_off:
-  case status::key_pressure:
+  case status::poly_pressure:
     output_.push_back(message | (std::to_integer<std::uint32_t>(b1) << 8));
     output_.push_back(scaleUp(std::to_integer<std::uint32_t>(b2), 7, 16) << 16);
     break;
@@ -118,8 +118,7 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
 namespace {
 
 constexpr bool isSystemRealTimeMessage(std::byte const midi1Byte) {
-  using status_type = std::underlying_type_t<status>;
-  switch (std::to_integer<status_type>(midi1Byte)) {
+  switch (static_cast<status>(midi1Byte)) {
   case status::timingclock:
   case status::seqstart:
   case status::seqcont:
@@ -146,7 +145,7 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
 }  // end anonymous namespace
 
 void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
-  auto const midi1int = std::to_integer<std::underlying_type_t<status>>(midi1Byte);
+  auto const midi1int = static_cast<status>(midi1Byte);
 
   if (isStatusByte(midi1Byte)) {
     if (midi1int == status::tunerequest || isSystemRealTimeMessage(midi1Byte)) {
@@ -212,7 +211,7 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
   } else if (d0_ != std::byte{0}) {  // status byte set
     if (isOneByteMessage(d0_)) {
       this->bsToUMP(d0_, midi1Byte, std::byte{0});
-    } else if (d0_ < std::byte{status::sysex_start} || d0_ == std::byte{status::spp}) {
+    } else if (d0_ < std::byte{to_underlying(status::sysex_start)} || d0_ == std::byte{to_underlying(status::spp)}) {
       // This is the first of a two data byte message.
       d1_ = midi1Byte;
     }
