@@ -274,12 +274,6 @@ public:
   midi2::umpProcessor<mocked_config&> processor_;
 };
 
-constexpr std::uint8_t ump_mt(midi2::ump_message_type mt) {
-  auto const result = static_cast<std::uint8_t>(mt);
-  assert(to_underlying(mt) == result);
-  return result;
-}
-
 //*       _   _ _ _ _         *
 //*  _  _| |_(_) (_) |_ _  _  *
 //* | || |  _| | | |  _| || | *
