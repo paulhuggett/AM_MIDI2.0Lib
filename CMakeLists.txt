@@ -31,7 +31,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/fifo.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/midiCIMessageCreate.hpp"
-  "${INCLUDE_DIR}/midi2/midiCIProcessor.hpp"
+  "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
   "${INCLUDE_DIR}/midi2/umpMessageCreate.hpp"
   "${INCLUDE_DIR}/midi2/umpProcessor.hpp"
