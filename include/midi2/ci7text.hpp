@@ -1,9 +1,10 @@
+//===-- CI Text Codec ---------------------------------------------------------*- C++ -*-===//
 //
-//  ci7text.hpp
-//  midi2
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 01/09/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
 #include <array>
 #include <cassert>
