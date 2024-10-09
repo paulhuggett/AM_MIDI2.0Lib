@@ -1,4 +1,4 @@
-//===-- UMP Processor ---------------------------------------------------------*- C++ -*-===//
+//===-- UMP Dispatcher --------------------------------------------------------*- C++ -*-===//
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
@@ -6,8 +6,8 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_UMP_PROCESSOR_HPP
-#define MIDI2_UMP_PROCESSOR_HPP
+#ifndef MIDI2_UMP_DISPATCHER_HPP
+#define MIDI2_UMP_DISPATCHER_HPP
 
 #include <algorithm>
 #include <array>
@@ -155,7 +155,7 @@ concept flex_data_backend = requires(T v, Context context) {
 };
 
 template <typename T>
-concept ump_processor_config = requires (T v) {
+concept ump_dispatcher_config = requires (T v) {
   { v.context };
   { v.utility } -> utility_backend<decltype(v.context)>;
   { v.system } -> system_backend<decltype(v.context)>;
@@ -285,9 +285,9 @@ template <typename T> concept word_memfun = requires(T a) {
   { a.word() } -> std::convertible_to<std::uint32_t>;
 };
 
-template <ump_processor_config Config = default_config> class umpProcessor {
+template <ump_dispatcher_config Config = default_config> class ump_dispatcher {
 public:
-  explicit constexpr umpProcessor(Config const& config = default_config{}) : config_{config} {}
+  explicit constexpr ump_dispatcher(Config const &config = default_config{}) : config_{config} {}
 
   void clearUMP() {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
@@ -297,11 +297,10 @@ public:
   }
   void processUMP() { /* nothing to do */ }
   template <typename First, typename... Rest>
-    requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>)
-  void processUMP(First ump, Rest &&...rest) {
+  requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>) void processUMP(First ump, Rest &&...rest) {
     this->processUMP(ump.word(), std::forward<Rest>(rest)...);
   }
-  template <typename... Rest> void processUMP(std::uint32_t ump, Rest&&... rest) {
+  template <typename... Rest> void processUMP(std::uint32_t ump, Rest &&...rest) {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
@@ -355,12 +354,12 @@ private:
   [[no_unique_address]] Config config_;
 };
 
-template <typename T> umpProcessor(T) -> umpProcessor<T>;
+template <typename T> ump_dispatcher(T) -> ump_dispatcher<T>;
 
 // utility message
 // ~~~~~~~~~~~~~~~
 // 32 bit utility messages
-template <ump_processor_config Config> void umpProcessor<Config>::utility_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_message() {
   static_assert(message_size<midi2::ump_message_type::utility>() == 1);
   switch (static_cast<ump_utility>((message_[0] >> 20) & 0x0F)) {
   // 7.2.1 NOOP
@@ -386,7 +385,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::utility_messag
 // system message
 // ~~~~~~~~~~~~~~
 // 32 bit System Common and Real Time
-template <ump_processor_config Config> void umpProcessor<Config>::system_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_message() {
   static_assert(message_size<midi2::ump_message_type::system>() == 1);
   switch (static_cast<status>((message_[0] >> 16) & 0xFF)) {
   case status::timing_code:
@@ -419,7 +418,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::system_message
 // m1cvm message
 // ~~~~~~~~~~~~~
 // 32 Bit MIDI 1.0 Channel Voice Messages
-template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_message() {
   static_assert(ump_message_size(midi2::ump_message_type::m1cvm) == 1);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::m1cvm));
 
@@ -449,7 +448,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m1cvm_message(
 
 // data64 message
 // ~~~~~~~~~~~~~~
-template <ump_processor_config Config> void umpProcessor<Config>::data64_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_message() {
   static_assert(ump_message_size(midi2::ump_message_type::data64) == 2);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::data64));
 
@@ -467,7 +466,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::data64_message
 // m2cvm message
 // ~~~~~~~~~~~~~
 // 64 bit MIDI 2.0 Channel Voice Messages
-template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
   switch (static_cast<midi2status>((message_[0] >> 16) & 0xF0)) {
@@ -521,7 +520,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::m2cvm_message(
 
 // ump stream message
 // ~~~~~~~~~~~~~~~~~~
-template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_message() {
   using types::ump_stream::device_identity_notification;
   using types::ump_stream::end_of_clip;
   using types::ump_stream::endpoint_discovery;
@@ -589,7 +588,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::ump_stream_mes
 
 // data128 message
 // ~~~~~~~~~~~~~~~
-template <ump_processor_config Config> void umpProcessor<Config>::data128_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_message() {
   using types::data128::mds_header;
   using types::data128::mds_payload;
   using types::data128::sysex8;
@@ -612,7 +611,7 @@ template <ump_processor_config Config> void umpProcessor<Config>::data128_messag
 
 // flex data message
 // ~~~~~~~~~~~~~~~~~
-template <ump_processor_config Config> void umpProcessor<Config>::flex_data_message() {
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_message() {
   static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
 
@@ -648,4 +647,4 @@ template <ump_processor_config Config> void umpProcessor<Config>::flex_data_mess
 
 }  // end namespace midi2
 
-#endif  // MIDI2_UMP_PROCESSOR_HPP
+#endif  // MIDI2_UMP_DISPATCHER_HPP

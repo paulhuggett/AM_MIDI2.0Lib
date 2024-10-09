@@ -1,4 +1,4 @@
-//===-- UMP Processor ---------------------------------------------------------*- C++ -*-===//
+//===-- UMP Dispatcher --------------------------------------------------------*- C++ -*-===//
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
@@ -7,8 +7,8 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/umpProcessor.hpp"
 #include "midi2/bitfield.hpp"
+#include "midi2/ump_dispatcher.hpp"
 #include "midi2/ump_types.hpp"
 
 // Standard library
@@ -31,7 +31,7 @@ using context_type = int;
 
 struct utility_base {
   utility_base() = default;
-  utility_base(utility_base const&) = default;
+  utility_base(utility_base const &) = default;
   virtual ~utility_base() noexcept = default;
 
   virtual void noop(context_type) = 0;
@@ -83,7 +83,7 @@ public:
 };
 struct m1cvm_base {
   m1cvm_base() = default;
-  m1cvm_base(m1cvm_base const&) = default;
+  m1cvm_base(m1cvm_base const &) = default;
   virtual ~m1cvm_base() noexcept = default;
 
   virtual void note_off(context_type, midi2::types::m1cvm::note_off) = 0;
@@ -106,7 +106,7 @@ public:
 };
 struct data64_base {
   data64_base() = default;
-  data64_base(data64_base const&) = default;
+  data64_base(data64_base const &) = default;
   virtual ~data64_base() noexcept = default;
 
   virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7) = 0;
@@ -123,7 +123,7 @@ public:
 };
 struct m2cvm_base {
   m2cvm_base() = default;
-  m2cvm_base(m2cvm_base const&) = default;
+  m2cvm_base(m2cvm_base const &) = default;
   virtual ~m2cvm_base() noexcept = default;
 
   virtual void note_off(context_type, midi2::types::m2cvm::note_off) = 0;
@@ -156,7 +156,7 @@ public:
 };
 struct data128_base {
   data128_base() = default;
-  data128_base(data128_base const&) = default;
+  data128_base(data128_base const &) = default;
   virtual ~data128_base() noexcept = default;
 
   virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8 const &) = 0;
@@ -177,7 +177,7 @@ public:
 };
 struct ump_stream_base {
   ump_stream_base() = default;
-  ump_stream_base(ump_stream_base const&) = default;
+  ump_stream_base(ump_stream_base const &) = default;
   virtual ~ump_stream_base() noexcept = default;
 
   virtual void endpoint_discovery(context_type, midi2::types::ump_stream::endpoint_discovery) = 0;
@@ -227,7 +227,7 @@ public:
 };
 struct flex_data_base {
   flex_data_base() = default;
-  flex_data_base(flex_data_base const&) = default;
+  flex_data_base(flex_data_base const &) = default;
   virtual ~flex_data_base() noexcept = default;
 
   virtual void set_tempo(context_type, midi2::types::flex_data::set_tempo) = 0;
@@ -255,9 +255,9 @@ using testing::ElementsAre;
 using testing::InSequence;
 using testing::StrictMock;
 
-class UMPProcessor : public testing::Test {
+class UMPDispatcher : public testing::Test {
 public:
-  UMPProcessor() : processor_{std::ref(config_)} {}
+  UMPDispatcher() : dispatcher_{std::ref(config_)} {}
 
   struct mocked_config {
     context_type context = 42;
@@ -271,7 +271,7 @@ public:
     StrictMock<FlexDataMocks> flex;
   };
   mocked_config config_;
-  midi2::umpProcessor<mocked_config&> processor_;
+  midi2::ump_dispatcher<mocked_config &> dispatcher_;
 };
 
 //*       _   _ _ _ _         *
@@ -279,50 +279,50 @@ public:
 //* | || |  _| | | |  _| || | *
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
-class UMPProcessorUtility : public UMPProcessor {};
+class UMPDispatcherUtility : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, Noop) {
+TEST_F(UMPDispatcherUtility, Noop) {
   EXPECT_CALL(config_.utility, noop(config_.context)).Times(1);
 
   midi2::types::utility::noop w0{};
-  processor_.processUMP(w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, JRClock) {
+TEST_F(UMPDispatcherUtility, JRClock) {
   midi2::types::utility::jr_clock message;
   message.w0.sender_clock_time = 0b1010101010101010;
   EXPECT_CALL(config_.utility, jr_clock(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, JRTimestamp) {
+TEST_F(UMPDispatcherUtility, JRTimestamp) {
   midi2::types::utility::jr_timestamp message{};
   message.w0.timestamp = (1U << 16) - 1U;
   EXPECT_CALL(config_.utility, jr_timestamp(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, DeltaClockstampTqpn) {
+TEST_F(UMPDispatcherUtility, DeltaClockstampTqpn) {
   midi2::types::utility::delta_clockstamp_tpqn message{};
   message.w0.ticks_pqn = 0b1010101010101010;
   EXPECT_CALL(config_.utility, delta_clockstamp_tpqn(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, DeltaClockstamp) {
+TEST_F(UMPDispatcherUtility, DeltaClockstamp) {
   midi2::types::utility::delta_clockstamp message{};
   message.w0.ticks_per_quarter_note = (1U << 20) - 1U;
   EXPECT_CALL(config_.utility, delta_clockstamp(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorUtility, BadMessage) {
+TEST_F(UMPDispatcherUtility, BadMessage) {
   midi2::types::utility::delta_clockstamp message;
   message.w0.mt = to_underlying(midi2::ump_message_type::utility);
   message.w0.status = std::uint8_t{0b1111};
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(std::bit_cast<std::uint32_t>(message))));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 
 //*  ___         _              *
@@ -330,19 +330,19 @@ TEST_F(UMPProcessorUtility, BadMessage) {
 //* \__ \ || (_-<  _/ -_) '  \  *
 //* |___/\_, /__/\__\___|_|_|_| *
 //*      |__/                   *
-class UMPProcessorSystem : public UMPProcessor {};
+class UMPDispatcherSystem : public UMPDispatcher {};
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, MIDITimeCode) {
+TEST_F(UMPDispatcherSystem, MIDITimeCode) {
   midi2::types::system::midi_time_code message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::timing_code);
   message.w0.time_code = 0b1010101;
   EXPECT_CALL(config_.system, midi_time_code(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, SongPositionPointer) {
+TEST_F(UMPDispatcherSystem, SongPositionPointer) {
   midi2::types::system::song_position_pointer message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
@@ -350,89 +350,89 @@ TEST_F(UMPProcessorSystem, SongPositionPointer) {
   message.w0.position_lsb = 0b1010101;
   message.w0.position_msb = 0b1111111;
   EXPECT_CALL(config_.system, song_position_pointer(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, SongSelect) {
+TEST_F(UMPDispatcherSystem, SongSelect) {
   midi2::types::system::song_select message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::song_select);
   message.w0.song = 0b1010101;
   EXPECT_CALL(config_.system, song_select(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, TuneRequest) {
+TEST_F(UMPDispatcherSystem, TuneRequest) {
   midi2::types::system::tune_request message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::tunerequest);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, TimingClock) {
+TEST_F(UMPDispatcherSystem, TimingClock) {
   midi2::types::system::tune_request message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::tunerequest);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, Start) {
+TEST_F(UMPDispatcherSystem, Start) {
   midi2::types::system::seq_start message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::seqstart);
   EXPECT_CALL(config_.system, seq_start(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, Continue) {
+TEST_F(UMPDispatcherSystem, Continue) {
   midi2::types::system::seq_continue message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::seqcont);
   EXPECT_CALL(config_.system, seq_continue(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, Stop) {
+TEST_F(UMPDispatcherSystem, Stop) {
   midi2::types::system::seq_stop message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::seqstop);
   EXPECT_CALL(config_.system, seq_stop(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, ActiveSensing) {
+TEST_F(UMPDispatcherSystem, ActiveSensing) {
   midi2::types::system::active_sensing message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::activesense);
   EXPECT_CALL(config_.system, active_sensing(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, Reset) {
+TEST_F(UMPDispatcherSystem, Reset) {
   midi2::types::system::reset message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = to_underlying(midi2::status::systemreset);
   EXPECT_CALL(config_.system, reset(config_.context, message));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorSystem, BadStatus) {
+TEST_F(UMPDispatcherSystem, BadStatus) {
   midi2::types::system::reset message;
   message.w0.mt = to_underlying(midi2::ump_message_type::system);
   message.w0.group = 0;
   message.w0.status = 0x00;
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message.w0.word())));
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 
 //*        _    _ _   _   __   *
@@ -441,62 +441,61 @@ TEST_F(UMPProcessorSystem, BadStatus) {
 //* |_|_|_|_\__,_|_| |_(_)__/  *
 //*                            *
 constexpr std::uint8_t ump_cvm(midi2::status s) {
-  static_assert(
-      std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
-      "status type must be a std::uint8_t");
+  static_assert(std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
+                "status type must be a std::uint8_t");
   assert((to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum must be 0");
   return to_underlying(s) >> 4;
 }
 
-class UMPProcessorMIDI1 : public UMPProcessor {};
+class UMPDispatcherMIDI1 : public UMPDispatcher {};
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, NoteOn) {
+TEST_F(UMPDispatcherMIDI1, NoteOn) {
   midi2::types::m1cvm::note_on message;
   message.w0.group = 0;
   message.w0.channel = 3;
   message.w0.note = 60;
   message.w0.velocity = 0x43;
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, NoteOff) {
+TEST_F(UMPDispatcherMIDI1, NoteOff) {
   midi2::types::m1cvm::note_off message;
   message.w0.group = 0;
   message.w0.channel = 3;
   message.w0.note = 60;
   message.w0.velocity = 0x43;
   EXPECT_CALL(config_.m1cvm, note_off(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, PolyPressure) {
+TEST_F(UMPDispatcherMIDI1, PolyPressure) {
   midi2::types::m1cvm::poly_pressure message;
   message.w0.group = std::uint8_t{0};
   message.w0.channel = std::uint8_t{3};
   message.w0.note = std::uint8_t{60};
   message.w0.pressure = std::uint8_t{0x43};
   EXPECT_CALL(config_.m1cvm, poly_pressure(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, ControlChange) {
+TEST_F(UMPDispatcherMIDI1, ControlChange) {
   midi2::types::m1cvm::control_change message;
   message.w0.group = 0;
   message.w0.channel = 3;
   message.w0.index = 60;
   message.w0.data = 127;
   EXPECT_CALL(config_.m1cvm, control_change(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI1, ChannelPressure) {
+TEST_F(UMPDispatcherMIDI1, ChannelPressure) {
   midi2::types::m1cvm::channel_pressure message;
   message.w0.group = 0;
   message.w0.channel = 3;
   message.w0.data = 0b01010101;
   EXPECT_CALL(config_.m1cvm, channel_pressure(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w0);
 }
 
 //*     _      _           __ _ _   *
@@ -505,7 +504,7 @@ TEST_F(UMPProcessorMIDI1, ChannelPressure) {
 //* \__,_\__,_|\__\__,_| \___/ |_|  *
 //*                                 *
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, Data64SysExIn1) {
+TEST_F(UMPDispatcher, Data64SysExIn1) {
   midi2::types::data64::sysex7 m0;
   m0.w0.mt = to_underlying(midi2::ump_message_type::data64);
   m0.w0.group = 0;
@@ -516,10 +515,10 @@ TEST_F(UMPProcessor, Data64SysExIn1) {
   m0.w1.data2 = 5;
   m0.w1.data3 = 7;
   EXPECT_CALL(config_.data64, sysex7_in_1(config_.context, m0)).Times(1);
-  processor_.processUMP(m0.w0, m0.w1);
+  dispatcher_.processUMP(m0.w0, m0.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessor, Data64Sysex8StartAndEnd) {
+TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
   using midi2::types::data64::sysex7;
 
@@ -562,9 +561,9 @@ TEST_F(UMPProcessor, Data64Sysex8StartAndEnd) {
     EXPECT_CALL(config_.data64, sysex7_continue(config_.context, m1)).Times(1);
     EXPECT_CALL(config_.data64, sysex7_end(config_.context, m2)).Times(1);
   }
-  processor_.processUMP(m0.w0, m0.w1);
-  processor_.processUMP(m1.w0, m1.w1);
-  processor_.processUMP(m2.w0, m2.w1);
+  dispatcher_.processUMP(m0.w0, m0.w1);
+  dispatcher_.processUMP(m1.w0, m1.w1);
+  dispatcher_.processUMP(m2.w0, m2.w1);
 }
 
 //*        _    _ _   ___                 *
@@ -572,10 +571,10 @@ TEST_F(UMPProcessor, Data64Sysex8StartAndEnd) {
 //* | '  \| / _` | |  / /  / _\ V / '  \  *
 //* |_|_|_|_\__,_|_| /___| \__|\_/|_|_|_| *
 //*                                       *
-class UMPProcessorMIDI2CVM : public UMPProcessor {};
+class UMPDispatcherMIDI2CVM : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, NoteOn) {
+TEST_F(UMPDispatcherMIDI2CVM, NoteOn) {
   midi2::types::m2cvm::note_on message;
   message.w0.group = std::uint8_t{0};
   message.w0.channel = std::uint8_t{3};
@@ -584,10 +583,10 @@ TEST_F(UMPProcessorMIDI2CVM, NoteOn) {
   message.w1.velocity = std::uint16_t{0x432};
   message.w1.attribute = 0;
   EXPECT_CALL(config_.m2cvm, note_on(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, NoteOff) {
+TEST_F(UMPDispatcherMIDI2CVM, NoteOff) {
   midi2::types::m2cvm::note_off n;
   n.w0.group = std::uint8_t{0};
   n.w0.channel = std::uint8_t{3};
@@ -596,10 +595,10 @@ TEST_F(UMPProcessorMIDI2CVM, NoteOff) {
   n.w1.velocity = std::uint16_t{0x432};
   n.w1.attribute = 0;
   EXPECT_CALL(config_.m2cvm, note_off(config_.context, n)).Times(1);
-  processor_.processUMP(n.w0, n.w1);
+  dispatcher_.processUMP(n.w0, n.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, ProgramChange) {
+TEST_F(UMPDispatcherMIDI2CVM, ProgramChange) {
   midi2::types::m2cvm::program_change message;
   message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   message.w0.group = std::uint8_t{0};
@@ -612,10 +611,10 @@ TEST_F(UMPProcessorMIDI2CVM, ProgramChange) {
   message.w1.bank_msb = 0b01010101;
   message.w1.bank_lsb = 0b00101010;
   EXPECT_CALL(config_.m2cvm, program_change(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, ControllerMessage) {
+TEST_F(UMPDispatcherMIDI2CVM, ControllerMessage) {
   midi2::types::m2cvm::controller_message message;
   message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   message.w0.group = std::uint8_t{0};
@@ -625,10 +624,10 @@ TEST_F(UMPProcessorMIDI2CVM, ControllerMessage) {
   message.w0.index = 2;
   message.w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, controller_message(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, ChannelPressure) {
+TEST_F(UMPDispatcherMIDI2CVM, ChannelPressure) {
   midi2::types::m2cvm::channel_pressure message;
   message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   message.w0.group = std::uint8_t{0};
@@ -636,10 +635,10 @@ TEST_F(UMPProcessorMIDI2CVM, ChannelPressure) {
   message.w0.channel = std::uint8_t{3};
   message.w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, channel_pressure(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, RPNPerNote) {
+TEST_F(UMPDispatcherMIDI2CVM, RPNPerNote) {
   midi2::types::m2cvm::per_note_controller message;
   message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   message.w0.group = std::uint8_t{0};
@@ -649,10 +648,10 @@ TEST_F(UMPProcessorMIDI2CVM, RPNPerNote) {
   message.w0.index = 1;
   message.w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, rpn_controller(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorMIDI2CVM, NRPNPerNote) {
+TEST_F(UMPDispatcherMIDI2CVM, NRPNPerNote) {
   midi2::types::m2cvm::per_note_controller message;
   message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   message.w0.group = std::uint8_t{0};
@@ -662,7 +661,7 @@ TEST_F(UMPProcessorMIDI2CVM, NRPNPerNote) {
   message.w0.index = 1;
   message.w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, nrpn_controller(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(message.w0, message.w1);
 }
 
 //*     _      _          _ ___ ___  *
@@ -670,10 +669,10 @@ TEST_F(UMPProcessorMIDI2CVM, NRPNPerNote) {
 //* / _` / _` |  _/ _` | | |/ // _ \ *
 //* \__,_\__,_|\__\__,_| |_/___\___/ *
 //*                                  *
-class UMPProcessorData128 : public UMPProcessor {};
+class UMPDispatcherData128 : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorData128, Sysex8In1) {
+TEST_F(UMPDispatcherData128, Sysex8In1) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
@@ -694,10 +693,10 @@ TEST_F(UMPProcessorData128, Sysex8In1) {
   part0.w2.data8 = 23;
   part0.w3.data9 = 29;
   EXPECT_CALL(config_.data128, sysex8_in_1(config_.context, part0)).Times(1);
-  processor_.processUMP(part0.w0, part0.w1, part0.w2, part0.w3);
+  dispatcher_.processUMP(part0.w0, part0.w1, part0.w2, part0.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorData128, Sysex8StartAndEnd) {
+TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
@@ -757,13 +756,13 @@ TEST_F(UMPProcessorData128, Sysex8StartAndEnd) {
     EXPECT_CALL(config_.data128, sysex8_end(config_.context, part2)).Times(1);
   }
 
-  processor_.processUMP(part0.w0, part0.w1, part0.w2, part0.w3);
-  processor_.processUMP(part1.w0, part1.w1, part1.w2, part1.w3);
-  processor_.processUMP(part2.w0, part2.w1, part2.w2, part2.w3);
+  dispatcher_.processUMP(part0.w0, part0.w1, part0.w2, part0.w3);
+  dispatcher_.processUMP(part1.w0, part1.w1, part1.w2, part1.w3);
+  dispatcher_.processUMP(part2.w0, part2.w1, part2.w2, part2.w3);
 }
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorData128, MixedDatSet) {
+TEST_F(UMPDispatcherData128, MixedDatSet) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto mds_id = std::uint8_t{0b1010};
 
@@ -795,13 +794,13 @@ TEST_F(UMPProcessorData128, MixedDatSet) {
     EXPECT_CALL(config_.data128, mds_header(config_.context, header)).Times(1);
     EXPECT_CALL(config_.data128, mds_payload(config_.context, payload)).Times(1);
   }
-  processor_.processUMP(header.w0, header.w1, header.w2, header.w3);
-  processor_.processUMP(payload.w0, payload.w1, payload.w2, payload.w3);
+  dispatcher_.processUMP(header.w0, header.w1, header.w2, header.w3);
+  dispatcher_.processUMP(payload.w0, payload.w1, payload.w2, payload.w3);
 }
 
 // NOLINTNEXTLINE
 constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
-TEST_F(UMPProcessor, PartialMessageThenClear) {
+TEST_F(UMPDispatcher, PartialMessageThenClear) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
   constexpr auto velocity = std::uint16_t{0x43};  // 7 bits
@@ -816,23 +815,23 @@ TEST_F(UMPProcessor, PartialMessageThenClear) {
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
 
   // The first half of a 64-bit MIDI 2 note-on message.
-  processor_.processUMP(
+  dispatcher_.processUMP(
       pack((to_underlying(midi2::ump_message_type::m2cvm) << 4) | group, (ump_note_on << 4) | channel, note_number, 0));
-  processor_.clearUMP();
+  dispatcher_.clearUMP();
 
   // An entire 32-bit MIDI 1 note-on message.
-  processor_.processUMP(pack((to_underlying(midi2::ump_message_type::m1cvm) << 4) | group, (ump_note_on << 4) | channel,
-                             note_number, velocity));
+  dispatcher_.processUMP(pack((to_underlying(midi2::ump_message_type::m1cvm) << 4) | group,
+                              (ump_note_on << 4) | channel, note_number, velocity));
 }
 //*  _   _ __  __ ___   ___ _                       *
 //* | | | |  \/  | _ \ / __| |_ _ _ ___ __ _ _ __   *
 //* | |_| | |\/| |  _/ \__ \  _| '_/ -_) _` | '  \  *
 //*  \___/|_|  |_|_|   |___/\__|_| \___\__,_|_|_|_| *
 //*                                                 *
-class UMPProcessorStream : public UMPProcessor {};
+class UMPDispatcherStream : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, EndpointDiscovery) {
+TEST_F(UMPDispatcherStream, EndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x03;
@@ -841,10 +840,10 @@ TEST_F(UMPProcessorStream, EndpointDiscovery) {
   message.w0.version_minor = 0x01;
   message.w1.filter = 0b00011111;
   EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, EndpointInfoNotification) {
+TEST_F(UMPDispatcherStream, EndpointInfoNotification) {
   midi2::types::ump_stream::endpoint_info_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -858,10 +857,10 @@ TEST_F(UMPProcessorStream, EndpointInfoNotification) {
   message.w1.receive_jr_timestamp_capability = 1;
   message.w1.transmit_jr_timestamp_capability = 0;
   EXPECT_CALL(config_.ump_stream, endpoint_info_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, DeviceIdentityNotification) {
+TEST_F(UMPDispatcherStream, DeviceIdentityNotification) {
   midi2::types::ump_stream::device_identity_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -878,10 +877,10 @@ TEST_F(UMPProcessorStream, DeviceIdentityNotification) {
   message.w3.sw_revision_3 = 0x7B;
   message.w3.sw_revision_4 = 0x79;
   EXPECT_CALL(config_.ump_stream, device_identity_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, EndpointNameNotification) {
+TEST_F(UMPDispatcherStream, EndpointNameNotification) {
   midi2::types::ump_stream::endpoint_name_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -901,10 +900,10 @@ TEST_F(UMPProcessorStream, EndpointNameNotification) {
   message.w3.name13 = std::uint8_t{'m'};
   message.w3.name14 = std::uint8_t{'m'};
   EXPECT_CALL(config_.ump_stream, endpoint_name_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, ProductInstanceIdNotification) {
+TEST_F(UMPDispatcherStream, ProductInstanceIdNotification) {
   midi2::types::ump_stream::product_instance_id_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -925,10 +924,10 @@ TEST_F(UMPProcessorStream, ProductInstanceIdNotification) {
   message.w3.pid14 = 0xFF;
   EXPECT_CALL(config_.ump_stream, product_instance_id_notification(config_.context, message)).Times(1);
 
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, JRConfigurationRequest) {
+TEST_F(UMPDispatcherStream, JRConfigurationRequest) {
   midi2::types::ump_stream::jr_configuration_request message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -937,10 +936,10 @@ TEST_F(UMPProcessorStream, JRConfigurationRequest) {
   message.w0.rxjr = 1;
   message.w0.txjr = 0;
   EXPECT_CALL(config_.ump_stream, jr_configuration_request(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, JRConfigurationNotification) {
+TEST_F(UMPDispatcherStream, JRConfigurationNotification) {
   midi2::types::ump_stream::jr_configuration_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -949,10 +948,10 @@ TEST_F(UMPProcessorStream, JRConfigurationNotification) {
   message.w0.rxjr = 1;
   message.w0.txjr = 0;
   EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, FunctionBlockDiscovery) {
+TEST_F(UMPDispatcherStream, FunctionBlockDiscovery) {
   midi2::types::ump_stream::function_block_discovery message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -960,10 +959,10 @@ TEST_F(UMPProcessorStream, FunctionBlockDiscovery) {
   message.w0.block_num = 0xFF;
   message.w0.filter = 0x03;
   EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, FunctionBlockInfoNotification) {
+TEST_F(UMPDispatcherStream, FunctionBlockInfoNotification) {
   midi2::types::ump_stream::function_block_info_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -978,10 +977,10 @@ TEST_F(UMPProcessorStream, FunctionBlockInfoNotification) {
   message.w1.ci_message_version = 0x1;
   message.w1.max_sys8_streams = 2;
   EXPECT_CALL(config_.ump_stream, function_block_info_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, FunctionBlockNameNotification) {
+TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
   midi2::types::ump_stream::function_block_name_notification message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
@@ -1001,25 +1000,25 @@ TEST_F(UMPProcessorStream, FunctionBlockNameNotification) {
   message.w3.name11 = 'm';
   message.w3.name12 = 'n';
   EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, StartOfClip) {
+TEST_F(UMPDispatcherStream, StartOfClip) {
   midi2::types::ump_stream::start_of_clip message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
   message.w0.status = to_underlying(midi2::ump_stream::start_of_clip);
   EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorStream, EndOfClip) {
+TEST_F(UMPDispatcherStream, EndOfClip) {
   midi2::types::ump_stream::end_of_clip message{};
   message.w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   message.w0.format = 0x00;
   message.w0.status = to_underlying(midi2::ump_stream::end_of_clip);
   EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 
 //*  ___ _           ___       _         *
@@ -1027,10 +1026,10 @@ TEST_F(UMPProcessorStream, EndOfClip) {
 //* | _|| / -_) \ / | |) / _` |  _/ _` | *
 //* |_| |_\___/_\_\ |___/\__,_|\__\__,_| *
 //*                                      *
-class UMPProcessorFlexData : public UMPProcessor {};
+class UMPDispatcherFlexData : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, SetTempo) {
+TEST_F(UMPDispatcherFlexData, SetTempo) {
   midi2::types::flex_data::set_tempo message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0;
@@ -1041,13 +1040,13 @@ TEST_F(UMPProcessorFlexData, SetTempo) {
   message.w0.status = to_underlying(midi2::flex_data::set_tempo);
   message.w1 = std::uint32_t{0xF0F0F0F0};
   EXPECT_CALL(config_.flex, set_tempo(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
-  processor_.processUMP(message.w1);
-  processor_.processUMP(message.w2);
-  processor_.processUMP(message.w3);
+  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w1);
+  dispatcher_.processUMP(message.w2);
+  dispatcher_.processUMP(message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, SetTimeSignature) {
+TEST_F(UMPDispatcherFlexData, SetTimeSignature) {
   midi2::types::flex_data::set_time_signature message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0;
@@ -1060,10 +1059,10 @@ TEST_F(UMPProcessorFlexData, SetTimeSignature) {
   message.w1.denominator = 2;
   message.w1.number_of_32_notes = 16;
   EXPECT_CALL(config_.flex, set_time_signature(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, SetMetronome) {
+TEST_F(UMPDispatcherFlexData, SetMetronome) {
   midi2::types::flex_data::set_metronome message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0;
@@ -1080,10 +1079,10 @@ TEST_F(UMPProcessorFlexData, SetMetronome) {
   message.w2.num_subdivision_clicks_2 = 0;
   EXPECT_CALL(config_.flex, set_metronome(config_.context, message)).Times(1);
 
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, SetKeySignature) {
+TEST_F(UMPDispatcherFlexData, SetKeySignature) {
   midi2::types::flex_data::set_key_signature message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0;
@@ -1095,10 +1094,10 @@ TEST_F(UMPProcessorFlexData, SetKeySignature) {
   message.w1.sharps_flats = 0b100;  // (-8)
   message.w1.tonic_note = static_cast<std::uint8_t>(midi2::types::flex_data::note::E);
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0, message.w1, message.w2, message.w3);
+  dispatcher_.processUMP(message.w0, message.w1, message.w2, message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, SetChordName) {
+TEST_F(UMPDispatcherFlexData, SetChordName) {
   midi2::types::flex_data::set_chord_name message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0x0F;
@@ -1127,13 +1126,13 @@ TEST_F(UMPProcessorFlexData, SetChordName) {
   message.w3.alter_2_type = 2;
   message.w3.alter_2_degree = 4;
   EXPECT_CALL(config_.flex, set_chord_name(config_.context, message)).Times(1);
-  processor_.processUMP(message.w0);
-  processor_.processUMP(message.w1);
-  processor_.processUMP(message.w2);
-  processor_.processUMP(message.w3);
+  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w1);
+  dispatcher_.processUMP(message.w2);
+  dispatcher_.processUMP(message.w3);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPProcessorFlexData, Text) {
+TEST_F(UMPDispatcherFlexData, Text) {
   midi2::types::flex_data::text_common message;
   message.w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   message.w0.group = 0;
@@ -1150,32 +1149,30 @@ TEST_F(UMPProcessorFlexData, Text) {
       (std::uint32_t{'B'} << 24) | (std::uint32_t{'H'} << 16) | (std::uint32_t{'\0'} << 8) | (std::uint32_t{'\0'} << 0);
   EXPECT_CALL(config_.flex, text(config_.context, message)).Times(1);
 
-  processor_.processUMP(message.w0);
-  processor_.processUMP(message.w1);
-  processor_.processUMP(message.w2);
-  processor_.processUMP(message.w3);
+  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(message.w1);
+  dispatcher_.processUMP(message.w2);
+  dispatcher_.processUMP(message.w3);
 }
 
-void UMPProcessorNeverCrashes(std::vector<std::uint32_t> const& in) {
-  midi2::umpProcessor p;
+void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
+  midi2::ump_dispatcher p;
   std::ranges::for_each(in, [&p](std::uint32_t ump) { p.processUMP(ump); });
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, UMPProcessorNeverCrashes);
+FUZZ_TEST(UMPDispatcherFuzz, UMPDispatcherNeverCrashes);
 #endif
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, Empty) {
-  UMPProcessorNeverCrashes({});
+TEST(UMPDispatcherFuzz, Empty) {
+  UMPDispatcherNeverCrashes({});
 }
 
-template <midi2::ump_message_type MessageType>
-void process_message(std::span<std::uint32_t> message) {
+template <midi2::ump_message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::message_size<MessageType>::value) {
-    message[0] = (message[0] & 0x00FFFFFF) |
-                 (static_cast<std::uint32_t>(MessageType) << 24);
-    midi2::umpProcessor p;
+    message[0] = (message[0] & 0x00FFFFFF) | (static_cast<std::uint32_t>(MessageType) << 24);
+    midi2::ump_dispatcher p;
     for (auto const w : message) {
       p.processUMP(w);
     }
@@ -1183,83 +1180,78 @@ void process_message(std::span<std::uint32_t> message) {
 }
 
 void utility(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::utility>(
-      {std::begin(message), std::end(message)});
+  process_message<midi2::ump_message_type::utility>({std::begin(message), std::end(message)});
 }
 void system(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::system>(
-      {std::begin(message), std::end(message)});
+  process_message<midi2::ump_message_type::system>({std::begin(message), std::end(message)});
 }
 void m1cvm(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::m1cvm>(
-      {std::begin(message), std::end(message)});
+  process_message<midi2::ump_message_type::m1cvm>({std::begin(message), std::end(message)});
 }
 void data64(std::vector<std::uint32_t> message) {
   process_message<midi2::ump_message_type::data64>({std::begin(message), std::end(message)});
 }
 void m2cvm(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::m2cvm>(
-      {std::begin(message), std::end(message)});
+  process_message<midi2::ump_message_type::m2cvm>({std::begin(message), std::end(message)});
 }
 void data128(std::vector<std::uint32_t> message) {
   process_message<midi2::ump_message_type::data128>({std::begin(message), std::end(message)});
 }
 void flex_data(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::flex_data>(
-      {std::begin(message), std::end(message)});
+  process_message<midi2::ump_message_type::flex_data>({std::begin(message), std::end(message)});
 }
 void stream(std::vector<std::uint32_t> message) {
   process_message<midi2::ump_message_type::ump_stream>({std::begin(message), std::end(message)});
 }
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, utility);
+FUZZ_TEST(UMPDispatcherFuzz, utility);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, system);
+FUZZ_TEST(UMPDispatcherFuzz, system);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, m1cvm);
+FUZZ_TEST(UMPDispatcherFuzz, m1cvm);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, data64);
+FUZZ_TEST(UMPDispatcherFuzz, data64);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, m2cvm);
+FUZZ_TEST(UMPDispatcherFuzz, m2cvm);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, data128);
+FUZZ_TEST(UMPDispatcherFuzz, data128);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, flex_data);
+FUZZ_TEST(UMPDispatcherFuzz, flex_data);
 // NOLINTNEXTLINE
-FUZZ_TEST(UMPProcessorFuzz, stream);
+FUZZ_TEST(UMPDispatcherFuzz, stream);
 #endif
 
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, UtilityMessage) {
+TEST(UMPDispatcherFuzz, UtilityMessage) {
   utility({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, SystemMessage) {
+TEST(UMPDispatcherFuzz, SystemMessage) {
   system({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, M1CVMMessage) {
+TEST(UMPDispatcherFuzz, M1CVMMessage) {
   m1cvm({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, Data64Message) {
+TEST(UMPDispatcherFuzz, Data64Message) {
   data64({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, M2CVMMessage) {
+TEST(UMPDispatcherFuzz, M2CVMMessage) {
   m2cvm({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, Data128Message) {
+TEST(UMPDispatcherFuzz, Data128Message) {
   data128({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, FlexDataMessage) {
+TEST(UMPDispatcherFuzz, FlexDataMessage) {
   flex_data({});
 }
 // NOLINTNEXTLINE
-TEST(UMPProcessorFuzz, UMPStreamMessage) {
+TEST(UMPDispatcherFuzz, UMPStreamMessage) {
   stream({});
 }
 

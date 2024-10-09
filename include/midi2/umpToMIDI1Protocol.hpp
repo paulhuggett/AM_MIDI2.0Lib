@@ -13,7 +13,7 @@
 #include <cstdint>
 
 #include "midi2/fifo.hpp"
-#include "midi2/umpProcessor.hpp"
+#include "midi2/ump_dispatcher.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {
@@ -186,7 +186,7 @@ private:
     [[no_unique_address]] struct flex_data flex{};
   };
   context_type context_;
-  umpProcessor<to_midi1_config> p_{to_midi1_config{&context_}};
+  ump_dispatcher<to_midi1_config> p_{to_midi1_config{&context_}};
 };
 
 }  // end namespace midi2
