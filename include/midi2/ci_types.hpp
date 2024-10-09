@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <ranges>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -65,16 +66,14 @@ constexpr std::byte to_le7(std::uint8_t v) {
 template <std::size_t Size>
 constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
   std::array<std::uint8_t, Size> result{};
-  std::transform(std::begin(other), std::end(other), std::begin(result),
-                 [](std::byte v) { return static_cast<std::uint8_t>(v); });
+  std::ranges::transform(other, std::begin(result), [](std::byte v) { return static_cast<std::uint8_t>(v); });
   return result;
 }
 
 template <std::size_t Size>
 constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) {
   std::array<std::byte, Size> result{};
-  std::transform(std::begin(other), std::end(other), std::begin(result),
-                 [](std::uint8_t v) { return static_cast<std::byte>(v); });
+  std::ranges::transform(other, std::begin(result), [](std::uint8_t v) { return static_cast<std::byte>(v); });
   return result;
 }
 

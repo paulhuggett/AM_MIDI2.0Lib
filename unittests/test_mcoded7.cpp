@@ -37,8 +37,7 @@ public:
     midi2::mcoded7::encoder encoder;
     std::vector<std::byte> output;
     auto out = std::back_inserter(output);
-    std::for_each(std::begin(input), std::end(input),
-                  [&encoder, &out](std::byte const b) { out = encoder.parse_byte(b, out); });
+    std::ranges::for_each(input, [&encoder, &out](std::byte const b) { out = encoder.parse_byte(b, out); });
     encoder.flush(out);
     return output;
   }
@@ -48,8 +47,7 @@ public:
     midi2::mcoded7::decoder decoder;
     std::vector<std::byte> output;
     auto out = std::back_inserter(output);
-    std::for_each(std::begin(input), std::end(input),
-                  [&decoder, &out](std::byte const b) { out = decoder.parse_byte(b, out); });
+    std::ranges::for_each(input, [&decoder, &out](std::byte const b) { out = decoder.parse_byte(b, out); });
     decoder.flush(out);
     return output;
   }
