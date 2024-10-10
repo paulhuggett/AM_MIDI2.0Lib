@@ -293,7 +293,7 @@ template <unsigned SourceBits, unsigned DestBits>
   requires (SourceBits > 1 && DestBits <= 32)
 constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
   if constexpr (SourceBits >= DestBits) {
-    return value << (SourceBits - DestBits);
+    return value >> (SourceBits - DestBits);
   } else {
     if (value == 0) {
       return 0;
