@@ -9,6 +9,7 @@ translations needed for most MIDI 2.0 Devices and Applications
 [![codecov](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib/graph/badge.svg?token=8q2aEvPTyv)](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=paulhuggett_AM_MIDI2.0Lib&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=paulhuggett_AM_MIDI2.0Lib)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/425f68679a124a1cbb0efa50342d8e8a)](https://app.codacy.com/gh/paulhuggett/AM_MIDI2.0Lib/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Fuzz Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml)
 
 ## IMPORTANT! Please read first
 I hope that this library is useful to everyone making MIDI 2.0 Devices.
