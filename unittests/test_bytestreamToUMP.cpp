@@ -136,11 +136,11 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
   constexpr auto m0 =
       std::uint32_t{(message_type << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (ump_note_on << 20) | (std::to_integer<std::uint32_t>(note_number) << 8)};
-  constexpr auto m1 = std::uint32_t{(midi2::scaleUp(std::to_integer<std::uint32_t>(velocity), 7, 16) << 16)};
+  constexpr auto m1 = std::uint32_t{(midi2::mcm_scale<7, 16>(std::to_integer<std::uint32_t>(velocity)) << 16)};
   constexpr auto m2 =
       std::uint32_t{(message_type << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (ump_note_off << 20) | (std::to_integer<std::uint32_t>(note_number) << 8)};
-  constexpr auto m3 = std::uint32_t{(midi2::scaleUp(0x40, 7, 16) << 16)};
+  constexpr auto m3 = std::uint32_t{(midi2::mcm_scale<7, 16>(0x40) << 16)};
   std::array const expected{m0, m1, m2, m3};
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
@@ -181,7 +181,7 @@ TEST(BytestreamToUMP, Midi2ChannelPressure) {
   constexpr auto group = std::uint32_t{0};
   std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) | (ump_channel_pressure << 20) |
                                           (std::to_integer<std::uint32_t>(channel) << 16)},
-                            midi2::scaleUp(std::to_integer<std::uint32_t>(pressure), 7, 32)};
+                            midi2::mcm_scale<7, 32>(std::to_integer<std::uint32_t>(pressure))};
 
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
@@ -503,7 +503,7 @@ TEST(BytestreamToUMP, Midi2RPN) {
   constexpr auto group = std::uint32_t{0};                         // 4 bits
   constexpr auto bank = std::to_integer<std::uint32_t>(msb);       // 7 bits
   constexpr auto index = std::to_integer<std::uint32_t>(lsb);      // 7 bits
-  constexpr auto data = std::uint32_t{(midi2::scaleUp(std::to_integer<std::uint32_t>(de) << 7, 14, 32))};
+  constexpr auto data = std::uint32_t{(midi2::mcm_scale<14, 32>(std::to_integer<std::uint32_t>(de) << 7))};
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
@@ -578,8 +578,8 @@ TEST(BytestreamToUMP, Midi2NonRegisteredParameterSetMSBAndLSB) {
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
                     ((midi2::midi2status::nrpn | std::to_integer<std::uint32_t>(channel)) << 16) | (bank << 8) | index},
-      midi2::scaleUp((std::to_integer<std::uint32_t>(data_msb) << 7) | std::to_integer<std::uint32_t>(data_lsb), 14,
-                     32),
+      midi2::mcm_scale<14, 32>((std::to_integer<std::uint32_t>(data_msb) << 7) |
+                               std::to_integer<std::uint32_t>(data_lsb)),
   };
 
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
@@ -654,11 +654,11 @@ TEST_P(BytestreamToUMPReserved, Midi2ReservedStatusCodeThenNoteOn) {
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel_) << 16) |
                     (ump_note_on << 20) | (std::to_integer<std::uint32_t>(note_number_) << 8) | attribute_type},
-      std::uint32_t{(midi2::scaleUp(std::to_integer<std::uint32_t>(velocity_), 7, 16) << 16) | attribute},
+      std::uint32_t{(midi2::mcm_scale<7, 16>(std::to_integer<std::uint32_t>(velocity_)) << 16) | attribute},
 
       std::uint32_t{(message_type << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel_) << 16) |
                     (ump_note_off << 20) | (std::to_integer<std::uint32_t>(note_number_) << 8) | attribute_type},
-      std::uint32_t{(midi2::scaleUp(std::to_integer<std::uint32_t>(velocity_), 7, 16) << 16) | attribute}};
+      std::uint32_t{(midi2::mcm_scale<7, 16>(std::to_integer<std::uint32_t>(velocity_)) << 16) | attribute}};
   auto const input = BytestreamToUMPReserved::input();
   auto const actual = convert(midi2::bytestreamToUMP{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))

@@ -8,13 +8,14 @@
 
 add_executable (m2unittests
   test_bitfield.cpp
+  test_bytestreamToUMP.cpp
   test_ci7.cpp
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp
   test_ci_types.cpp
   test_fifo.cpp
-  test_bytestreamToUMP.cpp
   test_mcoded7.cpp
+  test_scale.cpp
   test_ump_dispatcher.cpp
   test_umpToBytestream.cpp
   test_umpToMIDI1Protocol.cpp

@@ -133,7 +133,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     switch (status) {
     case midi2status::note_off:
     case midi2status::note_on: {
-      auto velocity = static_cast<std::byte>(scaleDown((UMP >> 16), 16, 7));
+      auto velocity = static_cast<std::byte>(mcm_scale<16, 7>(UMP >> 16));
       if (velocity == std::byte{0} && status == midi2status::note_on) {
         velocity = std::byte{1};
       }
@@ -146,11 +146,11 @@ void umpToBytestream::word2(std::uint32_t UMP) {
     case midi2status::cc:
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
       output_.push_back(val1);
-      output_.push_back(static_cast<std::byte>(scaleDown(UMP, 32, 7)));
+      output_.push_back(static_cast<std::byte>(mcm_scale<32, 7>(UMP)));
       break;
     case midi2status::channel_pressure:
       output_.push_back(static_cast<std::byte>((ump64word1_ >> 16) & 0xFF));
-      output_.push_back(static_cast<std::byte>(scaleDown(UMP, 32, 7)));
+      output_.push_back(static_cast<std::byte>(mcm_scale<32, 7>(UMP)));
       break;
     case midi2status::rpn: {
       output_.push_back(std::byte{to_underlying(status::cc)} | channel);
@@ -160,7 +160,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(std::byte{100});
       output_.push_back(val2);
 
-      auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
+      auto const val14bit = static_cast<std::uint16_t>(mcm_scale<32, 14>(UMP));
       output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{6});
       output_.push_back(static_cast<std::byte>((val14bit >> 7) & 0x7F));
@@ -177,7 +177,7 @@ void umpToBytestream::word2(std::uint32_t UMP) {
       output_.push_back(std::byte{98});
       output_.push_back(val2);
 
-      auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
+      auto const val14bit = static_cast<std::uint16_t>(mcm_scale<32, 14>(UMP));
       output_.push_back(std::byte{to_underlying(status::cc)} | channel);
       output_.push_back(std::byte{6});
       output_.push_back(static_cast<std::byte>((val14bit >> 7) & 0x7F));

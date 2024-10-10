@@ -67,15 +67,14 @@ enum class status : std::uint8_t {
 };
 
 constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
-// constexpr auto S7UNIVERSAL_RT = 0x7F;
 constexpr auto S7MIDICI = std::byte{0x0D};
 
 // Status codes added in MIDI 2.
 enum midi2status : std::uint8_t {
   rpn_pernote = 0x00,
   nrpn_pernote = 0x10,
-  rpn = 0x20,  // Registered Parameter Number
-  nrpn = 0x30,
+  rpn = 0x20,   ///< Registered Parameter Number
+  nrpn = 0x30,  ///< Assignable Controller Number
   rpn_relative = 0x40,
   nrpn_relative = 0x50,
   pitch_bend_pernote = 0x60,
@@ -288,47 +287,43 @@ constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::
   return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
 }
 
-constexpr uint32_t scaleUp(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
-  assert(dstBits >= srcBits);
-  // Handle value of 0 - skip processing
-  if (srcVal == 0) {
-    return std::uint32_t{0};
-  }
-
-  // handle 1-bit (bool) scaling
-  if (srcBits == 1) {
-    return static_cast<std::uint32_t>((std::uint32_t{1} << dstBits) - 1U);
-  }
-
-  // simple bit shift
-  uint8_t const scaleBits = (dstBits - srcBits);
-  auto bitShiftedValue = static_cast<std::uint32_t>(srcVal << scaleBits);
-  uint32_t const srcCenter = 1 << (srcBits - 1);
-  if (srcVal <= srcCenter) {
-    return bitShiftedValue;
-  }
-
-  // expanded bit repeat scheme
-  uint8_t const repeatBits = srcBits - 1;
-  auto repeatMask = (std::uint32_t{1} << repeatBits) - std::uint32_t{1};
-  uint32_t repeatValue = srcVal & repeatMask;
-  if (scaleBits > repeatBits) {
-    repeatValue <<= scaleBits - repeatBits;
+/// Implements the "min-center-max" scaling algorithm from section 3 of the document "M2-115-U MIDI 2.0 Bit Scaling and
+/// Resolution v1.0.1 23-May-2023"
+template <unsigned SourceBits, unsigned DestBits>
+  requires (SourceBits > 1 && DestBits <= 32)
+constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
+  if constexpr (SourceBits >= DestBits) {
+    return value << (SourceBits - DestBits);
   } else {
-    repeatValue >>= repeatBits - scaleBits;
-  }
+    if (value == 0) {
+      return 0;
+    }
+    if constexpr (SourceBits == 1) {
+      return static_cast<std::uint32_t>((1U << DestBits) - 1U);  // 1-bit (boolean) scaling
+    }
 
-  while (repeatValue != 0) {
-    bitShiftedValue |= repeatValue;
-    repeatValue >>= repeatBits;
-  }
-  return bitShiftedValue;
-}
+    constexpr auto scale_bits = DestBits - SourceBits;  // Number of bits to upscale
+    // Calculate the center value for SourceBits, e.g. 0x40 (64) for 7 bits,  0x2000 (8192) for 14 bits
+    constexpr auto center = 1U << (SourceBits - 1);
+    // Simple bit shift
+    auto bit_shifted_value = static_cast<std::uint32_t>(value << scale_bits);
+    if (value <= center) {
+      return bit_shifted_value;
+    }
 
-constexpr uint32_t scaleDown(uint32_t srcVal, uint8_t srcBits, uint8_t dstBits) {
-  assert(srcBits >= dstBits);
-  uint8_t const scaleBits = (srcBits - dstBits);
-  return srcVal >> scaleBits;
+    // expanded bit repeat scheme
+    constexpr auto repeat_bits = SourceBits - 1;             // We must repeat all but the highest bit
+    auto repeat_value = value & ((1U << repeat_bits) - 1U);  // Repeat bit sequence
+    if constexpr (scale_bits > repeat_bits) {
+      repeat_value <<= scale_bits - repeat_bits;
+    } else {
+      repeat_value >>= repeat_bits - scale_bits;
+    }
+    for (; repeat_value != 0; repeat_value >>= repeat_bits) {
+      bit_shifted_value |= repeat_value;  // Fill lower bits with repeat_value
+    }
+    return bit_shifted_value;
+  }
 }
 
 }  // end namespace midi2

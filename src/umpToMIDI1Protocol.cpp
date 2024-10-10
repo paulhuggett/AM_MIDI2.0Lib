@@ -41,9 +41,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ct
   out.w0.group = in.w0.group.value();
   out.w0.channel = in.w0.channel.value();
   out.w0.note = in.w0.note.value();
-  out.w0.velocity = static_cast<std::uint8_t>(scaleDown(in.w1.velocity.value(),
-                                                        static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
-                                                        static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
+  out.w0.velocity = static_cast<std::uint8_t>(
+      mcm_scale<decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()>(in.w1.velocity.value()));
   ctxt->push1(out);
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
@@ -52,9 +51,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctx
   out.w0.group = in.w0.group.value();
   out.w0.channel = in.w0.channel.value();
   out.w0.note = in.w0.note.value();
-  out.w0.velocity =
-      static_cast<std::uint8_t>(scaleDown(in.w1.velocity, static_cast<std::uint8_t>(decltype(in.w1.velocity)::bits()),
-                                          static_cast<std::uint8_t>(decltype(out.w0.velocity)::bits())));
+  out.w0.velocity = static_cast<std::uint8_t>(
+      mcm_scale<decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()>(in.w1.velocity));
   ctxt->push1(out);
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
@@ -63,8 +61,7 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *con
   out.w0.group = in.w0.group.value();
   out.w0.channel = in.w0.channel.value();
   out.w0.note = in.w0.note.value();
-  out.w0.pressure =
-      static_cast<std::uint8_t>(scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.pressure)::bits())));
+  out.w0.pressure = static_cast<std::uint8_t>(mcm_scale<32, decltype(out.w0.pressure)::bits()>(in.w1));
   ctxt->push1(out);
 }
 
@@ -98,8 +95,7 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *
   types::m1cvm::channel_pressure out;
   out.w0.group = in.w0.group.value();
   out.w0.channel = in.w0.channel.value();
-  out.w0.data =
-      static_cast<std::uint8_t>(scaleDown(in.w1, 32, static_cast<std::uint8_t>(decltype(out.w0.data)::bits())));
+  out.w0.data = static_cast<std::uint8_t>(mcm_scale<32, decltype(out.w0.data)::bits()>(in.w1));
   ctxt->push1(out);
 }
 
