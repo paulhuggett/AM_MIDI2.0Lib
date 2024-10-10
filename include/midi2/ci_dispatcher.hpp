@@ -550,8 +550,8 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
   }
 
   auto const *const pt2 = std::bit_cast<pt2_type const *>(buffer_.data() + offsetof(pt1_type, ids) + num_enabled_size);
-  auto const num_disabled = ci::from_le7(pt2->num_disabled);
-  if (num_disabled > 0 && pos_ == offsetof(pt1_type, ids) + num_enabled_size + offsetof(pt2_type, ids)) {
+  if (auto const num_disabled = ci::from_le7(pt2->num_disabled);
+      num_disabled > 0 && pos_ == offsetof(pt1_type, ids) + num_enabled_size + offsetof(pt2_type, ids)) {
     // Get the variable length "disabled" array.
     count_ = num_disabled * sizeof(pt2->ids[0]);
     return;
@@ -600,8 +600,7 @@ template <management_backend ManagementBackend, profile_backend ProfileBackend, 
 void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_details_reply() {
   using type = ci::profile_configuration::packed::details_reply_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
-  auto const data_length = ci::from_le7(reply->data_length);
-  if (pos_ == offsetof(type, data) && data_length > 0) {
+  if (auto const data_length = ci::from_le7(reply->data_length); pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
     return;
   }
@@ -879,7 +878,8 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
       this->overflow();
       return;
     }
-    buffer_[pos_++] = s7;
+    buffer_[pos_] = s7;
+    ++pos_;
     --count_;
   }
   if (count_ == 0) {
