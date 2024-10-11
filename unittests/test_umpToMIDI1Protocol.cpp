@@ -77,40 +77,46 @@ TEST(UMPToMIDI1, M2NoteOn) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2NoteOff) {
-  midi2::types::m2cvm::note_off ump;
-  ump.w0.group = 0;
-  ump.w0.channel = 0;
-  ump.w0.note = 64;
-  ump.w0.attribute = 0;
-  ump.w1.velocity = 0xC104;
-  ump.w1.attribute = 0;
+  midi2::types::m2cvm::note_off in;
+  auto& in0 = get<0>(in.w);
+  auto& in1 = get<1>(in.w);
+  in0.group = 0;
+  in0.channel = 0;
+  in0.note = 64;
+  in0.attribute = 0;
+  in1.velocity = 0xC104;
+  in1.attribute = 0;
 
   midi2::types::m1cvm::note_off expected;
-  expected.w0.group = 0;
-  expected.w0.channel = 0;
-  expected.w0.note = 64;
-  expected.w0.velocity = 0x60;
+  auto& expected0 = get<0>(expected.w);
+  expected0.group = 0;
+  expected0.channel = 0;
+  expected0.note = 64;
+  expected0.velocity = 0x60;
 
-  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
-  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
+  std::array const input{std::bit_cast<std::uint32_t>(in0), std::bit_cast<std::uint32_t>(in1)};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2PolyPressure) {
   constexpr auto note = std::uint8_t{60};
   midi2::types::m2cvm::poly_pressure ump;
-  ump.w0.group = 0;
-  ump.w0.channel = 0;
-  ump.w0.note = note;
-  ump.w1 = 0xF000F000;
+  auto& in0 = get<0>(ump.w);
+  auto& in1 = get<1>(ump.w);
+  in0.group = 0;
+  in0.channel = 0;
+  in0.note = note;
+  in1 = 0xF000F000;
 
   midi2::types::m1cvm::poly_pressure expected;
-  expected.w0.group = 0;
-  expected.w0.channel = 0;
-  expected.w0.note = note;
-  expected.w0.pressure = 0x78;
+  auto& expected0 = get<0>(expected.w);
+  expected0.group = 0;
+  expected0.channel = 0;
+  expected0.note = note;
+  expected0.pressure = 0x78;
 
-  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
-  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
+  std::array const input{std::bit_cast<std::uint32_t>(in0), std::bit_cast<std::uint32_t>(in1)};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2ProgramChangeNoBank) {
@@ -169,26 +175,30 @@ TEST(UMPToMIDI1, M2ProgramChangeWithBank) {
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2ChannelPressure) {
   midi2::types::m2cvm::channel_pressure ump;
-  ump.w0.group = 0;
-  ump.w0.channel = 0;
-  ump.w1 = 0xF000F000;
-  midi2::types::m1cvm::channel_pressure expected;
-  expected.w0.group = 0;
-  expected.w0.channel = 0;
-  expected.w0.data = 0x78;
+  get<0>(ump.w).group = 0;
+  get<0>(ump.w).channel = 0;
+  get<1>(ump.w) = 0xF000F000;
 
-  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
-  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre(std::bit_cast<std::uint32_t>(expected)));
+  midi2::types::m1cvm::channel_pressure expected;
+  get<0>(expected.w).group = 0;
+  get<0>(expected.w).channel = 0;
+  get<0>(expected.w).data = 0x78;
+
+  std::array const input{std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w))};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)),
+              ElementsAre(std::bit_cast<std::uint32_t>(get<0>(expected.w))));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2PerNotePitchBend) {
   midi2::types::m2cvm::per_note_pitch_bend ump;
-  ump.w0.group = 0;
-  ump.w0.channel = 0;
-  ump.w0.note = 60;
-  ump.w1 = 0x80000000;
+  auto& w0 = get<0>(ump.w);
+  auto& w1 = get<1>(ump.w);
+  w0.group = 0;
+  w0.channel = 0;
+  w0.note = 60;
+  w1 = 0x80000000;
 
-  std::array const input{std::bit_cast<std::uint32_t>(ump.w0), std::bit_cast<std::uint32_t>(ump.w1)};
+  std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre());
 }
 

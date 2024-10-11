@@ -33,6 +33,7 @@
 
 namespace midi2::UMPMessage {
 
+#if 0
 uint32_t mt0NOOP();
 uint32_t mt0JRClock(uint16_t clockTime);
 uint32_t mt0JRTimeStamp(uint16_t timestamp);
@@ -85,6 +86,7 @@ std::array<uint32_t, 4> mtFStartOfSeq();
 std::array<uint32_t, 4> mtFEndOfFile();
 std::array<uint32_t, 4> mtFRequestProtocol(uint8_t protocol, bool jrrx, bool jrtx);
 std::array<uint32_t, 4> mtFNotifyProtocol(uint8_t protocol, bool jrrx, bool jrtx);
+#endif
 
 }  // namespace midi2::UMPMessage
 

@@ -33,6 +33,7 @@
 
 using namespace midi2;
 
+#if 0
 namespace {
 
 uint32_t m1Create(uint8_t group, status status, uint8_t val1, uint8_t val2) {
@@ -410,3 +411,5 @@ std::array<uint32_t, 4> UMPMessage::mtFNotifyProtocol(uint8_t protocol, bool jrr
 }
 
 }  // end namespace midi2
+
+#endif

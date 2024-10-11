@@ -37,13 +37,16 @@ namespace midi2 {
 
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ctxt,
                                                           types::m2cvm::note_off const &in) const {
+  auto const &in0 = get<0>(in.w);
+  auto const &in1 = get<1>(in.w);
   types::m1cvm::note_off out;
-  out.w0.group = in.w0.group.value();
-  out.w0.channel = in.w0.channel.value();
-  out.w0.note = in.w0.note.value();
-  out.w0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()>(in.w1.velocity.value()));
-  ctxt->push1(out);
+  auto &out0 = get<0>(out.w);
+  out0.group = in0.group.value();
+  out0.channel = in0.channel.value();
+  out0.note = in0.note.value();
+  out0.velocity = static_cast<std::uint8_t>(
+      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity.value()));
+  ctxt->push(out.w);
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
                                                          types::m2cvm::note_on const &in) const {
@@ -57,12 +60,15 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctx
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
                                                                types::m2cvm::poly_pressure const &in) const {
+  auto &in0 = get<0>(in.w);
+  auto &in1 = get<1>(in.w);
   types::m1cvm::poly_pressure out;
-  out.w0.group = in.w0.group.value();
-  out.w0.channel = in.w0.channel.value();
-  out.w0.note = in.w0.note.value();
-  out.w0.pressure = static_cast<std::uint8_t>(mcm_scale<32, decltype(out.w0.pressure)::bits()>(in.w1));
-  ctxt->push1(out);
+  auto &out0 = get<0>(out.w);
+  out0.group = in0.group.value();
+  out0.channel = in0.channel.value();
+  out0.note = in0.note.value();
+  out0.pressure = static_cast<std::uint8_t>(mcm_scale<32, decltype(out0.pressure)::bits()>(in1));
+  ctxt->push(out.w);
 }
 
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
@@ -93,10 +99,12 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *co
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
                                                                   types::m2cvm::channel_pressure const &in) const {
   types::m1cvm::channel_pressure out;
-  out.w0.group = in.w0.group.value();
-  out.w0.channel = in.w0.channel.value();
-  out.w0.data = static_cast<std::uint8_t>(mcm_scale<32, decltype(out.w0.data)::bits()>(in.w1));
-  ctxt->push1(out);
+  types::m1cvm::channel_pressure::word0 &out0 = get<0>(out.w);
+  out0.group = get<0>(in.w).group.value();
+  out0.channel = get<0>(in.w).channel.value();
+  auto const &in1 = get<1>(in.w);
+  out0.data = static_cast<std::uint8_t>(mcm_scale<32, decltype(out0.data)::bits()>(in1));
+  ctxt->push(out.w);
 }
 
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
