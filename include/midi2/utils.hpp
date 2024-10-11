@@ -298,10 +298,6 @@ constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
     if (value == 0) {
       return 0;
     }
-    if constexpr (SourceBits == 1) {
-      return static_cast<std::uint32_t>((1U << DestBits) - 1U);  // 1-bit (boolean) scaling
-    }
-
     constexpr auto scale_bits = DestBits - SourceBits;  // Number of bits to upscale
     // Calculate the center value for SourceBits, e.g. 0x40 (64) for 7 bits,  0x2000 (8192) for 14 bits
     constexpr auto center = 1U << (SourceBits - 1);
