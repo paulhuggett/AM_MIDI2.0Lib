@@ -6,9 +6,11 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include <gtest/gtest.h>
-
+// DUT
 #include "midi2/utils.hpp"
+
+// Google test
+#include <gtest/gtest.h>
 
 namespace {
 

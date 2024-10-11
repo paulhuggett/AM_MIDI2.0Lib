@@ -1,29 +1,10 @@
-/**********************************************************
- * MIDI 2.0 Library
- * Author: Andrew Mee
- *
- * MIT License
- * Copyright 2024 Andrew Mee
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * ********************************************************/
+//===-- UMP To MIDI 1 ---------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
 
 #include "midi2/umpToMIDI1Protocol.hpp"
 
@@ -184,27 +165,16 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *c
   cc0.value = scaled_value & 0x7F;
   ctxt->push(cc.w);
 }
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_per_note_controller(
-    context_type *ctxt, midi2::types::m2cvm::rpn_per_note_controller const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
-}
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_per_note_controller(
-    context_type *ctxt, midi2::types::m2cvm::nrpn_per_note_controller const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
-}
-
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_management(context_type *const ctxt,
-                                                                     types::m2cvm::per_note_management const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
-}
-
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
-                                                                types::m2cvm::control_change const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
+                                                                types::m2cvm::control_change const &in) const {
+  auto const &in0 = get<0>(in.w);
+  types::m1cvm::control_change cc;
+  auto &cc0 = get<0>(cc.w);
+  cc0.group = in0.group.value();
+  cc0.channel = in0.channel.value();
+  cc0.controller = in0.controller.value();
+  cc0.value = static_cast<std::uint8_t>(mcm_scale<32, decltype(cc0.value)::bits()>(get<1>(in.w)));
+  ctxt->push(cc.w);
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::controller_message(context_type *const ctxt,
                                                                     types::m2cvm::controller_message const &) const {
@@ -214,11 +184,6 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::controller_message(context_type
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
                                                             types::m2cvm::pitch_bend const &) const {
   (void)ctxt;
-  // TODO: stuff goes here
-}
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_pitch_bend(context_type *const ctxt,
-                                                                     types::m2cvm::per_note_pitch_bend const &) const {
-  (void)ctxt; /* message dropped */
   // TODO: stuff goes here
 }
 

@@ -140,6 +140,10 @@ struct m2cvm_base {
   virtual void rpn_controller(context_type, midi2::types::m2cvm::rpn_controller) = 0;
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
   virtual void nrpn_controller(context_type, midi2::types::m2cvm::nrpn_controller) = 0;
+  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
+  virtual void rpn_relative_controller(context_type, midi2::types::m2cvm::rpn_relative_controller) = 0;
+  // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
+  virtual void nrpn_relative_controller(context_type, midi2::types::m2cvm::nrpn_relative_controller) = 0;
 
   virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management) = 0;
   virtual void control_change(context_type, midi2::types::m2cvm::control_change) = 0;
@@ -160,6 +164,9 @@ public:
               (override));
   MOCK_METHOD(void, rpn_controller, (context_type, midi2::types::m2cvm::rpn_controller), (override));
   MOCK_METHOD(void, nrpn_controller, (context_type, midi2::types::m2cvm::nrpn_controller), (override));
+  MOCK_METHOD(void, rpn_relative_controller, (context_type, midi2::types::m2cvm::rpn_relative_controller), (override));
+  MOCK_METHOD(void, nrpn_relative_controller, (context_type, midi2::types::m2cvm::nrpn_relative_controller),
+              (override));
 
   MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management), (override));
   MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change), (override));
@@ -663,7 +670,7 @@ TEST_F(UMPDispatcherMIDI2CVM, ControlChange) {
   auto &w1 = get<1>(message.w);
   w0.group = std::uint8_t{0};
   w0.channel = std::uint8_t{3};
-  w0.index = 2;
+  w0.controller = 2;
   w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, control_change(config_.context, message)).Times(1);
   dispatcher_.processUMP(w0, w1);

@@ -120,6 +120,10 @@ concept m2cvm_backend = requires(T v, Context context) {
   { v.rpn_controller(context, midi2::types::m2cvm::rpn_controller{}) } -> std::same_as<void>;
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
   { v.nrpn_controller(context, midi2::types::m2cvm::nrpn_controller{}) } -> std::same_as<void>;
+  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
+  { v.rpn_relative_controller(context, midi2::types::m2cvm::rpn_relative_controller{}) } -> std::same_as<void>;
+  // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
+  { v.nrpn_relative_controller(context, midi2::types::m2cvm::nrpn_relative_controller{}) } -> std::same_as<void>;
 
   // 7.4.9 MIDI 2.0 Program Change Message (status=0xC)
   { v.program_change(context, types::m2cvm::program_change{}) } -> std::same_as<void>;
@@ -241,6 +245,10 @@ template <typename Context> struct m2cvm_null {
   constexpr void rpn_controller(Context, types::m2cvm::rpn_controller const &) const { /* do nothing */ }
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
   constexpr void nrpn_controller(Context, types::m2cvm::nrpn_controller const &) const { /* do nothing */ }
+  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
+  constexpr void rpn_relative_controller(Context, types::m2cvm::rpn_relative_controller const &) { /* do nothing */ }
+  // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
+  constexpr void nrpn_relative_controller(Context, types::m2cvm::nrpn_relative_controller const &) { /* do nothing */ }
 
   constexpr void per_note_management(Context, types::m2cvm::per_note_management const &) const { /* do nothing */ }
   constexpr void control_change(Context, types::m2cvm::control_change const &) const { /* do nothing */ }
@@ -517,12 +525,14 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
   // 7.4.6 MIDI 2.0 Control Change Message
   case midi2status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
   case midi2status::rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
   case midi2status::nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
+  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
   case midi2status::rpn_relative:
+    config_.m2cvm.rpn_relative_controller(config_.context, types::m2cvm::rpn_relative_controller{span});
+    break;
   case midi2status::nrpn_relative:
-    config_.m2cvm.controller_message(config_.context, types::m2cvm::controller_message{span});
+    config_.m2cvm.nrpn_relative_controller(config_.context, types::m2cvm::nrpn_relative_controller{span});
     break;
   // 7.4.9 MIDI 2.0 Program Change Message
   case midi2status::program_change:

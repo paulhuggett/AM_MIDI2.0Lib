@@ -225,7 +225,7 @@ TEST(UMPToMIDI1, M2RPNController) {
   src0.channel = channel;
   src0.bank = bank;
   src0.index = index;
-  src1 = 0x12345678;
+  src1 = value;
 
   midi2::types::m1cvm::control_change cc[4];
   auto& out0 = get<0>(cc[0].w);
@@ -258,6 +258,53 @@ TEST(UMPToMIDI1, M2RPNController) {
   EXPECT_THAT(convert(std::begin(input), std::end(input)),
               ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
                           std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
+}
+TEST(UMPToMIDI1, M2NRPNController) {
+  constexpr auto group = std::uint8_t{1};
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto bank = std::uint8_t{60};
+  constexpr auto index = std::uint8_t{21};
+  constexpr auto value = std::uint32_t{0x87654321};
+  midi2::types::m2cvm::nrpn_controller src;
+  auto& src0 = get<0>(src.w);
+  auto& src1 = get<1>(src.w);
+  src0.group = group;
+  src0.channel = channel;
+  src0.bank = bank;
+  src0.index = index;
+  src1 = value;
+
+  midi2::types::m1cvm::control_change cc[4];
+  auto& out0 = get<0>(cc[0].w);
+  out0.group = group;
+  out0.channel = channel;
+  out0.controller = midi2::control::nrpn_msb;
+  out0.value = bank;
+
+  auto& out1 = get<0>(cc[1].w);
+  out1.group = group;
+  out1.channel = channel;
+  out1.controller = midi2::control::nrpn_lsb;
+  out1.value = index;
+
+  constexpr auto val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
+
+  auto& out2 = get<0>(cc[2].w);
+  out2.group = group;
+  out2.channel = channel;
+  out2.controller = midi2::control::data_entry_msb;
+  out2.value = (val14 >> 7) & 0x7F;
+
+  auto& out3 = get<0>(cc[3].w);
+  out3.group = group;
+  out3.channel = channel;
+  out3.controller = midi2::control::data_entry_lsb;
+  out3.value = val14 & 0x7F;
+
+  std::array const input{std::bit_cast<std::uint32_t>(src0), std::bit_cast<std::uint32_t>(src1)};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
+                                  std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
 
 }  // end anonymous namespace

@@ -705,6 +705,7 @@ struct rpn_controller {
 
   std::tuple<word0, word1> w;
 };
+
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_controller {
   union word0 {
@@ -727,6 +728,47 @@ struct nrpn_controller {
   std::tuple<word0, word1> w;
 };
 
+// 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Messages
+struct rpn_relative_controller {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::midi2status::rpn_relative)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Registered Relative Control (RPN)=0x4
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> bank;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> index;
+  };
+  using word1 = std::uint32_t;
+
+  rpn_relative_controller() = default;
+  explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(rpn_relative_controller const &a, rpn_relative_controller const &b) = default;
+
+  std::tuple<word0, word1> w;
+};
+struct nrpn_relative_controller {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::midi2status::nrpn_relative)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Assignable Relative Control (NRPN)=0x5
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> bank;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> index;
+  };
+  using word1 = std::uint32_t;
+
+  nrpn_relative_controller() = default;
+  explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(nrpn_relative_controller const &a, nrpn_relative_controller const &b) = default;
+
+  std::tuple<word0, word1> w;
+};
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 struct per_note_management {
   union word0 {
@@ -758,7 +800,7 @@ struct control_change {
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xB
     ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> index;
+    ump_bitfield<8, 8> controller;
     ump_bitfield<0, 7> reserved0;
   };
   using word1 = std::uint32_t;
