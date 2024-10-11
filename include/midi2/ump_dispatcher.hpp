@@ -92,9 +92,9 @@ concept m1cvm_backend = requires(T v, Context context) {
   { v.note_on(context, types::m1cvm::note_on{}) } -> std::same_as<void>;
   { v.poly_pressure(context, types::m1cvm::poly_pressure{}) } -> std::same_as<void>;
   { v.control_change(context, types::m1cvm::control_change{}) } -> std::same_as<void>;
-  { v.program_change(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
+  { v.program_change(context, types::m1cvm::program_change{}) } -> std::same_as<void>;
   { v.channel_pressure(context, types::m1cvm::channel_pressure{}) } -> std::same_as<void>;
-  { v.pitch_bend(context, types::m1cvm::m1cvm{}) } -> std::same_as<void>;
+  { v.pitch_bend(context, types::m1cvm::pitch_bend{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
@@ -201,9 +201,9 @@ template <typename Context> struct m1cvm_null {
   constexpr void note_on(Context, types::m1cvm::note_on const &) const { /* do nothing */ }
   constexpr void poly_pressure(Context, types::m1cvm::poly_pressure const &) const { /* do nothing */ }
   constexpr void control_change(Context, types::m1cvm::control_change const &) const { /* do nothing */ }
-  constexpr void program_change(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
+  constexpr void program_change(Context, types::m1cvm::program_change const &) const { /* do nothing */ }
   constexpr void channel_pressure(Context, types::m1cvm::channel_pressure const &) const { /* do nothing */ }
-  constexpr void pitch_bend(Context, types::m1cvm::m1cvm const &) const { /* do nothing */ }
+  constexpr void pitch_bend(Context, types::m1cvm::pitch_bend const &) const { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
   constexpr void sysex7_in_1(Context, types::data64::sysex7 const &) const { /* do nothing */ }
@@ -422,7 +422,6 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_messa
   static_assert(ump_message_size(midi2::ump_message_type::m1cvm) == 1);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::m1cvm));
 
-  auto const w0 = types::m1cvm::m1cvm{message_[0]};
   switch (static_cast<status>((message_[0] >> 16) & 0xF0)) {
   // 7.3.1 MIDI 1.0 Note Off Message
   case status::note_off: config_.m1cvm.note_off(config_.context, types::m1cvm::note_off{message_[0]}); break;
@@ -435,13 +434,15 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_messa
   // 7.3.4 MIDI 1.0 Control Change Message
   case status::cc: config_.m1cvm.control_change(config_.context, types::m1cvm::control_change{message_[0]}); break;
   // 7.3.5 MIDI 1.0 Program Change Message
-  case status::program_change: config_.m1cvm.program_change(config_.context, w0); break;
+  case status::program_change:
+    config_.m1cvm.program_change(config_.context, types::m1cvm::program_change{message_[0]});
+    break;
   // 7.3.6 MIDI 1.0 Channel Pressure Message
   case status::channel_pressure:
     config_.m1cvm.channel_pressure(config_.context, types::m1cvm::channel_pressure{message_[0]});
     break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
-  case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, w0); break;
+  case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, types::m1cvm::pitch_bend{message_[0]}); break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;
   }
 }
@@ -454,7 +455,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
 
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
   types::data64::sysex7 message{span};
-  switch (static_cast<data64>(message.w0.status.value())) {
+  switch (static_cast<data64>(get<0>(message.w).status.value())) {
   case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, message); break;
   case data64::sysex7_start: config_.data64.sysex7_start(config_.context, message); break;
   case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, message); break;

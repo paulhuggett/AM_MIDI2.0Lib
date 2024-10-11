@@ -90,9 +90,9 @@ struct m1cvm_base {
   virtual void note_on(context_type, midi2::types::m1cvm::note_on) = 0;
   virtual void poly_pressure(context_type, midi2::types::m1cvm::poly_pressure) = 0;
   virtual void control_change(context_type, midi2::types::m1cvm::control_change) = 0;
-  virtual void program_change(context_type, midi2::types::m1cvm::m1cvm) = 0;
+  virtual void program_change(context_type, midi2::types::m1cvm::program_change) = 0;
   virtual void channel_pressure(context_type, midi2::types::m1cvm::channel_pressure) = 0;
-  virtual void pitch_bend(context_type, midi2::types::m1cvm::m1cvm) = 0;
+  virtual void pitch_bend(context_type, midi2::types::m1cvm::pitch_bend) = 0;
 };
 class M1CVMMocks : public m1cvm_base {
 public:
@@ -100,9 +100,9 @@ public:
   MOCK_METHOD(void, note_on, (context_type, midi2::types::m1cvm::note_on), (override));
   MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m1cvm::poly_pressure), (override));
   MOCK_METHOD(void, control_change, (context_type, midi2::types::m1cvm::control_change), (override));
-  MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm::m1cvm), (override));
+  MOCK_METHOD(void, program_change, (context_type, midi2::types::m1cvm::program_change), (override));
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m1cvm::channel_pressure), (override));
-  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm::m1cvm), (override));
+  MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m1cvm::pitch_bend), (override));
 };
 struct data64_base {
   data64_base() = default;
@@ -345,23 +345,25 @@ TEST_F(UMPDispatcherSystem, MIDITimeCode) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, SongPositionPointer) {
   midi2::types::system::song_position_pointer message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::spp);
-  message.w0.position_lsb = 0b1010101;
-  message.w0.position_msb = 0b1111111;
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::spp);
+  w0.position_lsb = 0b1010101;
+  w0.position_msb = 0b1111111;
   EXPECT_CALL(config_.system, song_position_pointer(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, SongSelect) {
   midi2::types::system::song_select message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::song_select);
-  message.w0.song = 0b1010101;
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::song_select);
+  w0.song = 0b1010101;
   EXPECT_CALL(config_.system, song_select(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, TuneRequest) {
@@ -375,67 +377,73 @@ TEST_F(UMPDispatcherSystem, TuneRequest) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, TimingClock) {
-  midi2::types::system::tune_request message;
+  midi2::types::system::timing_clock message;
   auto &w0 = std::get<0>(message.w);
   w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::tunerequest);
-  EXPECT_CALL(config_.system, tune_request(config_.context, message));
+  w0.status = to_underlying(midi2::status::timingclock);
+  EXPECT_CALL(config_.system, timing_clock(config_.context, message));
   dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Start) {
   midi2::types::system::seq_start message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::seqstart);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::seqstart);
   EXPECT_CALL(config_.system, seq_start(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Continue) {
   midi2::types::system::seq_continue message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::seqcont);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::seqcont);
   EXPECT_CALL(config_.system, seq_continue(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Stop) {
   midi2::types::system::seq_stop message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::seqstop);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::seqstop);
   EXPECT_CALL(config_.system, seq_stop(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, ActiveSensing) {
   midi2::types::system::active_sensing message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::activesense);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::activesense);
   EXPECT_CALL(config_.system, active_sensing(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Reset) {
   midi2::types::system::reset message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = to_underlying(midi2::status::systemreset);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::status::systemreset);
   EXPECT_CALL(config_.system, reset(config_.context, message));
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, BadStatus) {
   midi2::types::system::reset message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::system);
-  message.w0.group = 0;
-  message.w0.status = 0x00;
-  EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message.w0.word())));
-  dispatcher_.processUMP(message.w0);
+  auto &w0 = std::get<0>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::system);
+  w0.group = 0;
+  w0.status = 0x00;
+  EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(w0.word())));
+  dispatcher_.processUMP(w0);
 }
 
 //*        _    _ _   _   __   *
@@ -454,12 +462,13 @@ class UMPDispatcherMIDI1 : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI1, NoteOn) {
   midi2::types::m1cvm::note_on message;
-  message.w0.group = 0;
-  message.w0.channel = 3;
-  message.w0.note = 60;
-  message.w0.velocity = 0x43;
+  auto &w0 = std::get<0>(message.w);
+  w0.group = 0;
+  w0.channel = 3;
+  w0.note = 60;
+  w0.velocity = 0x43;
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI1, NoteOff) {
@@ -486,12 +495,13 @@ TEST_F(UMPDispatcherMIDI1, PolyPressure) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI1, ControlChange) {
   midi2::types::m1cvm::control_change message;
-  message.w0.group = 0;
-  message.w0.channel = 3;
-  message.w0.index = 60;
-  message.w0.data = 127;
+  auto &w0 = get<0>(message.w);
+  w0.group = 0;
+  w0.channel = 3;
+  w0.index = 60;
+  w0.data = 127;
   EXPECT_CALL(config_.m1cvm, control_change(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0);
+  dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI1, ChannelPressure) {
@@ -512,16 +522,18 @@ TEST_F(UMPDispatcherMIDI1, ChannelPressure) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64SysExIn1) {
   midi2::types::data64::sysex7 m0;
-  m0.w0.mt = to_underlying(midi2::ump_message_type::data64);
-  m0.w0.group = 0;
-  m0.w0.status = to_underlying(midi2::data64::sysex7_in_1);
-  m0.w0.number_of_bytes = 4;
-  m0.w0.data0 = 2;
-  m0.w0.data1 = 3;
-  m0.w1.data2 = 5;
-  m0.w1.data3 = 7;
+  auto &w0 = get<0>(m0.w);
+  auto &w1 = get<1>(m0.w);
+  w0.mt = to_underlying(midi2::ump_message_type::data64);
+  w0.group = 0;
+  w0.status = to_underlying(midi2::data64::sysex7_in_1);
+  w0.number_of_bytes = 4;
+  w0.data0 = 2;
+  w0.data1 = 3;
+  w1.data2 = 5;
+  w1.data3 = 7;
   EXPECT_CALL(config_.data64, sysex7_in_1(config_.context, m0)).Times(1);
-  dispatcher_.processUMP(m0.w0, m0.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
@@ -529,47 +541,53 @@ TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   using midi2::types::data64::sysex7;
 
   sysex7 m0;
-  m0.w0.mt = to_underlying(midi2::ump_message_type::data64);
-  m0.w0.group = group;
-  m0.w0.status = to_underlying(midi2::data64::sysex7_start);
-  m0.w0.number_of_bytes = 6;
-  m0.w0.data0 = 2;
-  m0.w0.data1 = 3;
-  m0.w1.data2 = 5;
-  m0.w1.data3 = 7;
-  m0.w1.data4 = 11;
-  m0.w1.data5 = 13;
+  auto &m0w0 = get<0>(m0.w);
+  auto &m0w1 = get<1>(m0.w);
+  m0w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m0w0.group = group;
+  m0w0.status = to_underlying(midi2::data64::sysex7_start);
+  m0w0.number_of_bytes = 6;
+  m0w0.data0 = 2;
+  m0w0.data1 = 3;
+  m0w1.data2 = 5;
+  m0w1.data3 = 7;
+  m0w1.data4 = 11;
+  m0w1.data5 = 13;
 
   sysex7 m1;
-  m1.w0.mt = to_underlying(midi2::ump_message_type::data64);
-  m1.w0.group = group;
-  m1.w0.status = to_underlying(midi2::data64::sysex7_continue);
-  m1.w0.number_of_bytes = 6;
-  m1.w0.data0 = 17;
-  m1.w0.data1 = 19;
-  m1.w1.data2 = 23;
-  m1.w1.data3 = 29;
-  m1.w1.data4 = 31;
-  m1.w1.data5 = 37;
+  auto &m1w0 = get<0>(m1.w);
+  auto &m1w1 = get<1>(m1.w);
+  m1w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m1w0.group = group;
+  m1w0.status = to_underlying(midi2::data64::sysex7_continue);
+  m1w0.number_of_bytes = 6;
+  m1w0.data0 = 17;
+  m1w0.data1 = 19;
+  m1w1.data2 = 23;
+  m1w1.data3 = 29;
+  m1w1.data4 = 31;
+  m1w1.data5 = 37;
 
   sysex7 m2;
-  m2.w0.mt = to_underlying(midi2::ump_message_type::data64);
-  m2.w0.group = group;
-  m2.w0.status = to_underlying(midi2::data64::sysex7_end);
-  m2.w0.number_of_bytes = 4;
-  m2.w0.data0 = 41;
-  m2.w0.data1 = 43;
-  m2.w1.data2 = 47;
-  m2.w1.data3 = 53;
+  auto &m2w0 = get<0>(m2.w);
+  auto &m2w1 = get<1>(m2.w);
+  m2w0.mt = to_underlying(midi2::ump_message_type::data64);
+  m2w0.group = group;
+  m2w0.status = to_underlying(midi2::data64::sysex7_end);
+  m2w0.number_of_bytes = 4;
+  m2w0.data0 = 41;
+  m2w0.data1 = 43;
+  m2w1.data2 = 47;
+  m2w1.data3 = 53;
   {
     InSequence _;
     EXPECT_CALL(config_.data64, sysex7_start(config_.context, m0)).Times(1);
     EXPECT_CALL(config_.data64, sysex7_continue(config_.context, m1)).Times(1);
     EXPECT_CALL(config_.data64, sysex7_end(config_.context, m2)).Times(1);
   }
-  dispatcher_.processUMP(m0.w0, m0.w1);
-  dispatcher_.processUMP(m1.w0, m1.w1);
-  dispatcher_.processUMP(m2.w0, m2.w1);
+  dispatcher_.processUMP(m0w0, m0w1);
+  dispatcher_.processUMP(m1w0, m1w1);
+  dispatcher_.processUMP(m2w0, m2w1);
 }
 
 //*        _    _ _   ___                 *
@@ -582,14 +600,16 @@ class UMPDispatcherMIDI2CVM : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, NoteOn) {
   midi2::types::m2cvm::note_on message;
-  message.w0.group = std::uint8_t{0};
-  message.w0.channel = std::uint8_t{3};
-  message.w0.note = std::uint8_t{60};
-  message.w0.attribute = 0;
-  message.w1.velocity = std::uint16_t{0x432};
-  message.w1.attribute = 0;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.group = std::uint8_t{0};
+  w0.channel = std::uint8_t{3};
+  w0.note = std::uint8_t{60};
+  w0.attribute = 0;
+  w1.velocity = std::uint16_t{0x432};
+  w1.attribute = 0;
   EXPECT_CALL(config_.m2cvm, note_on(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, NoteOff) {
@@ -608,31 +628,35 @@ TEST_F(UMPDispatcherMIDI2CVM, NoteOff) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, ProgramChange) {
   midi2::types::m2cvm::program_change message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
-  message.w0.group = std::uint8_t{0};
-  message.w0.status = ump_cvm(midi2::status::program_change);
-  message.w0.channel = std::uint8_t{3};
-  message.w0.reserved = 0;
-  message.w0.option_flags = 0;
-  message.w0.bank_valid = true;
-  message.w1.program = 0b10101010;
-  message.w1.bank_msb = 0b01010101;
-  message.w1.bank_lsb = 0b00101010;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = ump_cvm(midi2::status::program_change);
+  w0.channel = std::uint8_t{3};
+  w0.reserved = 0;
+  w0.option_flags = 0;
+  w0.bank_valid = true;
+  w1.program = 0b10101010;
+  w1.bank_msb = 0b01010101;
+  w1.bank_lsb = 0b00101010;
   EXPECT_CALL(config_.m2cvm, program_change(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, ControllerMessage) {
   midi2::types::m2cvm::controller_message message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
-  message.w0.group = std::uint8_t{0};
-  message.w0.status = to_underlying(midi2::midi2status::rpn) >> 4;
-  message.w0.channel = std::uint8_t{3};
-  message.w0.bank = 1;
-  message.w0.index = 2;
-  message.w1 = 0xF0F0E1E1;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = to_underlying(midi2::midi2status::rpn) >> 4;
+  w0.channel = std::uint8_t{3};
+  w0.bank = 1;
+  w0.index = 2;
+  w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, controller_message(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, ChannelPressure) {
@@ -648,28 +672,32 @@ TEST_F(UMPDispatcherMIDI2CVM, ChannelPressure) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, RPNPerNote) {
   midi2::types::m2cvm::per_note_controller message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
-  message.w0.group = std::uint8_t{0};
-  message.w0.status = to_underlying(midi2::midi2status::rpn_pernote) >> 4;
-  message.w0.channel = std::uint8_t{3};
-  message.w0.note = 60;
-  message.w0.index = 1;
-  message.w1 = 0xF0F0E1E1;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = to_underlying(midi2::midi2status::rpn_pernote) >> 4;
+  w0.channel = std::uint8_t{3};
+  w0.note = 60;
+  w0.index = 1;
+  w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, rpn_controller(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, NRPNPerNote) {
   midi2::types::m2cvm::per_note_controller message;
-  message.w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
-  message.w0.group = std::uint8_t{0};
-  message.w0.status = to_underlying(midi2::midi2status::nrpn_pernote) >> 4;
-  message.w0.channel = std::uint8_t{3};
-  message.w0.note = 60;
-  message.w0.index = 1;
-  message.w1 = 0xF0F0E1E1;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
+  w0.group = std::uint8_t{0};
+  w0.status = to_underlying(midi2::midi2status::nrpn_pernote) >> 4;
+  w0.channel = std::uint8_t{3};
+  w0.note = 60;
+  w0.index = 1;
+  w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, nrpn_controller(config_.context, message)).Times(1);
-  dispatcher_.processUMP(message.w0, message.w1);
+  dispatcher_.processUMP(w0, w1);
 }
 
 //*     _      _          _ ___ ___  *
@@ -819,10 +847,11 @@ TEST_F(UMPDispatcher, PartialMessageThenClear) {
   constexpr auto group = std::uint8_t{0};
 
   midi2::types::m1cvm::note_on message;
-  message.w0.group = group;
-  message.w0.channel = channel;
-  message.w0.note = note_number;
-  message.w0.velocity = velocity;
+  auto &w0 = get<0>(message.w);
+  w0.group = group;
+  w0.channel = channel;
+  w0.note = note_number;
+  w0.velocity = velocity;
 
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
 

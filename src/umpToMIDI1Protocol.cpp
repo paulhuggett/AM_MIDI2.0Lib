@@ -50,13 +50,16 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ct
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
                                                          types::m2cvm::note_on const &in) const {
+  auto const &in0 = get<0>(in.w);
+  auto const &in1 = get<1>(in.w);
   types::m1cvm::note_on out;
-  out.w0.group = in.w0.group.value();
-  out.w0.channel = in.w0.channel.value();
-  out.w0.note = in.w0.note.value();
-  out.w0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in.w1.velocity)::bits(), decltype(out.w0.velocity)::bits()>(in.w1.velocity));
-  ctxt->push1(out);
+  auto &out0 = get<0>(out.w);
+  out0.group = in0.group.value();
+  out0.channel = in0.channel.value();
+  out0.note = in0.note.value();
+  out0.velocity = static_cast<std::uint8_t>(
+      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity));
+  ctxt->push(out.w);
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
                                                                types::m2cvm::poly_pressure const &in) const {
@@ -73,27 +76,32 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *con
 
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
                                                                 types::m2cvm::program_change const &in) const {
-  auto const group = in.w0.group.value();
-  auto const channel = in.w0.channel.value();
-  if (in.w0.bank_valid) {
+  auto &in0 = get<0>(in.w);
+  auto &in1 = get<1>(in.w);
+
+  auto const group = in0.group.value();
+  auto const channel = in0.channel.value();
+  if (in0.bank_valid) {
     // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
     // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
     types::m1cvm::control_change cc;
-    cc.w0.group = group;
-    cc.w0.channel = channel;
-    cc.w0.index = control::bank_select;
-    cc.w0.data = in.w1.bank_msb.value();
-    ctxt->push1(cc);
+    auto &cc0 = get<0>(cc.w);
+    cc0.group = group;
+    cc0.channel = channel;
+    cc0.index = control::bank_select;
+    cc0.data = in1.bank_msb.value();
+    ctxt->push(cc.w);
 
-    cc.w0.index = control::bank_select_lsb;
-    cc.w0.data = in.w1.bank_lsb.value();
-    ctxt->push1(cc);
+    cc0.index = control::bank_select_lsb;
+    cc0.data = in1.bank_lsb.value();
+    ctxt->push(cc.w);
   }
   types::m1cvm::program_change out;
-  out.w0.group = group;
-  out.w0.channel = channel;
-  out.w0.program = in.w1.program.value();
-  ctxt->push1(out);
+  auto &pc0 = get<0>(out.w);
+  pc0.group = group;
+  pc0.channel = channel;
+  pc0.program = in1.program.value();
+  ctxt->push(out.w);
 }
 
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,

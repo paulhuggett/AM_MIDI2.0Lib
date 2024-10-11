@@ -53,10 +53,12 @@
 namespace midi2::types {
 
 constexpr auto status_to_message_type(status const s) {
-  if (s == status::timing_code) {
-    return ump_message_type::system;
-  } else {
-    return ump_message_type::m1cvm;
+  switch (s) {
+  case status::spp:
+  case status::timing_code:
+  case status::song_select:
+  case status::tunerequest: return ump_message_type::system;
+  default: return ump_message_type::m1cvm;
   }
 }
 constexpr auto status_to_message_type(midi2status) {
@@ -215,9 +217,9 @@ struct midi_time_code {
 struct song_position_pointer {
   union word0 {
     UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xF2
+    ump_bitfield<16, 8> status;  ///< Always 0xF2
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> position_lsb;
     ump_bitfield<7, 1> reserved1;
@@ -225,17 +227,17 @@ struct song_position_pointer {
   };
 
   song_position_pointer() = default;
-  explicit song_position_pointer(std::uint32_t const w0_) : w0{w0_} {}
+  explicit song_position_pointer(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 struct song_select {
   union word0 {
     UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xF3
+    ump_bitfield<16, 8> status;  ///< Always 0xF3
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> song;
     ump_bitfield<7, 1> reserved1;
@@ -243,10 +245,10 @@ struct song_select {
   };
 
   song_select() = default;
-  explicit song_select(std::uint32_t const w0_) : w0{w0_} {}
+  explicit song_select(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(song_select const &, song_select const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct tune_request {
@@ -277,10 +279,10 @@ struct timing_clock {
   };
 
   timing_clock() = default;
-  explicit timing_clock(std::uint32_t const w0_) : w0{w0_} {}
+  explicit timing_clock(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(timing_clock const &, timing_clock const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct seq_start {
@@ -294,27 +296,27 @@ struct seq_start {
   };
 
   seq_start() = default;
-  explicit seq_start(std::uint32_t const w0_) : w0{w0_} {}
+  explicit seq_start(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(seq_start const &, seq_start const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct seq_continue {
   union word0 {
     UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x1
+    ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xFB
+    ump_bitfield<16, 8> status;  ///< Always 0xFB
     ump_bitfield<8, 8> reserved0;
     ump_bitfield<0, 8> reserved1;
   };
 
   seq_continue() = default;
-  explicit seq_continue(std::uint32_t const w0_) : w0{w0_} {}
+  explicit seq_continue(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(seq_continue const &, seq_continue const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct seq_stop {
@@ -328,10 +330,10 @@ struct seq_stop {
   };
 
   seq_stop() = default;
-  explicit seq_stop(std::uint32_t const w0_) : w0{w0_} {}
+  explicit seq_stop(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(seq_stop const &, seq_stop const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct active_sensing {
@@ -345,10 +347,10 @@ struct active_sensing {
   };
 
   active_sensing() = default;
-  explicit active_sensing(std::uint32_t const w0_) : w0{w0_} {}
+  explicit active_sensing(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(active_sensing const &, active_sensing const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct reset {
@@ -362,10 +364,10 @@ struct reset {
   };
 
   reset() = default;
-  explicit reset(std::uint32_t const w0_) : w0{w0_} {}
+  explicit reset(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(reset const &, reset const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 }  // end namespace system
@@ -395,10 +397,10 @@ struct note_on {
   };
 
   note_on() = default;
-  explicit note_on(std::uint32_t const w0_) : w0{w0_} {}
+  explicit note_on(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(note_on const &, note_on const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct note_off {
@@ -415,7 +417,7 @@ struct note_off {
   };
 
   note_off() = default;
-  explicit note_off(std::uint32_t const w0_) : w{w0_} {}
+  explicit note_off(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(note_off const &, note_off const &) = default;
 
   std::tuple<word0> w{};
@@ -455,10 +457,10 @@ struct control_change {
   };
 
   control_change() = default;
-  explicit control_change(std::uint32_t const w0_) : w0{w0_} {}
+  explicit control_change(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(control_change const &, control_change const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct program_change {
@@ -474,10 +476,10 @@ struct program_change {
   };
 
   program_change() = default;
-  explicit program_change(std::uint32_t const w0_) : w0{w0_} {}
+  explicit program_change(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(program_change const &, program_change const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 struct channel_pressure {
@@ -499,7 +501,7 @@ struct channel_pressure {
   std::tuple<word0> w;
 };
 
-struct m1cvm {
+struct pitch_bend {
   union word0 {
     UMP_MEMBERS(word0)
     ump_bitfield<28, 4> mt;  // 0x2
@@ -511,11 +513,11 @@ struct m1cvm {
     ump_bitfield<7, 1> reserved1;
     ump_bitfield<0, 7> data_b;
   };
-  m1cvm() = default;
-  explicit m1cvm(std::uint32_t const w0_) : w0{w0_} {}
-  friend bool operator==(m1cvm const &, m1cvm const &) = default;
+  pitch_bend() = default;
+  explicit pitch_bend(std::uint32_t const w0) : w{w0} {}
+  friend bool operator==(pitch_bend const &, pitch_bend const &) = default;
 
-  word0 w0{};
+  std::tuple<word0> w;
 };
 
 }  // end namespace m1cvm
@@ -553,11 +555,10 @@ struct sysex7 {
   };
 
   sysex7() = default;
-  explicit sysex7(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend bool operator==(sysex7 const &, sysex7 const &) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 }  // end namespace data64
@@ -615,11 +616,10 @@ struct note_on {
   };
 
   note_on() = default;
-  explicit note_on(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_on const &a, note_on const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
@@ -658,11 +658,10 @@ struct per_note_controller {
   using word1 = std::uint32_t;
 
   per_note_controller() = default;
-  explicit per_note_controller(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(per_note_controller const &a, per_note_controller const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
@@ -682,11 +681,10 @@ struct per_note_management {
   using word1 = std::uint32_t;
 
   per_note_management() = default;
-  explicit per_note_management(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit per_note_management(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(per_note_management const &a, per_note_management const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.6 MIDI 2.0 Control Change Message
@@ -726,12 +724,11 @@ struct registered_assignable_controller_message {
   using word1 = std::uint32_t;
 
   registered_assignable_controller_message() = default;
-  explicit registered_assignable_controller_message(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit registered_assignable_controller_message(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(registered_assignable_controller_message const &a,
                                    registered_assignable_controller_message const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
 struct controller_message {
@@ -749,11 +746,10 @@ struct controller_message {
   using word1 = std::uint32_t;
 
   controller_message() = default;
-  explicit controller_message(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit controller_message(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(controller_message const &a, controller_message const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.9 MIDI 2.0 Program Change Message
@@ -779,11 +775,10 @@ struct program_change {
   };
 
   program_change() = default;
-  explicit program_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit program_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(program_change const &a, program_change const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message

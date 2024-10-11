@@ -37,11 +37,6 @@ private:
       }
     }
 
-    template <typename T> void push1(T const &t) { output.push_back(std::bit_cast<std::uint32_t>(t.w0)); }
-    template <typename T> void push2(T const &t) {
-      output.push_back(std::bit_cast<std::uint32_t>(t.w0));
-      output.push_back(std::bit_cast<std::uint32_t>(t.w1));
-    }
     fifo<std::uint32_t, 4> output;
   };
 
@@ -66,31 +61,31 @@ private:
     struct system {
       void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) const { ctxt->push(in.w); }
       void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) const {
-        ctxt->push1(in);
+        ctxt->push(in.w);
       }
-      void song_select(context_type *const ctxt, types::system::song_select const &in) const { ctxt->push1(in); }
+      void song_select(context_type *const ctxt, types::system::song_select const &in) const { ctxt->push(in.w); }
       void tune_request(context_type *const ctxt, types::system::tune_request const &in) const { ctxt->push(in.w); }
-      void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) const { ctxt->push1(in); }
-      void seq_start(context_type *const ctxt, types::system::seq_start const &in) const { ctxt->push1(in); }
-      void seq_continue(context_type *const ctxt, types::system::seq_continue const &in) const { ctxt->push1(in); }
-      void seq_stop(context_type *const ctxt, types::system::seq_stop const &in) const { ctxt->push1(in); }
-      void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) const { ctxt->push1(in); }
-      void reset(context_type *const ctxt, types::system::reset const &in) const { ctxt->push1(in); }
+      void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) const { ctxt->push(in.w); }
+      void seq_start(context_type *const ctxt, types::system::seq_start const &in) const { ctxt->push(in.w); }
+      void seq_continue(context_type *const ctxt, types::system::seq_continue const &in) const { ctxt->push(in.w); }
+      void seq_stop(context_type *const ctxt, types::system::seq_stop const &in) const { ctxt->push(in.w); }
+      void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) const { ctxt->push(in.w); }
+      void reset(context_type *const ctxt, types::system::reset const &in) const { ctxt->push(in.w); }
     };
     struct m1cvm {
       void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) const { ctxt->push(in.w); }
-      void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) const { ctxt->push1(in); }
+      void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) const { ctxt->push(in.w); }
       void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) const { ctxt->push(in.w); }
-      void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) const { ctxt->push1(in); }
-      void program_change(context_type *const ctxt, types::m1cvm::m1cvm const &in) const { ctxt->push1(in); }
+      void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) const { ctxt->push(in.w); }
+      void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) const { ctxt->push(in.w); }
       void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) const { ctxt->push(in.w); }
-      void pitch_bend(context_type *const ctxt, types::m1cvm::m1cvm const &in) const { ctxt->push1(in); }
+      void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) const { ctxt->push(in.w); }
     };
     struct data64 {
-      void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push2(in); }
-      void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push2(in); }
-      void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push2(in); }
-      void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push2(in); }
+      void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push(in.w); }
+      void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push(in.w); }
+      void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push(in.w); }
+      void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) const { ctxt->push(in.w); }
     };
     struct m2cvm {
       void note_off(context_type *ctxt, types::m2cvm::note_off const &in) const;
