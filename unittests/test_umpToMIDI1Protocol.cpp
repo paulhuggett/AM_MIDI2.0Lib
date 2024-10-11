@@ -240,7 +240,7 @@ TEST(UMPToMIDI1, M2RPNController) {
   out1.controller = midi2::control::rpn_lsb;
   out1.value = index;
 
-  auto const val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
+  constexpr auto val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
 
   auto& out2 = get<0>(cc[2].w);
   out2.group = group;
