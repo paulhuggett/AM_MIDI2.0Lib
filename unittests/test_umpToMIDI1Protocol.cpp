@@ -21,11 +21,11 @@ namespace {
 template <typename InputIterator>
 auto convert(InputIterator first, InputIterator last) {
   std::vector<std::uint32_t> output;
-  midi2::umpToMIDI1Protocol UMP2M1;
-  std::for_each(first, last, [&output, &UMP2M1](std::uint32_t const ump) {
-    UMP2M1.UMPStreamParse(ump);
-    while (UMP2M1.availableUMP()) {
-      output.push_back(UMP2M1.readUMP());
+  midi2::umpToMIDI1Protocol ump2m1;
+  std::for_each(first, last, [&output, &ump2m1](std::uint32_t const ump) {
+    ump2m1.UMPStreamParse(ump);
+    while (ump2m1.available()) {
+      output.push_back(ump2m1.readUMP());
     }
   });
   return output;
@@ -164,14 +164,14 @@ TEST(UMPToMIDI1, M2ProgramChangeWithBank) {
   auto& x0 = get<0>(expected0.w);
   x0.group = group;
   x0.channel = channel;
-  x0.index = midi2::control::bank_select;
-  x0.data = bank_msb;
+  x0.controller = midi2::control::bank_select;
+  x0.value = bank_msb;
   midi2::types::m1cvm::control_change expected1;
   auto& x1 = get<0>(expected1.w);
   x1.group = group;
   x1.channel = channel;
-  x1.index = midi2::control::bank_select_lsb;
-  x1.data = bank_lsb;
+  x1.controller = midi2::control::bank_select_lsb;
+  x1.value = bank_lsb;
   midi2::types::m1cvm::program_change expected2;
   auto& x2 = get<0>(expected2.w);
   x2.group = group;
@@ -211,6 +211,53 @@ TEST(UMPToMIDI1, M2PerNotePitchBend) {
 
   std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre());
+}
+TEST(UMPToMIDI1, M2RPNController) {
+  constexpr auto group = std::uint8_t{1};
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto bank = std::uint8_t{60};
+  constexpr auto index = std::uint8_t{21};
+  constexpr auto value = std::uint32_t{0x12345678};
+  midi2::types::m2cvm::rpn_controller src;
+  auto& src0 = get<0>(src.w);
+  auto& src1 = get<1>(src.w);
+  src0.group = group;
+  src0.channel = channel;
+  src0.bank = bank;
+  src0.index = index;
+  src1 = 0x12345678;
+
+  midi2::types::m1cvm::control_change cc[4];
+  auto& out0 = get<0>(cc[0].w);
+  out0.group = group;
+  out0.channel = channel;
+  out0.controller = midi2::control::rpn_msb;
+  out0.value = bank;
+
+  auto& out1 = get<0>(cc[1].w);
+  out1.group = group;
+  out1.channel = channel;
+  out1.controller = midi2::control::rpn_lsb;
+  out1.value = index;
+
+  auto const val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
+
+  auto& out2 = get<0>(cc[2].w);
+  out2.group = group;
+  out2.channel = channel;
+  out2.controller = midi2::control::data_entry_msb;
+  out2.value = (val14 >> 7) & 0x7F;
+
+  auto& out3 = get<0>(cc[3].w);
+  out3.group = group;
+  out3.channel = channel;
+  out3.controller = midi2::control::data_entry_lsb;
+  out3.value = val14 & 0x7F;
+
+  std::array const input{std::bit_cast<std::uint32_t>(src0), std::bit_cast<std::uint32_t>(src1)};
+  EXPECT_THAT(convert(std::begin(input), std::end(input)),
+              ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
+                          std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
 
 }  // end anonymous namespace

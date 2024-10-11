@@ -451,9 +451,9 @@ struct control_change {
     ump_bitfield<20, 4> status;  /// Always 0x0B.
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> index;
+    ump_bitfield<8, 7> controller;
     ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data;
+    ump_bitfield<0, 7> value;
   };
 
   control_change() = default;
@@ -643,13 +643,13 @@ struct poly_pressure {
   std::tuple<word0, word1> w;
 };
 
-// 7.4.4 MIDI 2.0 Registered Per-Note Controller and Assignable Per-Note Controller Messages
-struct per_note_controller {
+// 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
+struct rpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::midi2status::rpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Registered Controller=0x0, Assignable Controller=0x1
+    ump_bitfield<20, 4> status;  ///< Registered Per-Note Controller=0x0
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved;
     ump_bitfield<8, 7> note;
@@ -657,9 +657,72 @@ struct per_note_controller {
   };
   using word1 = std::uint32_t;
 
-  per_note_controller() = default;
-  explicit per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend constexpr bool operator==(per_note_controller const &a, per_note_controller const &b) = default;
+  rpn_per_note_controller() = default;
+  explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(rpn_per_note_controller const &a, rpn_per_note_controller const &b) = default;
+
+  std::tuple<word0, word1> w;
+};
+
+// 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
+struct nrpn_per_note_controller {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::midi2status::nrpn_pernote)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Assignable Per-Note Controller=0x1
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved;
+    ump_bitfield<8, 7> note;
+    ump_bitfield<0, 8> index;
+  };
+  using word1 = std::uint32_t;
+
+  nrpn_per_note_controller() = default;
+  explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(nrpn_per_note_controller const &a, nrpn_per_note_controller const &b) = default;
+
+  std::tuple<word0, word1> w;
+};
+// 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
+struct rpn_controller {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::midi2status::rpn)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Registered Control (RPN)=0x2
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> bank;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> index;
+  };
+  using word1 = std::uint32_t;
+
+  rpn_controller() = default;
+  explicit rpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(rpn_controller const &a, rpn_controller const &b) = default;
+
+  std::tuple<word0, word1> w;
+};
+// 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
+struct nrpn_controller {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::midi2status::nrpn)
+    ump_bitfield<28, 4> mt;  ///< Always 0x4
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Assignable Control (RPN)=0x3
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> bank;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> index;
+  };
+  using word1 = std::uint32_t;
+
+  nrpn_controller() = default;
+  explicit nrpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend constexpr bool operator==(nrpn_controller const &a, nrpn_controller const &b) = default;
 
   std::tuple<word0, word1> w;
 };
@@ -690,24 +753,24 @@ struct per_note_management {
 // 7.4.6 MIDI 2.0 Control Change Message
 struct control_change {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2status::cc)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xB
     ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved;
-    ump_bitfield<8, 7> note;
+    ump_bitfield<8, 8> index;
+    ump_bitfield<0, 7> reserved0;
   };
   using word1 = std::uint32_t;
 
   control_change() = default;
-  explicit control_change(std::span<std::uint32_t, 2> m) : w0{m[0]}, w1{m[1]} {}
+  explicit control_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
 
-  word0 w0{};
-  word1 w1{};
+  std::tuple<word0, word1> w;
 };
 
+#if 0
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
 struct registered_assignable_controller_message {
   union word0 {
@@ -730,6 +793,7 @@ struct registered_assignable_controller_message {
 
   std::tuple<word0, word1> w;
 };
+#endif
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
 struct controller_message {
   union word0 {

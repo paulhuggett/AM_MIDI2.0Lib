@@ -35,6 +35,8 @@
 
 namespace midi2 {
 
+// note off
+// ~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ctxt,
                                                           types::m2cvm::note_off const &in) const {
   auto const &in0 = get<0>(in.w);
@@ -48,6 +50,9 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ct
       mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity.value()));
   ctxt->push(out.w);
 }
+
+// note on
+// ~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
                                                          types::m2cvm::note_on const &in) const {
   auto const &in0 = get<0>(in.w);
@@ -61,6 +66,9 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctx
       mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity));
   ctxt->push(out.w);
 }
+
+// poly pressure
+// ~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
                                                                types::m2cvm::poly_pressure const &in) const {
   auto &in0 = get<0>(in.w);
@@ -74,6 +82,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *con
   ctxt->push(out.w);
 }
 
+// program change
+// ~~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
                                                                 types::m2cvm::program_change const &in) const {
   auto &in0 = get<0>(in.w);
@@ -88,12 +98,12 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *co
     auto &cc0 = get<0>(cc.w);
     cc0.group = group;
     cc0.channel = channel;
-    cc0.index = control::bank_select;
-    cc0.data = in1.bank_msb.value();
+    cc0.controller = control::bank_select;
+    cc0.value = in1.bank_msb.value();
     ctxt->push(cc.w);
 
-    cc0.index = control::bank_select_lsb;
-    cc0.data = in1.bank_lsb.value();
+    cc0.controller = control::bank_select_lsb;
+    cc0.value = in1.bank_lsb.value();
     ctxt->push(cc.w);
   }
   types::m1cvm::program_change out;
@@ -104,6 +114,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *co
   ctxt->push(out.w);
 }
 
+// channel pressure
+// ~~~~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
                                                                   types::m2cvm::channel_pressure const &in) const {
   types::m1cvm::channel_pressure out;
@@ -115,33 +127,99 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *
   ctxt->push(out.w);
 }
 
+// rpn controller
+// ~~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
-                                                                types::m2cvm::per_note_controller const &) const {
-  (void)ctxt;
+                                                                types::m2cvm::rpn_controller const &in) const {
+  // TODO(pbh): the two (n)rpn_controller handlers are identical apart from the controller numbers for the first two
+  // messages. this should be merged later.
+  auto const &in0 = get<0>(in.w);
+  types::m1cvm::control_change cc;
+  auto &cc0 = get<0>(cc.w);
+  cc0.group = in0.group.value();
+  cc0.channel = in0.channel.value();
+  cc0.controller = control::rpn_msb;  // 0x65 #101
+  cc0.value = in0.bank.value();
+  ctxt->push(cc.w);
+
+  cc0.controller = control::rpn_lsb;  // 0x64 #100
+  cc0.value = in0.index.value();
+  ctxt->push(cc.w);
+
+  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(get<1>(in.w)));
+
+  cc0.controller = control::data_entry_msb;  // 0x6
+  cc0.value = static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F);
+  ctxt->push(cc.w);
+
+  cc0.controller = control::data_entry_lsb;  // 0x26 #38
+  cc0.value = static_cast<std::uint8_t>(scaled_value & 0x7F);
+  ctxt->push(cc.w);
 }
+
+// nrpn controller
+// ~~~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
-                                                                 types::m2cvm::per_note_controller const &) const {
-  (void)ctxt;
+                                                                 types::m2cvm::nrpn_controller const &in) const {
+  auto const &in0 = get<0>(in.w);
+  types::m1cvm::control_change cc;
+  auto &cc0 = get<0>(cc.w);
+  cc0.group = in0.group.value();
+  cc0.channel = in0.channel.value();
+  cc0.controller = control::nrpn_msb;  // 0x63 #99
+  cc0.value = in0.bank.value();
+  ctxt->push(cc.w);
+
+  cc0.controller = control::nrpn_lsb;  // 0x62 #98
+  cc0.value = in0.index.value();
+  ctxt->push(cc.w);
+
+  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(get<1>(in.w)));
+
+  cc0.controller = control::data_entry_msb;  // 0x6
+  cc0.value = (scaled_value >> 7) & 0x7F;
+  ctxt->push(cc.w);
+
+  cc0.controller = control::data_entry_lsb;  // 0x26 #38
+  cc0.value = scaled_value & 0x7F;
+  ctxt->push(cc.w);
 }
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_per_note_controller(
+    context_type *ctxt, midi2::types::m2cvm::rpn_per_note_controller const &) const {
+  (void)ctxt;
+  // TODO: stuff goes here
+}
+void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_per_note_controller(
+    context_type *ctxt, midi2::types::m2cvm::nrpn_per_note_controller const &) const {
+  (void)ctxt;
+  // TODO: stuff goes here
+}
+
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_management(context_type *const ctxt,
                                                                      types::m2cvm::per_note_management const &) const {
   (void)ctxt;
+  // TODO: stuff goes here
 }
+
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
                                                                 types::m2cvm::control_change const &) const {
   (void)ctxt;
+  // TODO: stuff goes here
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::controller_message(context_type *const ctxt,
                                                                     types::m2cvm::controller_message const &) const {
   (void)ctxt;
+  // TODO: stuff goes here
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
                                                             types::m2cvm::pitch_bend const &) const {
   (void)ctxt;
+  // TODO: stuff goes here
 }
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::per_note_pitch_bend(context_type *const ctxt,
                                                                      types::m2cvm::per_note_pitch_bend const &) const {
   (void)ctxt; /* message dropped */
+  // TODO: stuff goes here
 }
 
 #if 0

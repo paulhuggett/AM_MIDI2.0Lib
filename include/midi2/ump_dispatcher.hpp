@@ -105,15 +105,30 @@ concept data64_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
+  // 7.4.1 MIDI 2.0 Note Off Message (status=0x8)
   { v.note_off(context, types::m2cvm::note_off{}) } -> std::same_as<void>;
+  // 7.4.2 MIDI 2.0 Note On Message (status=0x9)
   { v.note_on(context, types::m2cvm::note_on{}) } -> std::same_as<void>;
+  // 7.4.3 MIDI 2.0 Poly Pressure Message (status=0xA)
   { v.poly_pressure(context, types::m2cvm::poly_pressure{}) } -> std::same_as<void>;
+
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
+  { v.rpn_per_note_controller(context, midi2::types::m2cvm::rpn_per_note_controller{}) } -> std::same_as<void>;
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
+  { v.nrpn_per_note_controller(context, midi2::types::m2cvm::nrpn_per_note_controller{}) } -> std::same_as<void>;
+  // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
+  { v.rpn_controller(context, midi2::types::m2cvm::rpn_controller{}) } -> std::same_as<void>;
+  // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
+  { v.nrpn_controller(context, midi2::types::m2cvm::nrpn_controller{}) } -> std::same_as<void>;
+
+  // 7.4.9 MIDI 2.0 Program Change Message (status=0xC)
   { v.program_change(context, types::m2cvm::program_change{}) } -> std::same_as<void>;
+  // 7.4.10 MIDI 2.0 Channel Pressure Message (status=0xD)
   { v.channel_pressure(context, types::m2cvm::channel_pressure{}) } -> std::same_as<void>;
-  { v.rpn_controller(context, types::m2cvm::per_note_controller{}) } -> std::same_as<void>;
-  { v.nrpn_controller(context, types::m2cvm::per_note_controller{}) } -> std::same_as<void>;
+
   { v.per_note_management(context, types::m2cvm::per_note_management{}) } -> std::same_as<void>;
   { v.control_change(context, types::m2cvm::control_change{}) } -> std::same_as<void>;
+
   { v.controller_message(context, types::m2cvm::controller_message{}) } -> std::same_as<void>;
   { v.pitch_bend(context, types::m2cvm::pitch_bend{}) } -> std::same_as<void>;
   { v.per_note_pitch_bend(context, types::m2cvm::per_note_pitch_bend{}) } -> std::same_as<void>;
@@ -217,8 +232,16 @@ template <typename Context> struct m2cvm_null {
   constexpr void poly_pressure(Context, types::m2cvm::poly_pressure const &) const { /* do nothing */ }
   constexpr void program_change(Context, types::m2cvm::program_change const &) const { /* do nothing */ }
   constexpr void channel_pressure(Context, types::m2cvm::channel_pressure const &) const { /* do nothing */ }
-  constexpr void rpn_controller(Context, types::m2cvm::per_note_controller const &) const { /* do nothing */ }
-  constexpr void nrpn_controller(Context, types::m2cvm::per_note_controller const &) const { /* do nothing */ }
+
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
+  constexpr void rpn_per_note_controller(Context, types::m2cvm::rpn_per_note_controller const &) { /* do nothing */ }
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
+  constexpr void nrpn_per_note_controller(Context, types::m2cvm::nrpn_per_note_controller const &) { /* do nothing */ }
+  // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
+  constexpr void rpn_controller(Context, types::m2cvm::rpn_controller const &) const { /* do nothing */ }
+  // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
+  constexpr void nrpn_controller(Context, types::m2cvm::nrpn_controller const &) const { /* do nothing */ }
+
   constexpr void per_note_management(Context, types::m2cvm::per_note_management const &) const { /* do nothing */ }
   constexpr void control_change(Context, types::m2cvm::control_change const &) const { /* do nothing */ }
   constexpr void controller_message(Context, types::m2cvm::controller_message const &) const { /* do nothing */ }
@@ -481,11 +504,11 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
     break;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
   case midi2status::rpn_pernote:
-    config_.m2cvm.rpn_controller(config_.context, types::m2cvm::per_note_controller{span});
+    config_.m2cvm.rpn_per_note_controller(config_.context, types::m2cvm::rpn_per_note_controller{span});
     break;
   // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
   case midi2status::nrpn_pernote:
-    config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::per_note_controller{span});
+    config_.m2cvm.nrpn_per_note_controller(config_.context, types::m2cvm::nrpn_per_note_controller{span});
     break;
   // 7.4.5 MIDI 2.0 Per-Note Management Message
   case midi2status::pernote_manage:
@@ -495,8 +518,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
   case midi2status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case midi2status::rpn:
-  case midi2status::nrpn:
+  case midi2status::rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
+  case midi2status::nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
   case midi2status::rpn_relative:
   case midi2status::nrpn_relative:
     config_.m2cvm.controller_message(config_.context, types::m2cvm::controller_message{span});

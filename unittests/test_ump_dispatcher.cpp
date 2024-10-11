@@ -131,8 +131,16 @@ struct m2cvm_base {
   virtual void poly_pressure(context_type, midi2::types::m2cvm::poly_pressure) = 0;
   virtual void program_change(context_type, midi2::types::m2cvm::program_change) = 0;
   virtual void channel_pressure(context_type, midi2::types::m2cvm::channel_pressure) = 0;
-  virtual void rpn_controller(context_type, midi2::types::m2cvm::per_note_controller) = 0;
-  virtual void nrpn_controller(context_type, midi2::types::m2cvm::per_note_controller) = 0;
+
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
+  virtual void rpn_per_note_controller(context_type, midi2::types::m2cvm::rpn_per_note_controller) = 0;
+  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
+  virtual void nrpn_per_note_controller(context_type, midi2::types::m2cvm::nrpn_per_note_controller) = 0;
+  // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
+  virtual void rpn_controller(context_type, midi2::types::m2cvm::rpn_controller) = 0;
+  // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
+  virtual void nrpn_controller(context_type, midi2::types::m2cvm::nrpn_controller) = 0;
+
   virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management) = 0;
   virtual void control_change(context_type, midi2::types::m2cvm::control_change) = 0;
   virtual void controller_message(context_type, midi2::types::m2cvm::controller_message) = 0;
@@ -146,8 +154,13 @@ public:
   MOCK_METHOD(void, poly_pressure, (context_type, midi2::types::m2cvm::poly_pressure), (override));
   MOCK_METHOD(void, program_change, (context_type, midi2::types::m2cvm::program_change), (override));
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::types::m2cvm::channel_pressure), (override));
-  MOCK_METHOD(void, rpn_controller, (context_type, midi2::types::m2cvm::per_note_controller), (override));
-  MOCK_METHOD(void, nrpn_controller, (context_type, midi2::types::m2cvm::per_note_controller), (override));
+
+  MOCK_METHOD(void, rpn_per_note_controller, (context_type, midi2::types::m2cvm::rpn_per_note_controller), (override));
+  MOCK_METHOD(void, nrpn_per_note_controller, (context_type, midi2::types::m2cvm::nrpn_per_note_controller),
+              (override));
+  MOCK_METHOD(void, rpn_controller, (context_type, midi2::types::m2cvm::rpn_controller), (override));
+  MOCK_METHOD(void, nrpn_controller, (context_type, midi2::types::m2cvm::nrpn_controller), (override));
+
   MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management), (override));
   MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change), (override));
   MOCK_METHOD(void, controller_message, (context_type, midi2::types::m2cvm::controller_message), (override));
@@ -498,8 +511,8 @@ TEST_F(UMPDispatcherMIDI1, ControlChange) {
   auto &w0 = get<0>(message.w);
   w0.group = 0;
   w0.channel = 3;
-  w0.index = 60;
-  w0.data = 127;
+  w0.controller = 60;
+  w0.value = 127;
   EXPECT_CALL(config_.m1cvm, control_change(config_.context, message)).Times(1);
   dispatcher_.processUMP(w0);
 }
@@ -644,18 +657,15 @@ TEST_F(UMPDispatcherMIDI2CVM, ProgramChange) {
   dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPDispatcherMIDI2CVM, ControllerMessage) {
-  midi2::types::m2cvm::controller_message message;
+TEST_F(UMPDispatcherMIDI2CVM, ControlChange) {
+  midi2::types::m2cvm::control_change message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   w0.group = std::uint8_t{0};
-  w0.status = to_underlying(midi2::midi2status::rpn) >> 4;
   w0.channel = std::uint8_t{3};
-  w0.bank = 1;
   w0.index = 2;
   w1 = 0xF0F0E1E1;
-  EXPECT_CALL(config_.m2cvm, controller_message(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.m2cvm, control_change(config_.context, message)).Times(1);
   dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
@@ -670,31 +680,53 @@ TEST_F(UMPDispatcherMIDI2CVM, ChannelPressure) {
   dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPDispatcherMIDI2CVM, RPNPerNote) {
-  midi2::types::m2cvm::per_note_controller message;
+TEST_F(UMPDispatcherMIDI2CVM, RPNPerNoteController) {
+  midi2::types::m2cvm::rpn_per_note_controller message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   w0.group = std::uint8_t{0};
-  w0.status = to_underlying(midi2::midi2status::rpn_pernote) >> 4;
   w0.channel = std::uint8_t{3};
   w0.note = 60;
   w0.index = 1;
+  w1 = 0xF0F0E1E1;
+  EXPECT_CALL(config_.m2cvm, rpn_per_note_controller(config_.context, message)).Times(1);
+  dispatcher_.processUMP(w0, w1);
+}
+// NOLINTNEXTLINE
+TEST_F(UMPDispatcherMIDI2CVM, NRPNPerNoteController) {
+  midi2::types::m2cvm::nrpn_per_note_controller message;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.group = std::uint8_t{0};
+  w0.channel = std::uint8_t{3};
+  w0.note = 60;
+  w0.index = 1;
+  w1 = 0xF0F0E1E1;
+  EXPECT_CALL(config_.m2cvm, nrpn_per_note_controller(config_.context, message)).Times(1);
+  dispatcher_.processUMP(w0, w1);
+}
+// NOLINTNEXTLINE
+TEST_F(UMPDispatcherMIDI2CVM, RPNController) {
+  midi2::types::m2cvm::rpn_controller message;
+  auto &w0 = get<0>(message.w);
+  auto &w1 = get<1>(message.w);
+  w0.group = std::uint8_t{0};
+  w0.channel = std::uint8_t{3};
+  w0.bank = 23;
+  w0.index = 31;
   w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, rpn_controller(config_.context, message)).Times(1);
   dispatcher_.processUMP(w0, w1);
 }
 // NOLINTNEXTLINE
-TEST_F(UMPDispatcherMIDI2CVM, NRPNPerNote) {
-  midi2::types::m2cvm::per_note_controller message;
+TEST_F(UMPDispatcherMIDI2CVM, NRPNController) {
+  midi2::types::m2cvm::nrpn_controller message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   w0.group = std::uint8_t{0};
-  w0.status = to_underlying(midi2::midi2status::nrpn_pernote) >> 4;
   w0.channel = std::uint8_t{3};
-  w0.note = 60;
-  w0.index = 1;
+  w0.bank = 23;
+  w0.index = 31;
   w1 = 0xF0F0E1E1;
   EXPECT_CALL(config_.m2cvm, nrpn_controller(config_.context, message)).Times(1);
   dispatcher_.processUMP(w0, w1);
