@@ -84,26 +84,26 @@ private:
       void rpn_controller(context_type *ctxt, types::m2cvm::rpn_controller const &in) const;
       void nrpn_controller(context_type *ctxt, types::m2cvm::nrpn_controller const &in) const;
 
-      void rpn_per_note_controller(context_type *ctxt, midi2::types::m2cvm::rpn_per_note_controller const &) const {
+      void rpn_per_note_controller(context_type *, midi2::types::m2cvm::rpn_per_note_controller const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
-      void nrpn_per_note_controller(context_type *ctxt, midi2::types::m2cvm::nrpn_per_note_controller const &) const {
+      void nrpn_per_note_controller(context_type *, midi2::types::m2cvm::nrpn_per_note_controller const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
-      void rpn_relative_controller(context_type *ctxt, types::m2cvm::rpn_relative_controller const &) const {
+      void rpn_relative_controller(context_type *, types::m2cvm::rpn_relative_controller const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
-      void nrpn_relative_controller(context_type *ctxt, types::m2cvm::nrpn_relative_controller const &) const {
+      void nrpn_relative_controller(context_type *, types::m2cvm::nrpn_relative_controller const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
 
-      void per_note_management(context_type *ctxt, types::m2cvm::per_note_management const &) const {
+      void per_note_management(context_type *, types::m2cvm::per_note_management const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
       void control_change(context_type *ctxt, types::m2cvm::control_change const &) const;
       void controller_message(context_type *ctxt, types::m2cvm::controller_message const &) const;
       void pitch_bend(context_type *ctxt, types::m2cvm::pitch_bend const &) const;
-      void per_note_pitch_bend(context_type *ctxt, types::m2cvm::per_note_pitch_bend const &) const {
+      void per_note_pitch_bend(context_type *, types::m2cvm::per_note_pitch_bend const &) const {
         // do nothing: cannot be translated to MIDI 1
       }
     };
