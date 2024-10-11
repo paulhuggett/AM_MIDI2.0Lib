@@ -98,8 +98,8 @@ private:
     [[no_unique_address]] struct m1cvm m1cvm{};
     [[no_unique_address]] struct data64 data64{};
     [[no_unique_address]] struct m2cvm m2cvm{};
-    [[no_unique_address]] data128_null<decltype(context)> data128;
-    [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream;
+    [[no_unique_address]] data128_null<decltype(context)> data128{};
+    [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream{};
     [[no_unique_address]] flex_data_null<decltype(context)> flex{};
   };
   context_type context_;
