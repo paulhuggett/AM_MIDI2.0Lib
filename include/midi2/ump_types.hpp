@@ -25,8 +25,8 @@
     this->mt = to_underlying(status_to_message_type(st));                      \
     this->status = status_to_ump_status(st);                                   \
   }                                                                            \
-  explicit name(std::uint32_t value) {                                         \
-    std::memcpy(this, &value, sizeof(*this));                                  \
+  explicit name(std::uint32_t value_) {                                        \
+    std::memcpy(this, &value_, sizeof(*this));                                 \
   }                                                                            \
   [[nodiscard]] constexpr auto word() const {                                  \
     return std::bit_cast<std::uint32_t>(*this);                                \
