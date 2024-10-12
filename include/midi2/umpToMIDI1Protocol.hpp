@@ -101,7 +101,6 @@ private:
         // do nothing: cannot be translated to MIDI 1
       }
       void control_change(context_type *ctxt, types::m2cvm::control_change const &) const;
-      void controller_message(context_type *ctxt, types::m2cvm::controller_message const &) const;
       void pitch_bend(context_type *ctxt, types::m2cvm::pitch_bend const &) const;
       void per_note_pitch_bend(context_type *, types::m2cvm::per_note_pitch_bend const &) const {
         // do nothing: cannot be translated to MIDI 1

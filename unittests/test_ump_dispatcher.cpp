@@ -147,7 +147,6 @@ struct m2cvm_base {
 
   virtual void per_note_management(context_type, midi2::types::m2cvm::per_note_management) = 0;
   virtual void control_change(context_type, midi2::types::m2cvm::control_change) = 0;
-  virtual void controller_message(context_type, midi2::types::m2cvm::controller_message) = 0;
   virtual void pitch_bend(context_type, midi2::types::m2cvm::pitch_bend) = 0;
   virtual void per_note_pitch_bend(context_type, midi2::types::m2cvm::per_note_pitch_bend) = 0;
 };
@@ -170,7 +169,6 @@ public:
 
   MOCK_METHOD(void, per_note_management, (context_type, midi2::types::m2cvm::per_note_management), (override));
   MOCK_METHOD(void, control_change, (context_type, midi2::types::m2cvm::control_change), (override));
-  MOCK_METHOD(void, controller_message, (context_type, midi2::types::m2cvm::controller_message), (override));
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::types::m2cvm::pitch_bend), (override));
   MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::types::m2cvm::per_note_pitch_bend), (override));
 };

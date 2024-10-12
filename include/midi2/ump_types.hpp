@@ -376,13 +376,8 @@ struct reset {
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
 namespace m1cvm {
-// Note Off
-// Note On
-// Poly Pressure
-// Control Change
-// Program Change
-// Channel Pressure
-// Pitch Bend
+
+// 7.3.2 MIDI 1.0 Note On Message
 struct note_on {
   union word0 {
     UMP_MEMBERS0(word0, status::note_on)
@@ -403,6 +398,7 @@ struct note_on {
   std::tuple<word0> w;
 };
 
+// 7.3.1 MIDI 1.0 Note Off Message
 struct note_off {
   union word0 {
     UMP_MEMBERS0(word0, status::note_off)
@@ -423,6 +419,7 @@ struct note_off {
   std::tuple<word0> w{};
 };
 
+// 7.3.3 MIDI 1.0 Poly Pressure Message
 struct poly_pressure {
   union word0 {
     UMP_MEMBERS0(word0, status::poly_pressure)
@@ -443,6 +440,7 @@ struct poly_pressure {
   std::tuple<word0> w{};
 };
 
+// 7.3.4 MIDI 1.0 Control Change Message
 struct control_change {
   union word0 {
     UMP_MEMBERS0(word0, status::cc)
@@ -463,6 +461,7 @@ struct control_change {
   std::tuple<word0> w;
 };
 
+// 7.3.5 MIDI 1.0 Program Change Message
 struct program_change {
   union word0 {
     UMP_MEMBERS0(word0, status::program_change)
@@ -482,6 +481,7 @@ struct program_change {
   std::tuple<word0> w;
 };
 
+// 7.3.6 MIDI 1.0 Channel Pressure Message
 struct channel_pressure {
   union word0 {
     UMP_MEMBERS0(word0, status::channel_pressure)
@@ -501,17 +501,18 @@ struct channel_pressure {
   std::tuple<word0> w;
 };
 
+// 7.3.7 MIDI 1.0 Pitch Bend Message
 struct pitch_bend {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, status::pitch_bend)
     ump_bitfield<28, 4> mt;  // 0x2
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  // 0b1000..0b1110
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data_a;
+    ump_bitfield<8, 7> lsb_data;
     ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data_b;
+    ump_bitfield<0, 7> msb_data;
   };
   pitch_bend() = default;
   explicit pitch_bend(std::uint32_t const w0) : w{w0} {}
@@ -728,7 +729,7 @@ struct nrpn_controller {
   std::tuple<word0, word1> w;
 };
 
-// 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Messages
+// 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 struct rpn_relative_controller {
   union word0 {
     UMP_MEMBERS0(word0, midi2::midi2status::rpn_relative)
@@ -749,6 +750,7 @@ struct rpn_relative_controller {
 
   std::tuple<word0, word1> w;
 };
+// 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_relative_controller {
   union word0 {
     UMP_MEMBERS0(word0, midi2::midi2status::nrpn_relative)
@@ -808,52 +810,6 @@ struct control_change {
   control_change() = default;
   explicit control_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
-
-  std::tuple<word0, word1> w;
-};
-
-#if 0
-// 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
-struct registered_assignable_controller_message {
-  union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Absolute RPN=0x2, NRPN=0x3; relative RPN=0x4, NRPN=0x5
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;
-  };
-  using word1 = std::uint32_t;
-
-  registered_assignable_controller_message() = default;
-  explicit registered_assignable_controller_message(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend constexpr bool operator==(registered_assignable_controller_message const &a,
-                                   registered_assignable_controller_message const &b) = default;
-
-  std::tuple<word0, word1> w;
-};
-#endif
-// 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-struct controller_message {
-  union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Absolute RPN=0x2, NRPN=0x3; relative RPN=0x4, NRPN=0x5
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;
-  };
-  using word1 = std::uint32_t;
-
-  controller_message() = default;
-  explicit controller_message(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend constexpr bool operator==(controller_message const &a, controller_message const &b) = default;
 
   std::tuple<word0, word1> w;
 };

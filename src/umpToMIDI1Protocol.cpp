@@ -165,6 +165,9 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *c
   cc0.value = scaled_value & 0x7F;
   ctxt->push(cc.w);
 }
+
+// control change
+// ~~~~~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
                                                                 types::m2cvm::control_change const &in) const {
   auto const &in0 = get<0>(in.w);
@@ -176,179 +179,20 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *co
   cc0.value = static_cast<std::uint8_t>(mcm_scale<32, decltype(cc0.value)::bits()>(get<1>(in.w)));
   ctxt->push(cc.w);
 }
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::controller_message(context_type *const ctxt,
-                                                                    types::m2cvm::controller_message const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
-}
+
+// pitch bend
+// ~~~~~~~~~~
 void umpToMIDI1Protocol::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
-                                                            types::m2cvm::pitch_bend const &) const {
-  (void)ctxt;
-  // TODO: stuff goes here
+                                                            types::m2cvm::pitch_bend const &in) const {
+  auto const &in0 = get<0>(in.w);
+  types::m1cvm::pitch_bend pb;
+  auto &pb0 = get<0>(pb.w);
+  pb0.group = in0.group.value();
+  pb0.channel = in0.channel.value();
+  auto const scaled_value = get<1>(in.w) >> (32 - 14);
+  pb0.lsb_data = scaled_value & 0x7F;
+  pb0.msb_data = (scaled_value >> 7) & 0x7F;
+  ctxt->push(pb.w);
 }
-
-#if 0
-void umpToMIDI1Protocol::UMPStreamParse(uint32_t ump) {
-  switch (UMPPos) {
-  case 0: {  // First UMP Packet
-    // First part of a UMP Message
-    mType = static_cast<ump_message_type>(UMP >> 28);
-    switch (mType) {
-    case ump_message_type::utility:        // 32 bits Utility Messages
-    case ump_message_type::reserved32_06:  // 32 Reserved
-    case ump_message_type::reserved32_07:  // 32 Reserved
-      break;
-      // 32-bit MIDI 1.0 Channel Voice Messages
-    case ump_message_type::m1cvm:
-      // 32-bit System Real Time and System Common Messages (except
-      // System Exclusive)
-    case ump_message_type::system:
-      output_.push_back(UMP);
-      break;
-
-      // 64-bit Data Messages (including System Exclusive)
-    case ump_message_type::data64:
-      // MIDI2.0 Channel Voice Messages
-    case ump_message_type::m2cvm:
-      ump64word1 = UMP;
-      UMPPos++;
-      break;
-    case ump_message_type::data128:
-    case ump_message_type::flex_data:
-    case ump_message_type::ump_stream:
-    case ump_message_type::reserved128_0E:
-    case ump_message_type::reserved64_08:
-    case ump_message_type::reserved64_09:
-    case ump_message_type::reserved64_0A:
-    case ump_message_type::reserved96_0B:
-    case ump_message_type::reserved96_0C:
-    default: UMPPos++; break;
-    }
-    break;
-  }
-  case 1: {  // 64Bit+ Messages only
-    switch (mType) {
-    case ump_message_type::reserved64_08:  // 64 Reserved
-    case ump_message_type::reserved64_09:  // 64 Reserved
-    case ump_message_type::reserved64_0A:  // 64 Reserved
-      UMPPos = 0;
-      break;
-      // 64 bits Data Messages (including System Exclusive) part 2
-    case ump_message_type::data64: {
-      UMPPos = 0;
-      output_.push_back(ump64word1);
-      output_.push_back(UMP);
-      break;
-    }
-    case ump_message_type::m2cvm: {
-      UMPPos = 0;
-      uint8_t const status = (ump64word1 >> 16) & 0xFF;
-      uint8_t const channel = (ump64word1 >> 16) & 0xF;
-      uint8_t const val1 = (ump64word1 >> 8) & 0xFF;
-      uint8_t const val2 = ump64word1 & 0xFF;
-      uint8_t const group = (ump64word1 >> 24) & 0xF;
-
-      switch (status) {
-      case note_off:
-        output_.push_back(
-            UMPMessage::mt2NoteOff(group, channel, val1, static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7))));
-        break;
-      case note_on: {
-        auto velocity = static_cast<std::uint8_t>(scaleDown((UMP >> 16), 16, 7));
-        if (velocity == 0) {
-          velocity = 1;
-        }
-        output_.push_back(UMPMessage::mt2NoteOn(group, channel, val1, velocity));
-        break;
-      }
-      case key_pressure:
-        output_.push_back(
-            UMPMessage::mt2PolyPressure(group, channel, val1, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
-        break;
-      case cc:
-        output_.push_back(UMPMessage::mt2CC(group, channel, val1, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
-        break;
-      case channel_pressure:
-        output_.push_back(
-            UMPMessage::mt2ChannelPressure(group, channel, static_cast<std::uint8_t>(scaleDown(UMP, 32, 7))));
-        break;
-      case nrpn: {
-        output_.push_back(UMPMessage::mt2CC(group, channel, 99, val1));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 98, val2));
-        auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
-        break;
-      }
-      case rpn: {
-        output_.push_back(UMPMessage::mt2CC(group, channel, 101, val1));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 100, val2));
-        auto const val14bit = static_cast<std::uint16_t>(scaleDown(UMP, 32, 14));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 6, (val14bit >> 7) & 0x7F));
-        output_.push_back(UMPMessage::mt2CC(group, channel, 38, val14bit & 0x7F));
-        break;
-      }
-      case program_change: {
-        if (ump64word1 & 0x1) {
-          output_.push_back(UMPMessage::mt2CC(group, channel, 0, (UMP >> 8) & 0x7F));
-          output_.push_back(UMPMessage::mt2CC(group, channel, 32, UMP & 0x7F));
-        }
-        output_.push_back(UMPMessage::mt2ProgramChange(group, channel, (UMP >> 24) & 0x7F));
-        break;
-      }
-      case pitch_bend: output_.push_back(UMPMessage::mt2PitchBend(group, channel, UMP >> 18)); break;
-      default:
-        // An unknown CVM message
-        break;
-      }
-      break;
-    }
-    case ump_message_type::data128:
-    case ump_message_type::flex_data:
-    case ump_message_type::m1cvm:
-    case ump_message_type::ump_stream:
-    case ump_message_type::reserved128_0E:
-    case ump_message_type::reserved32_06:
-    case ump_message_type::reserved32_07:
-    case ump_message_type::reserved96_0B:
-    case ump_message_type::reserved96_0C:
-    case ump_message_type::system:
-    case ump_message_type::utility:
-    default: UMPPos++; break;
-    }
-    break;
-  }
-  case 2: {
-    switch (mType) {
-    case ump_message_type::reserved96_0B:  // 96 Reserved
-    case ump_message_type::reserved96_0C:  // 96 Reserved
-      UMPPos = 0;
-      break;
-    case ump_message_type::data128:
-    case ump_message_type::flex_data:
-    case ump_message_type::m1cvm:
-    case ump_message_type::m2cvm:
-    case ump_message_type::ump_stream:
-    case ump_message_type::reserved128_0E:
-    case ump_message_type::reserved32_06:
-    case ump_message_type::reserved32_07:
-    case ump_message_type::reserved64_08:
-    case ump_message_type::reserved64_09:
-    case ump_message_type::reserved64_0A:
-    case ump_message_type::data64:
-    case ump_message_type::system:
-    case ump_message_type::utility:
-    default: UMPPos++; break;
-    }
-    break;
-  }
-  case 3: {
-    UMPPos = 0;
-    break;
-  }
-  default: assert(false); break;
-  }
-}
-#endif
 
 }  // end namespace midi2

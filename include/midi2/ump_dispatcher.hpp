@@ -133,7 +133,6 @@ concept m2cvm_backend = requires(T v, Context context) {
   { v.per_note_management(context, types::m2cvm::per_note_management{}) } -> std::same_as<void>;
   { v.control_change(context, types::m2cvm::control_change{}) } -> std::same_as<void>;
 
-  { v.controller_message(context, types::m2cvm::controller_message{}) } -> std::same_as<void>;
   { v.pitch_bend(context, types::m2cvm::pitch_bend{}) } -> std::same_as<void>;
   { v.per_note_pitch_bend(context, types::m2cvm::per_note_pitch_bend{}) } -> std::same_as<void>;
 };
@@ -252,7 +251,6 @@ template <typename Context> struct m2cvm_null {
 
   constexpr void per_note_management(Context, types::m2cvm::per_note_management const &) const { /* do nothing */ }
   constexpr void control_change(Context, types::m2cvm::control_change const &) const { /* do nothing */ }
-  constexpr void controller_message(Context, types::m2cvm::controller_message const &) const { /* do nothing */ }
   constexpr void pitch_bend(Context, types::m2cvm::pitch_bend const &) const { /* do nothing */ }
   constexpr void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend const &) const { /* do nothing */ }
 };

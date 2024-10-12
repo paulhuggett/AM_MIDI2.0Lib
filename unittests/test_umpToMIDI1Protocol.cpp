@@ -306,5 +306,30 @@ TEST(UMPToMIDI1, M2NRPNController) {
   EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
                                   std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
+TEST(UMPToMIDI1, PitchBend) {
+  constexpr auto group = std::uint8_t{1};
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto bank = std::uint8_t{60};
+  constexpr auto index = std::uint8_t{21};
+  constexpr auto value = std::uint32_t{0xFFFF0000};
+
+  midi2::types::m2cvm::pitch_bend pb;
+  auto& pb0 = get<0>(pb.w);
+  auto& pb1 = get<1>(pb.w);
+  pb0.group = group;
+  pb0.channel = channel;
+  pb1 = value;
+
+  midi2::types::m1cvm::pitch_bend expected;
+  auto& expected0 = get<0>(expected.w);
+  expected0.group = group;
+  expected0.channel = channel;
+  expected0.lsb_data = (value >> (32 - 14)) & 0x7F;
+  expected0.msb_data = ((value >> (32 - 14)) >> 7) & 0x7F;
+
+  std::array const input{std::bit_cast<std::uint32_t>(pb0), std::bit_cast<std::uint32_t>(pb1)};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
+}
 
 }  // end anonymous namespace
