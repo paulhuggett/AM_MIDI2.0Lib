@@ -330,4 +330,54 @@ TEST(UMPToMIDI1, PitchBend) {
   EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
 }
 
+TEST(UMPToMIDI1, M1NoteOff) {
+  midi2::types::m1cvm::note_off noff;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(noff.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1NoteOn) {
+  midi2::types::m1cvm::note_on non;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(non.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1PolyPressure) {
+  midi2::types::m1cvm::poly_pressure poly_pressure;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(poly_pressure.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1ControlChange) {
+  midi2::types::m1cvm::control_change control_change;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(control_change.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1ProgramChange) {
+  midi2::types::m1cvm::program_change program_change;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(program_change.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1ChannelPressure) {
+  midi2::types::m1cvm::channel_pressure channel_pressure;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(channel_pressure.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+TEST(UMPToMIDI1, M1PitchBend) {
+  midi2::types::m1cvm::pitch_bend pitch_bend;
+  auto const ump = std::bit_cast<std::uint32_t>(get<0>(pitch_bend.w));
+  std::array const input{ump};
+  auto const actual = convert(std::begin(input), std::end(input));
+  EXPECT_THAT(actual, ElementsAre(ump));
+}
+
 }  // end anonymous namespace
