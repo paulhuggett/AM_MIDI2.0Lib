@@ -19,8 +19,6 @@ namespace midi2 {
 
 class umpToBytestream {
 public:
-  std::uint8_t group = 0;
-
   umpToBytestream() = default;
 
   [[nodiscard]] constexpr bool availableBS() const { return !output_.empty(); }
@@ -31,7 +29,7 @@ public:
 private:
   ump_message_type mType_ = ump_message_type::utility;
   std::uint32_t ump64word1_ = 0;
-
+  std::uint8_t group_ = 0;
   std::uint8_t UMPPos_ = 0;
   fifo<std::byte, 16> output_;
 

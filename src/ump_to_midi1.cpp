@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstdint>
 
+#include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {
@@ -49,8 +50,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, typ
 // ~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
                                                          types::m2cvm::poly_pressure const &in) {
-  auto &in0 = get<0>(in.w);
-  auto &in1 = get<1>(in.w);
+  auto const &in0 = get<0>(in.w);
+  auto const &in1 = get<1>(in.w);
   types::m1cvm::poly_pressure out;
   auto &out0 = get<0>(out.w);
   out0.group = in0.group.value();
@@ -64,8 +65,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctx
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
                                                           types::m2cvm::program_change const &in) {
-  auto &in0 = get<0>(in.w);
-  auto &in1 = get<1>(in.w);
+  auto const &in0 = get<0>(in.w);
+  auto const &in1 = get<1>(in.w);
 
   auto const group = in0.group.value();
   auto const channel = in0.channel.value();

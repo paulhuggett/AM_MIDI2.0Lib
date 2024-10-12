@@ -9,6 +9,7 @@
 #include "midi2/umpToBytestream.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 
 #include "midi2/utils.hpp"
@@ -18,7 +19,7 @@ namespace midi2 {
 void umpToBytestream::word1(std::uint32_t const ump) {
   // First part of a UMP Message
   mType_ = static_cast<ump_message_type>(ump >> 28);
-  group = ump >> 24 & 0xF;
+  group_ = ump >> 24 & 0xF;
   switch (mType_) {
   case ump_message_type::utility:  // 32 bits Utility Messages
   case ump_message_type::reserved32_06:
