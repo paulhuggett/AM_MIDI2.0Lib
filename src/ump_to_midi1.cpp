@@ -6,20 +6,19 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/umpToMIDI1Protocol.hpp"
+#include "midi2/ump_to_midi1.hpp"
 
 #include <cassert>
 #include <cstdint>
 
-#include "midi2/umpMessageCreate.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {
 
 // note off
 // ~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ctxt,
-                                                          types::m2cvm::note_off const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt,
+                                                    types::m2cvm::note_off const &in) const {
   auto const &in0 = get<0>(in.w);
   auto const &in1 = get<1>(in.w);
   types::m1cvm::note_off out;
@@ -34,8 +33,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_off(context_type *const ct
 
 // note on
 // ~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
-                                                         types::m2cvm::note_on const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt,
+                                                   types::m2cvm::note_on const &in) const {
   auto const &in0 = get<0>(in.w);
   auto const &in1 = get<1>(in.w);
   types::m1cvm::note_on out;
@@ -50,8 +49,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::note_on(context_type *const ctx
 
 // poly pressure
 // ~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
-                                                               types::m2cvm::poly_pressure const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
+                                                         types::m2cvm::poly_pressure const &in) const {
   auto &in0 = get<0>(in.w);
   auto &in1 = get<1>(in.w);
   types::m1cvm::poly_pressure out;
@@ -65,8 +64,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::poly_pressure(context_type *con
 
 // program change
 // ~~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
-                                                                types::m2cvm::program_change const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
+                                                          types::m2cvm::program_change const &in) const {
   auto &in0 = get<0>(in.w);
   auto &in1 = get<1>(in.w);
 
@@ -97,8 +96,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::program_change(context_type *co
 
 // channel pressure
 // ~~~~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
-                                                                  types::m2cvm::channel_pressure const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
+                                                            types::m2cvm::channel_pressure const &in) const {
   types::m1cvm::channel_pressure out;
   types::m1cvm::channel_pressure::word0 &out0 = get<0>(out.w);
   out0.group = get<0>(in.w).group.value();
@@ -110,8 +109,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::channel_pressure(context_type *
 
 // rpn controller
 // ~~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
-                                                                types::m2cvm::rpn_controller const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
+                                                          types::m2cvm::rpn_controller const &in) const {
   // TODO(pbh): the two (n)rpn_controller handlers are identical apart from the controller numbers for the first two
   // messages. this should be merged later.
   auto const &in0 = get<0>(in.w);
@@ -140,8 +139,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::rpn_controller(context_type *co
 
 // nrpn controller
 // ~~~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
-                                                                 types::m2cvm::nrpn_controller const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
+                                                           types::m2cvm::nrpn_controller const &in) const {
   auto const &in0 = get<0>(in.w);
   types::m1cvm::control_change cc;
   auto &cc0 = get<0>(cc.w);
@@ -168,8 +167,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::nrpn_controller(context_type *c
 
 // control change
 // ~~~~~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
-                                                                types::m2cvm::control_change const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
+                                                          types::m2cvm::control_change const &in) const {
   auto const &in0 = get<0>(in.w);
   types::m1cvm::control_change cc;
   auto &cc0 = get<0>(cc.w);
@@ -182,8 +181,8 @@ void umpToMIDI1Protocol::to_midi1_config::m2cvm::control_change(context_type *co
 
 // pitch bend
 // ~~~~~~~~~~
-void umpToMIDI1Protocol::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
-                                                            types::m2cvm::pitch_bend const &in) const {
+void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt,
+                                                      types::m2cvm::pitch_bend const &in) const {
   auto const &in0 = get<0>(in.w);
   types::m1cvm::pitch_bend pb;
   auto &pb0 = get<0>(pb.w);

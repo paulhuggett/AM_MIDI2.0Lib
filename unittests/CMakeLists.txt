@@ -18,7 +18,7 @@ add_executable (m2unittests
   test_scale.cpp
   test_ump_dispatcher.cpp
   test_umpToBytestream.cpp
-  test_umpToMIDI1Protocol.cpp
+  test_ump_to_midi1.cpp
   test_ump_bytestream_round_trip.cpp
 )
 target_compile_definitions (m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)

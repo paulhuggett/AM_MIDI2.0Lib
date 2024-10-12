@@ -6,8 +6,8 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_UMPTOMIDI1PROTOCOL_HPP
-#define MIDI2_UMPTOMIDI1PROTOCOL_HPP
+#ifndef MIDI2_UMPTOMIDI1_HPP
+#define MIDI2_UMPTOMIDI1_HPP
 
 #include <algorithm>
 #include <cstdint>
@@ -19,7 +19,7 @@
 
 namespace midi2 {
 
-class umpToMIDI1Protocol {
+class ump_to_midi1 {
 public:
   [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
   [[nodiscard]] std::uint32_t readUMP() { return context_.output.pop_front(); }
@@ -122,4 +122,4 @@ private:
 
 }  // end namespace midi2
 
-#endif  // MIDI2_UMPTOMIDI1PROTOCOL_HPP
+#endif  // MIDI2_UMPTOMIDI1_HPP

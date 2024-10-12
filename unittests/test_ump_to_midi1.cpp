@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/umpToMIDI1Protocol.hpp"
+#include "midi2/ump_to_midi1.hpp"
 
 // Standard Library
 #include <algorithm>
@@ -21,7 +21,7 @@ namespace {
 template <typename InputIterator>
 auto convert(InputIterator first, InputIterator last) {
   std::vector<std::uint32_t> output;
-  midi2::umpToMIDI1Protocol ump2m1;
+  midi2::ump_to_midi1 ump2m1;
   std::for_each(first, last, [&output, &ump2m1](std::uint32_t const ump) {
     ump2m1.UMPStreamParse(ump);
     while (ump2m1.available()) {

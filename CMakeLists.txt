@@ -34,17 +34,15 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
-  "${INCLUDE_DIR}/midi2/umpMessageCreate.hpp"
   "${INCLUDE_DIR}/midi2/umpToBytestream.hpp"
-  "${INCLUDE_DIR}/midi2/umpToMIDI1Protocol.hpp"
+  "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 
 add_library(midi2 ${MIDI2_HEADERS}
   src/bytestreamToUMP.cpp
   src/umpToBytestream.cpp
-  src/umpToMIDI1Protocol.cpp
-  src/umpMessageCreate.cpp
+  src/ump_to_midi1.cpp
   src/midiCIMessageCreate.cpp
 )
 setup_target(midi2)
