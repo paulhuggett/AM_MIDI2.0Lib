@@ -90,28 +90,30 @@ private:
       static void rpn_controller(context_type *ctxt, types::m2cvm::rpn_controller const &in);
       static void nrpn_controller(context_type *ctxt, types::m2cvm::nrpn_controller const &in);
 
-      static constexpr void rpn_per_note_controller(context_type *,
+      static constexpr void rpn_per_note_controller(context_type const *,
                                                     midi2::types::m2cvm::rpn_per_note_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static constexpr void nrpn_per_note_controller(context_type *,
+      static constexpr void nrpn_per_note_controller(context_type const *,
                                                      midi2::types::m2cvm::nrpn_per_note_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static constexpr void rpn_relative_controller(context_type *, types::m2cvm::rpn_relative_controller const &) {
+      static constexpr void rpn_relative_controller(context_type const *,
+                                                    types::m2cvm::rpn_relative_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static constexpr void nrpn_relative_controller(context_type *, types::m2cvm::nrpn_relative_controller const &) {
+      static constexpr void nrpn_relative_controller(context_type const *,
+                                                     types::m2cvm::nrpn_relative_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
 
-      static constexpr void per_note_management(context_type *, types::m2cvm::per_note_management const &) {
+      static constexpr void per_note_management(context_type const *, types::m2cvm::per_note_management const &) {
         // do nothing: cannot be translated to MIDI 1
       }
       static void control_change(context_type *ctxt, types::m2cvm::control_change const &);
       static void pitch_bend(context_type *ctxt, types::m2cvm::pitch_bend const &);
 
-      static constexpr void per_note_pitch_bend(context_type *, types::m2cvm::per_note_pitch_bend const &) {
+      static constexpr void per_note_pitch_bend(context_type const *, types::m2cvm::per_note_pitch_bend const &) {
         // do nothing: cannot be translated to MIDI 1
       }
     };
