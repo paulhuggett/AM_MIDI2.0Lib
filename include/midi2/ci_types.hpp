@@ -19,6 +19,7 @@
 #include <string>
 #include <type_traits>
 
+#include "midi2/bitfield.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2::ci {
@@ -1455,18 +1456,42 @@ constexpr capabilities_reply::operator packed::capabilities_reply_v2() const {
 namespace packed {
 
 struct midi_message_report_v2 {
+  union system_message {
+    bitfield<std::uint8_t, 3, 5> reserved0;
+    bitfield<std::uint8_t, 2, 1> song_select;
+    bitfield<std::uint8_t, 1, 1> song_position;
+    bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+  };
+  union channel_controller {
+    bitfield<std::uint8_t, 6, 2> reserved0;
+    bitfield<std::uint8_t, 5, 1> channel_pressure;
+    bitfield<std::uint8_t, 4, 1> program_change;
+    bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
+    bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
+    bitfield<std::uint8_t, 1, 1> control_change;
+    bitfield<std::uint8_t, 0, 1> pitchbend;
+  };
+  union note_data_messages {
+    bitfield<std::uint8_t, 5, 3> reserved0;
+    bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
+    bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
+    bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
+    bitfield<std::uint8_t, 1, 1> poly_pressure;
+    bitfield<std::uint8_t, 0, 1> notes;
+  };
+
   std::byte message_data_control;
-  std::byte system_message_bitmap;
+  union system_message system_message;
   std::byte reserved;
-  std::byte channel_controller_bitmap;
-  std::byte note_data_messages_bitmap;
+  union channel_controller channel_controller;
+  union note_data_messages note_data_messages;
 };
 
 static_assert(offsetof(midi_message_report_v2, message_data_control) == 0);
-static_assert(offsetof(midi_message_report_v2, system_message_bitmap) == 1);
+static_assert(offsetof(midi_message_report_v2, system_message) == 1);
 static_assert(offsetof(midi_message_report_v2, reserved) == 2);
-static_assert(offsetof(midi_message_report_v2, channel_controller_bitmap) == 3);
-static_assert(offsetof(midi_message_report_v2, note_data_messages_bitmap) == 4);
+static_assert(offsetof(midi_message_report_v2, channel_controller) == 3);
+static_assert(offsetof(midi_message_report_v2, note_data_messages) == 4);
 static_assert(sizeof(midi_message_report_v2) == 5);
 static_assert(alignof(midi_message_report_v2) == 1);
 static_assert(std::is_trivially_copyable_v<midi_message_report_v2>);
@@ -1516,52 +1541,89 @@ struct midi_message_report {
 constexpr midi_message_report::midi_message_report(packed::midi_message_report_v2 const &v2)
     : message_data_control{static_cast<enum control>(v2.message_data_control)},
 
-      mtc_quarter_frame{static_cast<unsigned>(v2.system_message_bitmap & std::byte{0x01})},
-      song_position{static_cast<unsigned>((v2.system_message_bitmap >> 1) & std::byte{0x01})},
-      song_select{static_cast<unsigned>((v2.system_message_bitmap >> 2) & std::byte{0x01})},
+      mtc_quarter_frame{v2.system_message.mtc_quarter_frame},
+      song_position{v2.system_message.song_position},
+      song_select{v2.system_message.song_select},
 
-      pitchbend{static_cast<unsigned>(v2.channel_controller_bitmap & std::byte{0x01})},
-      control_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 1) & std::byte{0x01})},
-      rpn_registered_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 2) & std::byte{0x01})},
-      nrpn_assignable_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 3) & std::byte{0x01})},
-      program_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 4) & std::byte{0x01})},
-      channel_pressure{static_cast<unsigned>((v2.channel_controller_bitmap >> 5) & std::byte{0x01})},
+      pitchbend{v2.channel_controller.pitchbend},
+      control_change{v2.channel_controller.control_change},
+      rpn_registered_controller{v2.channel_controller.rpn_registered_controller},
+      nrpn_assignable_controller{v2.channel_controller.nrpn_assignable_controller},
+      program_change{v2.channel_controller.program_change},
+      channel_pressure{v2.channel_controller.channel_pressure},
 
-      notes{static_cast<unsigned>(v2.note_data_messages_bitmap & std::byte{0x01})},
-      poly_pressure{static_cast<unsigned>((v2.note_data_messages_bitmap >> 1) & std::byte{0x01})},
-      per_note_pitchbend{static_cast<unsigned>((v2.note_data_messages_bitmap >> 2) & std::byte{0x01})},
-      registered_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 3) & std::byte{0x01})},
-      assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {
+      notes{v2.note_data_messages.notes},
+      poly_pressure{v2.note_data_messages.poly_pressure},
+      per_note_pitchbend{v2.note_data_messages.per_note_pitchbend},
+      registered_per_note_controller{v2.note_data_messages.registered_per_note_controller},
+      assignable_per_note_controller{v2.note_data_messages.assignable_per_note_controller} {
 }
 
 constexpr midi_message_report::operator packed::midi_message_report_v2() const {
-  return {static_cast<std::byte>(message_data_control),
-          static_cast<std::byte>(mtc_quarter_frame) | (static_cast<std::byte>(song_position) << 1) |
-              (static_cast<std::byte>(song_select) << 2),
-          std::byte{0},
-          static_cast<std::byte>(pitchbend) | (static_cast<std::byte>(control_change) << 1) |
-              (static_cast<std::byte>(rpn_registered_controller) << 2) |
-              (static_cast<std::byte>(nrpn_assignable_controller) << 3) |
-              (static_cast<std::byte>(program_change) << 4) | (static_cast<std::byte>(channel_pressure) << 5),
-          static_cast<std::byte>(notes) | (static_cast<std::byte>(poly_pressure) << 1) |
-              (static_cast<std::byte>(per_note_pitchbend) << 2) |
-              (static_cast<std::byte>(registered_per_note_controller) << 3) |
-              (static_cast<std::byte>(assignable_per_note_controller) << 4)};
+  union packed::midi_message_report_v2::system_message sm{};
+  sm.mtc_quarter_frame = mtc_quarter_frame;
+  sm.song_position = song_position;
+  sm.song_select = song_select;
+
+  union packed::midi_message_report_v2::channel_controller cc{};
+  cc.pitchbend = pitchbend;
+  cc.control_change = control_change;
+  cc.rpn_registered_controller = rpn_registered_controller;
+  cc.nrpn_assignable_controller = nrpn_assignable_controller;
+  cc.program_change = program_change;
+  cc.channel_pressure = channel_pressure;
+
+  union packed::midi_message_report_v2::note_data_messages ndm{};
+  ndm.notes = notes;
+  ndm.poly_pressure = poly_pressure;
+  ndm.per_note_pitchbend = per_note_pitchbend;
+  ndm.registered_per_note_controller = registered_per_note_controller;
+  ndm.assignable_per_note_controller = assignable_per_note_controller;
+
+  return {.message_data_control = static_cast<std::byte>(message_data_control),
+          .system_message = sm,
+          .reserved = std::byte{0},
+          .channel_controller = cc,
+          .note_data_messages = ndm};
 }
 
 namespace packed {
 
 struct midi_message_report_reply_v2 {
-  std::byte system_message_bitmap;
+  union system_message {
+    bitfield<std::uint8_t, 3, 5> reserved0;
+    bitfield<std::uint8_t, 2, 1> song_select;
+    bitfield<std::uint8_t, 1, 1> song_position;
+    bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+  };
+  union channel_controller {
+    bitfield<std::uint8_t, 6, 2> reserved0;
+    bitfield<std::uint8_t, 5, 1> channel_pressure;
+    bitfield<std::uint8_t, 4, 1> program_change;
+    bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
+    bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
+    bitfield<std::uint8_t, 1, 1> control_change;
+    bitfield<std::uint8_t, 0, 1> pitchbend;
+  };
+  union note_data_messages {
+    bitfield<std::uint8_t, 5, 3> reserved0;
+    bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
+    bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
+    bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
+    bitfield<std::uint8_t, 1, 1> poly_pressure;
+    bitfield<std::uint8_t, 0, 1> notes;
+  };
+
+  union system_message system_message;
   std::byte reserved;
-  std::byte channel_controller_bitmap;
-  std::byte note_data_messages_bitmap;
+  union channel_controller channel_controller;
+  union note_data_messages note_data_messages;
 };
 
-static_assert(offsetof(midi_message_report_reply_v2, system_message_bitmap) == 0);
+static_assert(offsetof(midi_message_report_reply_v2, system_message) == 0);
 static_assert(offsetof(midi_message_report_reply_v2, reserved) == 1);
-static_assert(offsetof(midi_message_report_reply_v2, channel_controller_bitmap) == 2);
-static_assert(offsetof(midi_message_report_reply_v2, note_data_messages_bitmap) == 3);
+static_assert(offsetof(midi_message_report_reply_v2, channel_controller) == 2);
+static_assert(offsetof(midi_message_report_reply_v2, note_data_messages) == 3);
 static_assert(sizeof(midi_message_report_reply_v2) == 4);
 static_assert(alignof(midi_message_report_reply_v2) == 1);
 static_assert(std::is_trivially_copyable_v<midi_message_report_reply_v2>);
@@ -1602,34 +1664,46 @@ struct midi_message_report_reply {
 };
 
 constexpr midi_message_report_reply::midi_message_report_reply(packed::midi_message_report_reply_v2 const &v2)
-    : mtc_quarter_frame{static_cast<unsigned>(v2.system_message_bitmap & std::byte{0x01})},
-      song_position{static_cast<unsigned>((v2.system_message_bitmap >> 1) & std::byte{0x01})},
-      song_select{static_cast<unsigned>((v2.system_message_bitmap >> 2) & std::byte{0x01})},
-      pitchbend{static_cast<unsigned>(v2.channel_controller_bitmap & std::byte{0x01})},
-      control_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 1) & std::byte{0x01})},
-      rpn_registered_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 2) & std::byte{0x01})},
-      nrpn_assignable_controller{static_cast<unsigned>((v2.channel_controller_bitmap >> 3) & std::byte{0x01})},
-      program_change{static_cast<unsigned>((v2.channel_controller_bitmap >> 4) & std::byte{0x01})},
-      channel_pressure{static_cast<unsigned>((v2.channel_controller_bitmap >> 5) & std::byte{0x01})},
-      notes{static_cast<unsigned>(v2.note_data_messages_bitmap & std::byte{0x01})},
-      poly_pressure{static_cast<unsigned>((v2.note_data_messages_bitmap >> 1) & std::byte{0x01})},
-      per_note_pitchbend{static_cast<unsigned>((v2.note_data_messages_bitmap >> 2) & std::byte{0x01})},
-      registered_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 3) & std::byte{0x01})},
-      assignable_per_note_controller{static_cast<unsigned>((v2.note_data_messages_bitmap >> 4) & std::byte{0x01})} {
+    : mtc_quarter_frame{v2.system_message.mtc_quarter_frame},
+      song_position{v2.system_message.song_position},
+      song_select{v2.system_message.song_select},
+
+      pitchbend{v2.channel_controller.pitchbend},
+      control_change{v2.channel_controller.control_change},
+      rpn_registered_controller{v2.channel_controller.rpn_registered_controller},
+      nrpn_assignable_controller{v2.channel_controller.nrpn_assignable_controller},
+      program_change{v2.channel_controller.program_change},
+      channel_pressure{v2.channel_controller.channel_pressure},
+
+      notes{v2.note_data_messages.notes},
+      poly_pressure{v2.note_data_messages.poly_pressure},
+      per_note_pitchbend{v2.note_data_messages.per_note_pitchbend},
+      registered_per_note_controller{v2.note_data_messages.registered_per_note_controller},
+      assignable_per_note_controller{v2.note_data_messages.assignable_per_note_controller} {
 }
 
 constexpr midi_message_report_reply::operator packed::midi_message_report_reply_v2() const {
-  return {static_cast<std::byte>(mtc_quarter_frame) | (static_cast<std::byte>(song_position) << 1) |
-              (static_cast<std::byte>(song_select) << 2),
-          std::byte{0},
-          static_cast<std::byte>(pitchbend) | (static_cast<std::byte>(control_change) << 1) |
-              (static_cast<std::byte>(rpn_registered_controller) << 2) |
-              (static_cast<std::byte>(nrpn_assignable_controller) << 3) |
-              (static_cast<std::byte>(program_change) << 4) | (static_cast<std::byte>(channel_pressure) << 5),
-          static_cast<std::byte>(notes) | (static_cast<std::byte>(poly_pressure) << 1) |
-              (static_cast<std::byte>(per_note_pitchbend) << 2) |
-              (static_cast<std::byte>(registered_per_note_controller) << 3) |
-              (static_cast<std::byte>(assignable_per_note_controller) << 4)};
+  union packed::midi_message_report_reply_v2::system_message sm{};
+  sm.mtc_quarter_frame = mtc_quarter_frame;
+  sm.song_position = song_position;
+  sm.song_select = song_select;
+
+  union packed::midi_message_report_reply_v2::channel_controller cc{};
+  cc.pitchbend = pitchbend;
+  cc.control_change = control_change;
+  cc.rpn_registered_controller = rpn_registered_controller;
+  cc.nrpn_assignable_controller = nrpn_assignable_controller;
+  cc.program_change = program_change;
+  cc.channel_pressure = channel_pressure;
+
+  union packed::midi_message_report_reply_v2::note_data_messages ndm{};
+  ndm.notes = notes;
+  ndm.poly_pressure = poly_pressure;
+  ndm.per_note_pitchbend = per_note_pitchbend;
+  ndm.registered_per_note_controller = registered_per_note_controller;
+  ndm.assignable_per_note_controller = assignable_per_note_controller;
+
+  return {.system_message = sm, .reserved = std::byte{0}, .channel_controller = cc, .note_data_messages = ndm};
 }
 
 //*                                      _                 _  *
