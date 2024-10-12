@@ -9,7 +9,7 @@ ColumnLimit             : 120
 CommentPragmas          :  '^\\.+'
 SpaceBeforeParens       : ControlStatements
 SpaceInEmptyParentheses : false
-Standard                : c++11
+Standard                : c++20
 
 AllowShortBlocksOnASingleLine       : false
 AllowShortCaseLabelsOnASingleLine   : true
@@ -20,3 +20,7 @@ AllowShortLambdasOnASingleLine      : true
 AllowShortLoopsOnASingleLine        : false
 AlwaysBreakTemplateDeclarations     : MultiLine
 IndentCaseLabels                    : false
+
+IndentRequiresClause : true
+RequiresClausePosition : OwnLine
+RequiresExpressionIndentation : OuterScope
