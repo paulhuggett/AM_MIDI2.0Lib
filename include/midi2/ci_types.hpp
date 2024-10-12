@@ -14,7 +14,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <ranges>
 #include <span>
 #include <string>
 #include <type_traits>

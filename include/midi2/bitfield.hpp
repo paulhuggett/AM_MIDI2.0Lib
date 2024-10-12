@@ -75,7 +75,7 @@ public:
 
   /// Assigns a value to the bitfield.
   /// \param v  The value to be stored.
-  void assign(small_type const v) noexcept {
+  constexpr void assign(small_type const v) noexcept {
     assert(v <= this->max() && "Value too large for bitfield");
     value_ = static_cast<value_type>(value_ & ~(mask_ << Index)) |
              static_cast<value_type>((static_cast<value_type>(v) & mask_) << Index);
@@ -84,7 +84,7 @@ public:
   /// Assigns the value \p v to the bitfield.
   /// \param v  The value to be stored.
   /// \returns *this
-  bitfield& operator=(small_type const v) noexcept {
+  constexpr bitfield& operator=(small_type const v) noexcept {
     this->assign(v);
     return *this;
   }

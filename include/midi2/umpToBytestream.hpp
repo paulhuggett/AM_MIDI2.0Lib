@@ -9,6 +9,7 @@
 #ifndef MIDI2_UMPTOBYTESTREAM_HPP
 #define MIDI2_UMPTOBYTESTREAM_HPP
 
+#include <cstddef>
 #include <cstdint>
 
 #include "midi2/fifo.hpp"

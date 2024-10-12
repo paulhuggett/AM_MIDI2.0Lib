@@ -32,6 +32,7 @@
 #include <bit>
 #include <cstddef>
 #include <iterator>
+#include <span>
 #include <type_traits>
 
 #include "midi2/ci_types.hpp"

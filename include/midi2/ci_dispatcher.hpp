@@ -413,11 +413,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::dis
     assert(pos_ == sizeof(*v));
     management_backend_.discovery(midici_, ci::discovery{*v});
   };
-  using namespace ci::packed;
   if (midici_.params.ciVer == 1) {
-    handler(std::bit_cast<discovery_v1 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::packed::discovery_v1 const *>(buffer_.data()));
   } else {
-    handler(std::bit_cast<discovery_v2 const *>(buffer_.data()));
+    handler(std::bit_cast<ci::packed::discovery_v2 const *>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }

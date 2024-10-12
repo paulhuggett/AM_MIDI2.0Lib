@@ -40,7 +40,7 @@ public:
   /// \brief Inserts an element at the end.
   /// \param value  The value of the element to append.
   /// \returns True if the element was appended, false if the container was full.
-  bool push_back(ElementType const& value) {
+  constexpr bool push_back(ElementType const& value) {
     if (this->full()) {
       return false;
     }
@@ -50,7 +50,7 @@ public:
   /// \brief Removes the first element of the container and returns it.
   /// If there are no elements in the container, the behavior is undefined.
   /// \returns The first element in the container.
-  ElementType pop_front() {
+  constexpr ElementType pop_front() {
     assert(!this->empty());
     auto result = std::move(arr_[readIndex_ & mask_]);
     ++readIndex_;

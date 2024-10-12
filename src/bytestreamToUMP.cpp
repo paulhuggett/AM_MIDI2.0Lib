@@ -178,8 +178,10 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
       w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
       w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
       w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      output_.push_back(std::bit_cast<std::uint32_t>(w0));
-      output_.push_back(std::bit_cast<std::uint32_t>(w1));
+      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
+      output_.push_back(w0_32);
+      auto const w1_32 = std::bit_cast<std::uint32_t>(w0);
+      output_.push_back(w1_32);
 
       sysex7_.reset();
       sysex7_.state = single_ump;
@@ -200,8 +202,10 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
       w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
       w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
       w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      output_.push_back(std::bit_cast<std::uint32_t>(w0));
-      output_.push_back(std::bit_cast<std::uint32_t>(w1));
+      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
+      output_.push_back(w0_32);
+      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
+      output_.push_back(w1_32);
 
       sysex7_.reset();
       sysex7_.state = sysex7::status::cont;

@@ -309,8 +309,6 @@ TEST(UMPToMIDI1, M2NRPNController) {
 TEST(UMPToMIDI1, PitchBend) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
-  constexpr auto bank = std::uint8_t{60};
-  constexpr auto index = std::uint8_t{21};
   constexpr auto value = std::uint32_t{0xFFFF0000};
 
   midi2::types::m2cvm::pitch_bend pb;

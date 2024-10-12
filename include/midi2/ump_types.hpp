@@ -50,6 +50,8 @@
     return std::bit_cast<std::uint32_t>(a) == std::bit_cast<std::uint32_t>(b); \
   }
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-member-init,cppcoreguidelines-prefer-member-initializer,hicpp-member-init)
+
 namespace midi2::types {
 
 constexpr auto status_to_message_type(status const s) {
@@ -84,8 +86,8 @@ constexpr auto status_to_message_type(ump_stream) {
 
 template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
 
-template <typename T> constexpr auto status_to_ump_status(T t) {
-  return to_underlying(t);
+template <typename T> constexpr auto status_to_ump_status(T status) {
+  return to_underlying(status);
 }
 template <> constexpr auto status_to_ump_status(midi2status status) {
   auto const s = to_underlying(status);
@@ -416,7 +418,7 @@ struct note_off {
   explicit note_off(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(note_off const &, note_off const &) = default;
 
-  std::tuple<word0> w{};
+  std::tuple<word0> w;
 };
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
@@ -437,7 +439,7 @@ struct poly_pressure {
   explicit poly_pressure(std::uint32_t const w0_) : w{w0_} {}
   friend bool operator==(poly_pressure const &, poly_pressure const &) = default;
 
-  std::tuple<word0> w{};
+  std::tuple<word0> w;
 };
 
 // 7.3.4 MIDI 1.0 Control Change Message
@@ -595,7 +597,7 @@ struct note_off {
   explicit note_off(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_off const &a, note_off const &b) = default;
 
-  std::tuple<word0, word1> w{};
+  std::tuple<word0, word1> w;
 };
 
 // 7.4.2 MIDI 2.0 Note On Message
@@ -961,7 +963,7 @@ struct endpoint_info_notification {
   explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(endpoint_info_notification const &, endpoint_info_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.3 Device Identity Notification Message
@@ -1009,7 +1011,7 @@ struct device_identity_notification {
   explicit device_identity_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(device_identity_notification const &, device_identity_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.4 Endpoint Name Notification
@@ -1047,7 +1049,7 @@ struct endpoint_name_notification {
   explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(endpoint_name_notification const &, endpoint_name_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.5 Product Instance Id Notification Message
@@ -1085,7 +1087,7 @@ struct product_instance_id_notification {
   explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(product_instance_id_notification const &, product_instance_id_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
@@ -1110,7 +1112,7 @@ struct jr_configuration_request {
   explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(jr_configuration_request const &, jr_configuration_request const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.6.3 JR Stream Configuration Notification Message
@@ -1133,7 +1135,7 @@ struct jr_configuration_notification {
   explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(jr_configuration_notification const &, jr_configuration_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.7 Function Block Discovery Message
@@ -1154,7 +1156,7 @@ struct function_block_discovery {
   explicit function_block_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(function_block_discovery const &, function_block_discovery const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.8 Function Block Info Notification
@@ -1185,7 +1187,7 @@ struct function_block_info_notification {
   explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(function_block_info_notification const &, function_block_info_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.9 Function Block Name Notification
@@ -1224,7 +1226,7 @@ struct function_block_name_notification {
   explicit function_block_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(function_block_name_notification const &, function_block_name_notification const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.10 Start of Clip Message
@@ -1244,7 +1246,7 @@ struct start_of_clip {
   explicit start_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(start_of_clip const &, start_of_clip const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.1.11 End of Clip Message
@@ -1264,7 +1266,7 @@ struct end_of_clip {
   explicit end_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(end_of_clip const &, end_of_clip const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 };  // end namespace ump_stream
@@ -1293,7 +1295,7 @@ struct set_tempo {
   explicit set_tempo(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(set_tempo const &, set_tempo const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.5.4 Set Time Signature Message
@@ -1313,7 +1315,7 @@ struct set_time_signature {
   explicit set_time_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(set_time_signature const &, set_time_signature const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.5.5 Set Metronome Message
@@ -1339,7 +1341,7 @@ struct set_metronome {
   explicit set_metronome(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(set_metronome const &, set_metronome const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.5.7 Set Key Signature Message
@@ -1358,7 +1360,7 @@ struct set_key_signature {
   explicit set_key_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(set_key_signature const &, set_key_signature const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.5.8 Set Chord Name Message
@@ -1516,7 +1518,7 @@ struct sysex8 {
   explicit sysex8(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(sysex8 const &, sysex8 const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 // 7.9 Mixed Data Set Message
@@ -1552,7 +1554,7 @@ struct mds_header {
   explicit mds_header(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(mds_header const &, mds_header const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 struct mds_payload {
@@ -1572,12 +1574,14 @@ struct mds_payload {
   explicit mds_payload(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend bool operator==(mds_payload const &, mds_payload const &) = default;
 
-  std::tuple<word0, word1, word2, word3> w{};
+  std::tuple<word0, word1, word2, word3> w;
 };
 
 }  // end namespace data128
 
 }  // end namespace midi2::types
+
+// NOLINTEND(cppcoreguidelines-pro-type-member-init,cppcoreguidelines-prefer-member-initializer,hicpp-member-init)
 
 #undef UMP_MEMBERS
 

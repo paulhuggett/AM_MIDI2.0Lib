@@ -12,8 +12,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <utility>
-#include <version>
+#include <type_traits>
 
 namespace midi2 {
 
