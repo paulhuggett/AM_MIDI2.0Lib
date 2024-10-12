@@ -30,7 +30,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
   "${INCLUDE_DIR}/midi2/fifo.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
-  "${INCLUDE_DIR}/midi2/midiCIMessageCreate.hpp"
+  "${INCLUDE_DIR}/midi2/ci_create_message.hpp"
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
@@ -43,7 +43,6 @@ add_library(midi2 ${MIDI2_HEADERS}
   src/bytestreamToUMP.cpp
   src/umpToBytestream.cpp
   src/ump_to_midi1.cpp
-  src/midiCIMessageCreate.cpp
 )
 setup_target(midi2)
 

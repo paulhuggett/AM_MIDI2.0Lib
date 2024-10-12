@@ -25,8 +25,8 @@
  *
  * ********************************************************/
 
-#ifndef MIDI2_MIDICIMESSAGECREATE_HPP
-#define MIDI2_MIDICIMESSAGECREATE_HPP
+#ifndef MIDI2_CI_CREATE_MESSAGE_HPP
+#define MIDI2_CI_CREATE_MESSAGE_HPP
 
 #include <algorithm>
 #include <bit>
@@ -368,4 +368,4 @@ constexpr O create_message(O first, S const last, struct params const &params, p
 
 }  // end namespace midi2::ci
 
-#endif  // MIDI2_MIDICIMESSAGECREATE_HPP
+#endif  // MIDI2_CI_CREATE_MESSAGE_HPP

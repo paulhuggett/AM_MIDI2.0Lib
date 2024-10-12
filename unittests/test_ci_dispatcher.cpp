@@ -8,8 +8,10 @@
 
 // DUT
 #include "midi2/ci_dispatcher.hpp"
+
+// MIDI2
+#include "midi2/ci_create_message.hpp"
 #include "midi2/ci_types.hpp"
-#include "midi2/midiCIMessageCreate.hpp"
 #include "midi2/utils.hpp"
 
 // Standard library
