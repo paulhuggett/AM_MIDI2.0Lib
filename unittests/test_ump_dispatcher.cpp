@@ -31,8 +31,12 @@ using context_type = int;
 
 struct utility_base {
   utility_base() = default;
-  utility_base(utility_base const &) = default;
+  [[maybe_unused]] utility_base(utility_base const &) = default;
+  [[maybe_unused]] utility_base(utility_base &&) noexcept = default;
   virtual ~utility_base() noexcept = default;
+
+  [[maybe_unused]] utility_base &operator=(utility_base const &) = default;
+  [[maybe_unused]] utility_base &operator=(utility_base &&) noexcept = default;
 
   virtual void noop(context_type) = 0;
   virtual void jr_clock(context_type, midi2::types::utility::jr_clock) = 0;
@@ -54,8 +58,12 @@ public:
 };
 struct system_base {
   system_base() = default;
-  system_base(system_base const &) = default;
+  [[maybe_unused]] system_base(system_base const &) = default;
+  [[maybe_unused]] system_base(system_base &&) noexcept = default;
   virtual ~system_base() noexcept = default;
+
+  [[maybe_unused]] system_base &operator=(system_base const &) = default;
+  [[maybe_unused]] system_base &operator=(system_base &&) noexcept = default;
 
   virtual void midi_time_code(context_type, midi2::types::system::midi_time_code) = 0;
   virtual void song_position_pointer(context_type, midi2::types::system::song_position_pointer) = 0;
@@ -83,8 +91,12 @@ public:
 };
 struct m1cvm_base {
   m1cvm_base() = default;
-  m1cvm_base(m1cvm_base const &) = default;
+  [[maybe_unused]] m1cvm_base(m1cvm_base const &) = default;
+  [[maybe_unused]] m1cvm_base(m1cvm_base &&) noexcept = default;
   virtual ~m1cvm_base() noexcept = default;
+
+  [[maybe_unused]] m1cvm_base &operator=(m1cvm_base const &) = default;
+  [[maybe_unused]] m1cvm_base &operator=(m1cvm_base &&) noexcept = default;
 
   virtual void note_off(context_type, midi2::types::m1cvm::note_off) = 0;
   virtual void note_on(context_type, midi2::types::m1cvm::note_on) = 0;
@@ -106,8 +118,12 @@ public:
 };
 struct data64_base {
   data64_base() = default;
-  data64_base(data64_base const &) = default;
+  [[maybe_unused]] data64_base(data64_base const &) = default;
+  [[maybe_unused]] data64_base(data64_base &&) noexcept = default;
   virtual ~data64_base() noexcept = default;
+
+  [[maybe_unused]] data64_base &operator=(data64_base const &) = default;
+  [[maybe_unused]] data64_base &operator=(data64_base &&) noexcept = default;
 
   virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7) = 0;
   virtual void sysex7_start(context_type, midi2::types::data64::sysex7) = 0;
@@ -123,8 +139,12 @@ public:
 };
 struct m2cvm_base {
   m2cvm_base() = default;
-  m2cvm_base(m2cvm_base const &) = default;
+  [[maybe_unused]] m2cvm_base(m2cvm_base const &) = default;
+  [[maybe_unused]] m2cvm_base(m2cvm_base &&) noexcept = default;
   virtual ~m2cvm_base() noexcept = default;
+
+  [[maybe_unused]] m2cvm_base &operator=(m2cvm_base const &) = default;
+  [[maybe_unused]] m2cvm_base &operator=(m2cvm_base &&) noexcept = default;
 
   virtual void note_off(context_type, midi2::types::m2cvm::note_off) = 0;
   virtual void note_on(context_type, midi2::types::m2cvm::note_on) = 0;
@@ -174,8 +194,12 @@ public:
 };
 struct data128_base {
   data128_base() = default;
-  data128_base(data128_base const &) = default;
+  [[maybe_unused]] data128_base(data128_base const &) = default;
+  [[maybe_unused]] data128_base(data128_base &&) noexcept = default;
   virtual ~data128_base() noexcept = default;
+
+  [[maybe_unused]] data128_base &operator=(data128_base const &) = default;
+  [[maybe_unused]] data128_base &operator=(data128_base &&) noexcept = default;
 
   virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8 const &) = 0;
   virtual void sysex8_start(context_type, midi2::types::data128::sysex8 const &) = 0;
@@ -195,8 +219,12 @@ public:
 };
 struct ump_stream_base {
   ump_stream_base() = default;
-  ump_stream_base(ump_stream_base const &) = default;
+  [[maybe_unused]] ump_stream_base(ump_stream_base const &) = default;
+  [[maybe_unused]] ump_stream_base(ump_stream_base &&) noexcept = default;
   virtual ~ump_stream_base() noexcept = default;
+
+  [[maybe_unused]] ump_stream_base &operator=(ump_stream_base const &) = default;
+  [[maybe_unused]] ump_stream_base &operator=(ump_stream_base &&) noexcept = default;
 
   virtual void endpoint_discovery(context_type, midi2::types::ump_stream::endpoint_discovery) = 0;
   virtual void endpoint_info_notification(context_type, midi2::types::ump_stream::endpoint_info_notification) = 0;
@@ -245,8 +273,12 @@ public:
 };
 struct flex_data_base {
   flex_data_base() = default;
-  flex_data_base(flex_data_base const &) = default;
+  [[maybe_unused]] flex_data_base(flex_data_base const &) = default;
+  [[maybe_unused]] flex_data_base(flex_data_base &&) noexcept = default;
   virtual ~flex_data_base() noexcept = default;
+
+  [[maybe_unused]] flex_data_base &operator=(flex_data_base const &) = default;
+  [[maybe_unused]] flex_data_base &operator=(flex_data_base &&) noexcept = default;
 
   virtual void set_tempo(context_type, midi2::types::flex_data::set_tempo) = 0;
   virtual void set_time_signature(context_type, midi2::types::flex_data::set_time_signature) = 0;
