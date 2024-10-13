@@ -27,8 +27,8 @@ std::vector<std::byte> convert(Range && range) {
   std::vector<std::byte> output;
   std::ranges::for_each(std::forward<Range>(range), [&output, &ump2bs](std::uint32_t const ump) {
     ump2bs.UMPStreamParse(ump);
-    while (ump2bs.availableBS()) {
-      output.push_back(ump2bs.readBS());
+    while (ump2bs.available()) {
+      output.push_back(ump2bs.read());
     }
   });
   return output;

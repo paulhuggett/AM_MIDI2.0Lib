@@ -55,8 +55,8 @@ template <std::size_t Size> auto convert(midi2::bytestreamToUMP bs2ump, std::arr
   std::vector<std::uint32_t> output;
   for (std::byte const b : input) {
     bs2ump.bytestreamParse(b);
-    while (bs2ump.availableUMP()) {
-      output.push_back(bs2ump.readUMP());
+    while (bs2ump.available()) {
+      output.push_back(bs2ump.read());
     }
   }
   return output;
@@ -678,8 +678,8 @@ void NeverCrashes(std::vector<std::byte> const& bytes) {
   midi2::bytestreamToUMP bs2ump;
   for (auto const b : bytes) {
     bs2ump.bytestreamParse(b);
-    while (bs2ump.availableUMP()) {
-      (void)bs2ump.readUMP();
+    while (bs2ump.available()) {
+      (void)bs2ump.read();
     }
   }
 }

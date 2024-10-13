@@ -21,8 +21,8 @@ class umpToBytestream {
 public:
   umpToBytestream() = default;
 
-  [[nodiscard]] constexpr bool availableBS() const { return !output_.empty(); }
-  [[nodiscard]] std::byte readBS() { return output_.pop_front(); }
+  [[nodiscard]] constexpr bool available() const { return !output_.empty(); }
+  [[nodiscard]] std::byte read() { return output_.pop_front(); }
 
   void UMPStreamParse(uint32_t UMP);
 
