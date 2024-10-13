@@ -121,10 +121,10 @@ namespace {
 
 constexpr bool isSystemRealTimeMessage(std::byte const midi1Byte) {
   switch (static_cast<status>(midi1Byte)) {
-  case status::timingclock:
-  case status::seqstart:
-  case status::seqcont:
-  case status::seqstop:
+  case status::timing_clock:
+  case status::sequence_start:
+  case status::sequence_continue:
+  case status::sequence_stop:
   case status::activesense:
   case status::systemreset: return true;
   default: return false;
@@ -150,8 +150,8 @@ void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
   if (isStatusByte(midi1Byte)) {
-    if (midi1int == status::tunerequest || isSystemRealTimeMessage(midi1Byte)) {
-      if (midi1int == status::tunerequest) {
+    if (midi1int == status::tune_request || isSystemRealTimeMessage(midi1Byte)) {
+      if (midi1int == status::tune_request) {
         d0_ = midi1Byte;
       }
       this->bsToUMP(midi1Byte, std::byte{0}, std::byte{0});

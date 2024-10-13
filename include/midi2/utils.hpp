@@ -53,13 +53,13 @@ enum class status : std::uint8_t {
   song_select = 0xF3,
   reserved1 = 0xF4,
   reserved2 = 0xF5,
-  tunerequest = 0xF6,
+  tune_request = 0xF6,
   sysex_stop = 0xF7,  // End of system exclusive
-  timingclock = 0xF8,
+  timing_clock = 0xF8,
   reserved3 = 0xF9,
-  seqstart = 0xFA,  // Start the current sequence playing
-  seqcont = 0xFB,   // Continue at the point the sequence was stopped
-  seqstop = 0xFC,   // Stop the current sequence
+  sequence_start = 0xFA,     // Start the current sequence playing
+  sequence_continue = 0xFB,  // Continue at the point the sequence was stopped
+  sequence_stop = 0xFC,      // Stop the current sequence
   reserved4 = 0xFD,
   activesense = 0xFE,
   systemreset = 0xFF,
@@ -94,7 +94,7 @@ enum midi2status : std::uint8_t {
   song_select = 0xF3,
   reserved1 = 0xF4,
   reserved2 = 0xF5,
-  tunerequest = 0xF6,
+  tune_request = 0xF6,
   sysex_stop = 0xF7,  // End of system exclusive
   timingclock = 0xF8,
   reserved3 = 0xF9,

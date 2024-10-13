@@ -58,8 +58,9 @@ constexpr auto status_to_message_type(status const s) {
   switch (s) {
   case status::spp:
   case status::timing_code:
+  case status::timing_clock:
   case status::song_select:
-  case status::tunerequest: return ump_message_type::system;
+  case status::tune_request: return ump_message_type::system;
   default: return ump_message_type::m1cvm;
   }
 }
@@ -255,7 +256,7 @@ struct song_select {
 
 struct tune_request {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, status::tune_request)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF6
@@ -272,7 +273,7 @@ struct tune_request {
 
 struct timing_clock {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, status::timing_clock)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF8

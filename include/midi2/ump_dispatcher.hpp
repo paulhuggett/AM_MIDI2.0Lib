@@ -426,15 +426,17 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_mess
     config_.system.song_position_pointer(config_.context, types::system::song_position_pointer{message_[0]});
     break;
   case status::song_select: config_.system.song_select(config_.context, types::system::song_select{message_[0]}); break;
-  case status::tunerequest:
+  case status::tune_request:
     config_.system.tune_request(config_.context, types::system::tune_request{message_[0]});
     break;
-  case status::timingclock:
+  case status::timing_clock:
     config_.system.timing_clock(config_.context, types::system::timing_clock{message_[0]});
     break;
-  case status::seqstart: config_.system.seq_start(config_.context, types::system::seq_start{message_[0]}); break;
-  case status::seqcont: config_.system.seq_continue(config_.context, types::system::seq_continue{message_[0]}); break;
-  case status::seqstop: config_.system.seq_stop(config_.context, types::system::seq_stop{message_[0]}); break;
+  case status::sequence_start: config_.system.seq_start(config_.context, types::system::seq_start{message_[0]}); break;
+  case status::sequence_continue:
+    config_.system.seq_continue(config_.context, types::system::seq_continue{message_[0]});
+    break;
+  case status::sequence_stop: config_.system.seq_stop(config_.context, types::system::seq_stop{message_[0]}); break;
   case status::activesense:
     config_.system.active_sensing(config_.context, types::system::active_sensing{message_[0]});
     break;

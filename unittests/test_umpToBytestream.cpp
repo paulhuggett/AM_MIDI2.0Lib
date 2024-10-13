@@ -10,7 +10,6 @@
 #include "midi2/umpToBytestream.hpp"
 
 // Standard library
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <ranges>
@@ -25,12 +24,12 @@ template <std::ranges::input_range Range>
 std::vector<std::byte> convert(Range && range) {
   midi2::umpToBytestream ump2bs;
   std::vector<std::byte> output;
-  std::ranges::for_each(std::forward<Range>(range), [&output, &ump2bs](std::uint32_t const ump) {
+  for (auto const ump : range) {
     ump2bs.UMPStreamParse(ump);
     while (ump2bs.available()) {
       output.push_back(ump2bs.read());
     }
-  });
+  }
   return output;
 }
 
@@ -38,17 +37,25 @@ using testing::ElementsAre;
 
 TEST(UMPToBytestream, NoteOn) {
   std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x81}, std::byte{0x70},
-                          std::byte{0x70}));
+  EXPECT_THAT(convert(input), ElementsAre(std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x81},
+                                          std::byte{0x70}, std::byte{0x70}));
 }
 
-TEST(UMPToBytestream, SystemMessageOneByte) {
-  std::array const input{std::uint32_t{0x10F80000}};
-  EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF8}));
+TEST(UMPToBytestream, SystemTuneRequest) {
+  midi2::types::system::tune_request message;
+  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::tune_request)}));
 }
 
-TEST(UMPToBytestream, PCTwoBytes) {
+TEST(UMPToBytestream, SystemTimingClock) {
+  midi2::types::system::timing_clock message;
+  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
+}
+
+TEST(UMPToBytestream, ProgramChangeTwoBytes) {
   std::array const input{std::uint32_t{0x20C64000}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xC6}, std::byte{0x40}));
 }

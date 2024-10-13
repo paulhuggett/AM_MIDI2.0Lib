@@ -421,7 +421,7 @@ TEST_F(UMPDispatcherSystem, TuneRequest) {
   auto &w0 = std::get<0>(message.w);
   w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::tunerequest);
+  w0.status = to_underlying(midi2::status::tune_request);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -429,9 +429,7 @@ TEST_F(UMPDispatcherSystem, TuneRequest) {
 TEST_F(UMPDispatcherSystem, TimingClock) {
   midi2::types::system::timing_clock message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::timingclock);
   EXPECT_CALL(config_.system, timing_clock(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -441,7 +439,7 @@ TEST_F(UMPDispatcherSystem, Start) {
   auto &w0 = std::get<0>(message.w);
   w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::seqstart);
+  w0.status = to_underlying(midi2::status::sequence_start);
   EXPECT_CALL(config_.system, seq_start(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -451,7 +449,7 @@ TEST_F(UMPDispatcherSystem, Continue) {
   auto &w0 = std::get<0>(message.w);
   w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::seqcont);
+  w0.status = to_underlying(midi2::status::sequence_continue);
   EXPECT_CALL(config_.system, seq_continue(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -461,7 +459,7 @@ TEST_F(UMPDispatcherSystem, Stop) {
   auto &w0 = std::get<0>(message.w);
   w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::seqstop);
+  w0.status = to_underlying(midi2::status::sequence_stop);
   EXPECT_CALL(config_.system, seq_stop(config_.context, message));
   dispatcher_.processUMP(w0);
 }

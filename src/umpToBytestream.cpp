@@ -16,6 +16,7 @@
 
 namespace midi2 {
 
+#if 0
 void umpToBytestream::word1(std::uint32_t const ump) {
   // First part of a UMP Message
   mType_ = static_cast<ump_message_type>(ump >> 28);
@@ -245,5 +246,6 @@ void umpToBytestream::UMPStreamParse(std::uint32_t UMP) {
   default: UMPPos_ = 0; break;
   }
 }
+#endif
 
 }  // end namespace midi2

@@ -242,11 +242,11 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   // A real-time message can appear anywhere, even in the middle of another
   // multi-byte message.
   std::array const input{static_cast<std::byte>(midi2::status::note_on) | channel,
-                         static_cast<std::byte>(midi2::status::seqstart), note_number, velocity};
+                         static_cast<std::byte>(midi2::status::sequence_start), note_number, velocity};
 
   constexpr auto group = std::uint32_t{0};
   std::array const expected{
-      std::uint32_t{(1U << 28) | (group << 24) | (std::uint32_t{to_underlying(midi2::status::seqstart)} << 16)},
+      std::uint32_t{(1U << 28) | (group << 24) | (std::uint32_t{to_underlying(midi2::status::sequence_start)} << 16)},
       std::uint32_t{(2U << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) | (ump_note_on << 20) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::to_integer<std::uint32_t>(velocity)}};
 
@@ -340,7 +340,7 @@ TEST(BytestreamToUMP, Midi2BankAndProgramChange) {
 }
 
 // NOLINTNEXTLINE
-TEST(BytestreamToUMP, PCTwoBytes) {
+TEST(BytestreamToUMP, ProgramChangeTwoBytes) {
   std::array const input{std::byte{0xC6}, std::byte{0x40}};
   EXPECT_THAT(convert(midi2::bytestreamToUMP{}, input),
               ElementsAre(UINT32_C(0x20C64000)));
