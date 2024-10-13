@@ -119,22 +119,6 @@ void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
 
 namespace {
 
-constexpr bool isSystemRealTimeMessage(std::byte const midi1Byte) {
-  switch (static_cast<status>(midi1Byte)) {
-  case status::timing_clock:
-  case status::sequence_start:
-  case status::sequence_continue:
-  case status::sequence_stop:
-  case status::activesense:
-  case status::systemreset: return true;
-  default: return false;
-  }
-}
-
-constexpr bool isStatusByte(std::byte const midi1Byte) {
-  return (midi1Byte & std::byte{0x80}) != std::byte{0x00};
-}
-
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
 constexpr bool isOneByteMessage(std::byte const midi1Byte) {
   using status_type = std::underlying_type_t<status>;

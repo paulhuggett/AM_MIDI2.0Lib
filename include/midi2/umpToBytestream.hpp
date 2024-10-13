@@ -19,11 +19,29 @@
 namespace midi2 {
 
 template <midi2::status> struct bytestream_message_size {};
-template <> struct bytestream_message_size<midi2::status::tune_request> : std::integral_constant<unsigned, 1> {};
-template <> struct bytestream_message_size<midi2::status::timing_clock> : std::integral_constant<unsigned, 1> {};
 
 template <> struct bytestream_message_size<midi2::status::note_off> : std::integral_constant<unsigned, 3> {};
 template <> struct bytestream_message_size<midi2::status::note_on> : std::integral_constant<unsigned, 3> {};
+template <> struct bytestream_message_size<midi2::status::poly_pressure> : std::integral_constant<unsigned, 3> {};
+template <> struct bytestream_message_size<midi2::status::cc> : std::integral_constant<unsigned, 3> {};
+template <> struct bytestream_message_size<midi2::status::program_change> : std::integral_constant<unsigned, 2> {};
+template <> struct bytestream_message_size<midi2::status::channel_pressure> : std::integral_constant<unsigned, 2> {};
+template <> struct bytestream_message_size<midi2::status::pitch_bend> : std::integral_constant<unsigned, 3> {};
+
+// System Common Messages
+template <> struct bytestream_message_size<midi2::status::sysex_start> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::timing_code> : std::integral_constant<unsigned, 2> {};
+template <> struct bytestream_message_size<midi2::status::spp> : std::integral_constant<unsigned, 3> {};
+template <> struct bytestream_message_size<midi2::status::song_select> : std::integral_constant<unsigned, 2> {};
+template <> struct bytestream_message_size<midi2::status::tune_request> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::sysex_stop> : std::integral_constant<unsigned, 1> {};
+
+template <> struct bytestream_message_size<midi2::status::timing_clock> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::sequence_start> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::sequence_continue> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::sequence_stop> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::activesense> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::systemreset> : std::integral_constant<unsigned, 1> {};
 
 class umpToBytestream {
 public:
@@ -36,9 +54,9 @@ public:
 
 private:
   struct context_type {
-    void push_back(std::byte s) {
-      if ((s & std::byte{0b10000000}) == std::byte{0}) {
-        // Not a status byte so always emit)
+    void push_back(std::byte const s) {
+      if (!isStatusByte(s) || isSystemRealTimeMessage(s)) {
+        // Not a status byte or a system real-time message, so always emit. Don't update running status.
         output.push_back(s);
       } else {
         if (!running_status_ || status != s) {
@@ -55,7 +73,12 @@ private:
 
   struct to_bytestream_config {
     struct system {
-      static void midi_time_code(context_type *, types::system::midi_time_code const &) {}
+      static void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
+        static_assert(std::tuple_size_v<decltype(types::system::midi_time_code::w)> == 1);
+        static_assert(bytestream_message_size<status::timing_code>() == 2);
+        ctxt->push_back(std::byte{to_underlying(status::timing_code)});
+        ctxt->push_back(std::byte{get<0>(in.w).time_code.value()});
+      }
       static void song_position_pointer(context_type *, types::system::song_position_pointer const &) {}
       static void song_select(context_type *, types::system::song_select const &) {}
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {

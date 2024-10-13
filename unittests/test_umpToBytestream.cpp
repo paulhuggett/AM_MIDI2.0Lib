@@ -41,6 +41,15 @@ TEST(UMPToBytestream, NoteOn) {
                                           std::byte{0x70}, std::byte{0x70}));
 }
 
+TEST(UMPTOBytestream, SystemTimeCode) {
+  midi2::types::system::midi_time_code message;
+  auto const tc = 0b1010101;
+  get<0>(message.w).time_code = tc;
+  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_code)}, std::byte{tc}));
+}
+
 TEST(UMPToBytestream, SystemTuneRequest) {
   midi2::types::system::tune_request message;
   std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
