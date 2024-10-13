@@ -81,12 +81,12 @@ private:
       }
       static void song_position_pointer(context_type *, types::system::song_position_pointer const &) {}
       static void song_select(context_type *, types::system::song_select const &) {}
-      static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
+      static void tune_request(context_type *const ctxt, types::system::tune_request const &) {
         static_assert(std::tuple_size_v<decltype(types::system::tune_request::w)> == 1);
         static_assert(bytestream_message_size<status::tune_request>() == 1);
         ctxt->push_back(std::byte{to_underlying(status::tune_request)});
       }
-      static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
+      static void timing_clock(context_type *const ctxt, types::system::timing_clock const &) {
         static_assert(std::tuple_size_v<decltype(types::system::timing_clock::w)> == 1);
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
         ctxt->push_back(std::byte{to_underlying(status::timing_clock)});
@@ -114,16 +114,16 @@ private:
         ctxt->push_back(std::byte{w0.note.value()});
         ctxt->push_back(std::byte{w0.velocity.value()});
       }
-      static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {}
-      static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {}
+      static void poly_pressure(context_type *, types::m1cvm::poly_pressure const &) {}
+      static void control_change(context_type *, types::m1cvm::control_change const &) {}
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
         auto const &w0 = get<0>(in.w);
         static_assert(std::tuple_size_v<decltype(types::m1cvm::program_change::w)> == 1);
         ctxt->push_back((std::byte{w0.status.value()} << 4) | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.program.value()});
       }
-      static void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {}
-      static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {}
+      static void channel_pressure(context_type *, types::m1cvm::channel_pressure const &) {}
+      static void pitch_bend(context_type *, types::m1cvm::pitch_bend const &) {}
     };
     struct data64 {
     public:
