@@ -219,7 +219,7 @@ struct midi_time_code {
 };
 struct song_position_pointer {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, status::spp)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF2
@@ -237,7 +237,7 @@ struct song_position_pointer {
 };
 struct song_select {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, status::song_select)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF3

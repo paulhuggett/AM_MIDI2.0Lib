@@ -79,7 +79,13 @@ private:
         ctxt->push_back(std::byte{to_underlying(status::timing_code)});
         ctxt->push_back(std::byte{get<0>(in.w).time_code.value()});
       }
-      static void song_position_pointer(context_type *, types::system::song_position_pointer const &) {}
+      static void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) {
+        static_assert(std::tuple_size_v<decltype(types::system::song_position_pointer::w)> == 1);
+        static_assert(bytestream_message_size<status::spp>() == 3);
+        ctxt->push_back(std::byte{to_underlying(status::spp)});
+        ctxt->push_back(std::byte{get<0>(in.w).position_lsb.value()});
+        ctxt->push_back(std::byte{get<0>(in.w).position_msb.value()});
+      }
       static void song_select(context_type *, types::system::song_select const &) {}
       static void tune_request(context_type *const ctxt, types::system::tune_request const &) {
         static_assert(std::tuple_size_v<decltype(types::system::tune_request::w)> == 1);

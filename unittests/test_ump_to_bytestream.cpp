@@ -36,11 +36,13 @@ std::vector<std::byte> convert(Range && range) {
 using testing::ElementsAre;
 using testing::ElementsAreArray;
 
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOff) {
   std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x81},
                                           std::byte{0x70}, std::byte{0x70}));
 }
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOn) {
   constexpr auto channel = 1;
   constexpr auto note0 = 62;
@@ -67,6 +69,7 @@ TEST(UMPToBytestream, NoteOn) {
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 
+// NOLINTNEXTLINE
 TEST(UMPTOBytestream, SystemTimeCode) {
   midi2::types::system::midi_time_code message;
   auto const tc = 0b1010101;
@@ -75,26 +78,40 @@ TEST(UMPTOBytestream, SystemTimeCode) {
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_code)}, std::byte{tc}));
 }
+// NOLINTNEXTLINE
+TEST(UMPToByteStream, SystemSongPositionPointer) {
+  auto const lsb = 0b01111000;
+  auto const msb = 0b00001111;
+  midi2::types::system::song_position_pointer message;
+  auto& w0 = get<0>(message.w);
+  w0.position_lsb = lsb;
+  w0.position_msb = msb;
 
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{std::byte{to_underlying(midi2::status::spp)}, std::byte{lsb}, std::byte{msb}};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+}
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTuneRequest) {
   midi2::types::system::tune_request message;
   std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::tune_request)}));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimingClock) {
   midi2::types::system::timing_clock message;
   std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, ProgramChangeTwoBytes) {
   std::array const input{std::uint32_t{0x20C64000}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xC6}, std::byte{0x40}));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, Sysex) {
   std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
                          std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
