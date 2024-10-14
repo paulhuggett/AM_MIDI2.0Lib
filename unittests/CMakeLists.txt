@@ -8,7 +8,7 @@
 
 add_executable (m2unittests
   test_bitfield.cpp
-  test_bytestreamToUMP.cpp
+  test_bytestream_to_ump.cpp
   test_ci7.cpp
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp

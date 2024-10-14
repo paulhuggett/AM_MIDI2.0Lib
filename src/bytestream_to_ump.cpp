@@ -6,7 +6,7 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/bytestreamToUMP.hpp"
+#include "midi2/bytestream_to_ump.hpp"
 
 #include <bit>
 #include <cassert>
@@ -19,7 +19,7 @@
 
 namespace midi2 {
 
-void bytestreamToUMP::controllerToUMP(std::byte const b0, std::byte const b1, std::byte const b2) {
+void bytestream_to_ump::controllerToUMP(std::byte const b0, std::byte const b1, std::byte const b2) {
   auto const channel = b0 & std::byte{0x0F};
   auto& c = channel_[std::to_integer<unsigned>(channel)];
   switch (std::to_integer<std::underlying_type_t<control>>(b1)) {
@@ -46,10 +46,22 @@ void bytestreamToUMP::controllerToUMP(std::byte const b0, std::byte const b1, st
                                                  std::to_integer<std::uint32_t>(b2)));
     }
     break;
-  case control::nrpn_msb: c.rpnMode = false; c.rpnMsb = b2; break;
-  case control::nrpn_lsb: c.rpnMode = false; c.rpnLsb = b2; break;
-  case control::rpn_msb: c.rpnMode = true; c.rpnMsb = b2; break;
-  case control::rpn_lsb: c.rpnMode = true; c.rpnLsb = b2; break;
+  case control::nrpn_msb:
+    c.rpnMode = false;
+    c.rpnMsb = b2;
+    break;
+  case control::nrpn_lsb:
+    c.rpnMode = false;
+    c.rpnLsb = b2;
+    break;
+  case control::rpn_msb:
+    c.rpnMode = true;
+    c.rpnMsb = b2;
+    break;
+  case control::rpn_lsb:
+    c.rpnMode = true;
+    c.rpnLsb = b2;
+    break;
   default:
     output_.push_back(pack(ump_message_type::m2cvm, b0, b1, std::byte{0}));
     output_.push_back(midi2::mcm_scale<7, 32>(std::to_integer<std::uint32_t>(b2)));
@@ -57,7 +69,7 @@ void bytestreamToUMP::controllerToUMP(std::byte const b0, std::byte const b1, st
   }
 }
 
-void bytestreamToUMP::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
+void bytestream_to_ump::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
          "The top bit of b1 and b2 must be zero");
   using midi2::mcm_scale;
@@ -130,7 +142,7 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
 
 }  // end anonymous namespace
 
-void bytestreamToUMP::bytestreamParse(std::byte const midi1Byte) {
+void bytestream_to_ump::bytestreamParse(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
   if (isStatusByte(midi1Byte)) {

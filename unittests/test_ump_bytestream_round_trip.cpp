@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT includes
-#include "midi2/bytestreamToUMP.hpp"
+#include "midi2/bytestream_to_ump.hpp"
 #include "midi2/ump_to_bytestream.hpp"
 
 // Standard Library
@@ -30,7 +30,7 @@ using byte_vector = std::vector<std::byte>;
 using ump_vector = std::vector<std::uint32_t>;
 
 ump_vector bytesToUMP(byte_vector const& in) {
-  midi2::bytestreamToUMP bs2ump;
+  midi2::bytestream_to_ump bs2ump;
   ump_vector out;
   for (auto const v : in) {
     bs2ump.bytestreamParse(v);

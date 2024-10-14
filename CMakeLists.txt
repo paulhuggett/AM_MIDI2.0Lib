@@ -25,7 +25,7 @@ add_subdirectory (icubaby)
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/bitfield.hpp"
-  "${INCLUDE_DIR}/midi2/bytestreamToUMP.hpp"
+  "${INCLUDE_DIR}/midi2/bytestream_to_ump.hpp"
   "${INCLUDE_DIR}/midi2/ci7text.hpp"
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
   "${INCLUDE_DIR}/midi2/fifo.hpp"
@@ -40,7 +40,7 @@ set(MIDI2_HEADERS
 )
 
 add_library(midi2 ${MIDI2_HEADERS}
-  src/bytestreamToUMP.cpp
+  src/bytestream_to_ump.cpp
   src/ump_to_bytestream.cpp
   src/ump_to_midi1.cpp
 )
