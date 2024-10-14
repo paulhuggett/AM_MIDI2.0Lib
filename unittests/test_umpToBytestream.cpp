@@ -34,11 +34,37 @@ std::vector<std::byte> convert(Range && range) {
 }
 
 using testing::ElementsAre;
+using testing::ElementsAreArray;
 
-TEST(UMPToBytestream, NoteOn) {
+TEST(UMPToBytestream, NoteOff) {
   std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x81},
                                           std::byte{0x70}, std::byte{0x70}));
+}
+TEST(UMPToBytestream, NoteOn) {
+  constexpr auto channel = 1;
+  constexpr auto note0 = 62;
+  constexpr auto velocity0 = 0x7F;
+  constexpr auto note1 = 74;
+  constexpr auto velocity1 = 0;
+
+  std::array<midi2::types::m1cvm::note_on, 2> message;
+  auto& w0 = get<0>(message[0].w);
+  w0.channel = channel;
+  w0.note = note0;
+  w0.velocity = velocity0;
+  auto& w1 = get<0>(message[1].w);
+  w1.channel = channel;
+  w1.note = note1;
+  w1.velocity = velocity1;
+  std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
+
+  std::array const expected{
+      std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
+      std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel}, std::byte{note1}, std::byte{velocity1},
+  };
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 
 TEST(UMPTOBytestream, SystemTimeCode) {
