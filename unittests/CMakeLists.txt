@@ -17,7 +17,7 @@ add_executable (m2unittests
   test_mcoded7.cpp
   test_scale.cpp
   test_ump_dispatcher.cpp
-  test_umpToBytestream.cpp
+  test_ump_to_bytestream.cpp
   test_ump_to_midi1.cpp
   test_ump_bytestream_round_trip.cpp
 )

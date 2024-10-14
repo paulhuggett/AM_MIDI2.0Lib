@@ -6,7 +6,7 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/umpToBytestream.hpp"
+#include "midi2/ump_to_bytestream.hpp"
 
 #include <cassert>
 #include <cstddef>

@@ -34,7 +34,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
-  "${INCLUDE_DIR}/midi2/umpToBytestream.hpp"
+  "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )

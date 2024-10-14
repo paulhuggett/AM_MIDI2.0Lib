@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/umpToBytestream.hpp"
+#include "midi2/ump_to_bytestream.hpp"
 
 // Standard library
 #include <array>
@@ -22,7 +22,7 @@ namespace {
 
 template <std::ranges::input_range Range>
 std::vector<std::byte> convert(Range && range) {
-  midi2::umpToBytestream ump2bs;
+  midi2::ump_to_bytestream ump2bs;
   std::vector<std::byte> output;
   for (auto const ump : range) {
     ump2bs.UMPStreamParse(ump);

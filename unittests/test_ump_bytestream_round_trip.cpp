@@ -8,7 +8,7 @@
 
 // DUT includes
 #include "midi2/bytestreamToUMP.hpp"
-#include "midi2/umpToBytestream.hpp"
+#include "midi2/ump_to_bytestream.hpp"
 
 // Standard Library
 #include <algorithm>
@@ -42,7 +42,7 @@ ump_vector bytesToUMP(byte_vector const& in) {
 }
 
 byte_vector umpToBytes(ump_vector const& in) {
-  midi2::umpToBytestream ump2bs;
+  midi2::ump_to_bytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
     ump2bs.UMPStreamParse(v);

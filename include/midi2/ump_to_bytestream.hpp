@@ -43,9 +43,9 @@ template <> struct bytestream_message_size<midi2::status::sequence_stop> : std::
 template <> struct bytestream_message_size<midi2::status::activesense> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::systemreset> : std::integral_constant<unsigned, 1> {};
 
-class umpToBytestream {
+class ump_to_bytestream {
 public:
-  umpToBytestream() = default;
+  ump_to_bytestream() = default;
 
   [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
   [[nodiscard]] std::byte read() { return context_.output.pop_front(); }
