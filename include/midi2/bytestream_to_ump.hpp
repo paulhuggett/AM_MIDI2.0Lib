@@ -6,8 +6,8 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_BYTESTREAMTOUMP_HPP
-#define MIDI2_BYTESTREAMTOUMP_HPP
+#ifndef MIDI2_BYTESTREAM_TO_UMP_HPP
+#define MIDI2_BYTESTREAM_TO_UMP_HPP
 
 #include <algorithm>
 #include <array>
@@ -20,10 +20,10 @@
 
 namespace midi2 {
 
-class bytestreamToUMP {
+class bytestream_to_ump {
 public:
-  bytestreamToUMP() = default;
-  explicit bytestreamToUMP(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
+  bytestream_to_ump() = default;
+  explicit bytestream_to_ump(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
       : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
     assert(defaultGroup <= 0b1111);
   }
@@ -92,4 +92,4 @@ private:
 
 }  // end namespace midi2
 
-#endif  // MIDI2_BYTESTREAMTOUMP_HPP
+#endif  // MIDI2_BYTESTREAM_TO_UMP_HPP

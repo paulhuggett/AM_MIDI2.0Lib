@@ -1,4 +1,4 @@
-//===-- bytestreamToUMP--------------------------------------------------------*- C++ -*-===//
+//===-- Bytestream To UMP -----------------------------------------------------*- C++ -*-===//
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/bytestreamToUMP.hpp"
+#include "midi2/bytestream_to_ump.hpp"
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 
@@ -48,10 +48,9 @@ template <typename ArrayLike> struct HexContainer {
 
   ArrayLike const* container;
 };
-template <typename ArrayLike>
-HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;
+template <typename ArrayLike> HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;
 
-template <std::size_t Size> auto convert(midi2::bytestreamToUMP bs2ump, std::array<std::byte, Size> const& input) {
+template <std::size_t Size> auto convert(midi2::bytestream_to_ump bs2ump, std::array<std::byte, Size> const& input) {
   std::vector<std::uint32_t> output;
   for (std::byte const b : input) {
     bs2ump.bytestreamParse(b);
@@ -63,9 +62,8 @@ template <std::size_t Size> auto convert(midi2::bytestreamToUMP bs2ump, std::arr
 }
 
 constexpr std::uint32_t ump_cvm(midi2::status s) {
-  static_assert(
-      std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
-      "status type must be a std::uint8_t");
+  static_assert(std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
+                "status type must be a std::uint8_t");
   assert((to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum  must be 0");
   return std::uint32_t{to_underlying(s)} >> 4;
 }
@@ -80,12 +78,10 @@ constexpr auto ump_channel_pressure = ump_cvm(midi2::status::channel_pressure);
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, NoteOnWithRunningStatus) {
   std::array const input{std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x70}, std::byte{0x70}};
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
-  std::array const expected{std::uint32_t{0x20816050},
-                            std::uint32_t{0x20817070}};
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
+  std::array const expected{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -110,10 +106,9 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
       std::uint32_t{(2U << 28) | (group << 24) | (ump_note_on << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::uint32_t{0x00}};
   std::array const expected{m0, m1};
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -123,8 +118,7 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
   constexpr auto note_number = std::byte{60};
   constexpr auto velocity = std::byte{127};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
   constexpr auto group = std::uint32_t{0};
 
   // A note on message followed by a note-on with velocity 0. The second of
@@ -142,10 +136,9 @@ TEST(BytestreamToUMP, Midi2NoteOnImplicitNoteOffWithRunningStatus) {
                     (ump_note_off << 20) | (std::to_integer<std::uint32_t>(note_number) << 8)};
   constexpr auto m3 = std::uint32_t{(midi2::mcm_scale<7, 16>(0x40) << 16)};
   std::array const expected{m0, m1, m2, m3};
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -156,17 +149,15 @@ TEST(BytestreamToUMP, Midi1ChannelPressure) {
   std::array const input{std::byte{static_cast<std::byte>(to_underlying(midi2::status::channel_pressure)) | channel},
                          pressure};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
   constexpr auto group = std::uint32_t{0};
   std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) | (ump_channel_pressure << 20) |
                                           (std::to_integer<std::uint32_t>(channel) << 16) |
                                           (std::to_integer<std::uint32_t>(pressure) << 8)}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -176,17 +167,15 @@ TEST(BytestreamToUMP, Midi2ChannelPressure) {
   constexpr auto pressure = std::byte{57};  // 7 bits
   std::array const input{static_cast<std::byte>(to_underlying(midi2::status::channel_pressure)) | channel, pressure};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
   constexpr auto group = std::uint32_t{0};
   std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) | (ump_channel_pressure << 20) |
                                           (std::to_integer<std::uint32_t>(channel) << 16)},
                             midi2::mcm_scale<7, 32>(std::to_integer<std::uint32_t>(pressure))};
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -197,18 +186,16 @@ TEST(BytestreamToUMP, PitchBend) {
   constexpr auto channel = std::byte{3};
   std::array const input{static_cast<std::byte>(midi2::status::pitch_bend) | channel, bend_lsb, bend_msb};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
   constexpr auto group = std::uint32_t{0};
 
   std::array const expected{std::uint32_t{
       (message_type << 28) | (group << 24) | (ump_pitch_bend << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
       (std::to_integer<std::uint32_t>(bend_lsb) << 8) | std::to_integer<std::uint32_t>(bend_msb)}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -219,17 +206,15 @@ TEST(BytestreamToUMP, Midi2PitchBend) {
   constexpr auto channel = std::byte{3};
   std::array const input{static_cast<std::byte>(midi2::status::pitch_bend) | channel, bend_lsb, bend_msb};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);
   constexpr auto group = std::uint32_t{0};
   std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) | (ump_pitch_bend << 20) |
                                           (std::to_integer<std::uint32_t>(channel) << 16)},
                             std::uint32_t{0x80000000}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -250,18 +235,16 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
       std::uint32_t{(2U << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) | (ump_note_on << 20) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::to_integer<std::uint32_t>(velocity)}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SystemMessageOneByte) {
   std::array const input{std::byte{0xF8}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{}, input),
-              ElementsAre(UINT32_C(0x10f80000)));
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{}, input), ElementsAre(UINT32_C(0x10f80000)));
 }
 
 // NOLINTNEXTLINE
@@ -281,9 +264,8 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
                          // Program Change
                          static_cast<std::byte>(midi2::status::program_change) | channel, program};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);  // 4 bits
-  constexpr auto group = std::uint32_t{0x00};         // 4 bits
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);  // 4 bits
+  constexpr auto group = std::uint32_t{0x00};                                                // 4 bits
 
   std::array const expected{
       // MSB (Coarse) Bank Select
@@ -299,10 +281,9 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
       std::uint32_t{(message_type << 28) | (group << 24) | (ump_program_change << 20) |
                     (std::to_integer<std::uint32_t>(channel) << 16) | (std::to_integer<std::uint32_t>(program) << 8)}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -320,11 +301,10 @@ TEST(BytestreamToUMP, Midi2BankAndProgramChange) {
                          // Program Change
                          static_cast<std::byte>(midi2::status::program_change) | channel, program};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);  // 4 bits
-  constexpr auto group = std::uint32_t{0x00};         // 4 bits
-  constexpr auto option_flags = std::uint32_t{0x00};  // 7 bits
-  constexpr auto bank_valid = std::uint32_t{0x01};    // 1 bit
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);  // 4 bits
+  constexpr auto group = std::uint32_t{0x00};                                                // 4 bits
+  constexpr auto option_flags = std::uint32_t{0x00};                                         // 7 bits
+  constexpr auto bank_valid = std::uint32_t{0x01};                                           // 1 bit
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) |
@@ -332,18 +312,16 @@ TEST(BytestreamToUMP, Midi2BankAndProgramChange) {
       std::uint32_t{(std::to_integer<std::uint32_t>(program) << 24) | (std::to_integer<std::uint32_t>(bank_msb) << 8) |
                     std::to_integer<std::uint32_t>(bank_lsb)}};
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, ProgramChangeTwoBytes) {
   std::array const input{std::byte{0xC6}, std::byte{0x40}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{}, input),
-              ElementsAre(UINT32_C(0x20C64000)));
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{}, input), ElementsAre(UINT32_C(0x20C64000)));
 }
 
 // NOLINTNEXTLINE
@@ -351,22 +329,17 @@ TEST(BytestreamToUMP, SysEx) {
   using u8 = std::byte;
   constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
   constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
-  std::array const input{
-      start,    u8{0x7E}, u8{0x7F}, u8{0x0D}, u8{0x70}, u8{0x02}, u8{0x4B},
-      u8{0x60}, u8{0x7A}, u8{0x73}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7F},
-      u8{0x7D}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x01}, u8{0x00},
-      u8{0x00}, u8{0x00}, u8{0x03}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x10},
-      u8{0x00}, u8{0x00}, u8{0x00}, stop};
-  std::array const expected{
-      std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B},
-      std::uint32_t{0x3026607A}, std::uint32_t{0x737F7F7F},
-      std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
-      std::uint32_t{0x30260100}, std::uint32_t{0x00000300},
-      std::uint32_t{0x30360000}, std::uint32_t{0x10000000}};
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  std::array const input{start,    u8{0x7E}, u8{0x7F}, u8{0x0D}, u8{0x70}, u8{0x02}, u8{0x4B}, u8{0x60},
+                         u8{0x7A}, u8{0x73}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7D}, u8{0x00},
+                         u8{0x00}, u8{0x00}, u8{0x00}, u8{0x01}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x03},
+                         u8{0x00}, u8{0x00}, u8{0x00}, u8{0x10}, u8{0x00}, u8{0x00}, u8{0x00}, stop};
+  std::array const expected{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
+                            std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
+                            std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
+                            std::uint32_t{0x10000000}};
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -444,34 +417,30 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
       in_one_message(2, 0x7A, 0x7B), midi2::pack(0, 0, 0, 0),
   };
 
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MT4NoteOnWithRunningStatus) {
   std::array const input{std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x70}, std::byte{0x70}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40816000), UINT32_C(0xA0820000),
-                          UINT32_C(0x40817000), UINT32_C(0xe1860000)));
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{true}, input),
+              ElementsAre(UINT32_C(0x40816000), UINT32_C(0xA0820000), UINT32_C(0x40817000), UINT32_C(0xe1860000)));
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MT4ProgramChangeTwoBytes) {
   std::array const input{std::byte{0xC6}, std::byte{0x40}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40C60000), UINT32_C(0x40000000)));
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{true}, input), ElementsAre(UINT32_C(0x40C60000), UINT32_C(0x40000000)));
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MT4PC2BytesWithBankMsbLsb) {
   std::array const input{std::byte{0xB6}, std::byte{0x00}, std::byte{0x01}, std::byte{0x20},
                          std::byte{0x0A}, std::byte{0xC6}, std::byte{0x41}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{true}, input),
-              ElementsAre(UINT32_C(0x40C60001), UINT32_C(0x4100010A)));
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{true}, input), ElementsAre(UINT32_C(0x40C60001), UINT32_C(0x4100010A)));
 }
 
 // NOLINTNEXTLINE
@@ -498,11 +467,10 @@ TEST(BytestreamToUMP, Midi2RPN) {
       // (running status) Set data
       static_cast<std::byte>(midi2::control::data_entry_msb), de};
 
-  constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);  // 4 bits
-  constexpr auto group = std::uint32_t{0};                         // 4 bits
-  constexpr auto bank = std::to_integer<std::uint32_t>(msb);       // 7 bits
-  constexpr auto index = std::to_integer<std::uint32_t>(lsb);      // 7 bits
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);  // 4 bits
+  constexpr auto group = std::uint32_t{0};                                                   // 4 bits
+  constexpr auto bank = std::to_integer<std::uint32_t>(msb);                                 // 7 bits
+  constexpr auto index = std::to_integer<std::uint32_t>(lsb);                                // 7 bits
   constexpr auto data = std::uint32_t{(midi2::mcm_scale<14, 32>(std::to_integer<std::uint32_t>(de) << 7))};
 
   std::array const expected{
@@ -511,25 +479,36 @@ TEST(BytestreamToUMP, Midi2RPN) {
       data,
   };
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi2RPNWithLSB) {
   std::array const input{
-    std::byte{0xB0}, std::byte{0x64}, std::byte{0x00}, // RPN (LSB)
-    std::byte{0xB0}, std::byte{0x65}, std::byte{0x00}, // RPN (MSB)
+      std::byte{0xB0},
+      std::byte{0x64},
+      std::byte{0x00},  // RPN (LSB)
+      std::byte{0xB0},
+      std::byte{0x65},
+      std::byte{0x00},  // RPN (MSB)
 
-    std::byte{0xB0}, std::byte{0x06}, std::byte{0x02}, // Data entry (MSB)
-    std::byte{0xB0}, std::byte{0x26}, std::byte{0x03}, // Data entry (LSB)
+      std::byte{0xB0},
+      std::byte{0x06},
+      std::byte{0x02},  // Data entry (MSB)
+      std::byte{0xB0},
+      std::byte{0x26},
+      std::byte{0x03},  // Data entry (LSB)
 
-    // End of the controller sequence
-    std::byte{0xB0}, std::byte{0x64}, std::byte{0x7F},
-    std::byte{0xB0}, std::byte{0x65}, std::byte{0x7F},
+      // End of the controller sequence
+      std::byte{0xB0},
+      std::byte{0x64},
+      std::byte{0x7F},
+      std::byte{0xB0},
+      std::byte{0x65},
+      std::byte{0x7F},
   };
 
   std::array const expected{
@@ -539,10 +518,9 @@ TEST(BytestreamToUMP, Midi2RPNWithLSB) {
       std::uint32_t{0xFE0FF07F},
   };
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -571,9 +549,9 @@ TEST(BytestreamToUMP, Midi2NonRegisteredParameterSetMSBAndLSB) {
   };
 
   constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m2cvm);  // 4 bits
-  constexpr auto group = std::uint32_t{0};                  // 4 bits
-  constexpr auto bank = std::to_integer<std::uint32_t>(msb);   // 7 bits
-  constexpr auto index = std::to_integer<std::uint32_t>(lsb);  // 7 bits
+  constexpr auto group = std::uint32_t{0};                                                   // 4 bits
+  constexpr auto bank = std::to_integer<std::uint32_t>(msb);                                 // 7 bits
+  constexpr auto index = std::to_integer<std::uint32_t>(lsb);                                // 7 bits
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
@@ -582,23 +560,22 @@ TEST(BytestreamToUMP, Midi2NonRegisteredParameterSetMSBAndLSB) {
                                std::to_integer<std::uint32_t>(data_lsb)),
   };
 
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi1BadDataTwoNoteOffs) {
   std::array const input{std::byte{0x80}, std::byte{0x80}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{}, input), IsEmpty());
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{}, input), IsEmpty());
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi2BadDataTwoNoteOffs) {
   std::array const input{std::byte{0x80}, std::byte{0x80}};
-  EXPECT_THAT(convert(midi2::bytestreamToUMP{true}, input), IsEmpty());
+  EXPECT_THAT(convert(midi2::bytestream_to_ump{true}, input), IsEmpty());
 }
 
 // This group of tests uses a bytestream which starts with one of the
@@ -638,10 +615,9 @@ TEST_P(BytestreamToUMPReserved, Midi1ReservedStatusCodeThenNoteOn) {
                     (std::to_integer<std::uint32_t>(velocity_))}};
 
   auto const input = BytestreamToUMPReserved::input();
-  auto const actual = convert(midi2::bytestreamToUMP{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << "Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << "Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -660,22 +636,19 @@ TEST_P(BytestreamToUMPReserved, Midi2ReservedStatusCodeThenNoteOn) {
                     (ump_note_off << 20) | (std::to_integer<std::uint32_t>(note_number_) << 8) | attribute_type},
       std::uint32_t{(midi2::mcm_scale<7, 16>(std::to_integer<std::uint32_t>(velocity_)) << 16) | attribute}};
   auto const input = BytestreamToUMPReserved::input();
-  auto const actual = convert(midi2::bytestreamToUMP{true}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{true}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << "Input: " << HexContainer(input)
-      << "\n Actual: " << HexContainer(actual)
+      << "Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
 INSTANTIATE_TEST_SUITE_P(ReservedStatusCodes, BytestreamToUMPReserved,
-                         testing::Values(midi2::status::reserved1,
-                                         midi2::status::reserved2,
-                                         midi2::status::reserved3,
+                         testing::Values(midi2::status::reserved1, midi2::status::reserved2, midi2::status::reserved3,
                                          midi2::status::reserved4));
 
 void NeverCrashes(std::vector<std::byte> const& bytes) {
-  // This test simply gets bytestreamToUMP to consume a random buffer.
-  midi2::bytestreamToUMP bs2ump;
+  // This test simply gets bytestream_to_ump to consume a random buffer.
+  midi2::bytestream_to_ump bs2ump;
   for (auto const b : bytes) {
     bs2ump.bytestreamParse(b);
     while (bs2ump.available()) {

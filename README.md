@@ -1,9 +1,16 @@
 # AM MIDI 2.0 Lib 
 A MIDI 2.0 Library
 
-This is a general purposes Library for building MIDI 2.0 Devices and Applications. This library aims to work on 
-everything from embedded devices through to large scale applications. It provides the building blocks, processing and 
+This is a general purpose Library for building MIDI 2.0 Devices and Applications. This library aims to work on everything from embedded devices through to large scale applications. It provides the building blocks, processing and 
 translations needed for most MIDI 2.0 Devices and Applications
+
+This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM_MIDI2.0Lib>. It has been heavily modified with a number of goals:
+
+- Using C++20 features
+- Limiting use of magic numbers and bitwise operators to define data layout and instead using the C++ type system wherever possible
+- UMP convertion classes are now built on the library's `ump_dispatcher` class rather than duplicating code to extract UMP messages
+- Using templates to pass callables to enable cross-callback optimization
+- Significantly increasing the depth of testing
 
 [![CI Build & Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib/graph/badge.svg?token=8q2aEvPTyv)](https://codecov.io/gh/paulhuggett/AM_MIDI2.0Lib)
@@ -11,51 +18,25 @@ translations needed for most MIDI 2.0 Devices and Applications
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/425f68679a124a1cbb0efa50342d8e8a)](https://app.codacy.com/gh/paulhuggett/AM_MIDI2.0Lib/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Fuzz Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml)
 
-## IMPORTANT! Please read first
-I hope that this library is useful to everyone making MIDI 2.0 Devices.
-If you do use this library please let me know! I am keen to see all the MIDI 2.0 Projects. This code is also available 
-for DIY and commercial use (MIT Licence). Please note that use of this library is at your own risk.
-
-THIS LIBRARY IS CURRENTLY UNDER DEVELOPMENT - 
-The code is still being adjusted as it is being prototyped and changes do occur, however the WIKI attempts to reflect 
-the latest code.
-
-If you see code here that :
-* could be styled/structured better
-* could be written better
-* could use less resources
-* has memory leaks, bugs, 
-* is fundamentally flawed
-* has spelling mistakes and grammatical errors
-
-then please submit PR's and/or issues - but PR's preferred. 
-
 ## What does this do?
 Please read the MIDI 2.0 specification on https://midi.org/specifications to understand the following.
 
 This library can:
-* Convert MIDI 1.0 Byte stream to UMP and back
-* Process and send UMP Streams
-* Process and Send MIDI-CI Messages
-* Build UMP 32 bit Words to send out
 
-This library is designed to use a small footprint. It does this by processing each UMP packet (or MIDI 1.0 Byte stream) 
-one at a time. This way large data is handled in small chunks to keep memory small.
+* Convert a MIDI 1.0 byte-stream to UMP and back
+* Process and construct UMP streams
+* Process and construct MIDI CI messages
 
-This set of files allows you to pick and choose which parts of MIDI 2.0 you wish to include. For example if you are 
-only working with MIDI 1.0 Byte streams and just need a MIDI-CI handler? Then great just pull in that header :)
+This library is designed to use a small footprint. It does this by processing each UMP packet (or MIDI 1.0 Byte stream) one at a time. This way large data is handled in small chunks to keep memory small.
 
-Note it is upto the application to:
+Note it is up to the application to:
+
  * Store Remote MIDI-CI Device details
- * Upon receiving MIDI-CI Message to interpret the Messages data structure (e.g. Profile Id bytes, Note On Articulation 
-etc.)
+ * Upon receiving MIDI-CI Message to interpret the Messages data structure (e.g. Profile Id bytes, Note On Articulation etc.)
  * Handle logic and NAK sending and receiving.
 
-This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a 
-memory footprint of around 1k.
+This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a memory footprint of around 1k.
 
-## Documentation
-Can be found on the [docs folder](https://github.com/midi2-dev/AM_MIDI2.0Lib/tree/main/docs)
 
 ### Example: Translate MIDI 1.0 Byte stream to UMP
 
@@ -89,8 +70,8 @@ void loop()
     if(inByte == 0xFE) return; //Skip ActiveSense 
     
     BS2UMP.midi1BytestreamParse(inByte);
-    while(BS2UMP.availableUMP()){
-      uint32_t ump = BS2UMP.readUMP();
+    while(BS2UMP.available()){
+      uint32_t ump = BS2UMP.read();
       //ump contains a ump 32 bit value. UMP messages that have 64bit will produce 2 UMP words
     }
   }
