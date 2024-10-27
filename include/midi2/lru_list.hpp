@@ -1,12 +1,13 @@
+//===-- LRU Doubly-linked List ------------------------------------------------*- C++ -*-===//
 //
-//  lru_list.hpp
-//  hasht
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 24/10/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
-#ifndef LRU_LIST_HPP
-#define LRU_LIST_HPP
+#ifndef MIDI2_LRU_LIST_HPP
+#define MIDI2_LRU_LIST_HPP
 
 #include <algorithm>
 #include <array>
@@ -18,6 +19,8 @@
 #ifndef NDEBUG
 #include <ostream>
 #endif
+
+namespace midi2 {
 
 template <typename ValueType, std::size_t Size> class lru_list {
 public:
@@ -164,4 +167,6 @@ template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::
 }
 #endif
 
-#endif  // LRU_LIST_HPP
+}  // end namespace midi2
+
+#endif  // MIDI2_LRU_LIST_HPP

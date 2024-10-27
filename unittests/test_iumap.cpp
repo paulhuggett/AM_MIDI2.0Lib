@@ -1,3 +1,11 @@
+//===-- In-place Unordered Map ------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 // DUT
 #include "midi2/iumap.hpp"
 
@@ -8,7 +16,7 @@
 // Google Test/Mock
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#if defined(FUZZTEST) && FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 #include <fuzztest/fuzztest.h>
 #endif
 
@@ -17,7 +25,7 @@ using namespace std::string_literals;
 namespace {
 
 TEST(IUMap, Empty) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   EXPECT_EQ(h.size(), 0U);
   EXPECT_EQ(h.max_size(), 8U);
   EXPECT_EQ(h.capacity(), 8U);
@@ -25,7 +33,7 @@ TEST(IUMap, Empty) {
 }
 
 TEST(IUMap, Insert) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   using value_type = decltype(h)::value_type;
 
   auto [pos1, did_insert1] = h.insert(std::make_pair(1, "one"s));
@@ -48,7 +56,7 @@ TEST(IUMap, Insert) {
 }
 
 TEST(IUMap, InsertIntoAFullMap) {
-  iumap<int, std::string, 2> h;
+  midi2::iumap<int, std::string, 2> h;
   h.insert(std::make_pair(1, "one"s));
   h.insert(std::make_pair(2, "two"s));
   auto [pos, did_insert] = h.insert(std::make_pair(3, "three"s));
@@ -57,7 +65,7 @@ TEST(IUMap, InsertIntoAFullMap) {
 }
 
 TEST(IUMap, InsertOrAssign) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   using value_type = decltype(h)::value_type;
 
   auto [pos1, did_insert1] = h.insert_or_assign(10, "ten"s);
@@ -72,7 +80,7 @@ TEST(IUMap, InsertOrAssign) {
 }
 
 TEST(IUMap, InsertOrAssignIntoAFullMap) {
-  iumap<int, std::string, 2> h;
+  midi2::iumap<int, std::string, 2> h;
   h.insert(std::make_pair(1, "one"s));
   h.insert(std::make_pair(2, "two"s));
   auto [pos, did_insert] = h.insert_or_assign(3, "three"s);
@@ -81,7 +89,7 @@ TEST(IUMap, InsertOrAssignIntoAFullMap) {
 }
 
 TEST(IUMap, Erase) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   auto [pos1, did_insert1] = h.insert(std::make_pair(10, "ten"s));
   h.erase(pos1);
   EXPECT_EQ(h.size(), 0U);
@@ -89,7 +97,7 @@ TEST(IUMap, Erase) {
 }
 
 TEST(IUMap, FindFound) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   h.insert(std::make_pair(10, "ten"s));
   auto pos = h.find(10);
   ASSERT_NE(pos, h.end());
@@ -98,14 +106,14 @@ TEST(IUMap, FindFound) {
 }
 
 TEST(IUMap, FindNotFound) {
-  iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> h;
   h.insert(std::make_pair(10, "ten"s));
   auto pos = h.find(11);
   EXPECT_EQ(pos, h.end());
 }
 
 TEST(IUMap, CopyAssign) {
-  iumap<int, std::string, 4> a;
+  midi2::iumap<int, std::string, 4> a;
   a.insert(std::make_pair(1, "one"));
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(std::make_pair(3, "three"));
@@ -115,7 +123,7 @@ TEST(IUMap, CopyAssign) {
   auto const six = std::pair<int const, std::string>{6, "six"s};
   auto const seven = std::pair<int const, std::string>{7, "seven"s};
 
-  iumap<int, std::string, 4> b;
+  midi2::iumap<int, std::string, 4> b;
   b.insert(four);
   auto pb5 = b.insert(std::make_pair(5, "five")).first;
   b.insert(six);
@@ -140,7 +148,7 @@ TEST(IUMap, CopyAssign) {
 }
 
 TEST(IUMap, MoveAssign) {
-  iumap<int, std::string, 4> a;
+  midi2::iumap<int, std::string, 4> a;
   a.insert(std::make_pair(1, "one"));
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(std::make_pair(3, "three"));
@@ -150,7 +158,7 @@ TEST(IUMap, MoveAssign) {
   auto const six = std::pair<int const, std::string>{6, "six"s};
   auto const seven = std::pair<int const, std::string>{7, "seven"s};
 
-  iumap<int, std::string, 4> b;
+  midi2::iumap<int, std::string, 4> b;
   b.insert(four);
   auto pb5 = b.insert(std::make_pair(5, "five")).first;
   b.insert(six);
@@ -178,13 +186,13 @@ TEST(IUMap, CopyCtor) {
   auto const one = std::pair<int const, std::string>{1, "one"s};
   auto const three = std::pair<int const, std::string>{3, "three"s};
 
-  iumap<int, std::string, 4> a;
+  midi2::iumap<int, std::string, 4> a;
   a.insert(one);
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(three);
   a.erase(pa2);  // an erase so that the container holds a tombstone record
 
-  iumap<int, std::string, 4> b(a);
+  midi2::iumap<int, std::string, 4> b(a);
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(1), b.end());
   EXPECT_EQ(*a.find(1), one);
@@ -197,13 +205,13 @@ TEST(IUMap, MoveCtor) {
   auto const one = std::pair<int const, std::string>{1, "one"s};
   auto const three = std::pair<int const, std::string>{3, "three"s};
 
-  iumap<int, std::string, 4> a;
+  midi2::iumap<int, std::string, 4> a;
   a.insert(one);
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(three);
   a.erase(pa2);  // an erase so that the container holds a tombstone record
 
-  iumap<int, std::string, 4> const b{std::move(a)};
+  midi2::iumap<int, std::string, 4> const b{std::move(a)};
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(1), b.end());
   EXPECT_EQ(*b.find(1), one);
@@ -213,7 +221,7 @@ TEST(IUMap, MoveCtor) {
 }
 
 TEST(IUMap, IteratorAdd) {
-  iumap<int, int, 4> a;
+  midi2::iumap<int, int, 4> a;
   a.try_emplace(1, 1);
   a.try_emplace(2, 2);
   a.try_emplace(3, 3);
@@ -227,7 +235,7 @@ TEST(IUMap, IteratorAdd) {
 }
 
 TEST(IUMap, IteratorSubtract) {
-  iumap<int, int, 4> a;
+  midi2::iumap<int, int, 4> a;
   a.try_emplace(1, 1);
   a.try_emplace(2, 2);
   a.try_emplace(3, 3);
@@ -241,7 +249,7 @@ TEST(IUMap, IteratorSubtract) {
 }
 
 void Thrash(std::vector<int> const &in, std::vector<int> const &del) {
-  iumap<int, int, 16> a;
+  midi2::iumap<int, int, 16> a;
   std::unordered_map<int, int> b;
 
   for (int const a1 : in) {
@@ -263,7 +271,7 @@ void Thrash(std::vector<int> const &in, std::vector<int> const &del) {
   EXPECT_THAT(a, testing::UnorderedElementsAreArray(b));
 }
 
-#if defined(FUZZTEST) && FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 FUZZ_TEST(IUMap, Thrash);
 #endif
 TEST(IUMap, ThreashNone) {

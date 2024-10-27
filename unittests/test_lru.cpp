@@ -1,17 +1,25 @@
+//===-- LRU Doubly-linked List ------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 // DUT
 #include "midi2/lru_list.hpp"
 
 // Google Test/Mock/Fuzz
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#if defined(FUZZTEST) && FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 #include <fuzztest/fuzztest.h>
 #endif
 
 namespace {
 
 TEST(LruList, Empty) {
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   EXPECT_TRUE(lru.empty());
   EXPECT_EQ(lru.size(), 0);
 }
@@ -34,7 +42,7 @@ using testing::StrictMock;
 
 TEST(LruList, AddToFull) {
   StrictMock<mock_evictor> evictor;
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   using int_ref = int &;
   EXPECT_THAT(static_cast<int_ref>(lru.add(1, std::ref(evictor))), 1);
   EXPECT_FALSE(lru.empty());
@@ -57,7 +65,7 @@ TEST(LruList, EvictFirst) {
   StrictMock<mock_evictor> evictor;
   auto one = 1;
   EXPECT_CALL(evictor, evict(one)).Times(1);
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   lru.add(1, std::ref(evictor));
   lru.add(2, std::ref(evictor));
   lru.add(3, std::ref(evictor));
@@ -71,7 +79,7 @@ TEST(LruList, TouchOneEvictTwo) {
   StrictMock<mock_evictor> evictor;
   auto two = 2;
   EXPECT_CALL(evictor, evict(two)).Times(1);
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   auto &one = lru.add(1, std::ref(evictor));
   lru.add(2, std::ref(evictor));
   lru.add(3, std::ref(evictor));
@@ -95,7 +103,7 @@ TEST(LruList, Sequence) {
     EXPECT_CALL(evictor, evict(four)).Times(1);
   }
 
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   auto &t1 = lru.add(1, std::ref(evictor));
   lru.touch(t1);  // do nothing!
   auto &t2 = lru.add(2, std::ref(evictor));
@@ -112,14 +120,14 @@ TEST(LruList, Sequence) {
 }
 
 void Thrash(std::vector<int> const &a) {
-  lru_list<int, 4> lru;
+  midi2::lru_list<int, 4> lru;
   auto evictor = [](int &) {};
   for (auto value : a) {
     lru.add(value, evictor);
   }
 }
 
-#if defined(FUZZTEST) && FUZZTEST
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 FUZZ_TEST(LruList, Thrash);
 #endif
 TEST(LruList, NoThrash) {

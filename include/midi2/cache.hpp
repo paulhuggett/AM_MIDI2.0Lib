@@ -1,12 +1,13 @@
+//===-- LRU Cache -=============-----------------------------------------------*- C++ -*-===//
 //
-//  cache.hpp
-//  hasht
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 24/10/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
-#ifndef CACHE_HPP
-#define CACHE_HPP
+#ifndef MIDI2_CACHE_HPP
+#define MIDI2_CACHE_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -15,6 +16,8 @@
 
 #include "iumap.hpp"
 #include "lru_list.hpp"
+
+namespace midi2 {
 
 template <typename Key, typename Mapped, std::size_t Size> class cache {
 public:
@@ -79,4 +82,6 @@ bool cache<Key, Mapped, Size>::set(key_type const &k, mapped_type const &v) {
   return false;
 }
 
-#endif  // CACHE_HPP
+}  // end namespace midi2
+
+#endif  // MIDI2_CACHE_HPP

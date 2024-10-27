@@ -1,12 +1,13 @@
+//===-- In-place Unordered Map ------------------------------------------------*- C++ -*-===//
 //
-//  cache.hpp
-//  hasht
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
 //
-//  Created by Paul Bowen-Huggett on 23/10/2024.
-//
+//===------------------------------------------------------------------------------------===//
 
-#ifndef IUMAP_HPP
-#define IUMAP_HPP
+#ifndef MIDI2_IUMAP_HPP
+#define MIDI2_IUMAP_HPP
 
 // Standard library
 #include <array>
@@ -23,6 +24,8 @@
 #ifdef IUMAP_TRACE
 #include <ostream>
 #endif  // IUMAP_TRACE
+
+namespace midi2 {
 
 /// \tparam UInt An unsigned integer type.
 /// \param n An integer value to check whether it is a power of two.
@@ -562,4 +565,6 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::find_insert_slot(Container &cont
   return first_tombstone != nullptr ? first_tombstone : slot_ptr{nullptr};
 }
 
-#endif  // IUMAP_HPP
+}  // end namespace midi2
+
+#endif  // MIDI2_IUMAP_HPP

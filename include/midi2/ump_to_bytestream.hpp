@@ -143,31 +143,31 @@ private:
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
         ctxt->push_back(std::byte{to_underlying(status::timing_clock)});
       }
-      static void seq_start(context_type *, types::system::seq_start const &) {
+      static void seq_start(context_type *const ctxt, types::system::seq_start const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         // TODO
       }
-      static void seq_continue(context_type *, types::system::seq_continue const &) {
+      static void seq_continue(context_type *const ctxt, types::system::seq_continue const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         // TODO
       }
-      static void seq_stop(context_type *, types::system::seq_stop const &) {
+      static void seq_stop(context_type *const ctxt, types::system::seq_stop const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         // TODO
       }
-      static void active_sensing(context_type *, types::system::active_sensing const &) {
+      static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         // TODO
       }
-      static void reset(context_type *, types::system::reset const &) {
+      static void reset(context_type *const ctxt, types::system::reset const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -207,6 +207,7 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
+#if 0
         // TODO: implement!
         auto const &w0 = get<0>(in.w);
         auto const controller = w0.controller.value();
@@ -236,6 +237,7 @@ private:
         cc0.controller = is_rpn ? control::rpn_lsb : control::nrpn_lsb;  // 0x64/0x62
         cc0.value = new_value.second;
         ctxt->push(cc.w);
+#endif
       }
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
         if (ctxt->filter_message(in)) {
