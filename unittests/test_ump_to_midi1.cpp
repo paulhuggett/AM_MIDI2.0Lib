@@ -25,7 +25,7 @@ auto convert(InputIterator first, InputIterator last) {
   std::for_each(first, last, [&output, &ump2m1](std::uint32_t const ump) {
     ump2m1.UMPStreamParse(ump);
     while (ump2m1.available()) {
-      output.push_back(ump2m1.readUMP());
+      output.push_back(ump2m1.read());
     }
   });
   return output;

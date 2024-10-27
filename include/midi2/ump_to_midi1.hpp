@@ -21,7 +21,7 @@ namespace midi2 {
 class ump_to_midi1 {
 public:
   [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
-  [[nodiscard]] std::uint32_t readUMP() { return context_.output.pop_front(); }
+  [[nodiscard]] std::uint32_t read() { return context_.output.pop_front(); }
 
   void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
 
@@ -37,6 +37,20 @@ private:
       }
     }
 
+    struct pn_value {
+      constexpr pn_value() noexcept = default;
+      friend bool operator==(pn_value const &, pn_value const &) noexcept = default;
+      bool valid = false;
+
+      using pair14 = std::pair<std::uint8_t, std::uint8_t>;
+      pair14 rpn{};
+      pair14 nrpn{};
+    };
+
+    template <typename T, std::size_t Rows, std::size_t Columns>
+    using array2d = std::array<std::array<T, Columns>, Rows>;
+
+    array2d<pn_value, 16, 16> last_pn;
     fifo<std::uint32_t, 4> output;
   };
 
@@ -80,7 +94,8 @@ private:
       static void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
     };
     // m2cvm messages are translated to m1cvm messages.
-    struct m2cvm {
+    class m2cvm {
+    public:
       static void note_off(context_type *ctxt, types::m2cvm::note_off const &in);
       static void note_on(context_type *ctxt, types::m2cvm::note_on const &in);
       static void poly_pressure(context_type *ctxt, types::m2cvm::poly_pressure const &in);
@@ -116,13 +131,18 @@ private:
       static constexpr void per_note_pitch_bend(context_type const *, types::m2cvm::per_note_pitch_bend const &) {
         // do nothing: cannot be translated to MIDI 1
       }
+
+    private:
+      static void pn_message(context_type *const ctxt, bool is_rpn, std::uint8_t const group,
+                             std::uint8_t const channel, context_type::pn_value::pair14 const &new_value,
+                             std::uint32_t const value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};
     [[no_unique_address]] struct system system{};
     [[no_unique_address]] struct m1cvm m1cvm{};
     [[no_unique_address]] struct data64 data64{};
-    [[no_unique_address]] struct m2cvm m2cvm{};
+    [[no_unique_address]] class m2cvm m2cvm{};
     [[no_unique_address]] data128_null<decltype(context)> data128{};
     [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream{};
     [[no_unique_address]] flex_data_null<decltype(context)> flex{};

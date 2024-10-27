@@ -20,8 +20,7 @@
 
 namespace {
 
-template <std::ranges::input_range Range>
-std::vector<std::byte> convert(Range && range) {
+template <std::ranges::input_range Range> std::vector<std::byte> convert(Range const& range) {
   midi2::ump_to_bytestream ump2bs;
   std::vector<std::byte> output;
   for (auto const ump : range) {

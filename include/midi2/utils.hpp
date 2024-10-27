@@ -65,7 +65,7 @@ enum class status : std::uint8_t {
   systemreset = 0xFF,
 };
 
-constexpr bool isSystemRealTimeMessage(std::byte const midi1Byte) {
+constexpr bool is_system_real_time_message(std::byte const midi1Byte) {
   switch (static_cast<status>(midi1Byte)) {
   case status::timing_clock:
   case status::sequence_start:
@@ -77,7 +77,7 @@ constexpr bool isSystemRealTimeMessage(std::byte const midi1Byte) {
   }
 }
 
-constexpr bool isStatusByte(std::byte const midi1Byte) {
+constexpr bool is_status_byte(std::byte const midi1Byte) {
   return (midi1Byte & std::byte{0x80}) != std::byte{0x00};
 }
 
