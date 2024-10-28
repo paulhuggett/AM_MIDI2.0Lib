@@ -131,8 +131,8 @@ private:
       }
 
     private:
-      static void pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
-                             std::pair<std::uint8_t, std::uint8_t> controller_number, std::uint32_t const value);
+      static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
+                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t const value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};
