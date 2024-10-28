@@ -72,8 +72,9 @@ private:
       }
     }
 
+    /// \returns true if the message should be filtered; false if the message should be allowed.
     template <typename T> constexpr bool filter_message(T const &in) const {
-      return (only_groups & (1U << get<0>(in.w).group)) != 0;
+      return (only_groups & (1U << get<0>(in.w).group)) == 0U;
     }
 
     bool running_status_ = false;

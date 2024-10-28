@@ -20,8 +20,11 @@
 
 namespace {
 
-template <std::ranges::input_range Range> std::vector<std::byte> convert(Range const& range) {
+template <std::ranges::input_range Range>
+std::vector<std::byte> convert(Range const& range, std::uint16_t group_filter = 0) {
   midi2::ump_to_bytestream ump2bs;
+  ump2bs.group_filter(group_filter);
+
   std::vector<std::byte> output;
   for (auto const ump : range) {
     ump2bs.UMPStreamParse(ump);
@@ -37,9 +40,60 @@ using testing::ElementsAreArray;
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOff) {
-  std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
-  EXPECT_THAT(convert(input), ElementsAre(std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x81},
-                                          std::byte{0x70}, std::byte{0x70}));
+  std::array<midi2::types::m1cvm::note_off, 2> message;
+  auto const group = 0U;
+  auto const channel = 2U;
+  constexpr auto note0 = 62;
+  constexpr auto velocity0 = 0x7F;
+  constexpr auto note1 = 74;
+  constexpr auto velocity1 = 0x7F;
+
+  auto& w0 = get<0>(message[0].w);
+  w0.group = group;
+  w0.channel = channel;
+  w0.note = note0;
+  w0.velocity = velocity0;
+  auto& w1 = get<0>(message[1].w);
+  w1.channel = channel;
+  w1.note = note1;
+  w1.velocity = velocity1;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
+  std::array const expected{
+      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
+      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel}, std::byte{note1}, std::byte{velocity1},
+  };
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+}
+TEST(UMPToBytestream, NoteOffFiltered) {
+  std::array<midi2::types::m1cvm::note_off, 2> message;
+  auto const group = 1U;
+  auto const channel = 2U;
+  constexpr auto note0 = 62;
+  constexpr auto velocity0 = 0x7F;
+  constexpr auto note1 = 74;
+  constexpr auto velocity1 = 0x7F;
+
+  auto& w0 = get<0>(message[0].w);
+  w0.group = group;  // message should be filtered
+  w0.channel = channel;
+  w0.note = note0;
+  w0.velocity = velocity0;
+  auto& w1 = get<0>(message[1].w);
+  w1.group = 0;  // message should not be filtered out
+  w1.channel = channel;
+  w1.note = note1;
+  w1.velocity = velocity1;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
+  std::array const expected{
+      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel},
+      std::byte{note1},
+      std::byte{velocity1},
+  };
+  auto const actual = convert(input, std::uint16_t{group});
+  EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOn) {
@@ -110,6 +164,24 @@ TEST(UMPToBytestream, ProgramChangeTwoBytes) {
   std::array const input{std::uint32_t{0x20C64000}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xC6}, std::byte{0x40}));
 }
+// NOLINTNEXTLINE
+TEST(UMPToBytestream, SysexInOne) {
+  midi2::types::data64::sysex7 message;
+  auto& m0 = std::get<0>(message.w);
+  auto& m1 = std::get<1>(message.w);
+  m0.mt = to_underlying(midi2::ump_message_type::data64);
+  m0.group = 0;
+  m0.status = to_underlying(midi2::data64::sysex7_in_1);
+  m0.number_of_bytes = 4;
+  m0.data0 = 0x7E;
+  m0.data1 = 0x7F;
+  m1.data2 = 0x07;
+  m1.data3 = 0x0D;
+  std::array const input{std::bit_cast<std::uint32_t>(m0), std::bit_cast<std::uint32_t>(m1)};
+  EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x07},
+                                          std::byte{0x0D}, std::byte{0xF7}));
+}
+
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, Sysex) {
   std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
