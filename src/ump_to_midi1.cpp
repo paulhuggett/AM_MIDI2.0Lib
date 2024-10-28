@@ -128,10 +128,10 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
                                                       std::pair<std::uint8_t, std::uint8_t> controller_number,
                                                       std::uint32_t const value) {
   types::m1cvm::control_change cc;
+  auto &cc0 = get<0>(cc.w);
   cc0.group = key.group;
   cc0.channel = key.channel;
 
-  auto &cc0 = get<0>(cc.w);
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
