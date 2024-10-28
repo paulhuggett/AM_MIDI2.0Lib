@@ -213,6 +213,7 @@ TEST(UMPToMIDI1, M2PerNotePitchBend) {
   std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre());
 }
+
 TEST(UMPToMIDI1, M2RPNController) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
@@ -260,6 +261,104 @@ TEST(UMPToMIDI1, M2RPNController) {
               ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
                           std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
+
+TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
+  constexpr auto group = std::uint8_t{1};
+  constexpr auto channel = std::uint8_t{3};
+  constexpr auto bank = std::uint8_t{60};
+  constexpr auto index = std::uint8_t{21};
+  constexpr auto value0 = std::uint32_t{0x12345678};
+  constexpr auto value1 = std::uint32_t{0x87654321};
+
+  std::vector<std::uint32_t> input;
+
+  // This test modifies the same RPN controller twice in succession. We
+  // expect that the MIDI-1 messages to set the RPN value are sent just
+  // once.
+  {
+    midi2::types::m2cvm::rpn_controller src0;
+    auto& src00 = get<0>(src0.w);
+    src00.group = group;
+    src00.channel = channel;
+    src00.bank = bank;
+    src00.index = index;
+    get<1>(src0.w) = value0;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(src0.w)));
+    input.push_back(std::bit_cast<std::uint32_t>(get<1>(src0.w)));
+  }
+  {
+    midi2::types::m2cvm::rpn_controller src1;
+    auto& src10 = get<0>(src1.w);
+    src10.group = group;
+    src10.channel = channel;
+    src10.bank = bank;
+    src10.index = index;
+    get<1>(src1.w) = value1;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(src1.w)));
+    input.push_back(std::bit_cast<std::uint32_t>(get<1>(src1.w)));
+  }
+
+  std::vector<std::uint32_t> expected;
+  constexpr auto value0_14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value0));
+  constexpr auto value1_14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value1));
+  {
+    midi2::types::m1cvm::control_change cc0;
+    auto& out0 = get<0>(cc0.w);
+    out0.group = group;
+    out0.channel = channel;
+    out0.controller = midi2::control::rpn_msb;
+    out0.value = bank;
+    expected.push_back(std::bit_cast<std::uint32_t>(out0));
+  }
+  {
+    midi2::types::m1cvm::control_change cc1;
+    auto& out1 = get<0>(cc1.w);
+    out1.group = group;
+    out1.channel = channel;
+    out1.controller = midi2::control::rpn_lsb;
+    out1.value = index;
+    expected.push_back(std::bit_cast<std::uint32_t>(out1));
+  }
+  {
+    midi2::types::m1cvm::control_change cc2;
+    auto& out2 = get<0>(cc2.w);
+    out2.group = group;
+    out2.channel = channel;
+    out2.controller = midi2::control::data_entry_msb;
+    out2.value = (value0_14 >> 7) & 0x7F;
+    expected.push_back(std::bit_cast<std::uint32_t>(out2));
+  }
+  {
+    midi2::types::m1cvm::control_change cc3;
+    auto& out3 = get<0>(cc3.w);
+    out3.group = group;
+    out3.channel = channel;
+    out3.controller = midi2::control::data_entry_lsb;
+    out3.value = value0_14 & 0x7F;
+    expected.push_back(std::bit_cast<std::uint32_t>(out3));
+  }
+  {
+    midi2::types::m1cvm::control_change cc4;
+    auto& out4 = get<0>(cc4.w);
+    out4.group = group;
+    out4.channel = channel;
+    out4.controller = midi2::control::data_entry_msb;
+    out4.value = (value1_14 >> 7) & 0x7F;
+    expected.push_back(std::bit_cast<std::uint32_t>(out4));
+  }
+  {
+    midi2::types::m1cvm::control_change cc5;
+    auto& out5 = get<0>(cc5.w);
+    out5.group = group;
+    out5.channel = channel;
+    out5.controller = midi2::control::data_entry_lsb;
+    out5.value = value1_14 & 0x7F;
+    expected.push_back(std::bit_cast<std::uint32_t>(out5));
+  }
+
+  EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAreArray(expected));
+}
+
 TEST(UMPToMIDI1, M2NRPNController) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
