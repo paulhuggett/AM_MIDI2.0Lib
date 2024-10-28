@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "midi2/cache.hpp"
 #include "midi2/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"
 #include "midi2/utils.hpp"
@@ -75,27 +76,6 @@ private:
       return (only_groups & (1U << get<0>(in.w).group)) != 0;
     }
 
-    struct pn_value {
-      constexpr pn_value() noexcept = default;
-      friend bool operator==(pn_value const &, pn_value const &) noexcept = default;
-      bool valid = false;
-
-      using pair14 = std::pair<std::uint8_t, std::uint8_t>;
-      pair14 rpn{};
-      pair14 nrpn{};
-
-      std::uint8_t *controller_value(unsigned const v) {
-        switch (v) {
-        case control::rpn_msb: return &rpn.first;
-        case control::rpn_lsb: return &rpn.second;
-        case control::nrpn_msb: return &nrpn.first;
-        case control::nrpn_lsb: return &nrpn.second;
-        }
-        return nullptr;
-      }
-    };
-    std::array<pn_value, 16> last_pn;
-
     bool running_status_ = false;
     std::byte status = std::byte{0xFF};  // TODO: 0xFF is a valid status value.
     std::uint16_t only_groups = 0;       ///< A bitmap indicating which groups should be included in the output
@@ -124,7 +104,10 @@ private:
         ctxt->push_back(std::byte{w0.position_lsb.value()});
         ctxt->push_back(std::byte{w0.position_msb.value()});
       }
-      static void song_select(context_type *, types::system::song_select const &) {
+      static void song_select(context_type *const ctxt, types::system::song_select const &in) {
+        if (ctxt->filter_message(in)) {
+          return;
+        }
         // TODO
       }
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
@@ -207,37 +190,12 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-#if 0
-        // TODO: implement!
+        static_assert(std::tuple_size_v<decltype(types::m1cvm::control_change::w)> == 1);
+        static_assert(bytestream_message_size<status::cc>() == 3);
         auto const &w0 = get<0>(in.w);
-        auto const controller = w0.controller.value();
-        auto const value = w0.value.value();
-
-        bool send_update = true;
-        auto *const ptr = ctxt->last_pn[w0.channel].controller_value(controller);
-        if (ptr != nullptr && *ptr == value) {
-          send_update = false;
-        }
-
-        if (controller == control::rpn_msb) {
-          ctxt->last_pn[w0.channel].rpn.first = value;
-        }
-
-        ctxt->push_back(status::cc);
-        ctxt->push_back();
-
-        auto &cc0 = get<0>(cc.w);
-        cc0.group = group;
-        cc0.channel = channel;
-        // Controller number MSB
-        cc0.controller = is_rpn ? control::rpn_msb : control::nrpn_msb;  // 0x65/0x63
-        cc0.value = new_value.first;
-        ctxt->push(cc.w);
-        // Controller number LSB
-        cc0.controller = is_rpn ? control::rpn_lsb : control::nrpn_lsb;  // 0x64/0x62
-        cc0.value = new_value.second;
-        ctxt->push(cc.w);
-#endif
+        ctxt->push_back(std::byte{to_underlying(status::cc)});
+        ctxt->push_back(std::byte{w0.controller.value()});
+        ctxt->push_back(std::byte{w0.value.value()});
       }
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
         if (ctxt->filter_message(in)) {

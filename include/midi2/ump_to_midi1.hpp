@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <tuple>
 
+#include "midi2/cache.hpp"
 #include "midi2/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"
 #include "midi2/ump_types.hpp"
@@ -37,22 +38,19 @@ private:
       }
     }
 
-    struct pn_value {
-      constexpr pn_value() noexcept = default;
-      friend bool operator==(pn_value const &, pn_value const &) noexcept = default;
-      bool valid = false;
+    struct pn_cache_key {
+      bool operator==(pn_cache_key const &) const noexcept = default;
 
-      using pair14 = std::pair<std::uint8_t, std::uint8_t>;
-      pair14 rpn{};
-      pair14 nrpn{};
+      std::uint8_t group : 4 = 0;
+      std::uint8_t channel : 4 = 0;
+      bool is_rpn = false;
     };
 
-    template <typename T, std::size_t Rows, std::size_t Columns>
-    using array2d = std::array<std::array<T, Columns>, Rows>;
-
-    array2d<pn_value, 16, 16> last_pn;
+    // value is 14 bit MIDI 1 controller number (bank/index).
+    cache<pn_cache_key, std::pair<std::uint8_t, std::uint8_t>, 16> pn_cache;
     fifo<std::uint32_t, 4> output;
   };
+  friend struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key>;
 
   struct to_midi1_config {
     // system messages go straight through.
@@ -133,9 +131,8 @@ private:
       }
 
     private:
-      static void pn_message(context_type *const ctxt, bool is_rpn, std::uint8_t const group,
-                             std::uint8_t const channel, context_type::pn_value::pair14 const &new_value,
-                             std::uint32_t const value);
+      static void pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
+                             std::pair<std::uint8_t, std::uint8_t> controller_number, std::uint32_t const value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};
@@ -152,5 +149,12 @@ private:
 };
 
 }  // end namespace midi2
+
+template <> struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key> {
+  std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
+    return std::hash<unsigned>{}(static_cast<unsigned>(key.group << 5) | static_cast<unsigned>(key.channel << 1) |
+                                 static_cast<unsigned>(key.is_rpn));
+  }
+};
 
 #endif  // MIDI2_UMPTOMIDI1_HPP

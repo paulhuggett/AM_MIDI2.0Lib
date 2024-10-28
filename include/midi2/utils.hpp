@@ -10,6 +10,7 @@
 #define MIDI2_UTILS_HPP
 
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -34,6 +35,14 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
 #else
   return static_cast<std::underlying_type_t<Enum>>(e);
 #endif
+}
+
+/// \tparam T An unsigned integer type.
+/// \param n An integer value to check whether it is a power of two.
+/// \returns True if the input value is a power of 2.
+template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) noexcept {
+  // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
+  return n > 0U && !(n & (n - 1U));
 }
 
 enum class status : std::uint8_t {

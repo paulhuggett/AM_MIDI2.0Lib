@@ -11,8 +11,11 @@
 
 #include <cassert>
 #include <cstddef>
-#include <ostream>
 #include <utility>
+
+#ifdef CACHE_TRACE
+#include <ostream>
+#endif
 
 #include "iumap.hpp"
 #include "lru_list.hpp"
@@ -26,12 +29,15 @@ public:
   using value_type = std::pair<key_type, mapped_type>;
 
   mapped_type *find(key_type const &k);
+  /// \returns true if the key and value were found in the cache; false otherwise.
   bool set(key_type const &k, mapped_type const &v);
 
+#ifdef CACHE_TRACE
   void dump(std::ostream &os) {
     lru.dump(os);
     h.dump(os);
   }
+#endif
 
 private:
   using lru_container = lru_list<value_type, Size>;

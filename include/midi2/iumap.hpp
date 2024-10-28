@@ -9,6 +9,8 @@
 #ifndef MIDI2_IUMAP_HPP
 #define MIDI2_IUMAP_HPP
 
+#include "midi2/utils.hpp"
+
 // Standard library
 #include <array>
 #include <bit>
@@ -26,14 +28,6 @@
 #endif  // IUMAP_TRACE
 
 namespace midi2 {
-
-/// \tparam UInt An unsigned integer type.
-/// \param n An integer value to check whether it is a power of two.
-/// \returns True if the input value is a power of 2.
-template <std::unsigned_integral UInt> constexpr bool is_power_of_two(UInt n) noexcept {
-  //  if a number n is a power of 2 then bitwise & of n and n-1 will be zero.
-  return n > 0U && !(n & (n - 1U));
-}
 
 // An in-place unordered hash table.
 template <typename Key, typename Mapped, std::size_t Size, typename Hash = std::hash<std::remove_cv_t<Key>>,

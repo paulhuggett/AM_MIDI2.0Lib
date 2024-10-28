@@ -11,6 +11,7 @@
 
 // Standard Library
 #include <algorithm>
+#include <array>
 #include <vector>
 
 // Google Test/Mock

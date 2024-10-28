@@ -9,13 +9,9 @@
 #include <type_traits>
 #include <utility>
 
-namespace midi2 {
+#include "midi2/utils.hpp"
 
-/// \returns True if the input value is a power of 2.
-template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) noexcept {
-  // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
-  return n > 0U && !(n & (n - 1U));
-}
+namespace midi2 {
 
 /// \returns  The number of bits required for value.
 // NOLINTNEXTLINE(misc-no-recursion)
