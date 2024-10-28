@@ -22,7 +22,9 @@
 
 namespace midi2 {
 
-template <typename ValueType, std::size_t Size> class lru_list {
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+class lru_list {
 public:
   class node {
     friend class lru_list;
@@ -60,7 +62,9 @@ private:
 
 // clear
 // ~~~~~
-template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::clear() {
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+void lru_list<ValueType, Size>::clear() {
   auto *const data = v_.data();
   std::for_each(data, data + size_, [](node *const n) {
     n->value()->~ValueType();  // Evict the old value. Bye bye.
@@ -72,7 +76,9 @@ template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::
 
 // touch
 // ~~~~~
-template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::touch(node &n) {
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+void lru_list<ValueType, Size>::touch(node &n) {
   assert(first_ != nullptr && last_ != nullptr);
   if (first_ == &n) {
     return;
@@ -98,6 +104,7 @@ template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::
 // add
 // ~~~
 template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
 template <std::invocable<ValueType &> Evictor>
 auto lru_list<ValueType, Size>::add(ValueType const &payload, Evictor evictor) -> node & {
   node *result = nullptr;
@@ -137,7 +144,9 @@ auto lru_list<ValueType, Size>::add(ValueType const &payload, Evictor evictor) -
 
 // check invariants
 // ~~~~~~~~~~~~~~~~
-template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::check_invariants() const noexcept {
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+void lru_list<ValueType, Size>::check_invariants() const noexcept {
 #ifndef NDEBUG
   assert((first_ == nullptr) == (size_ == 0) && "first_ must be null if and only if the container is empty");
   assert((first_ == last_) == (size_ < 2) && "with < 2 members, first_ and last_ must be equal");
@@ -156,7 +165,9 @@ template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::
 // dump
 // ~~~~
 #ifndef NDEBUG
-template <typename ValueType, std::size_t Size> void lru_list<ValueType, Size>::dump(std::ostream &os) const {
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+void lru_list<ValueType, Size>::dump(std::ostream &os) const {
   this->check_invariants();
   char const *separator = "";
   for (node const *n = first_; n != nullptr; n = n->next) {
