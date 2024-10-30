@@ -37,6 +37,7 @@ std::vector<std::byte> convert(Range const& range, std::uint16_t group_filter = 
 
 using testing::ElementsAre;
 using testing::ElementsAreArray;
+using testing::IsEmpty;
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOff) {
@@ -123,7 +124,38 @@ TEST(UMPToBytestream, NoteOn) {
 }
 
 // NOLINTNEXTLINE
-TEST(UMPTOBytestream, SystemTimeCode) {
+TEST(UMPToBytestream, ControlChange) {
+  midi2::types::m1cvm::control_change message;
+  auto& w0 = get<0>(message.w);
+  w0.group = 1;
+  w0.channel = 1;
+  w0.controller = 17;
+  w0.value = 0x71;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{
+      std::byte{to_underlying(midi2::status::cc)} | std::byte{w0.channel.value()},
+      std::byte{w0.controller.value()},
+      std::byte{w0.value.value()},
+  };
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+}
+TEST(UMPToBytestream, ControlChangeFilteredGroup) {
+  midi2::types::m1cvm::control_change message;
+  auto& w0 = get<0>(message.w);
+  w0.group = 1;
+  w0.channel = 1;
+  w0.controller = 17;
+  w0.value = 0x71;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  auto const actual = convert(input, std::uint16_t{w0.group});
+  EXPECT_THAT(actual, IsEmpty());
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToBytestream, SystemTimeCode) {
   midi2::types::system::midi_time_code message;
   auto const tc = 0b1010101;
   get<0>(message.w).time_code = tc;

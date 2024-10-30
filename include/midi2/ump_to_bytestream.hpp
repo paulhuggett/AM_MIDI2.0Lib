@@ -194,7 +194,7 @@ private:
         static_assert(std::tuple_size_v<decltype(types::m1cvm::control_change::w)> == 1);
         static_assert(bytestream_message_size<status::cc>() == 3);
         auto const &w0 = get<0>(in.w);
-        ctxt->push_back(std::byte{to_underlying(status::cc)});
+        ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.controller.value()});
         ctxt->push_back(std::byte{w0.value.value()});
       }
