@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/iumap.hpp"
+#include "midi2/adt/iumap.hpp"
 
 // Standard library
 #include <string>

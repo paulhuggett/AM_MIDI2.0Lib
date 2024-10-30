@@ -18,7 +18,7 @@
 #include <string>
 #include <type_traits>
 
-#include "midi2/bitfield.hpp"
+#include "midi2/adt/bitfield.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2::ci {

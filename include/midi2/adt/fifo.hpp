@@ -31,7 +31,8 @@ template <std::unsigned_integral T> consteval unsigned bits_required(T const val
 /// \tparam ElementType The type of the elements held by this container.
 /// \tparam Elements The number of elements in the FIFO. Must be less than 2^32.
 template <typename ElementType, std::uint32_t Elements>
-requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31) class fifo {
+  requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31)
+class fifo {
 public:
   /// \brief Inserts an element at the end.
   /// \param value  The value of the element to append.

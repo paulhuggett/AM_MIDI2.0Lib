@@ -15,7 +15,7 @@
 #include <span>
 #include <tuple>
 
-#include "midi2/bitfield.hpp"
+#include "midi2/adt/bitfield.hpp"
 #include "midi2/utils.hpp"
 
 #define UMP_MEMBERS0(name, st)                                                 \

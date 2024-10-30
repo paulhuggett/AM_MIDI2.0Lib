@@ -13,8 +13,8 @@
 #include <cstdint>
 #include <optional>
 
-#include "midi2/cache.hpp"
-#include "midi2/fifo.hpp"
+#include "midi2/adt/cache.hpp"
+#include "midi2/adt/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"
 #include "midi2/utils.hpp"
 

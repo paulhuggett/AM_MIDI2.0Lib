@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/lru_list.hpp"
+#include "midi2/adt/lru_list.hpp"
 
 // Google Test/Mock/Fuzz
 #include <gmock/gmock.h>

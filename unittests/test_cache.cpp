@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/cache.hpp"
+#include "midi2/adt/cache.hpp"
 
 // Google Test/Mock
 #include <gmock/gmock.h>
