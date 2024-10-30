@@ -125,32 +125,37 @@ TEST(UMPToBytestream, NoteOn) {
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, ControlChange) {
+  constexpr auto channel = 1U;
+  constexpr auto controller = 17U;
+  constexpr auto value = 0x71U;
+
   midi2::types::m1cvm::control_change message;
   auto& w0 = get<0>(message.w);
   w0.group = 1;
-  w0.channel = 1;
-  w0.controller = 17;
-  w0.value = 0x71;
+  w0.channel = channel;
+  w0.controller = controller;
+  w0.value = value;
 
   std::array const input{std::bit_cast<std::uint32_t>(w0)};
   std::array const expected{
-      std::byte{to_underlying(midi2::status::cc)} | std::byte{w0.channel.value()},
-      std::byte{w0.controller.value()},
-      std::byte{w0.value.value()},
+      std::byte{to_underlying(midi2::status::cc)} | std::byte{channel},
+      std::byte{controller},
+      std::byte{value},
   };
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 TEST(UMPToBytestream, ControlChangeFilteredGroup) {
+  constexpr auto group = 1U;
   midi2::types::m1cvm::control_change message;
   auto& w0 = get<0>(message.w);
-  w0.group = 1;
+  w0.group = group;
   w0.channel = 1;
   w0.controller = 17;
   w0.value = 0x71;
 
   std::array const input{std::bit_cast<std::uint32_t>(w0)};
-  auto const actual = convert(input, std::uint16_t{w0.group});
+  auto const actual = convert(input, std::uint16_t{group});
   EXPECT_THAT(actual, IsEmpty());
 }
 
