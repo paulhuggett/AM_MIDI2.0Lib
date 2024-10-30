@@ -689,6 +689,10 @@ struct nrpn_per_note_controller {
   std::tuple<word0, word1> w;
 };
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
+/// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
+/// map and translate directly to MIDI 1.0 Registered Parameter Numbers and use the same
+/// definitions as MMA/AMEI approved RPN messages. Registered Controllers are organized in 128 Banks
+/// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
 struct rpn_controller {
   union word0 {
     UMP_MEMBERS0(word0, midi2::midi2status::rpn)
@@ -697,9 +701,9 @@ struct rpn_controller {
     ump_bitfield<20, 4> status;  ///< Registered Control (RPN)=0x2
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;
+    ump_bitfield<8, 7> bank;  ///< Corresponds to RPN MSB
     ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;
+    ump_bitfield<0, 7> index;  ///< Corresponds to RPN LSB
   };
   using word1 = std::uint32_t;
 
@@ -719,9 +723,9 @@ struct nrpn_controller {
     ump_bitfield<20, 4> status;  ///< Assignable Control (RPN)=0x3
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;
+    ump_bitfield<8, 7> bank;  ///< Corresponds to NRPN MSB
     ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;
+    ump_bitfield<0, 7> index;  ///< Corresponds to NRPN LSB
   };
   using word1 = std::uint32_t;
 

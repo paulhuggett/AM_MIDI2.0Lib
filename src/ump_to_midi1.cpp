@@ -110,30 +110,9 @@ void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const 
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
                                                           types::m2cvm::rpn_controller const &in) {
-  // TODO(pbh): the two (n)rpn_controller handlers are identical apart from the controller numbers for the first two
-  // messages. this should be merged later.
   auto const &in0 = get<0>(in.w);
-  types::m1cvm::control_change cc;
-  auto &cc0 = get<0>(cc.w);
-  cc0.group = in0.group.value();
-  cc0.channel = in0.channel.value();
-  cc0.controller = control::rpn_msb;  // 0x65 #101
-  cc0.value = in0.bank.value();
-  ctxt->push(cc.w);
-
-  cc0.controller = control::rpn_lsb;  // 0x64 #100
-  cc0.value = in0.index.value();
-  ctxt->push(cc.w);
-
-  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(get<1>(in.w)));
-
-  cc0.controller = control::data_entry_msb;  // 0x6
-  cc0.value = static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F);
-  ctxt->push(cc.w);
-
-  cc0.controller = control::data_entry_lsb;  // 0x26 #38
-  cc0.value = static_cast<std::uint8_t>(scaled_value & 0x7F);
-  ctxt->push(cc.w);
+  pn_message(ctxt, context_type::pn_cache_key{in0.group, in0.channel, true},
+             std::make_pair(in0.bank.value(), in0.index.value()), get<1>(in.w));
 }
 
 // nrpn controller
@@ -141,26 +120,44 @@ void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ct
 void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
                                                            types::m2cvm::nrpn_controller const &in) {
   auto const &in0 = get<0>(in.w);
+  pn_message(ctxt, context_type::pn_cache_key{in0.group, in0.channel, false},
+             std::make_pair(in0.bank.value(), in0.index.value()), get<1>(in.w));
+}
+
+void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
+                                                      std::pair<std::uint8_t, std::uint8_t> const &controller_number,
+                                                      std::uint32_t const value) {
   types::m1cvm::control_change cc;
   auto &cc0 = get<0>(cc.w);
-  cc0.group = in0.group.value();
-  cc0.channel = in0.channel.value();
-  cc0.controller = control::nrpn_msb;  // 0x63 #99
-  cc0.value = in0.bank.value();
-  ctxt->push(cc.w);
+  cc0.group = key.group;
+  cc0.channel = key.channel;
 
-  cc0.controller = control::nrpn_lsb;  // 0x62 #98
-  cc0.value = in0.index.value();
-  ctxt->push(cc.w);
+  // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
+  // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
+  // parameter.
+  if (!ctxt->pn_cache.set(key, controller_number)) {
+    // Controller number MSB
+    cc0.controller = key.is_rpn ? control::rpn_msb : control::nrpn_msb;  // 0x65/0x63
+    cc0.value = controller_number.first;
+    ctxt->push(cc.w);
+    // Controller number LSB
+    cc0.controller = key.is_rpn ? control::rpn_lsb : control::nrpn_lsb;  // 0x64/0x62
+    cc0.value = controller_number.second;
+    ctxt->push(cc.w);
+  }
 
-  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(get<1>(in.w)));
+  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(value));
 
+  cc0.group = key.group;
+  cc0.channel = key.channel;
+  // Data Entry MSB
   cc0.controller = control::data_entry_msb;  // 0x6
-  cc0.value = (scaled_value >> 7) & 0x7F;
+  cc0.value = static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F);
   ctxt->push(cc.w);
 
-  cc0.controller = control::data_entry_lsb;  // 0x26 #38
-  cc0.value = scaled_value & 0x7F;
+  // Data Entry LSB
+  cc0.controller = control::data_entry_lsb;  // 0x26
+  cc0.value = static_cast<std::uint8_t>(scaled_value & 0x7F);
   ctxt->push(cc.w);
 }
 

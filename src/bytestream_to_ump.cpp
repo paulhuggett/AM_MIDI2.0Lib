@@ -145,8 +145,8 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
 void bytestream_to_ump::bytestreamParse(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
-  if (isStatusByte(midi1Byte)) {
-    if (midi1int == status::tune_request || isSystemRealTimeMessage(midi1Byte)) {
+  if (is_status_byte(midi1Byte)) {
+    if (midi1int == status::tune_request || is_system_real_time_message(midi1Byte)) {
       if (midi1int == status::tune_request) {
         d0_ = midi1Byte;
       }
