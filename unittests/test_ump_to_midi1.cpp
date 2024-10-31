@@ -229,14 +229,14 @@ TEST(UMPToMIDI1, M2RPNController) {
   src0.index = index;
   src1 = value;
 
-  midi2::types::m1cvm::control_change cc[4];
-  auto& out0 = get<0>(cc[0].w);
+  std::array<midi2::types::m1cvm::control_change, 4> cc;
+  auto& out0 = get<0>(cc.at(0).w);
   out0.group = group;
   out0.channel = channel;
   out0.controller = midi2::control::rpn_msb;
   out0.value = bank;
 
-  auto& out1 = get<0>(cc[1].w);
+  auto& out1 = get<0>(cc.at(1).w);
   out1.group = group;
   out1.channel = channel;
   out1.controller = midi2::control::rpn_lsb;
@@ -244,13 +244,13 @@ TEST(UMPToMIDI1, M2RPNController) {
 
   constexpr auto val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
 
-  auto& out2 = get<0>(cc[2].w);
+  auto& out2 = get<0>(cc.at(2).w);
   out2.group = group;
   out2.channel = channel;
   out2.controller = midi2::control::data_entry_msb;
   out2.value = (val14 >> 7) & 0x7F;
 
-  auto& out3 = get<0>(cc[3].w);
+  auto& out3 = get<0>(cc.at(3).w);
   out3.group = group;
   out3.channel = channel;
   out3.controller = midi2::control::data_entry_lsb;
