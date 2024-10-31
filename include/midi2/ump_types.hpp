@@ -54,15 +54,11 @@
 
 namespace midi2::types {
 
-constexpr auto status_to_message_type(status const s) {
-  switch (s) {
-  case status::spp:
-  case status::timing_code:
-  case status::timing_clock:
-  case status::song_select:
-  case status::tune_request: return ump_message_type::system;
-  default: return ump_message_type::m1cvm;
-  }
+constexpr auto status_to_message_type(status) {
+  return ump_message_type::m1cvm;
+}
+constexpr auto status_to_message_type(system_crt) {
+  return ump_message_type::system;
 }
 constexpr auto status_to_message_type(midi2status) {
   return ump_message_type::m2cvm;
@@ -201,7 +197,7 @@ namespace system {
 
 struct midi_time_code {
   union word0 {
-    UMP_MEMBERS0(word0, status::timing_code)
+    UMP_MEMBERS0(word0, system_crt::timing_code)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF1
@@ -219,7 +215,7 @@ struct midi_time_code {
 };
 struct song_position_pointer {
   union word0 {
-    UMP_MEMBERS0(word0, status::spp)
+    UMP_MEMBERS0(word0, system_crt::spp)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF2
@@ -237,7 +233,7 @@ struct song_position_pointer {
 };
 struct song_select {
   union word0 {
-    UMP_MEMBERS0(word0, status::song_select)
+    UMP_MEMBERS0(word0, system_crt::song_select)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF3
@@ -256,7 +252,7 @@ struct song_select {
 
 struct tune_request {
   union word0 {
-    UMP_MEMBERS0(word0, status::tune_request)
+    UMP_MEMBERS0(word0, system_crt::tune_request)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF6
@@ -273,7 +269,7 @@ struct tune_request {
 
 struct timing_clock {
   union word0 {
-    UMP_MEMBERS0(word0, status::timing_clock)
+    UMP_MEMBERS0(word0, system_crt::timing_clock)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xF8
@@ -288,9 +284,9 @@ struct timing_clock {
   std::tuple<word0> w;
 };
 
-struct seq_start {
+struct sequence_start {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, system_crt::sequence_start)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xFA
@@ -298,16 +294,16 @@ struct seq_start {
     ump_bitfield<0, 8> reserved1;
   };
 
-  seq_start() = default;
-  explicit seq_start(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(seq_start const &, seq_start const &) = default;
+  sequence_start() = default;
+  explicit sequence_start(std::uint32_t const w0) : w{w0} {}
+  friend bool operator==(sequence_start const &, sequence_start const &) = default;
 
   std::tuple<word0> w;
 };
 
-struct seq_continue {
+struct sequence_continue {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, system_crt::sequence_continue)
     ump_bitfield<28, 4> mt;  ///< Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  ///< Always 0xFB
@@ -315,16 +311,16 @@ struct seq_continue {
     ump_bitfield<0, 8> reserved1;
   };
 
-  seq_continue() = default;
-  explicit seq_continue(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(seq_continue const &, seq_continue const &) = default;
+  sequence_continue() = default;
+  explicit sequence_continue(std::uint32_t const w0) : w{w0} {}
+  friend bool operator==(sequence_continue const &, sequence_continue const &) = default;
 
   std::tuple<word0> w;
 };
 
-struct seq_stop {
+struct sequence_stop {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, system_crt::sequence_stop)
     ump_bitfield<28, 4> mt;  // Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  // Always 0xFC
@@ -332,9 +328,9 @@ struct seq_stop {
     ump_bitfield<0, 8> reserved1;
   };
 
-  seq_stop() = default;
-  explicit seq_stop(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(seq_stop const &, seq_stop const &) = default;
+  sequence_stop() = default;
+  explicit sequence_stop(std::uint32_t const w0) : w{w0} {}
+  friend bool operator==(sequence_stop const &, sequence_stop const &) = default;
 
   std::tuple<word0> w;
 };
@@ -650,7 +646,7 @@ struct poly_pressure {
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 struct rpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::rpn_pernote)
+    UMP_MEMBERS0(word0, midi2status::rpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Per-Note Controller=0x0

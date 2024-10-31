@@ -64,9 +64,9 @@ private:
       static void song_select(context_type *const ctxt, types::system::song_select const &in) { ctxt->push(in.w); }
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) { ctxt->push(in.w); }
       static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) { ctxt->push(in.w); }
-      static void seq_start(context_type *const ctxt, types::system::seq_start const &in) { ctxt->push(in.w); }
-      static void seq_continue(context_type *const ctxt, types::system::seq_continue const &in) { ctxt->push(in.w); }
-      static void seq_stop(context_type *const ctxt, types::system::seq_stop const &in) { ctxt->push(in.w); }
+      static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) { ctxt->push(in.w); }
+      static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) { ctxt->push(in.w); }
+      static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) { ctxt->push(in.w); }
       static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
         ctxt->push(in.w);
       }

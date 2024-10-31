@@ -196,7 +196,45 @@ TEST(UMPToByteStream, SystemSongSelect) {
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
+// NOLINTNEXTLINE
+TEST(UMPToByteStream, SystemSequenceStart) {
+  auto const group = 1U;
+  midi2::types::system::sequence_start message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
 
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{std::byte{to_underlying(midi2::status::sequence_start)}};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+// NOLINTNEXTLINE
+TEST(UMPToByteStream, SystemSequenceContinue) {
+  auto const group = 1U;
+  midi2::types::system::sequence_continue message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{std::byte{to_underlying(midi2::status::sequence_continue)}};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+// NOLINTNEXTLINE
+TEST(UMPToByteStream, SystemSequenceStop) {
+  auto const group = 1U;
+  midi2::types::system::sequence_stop message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{std::byte{to_underlying(midi2::status::sequence_stop)}};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTuneRequest) {
   midi2::types::system::tune_request message;

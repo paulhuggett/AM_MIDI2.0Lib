@@ -131,23 +131,29 @@ private:
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
         ctxt->push_back(std::byte{to_underlying(status::timing_clock)});
       }
-      static void seq_start(context_type *const ctxt, types::system::seq_start const &in) {
+      static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO
+        static_assert(std::tuple_size_v<decltype(types::system::sequence_start::w)> == 1);
+        static_assert(bytestream_message_size<status::sequence_start>() == 1);
+        ctxt->push_back(std::byte{to_underlying(status::sequence_start)});
       }
-      static void seq_continue(context_type *const ctxt, types::system::seq_continue const &in) {
+      static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO
+        static_assert(std::tuple_size_v<decltype(types::system::sequence_continue::w)> == 1);
+        static_assert(bytestream_message_size<status::sequence_continue>() == 1);
+        ctxt->push_back(std::byte{to_underlying(status::sequence_continue)});
       }
-      static void seq_stop(context_type *const ctxt, types::system::seq_stop const &in) {
+      static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO
+        static_assert(std::tuple_size_v<decltype(types::system::sequence_stop::w)> == 1);
+        static_assert(bytestream_message_size<status::sequence_stop>() == 1);
+        ctxt->push_back(std::byte{to_underlying(status::sequence_stop)});
       }
       static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
         if (ctxt->filter_message(in)) {

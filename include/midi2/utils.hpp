@@ -131,6 +131,20 @@ enum midi2status : std::uint8_t {
   systemreset = 0xFF,
 };
 
+// Here, CRT is short for "common and real-time".
+enum class system_crt : std::uint8_t {
+  timing_code = 0xF1,
+  spp = 0xF2,  ///< Song Position Pointer
+  song_select = 0xF3,
+  tune_request = 0xF6,
+  timing_clock = 0xF8,
+  sequence_start = 0xFA,     ///< Start the current sequence playing
+  sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
+  sequence_stop = 0xFC,      ///< Stop the current sequence
+  active_sense = 0xFE,
+  system_reset = 0xFF,
+};
+
 // The MIDI 1.0 Specification defines Control Change indexes 98, 99, 100, and
 // 101 (0x62, 0x63, 0x64, and 0x65) to be used as compound sequences for
 // Non-Registered Parameter Number and Registered Parameter Number control

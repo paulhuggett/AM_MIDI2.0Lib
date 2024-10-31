@@ -77,9 +77,9 @@ concept system_backend = requires(T v, Context context) {
   { v.song_select(context,  types::system::song_select{}) } -> std::same_as<void>;
   { v.tune_request(context,  types::system::tune_request{}) } -> std::same_as<void>;
   { v.timing_clock(context,  types::system::timing_clock{}) } -> std::same_as<void>;
-  { v.seq_start(context,  types::system::seq_start{}) } -> std::same_as<void>;
-  { v.seq_continue(context,  types::system::seq_continue{}) } -> std::same_as<void>;
-  { v.seq_stop(context,  types::system::seq_stop{}) } -> std::same_as<void>;
+  { v.seq_start(context,  types::system::sequence_start{}) } -> std::same_as<void>;
+  { v.seq_continue(context,  types::system::sequence_continue{}) } -> std::same_as<void>;
+  { v.seq_stop(context,  types::system::sequence_stop{}) } -> std::same_as<void>;
   { v.active_sensing(context,  types::system::active_sensing{}) } -> std::same_as<void>;
   { v.reset(context,  types::system::reset{}) } -> std::same_as<void>;
 };
@@ -206,9 +206,9 @@ template <typename Context> struct system_null {
   constexpr static void song_select(Context, types::system::song_select const &) { /* do nothing */ }
   constexpr static void tune_request(Context, types::system::tune_request const &) { /* do nothing */ }
   constexpr static void timing_clock(Context, types::system::timing_clock const &) { /* do nothing */ }
-  constexpr static void seq_start(Context, types::system::seq_start const &) { /* do nothing */ }
-  constexpr static void seq_continue(Context, types::system::seq_continue const &) { /* do nothing */ }
-  constexpr static void seq_stop(Context, types::system::seq_stop const &) { /* do nothing */ }
+  constexpr static void seq_start(Context, types::system::sequence_start const &) { /* do nothing */ }
+  constexpr static void seq_continue(Context, types::system::sequence_continue const &) { /* do nothing */ }
+  constexpr static void seq_stop(Context, types::system::sequence_stop const &) { /* do nothing */ }
   constexpr static void active_sensing(Context, types::system::active_sensing const &) { /* do nothing */ }
   constexpr static void reset(Context, types::system::reset const &) { /* do nothing */ }
 };
@@ -418,29 +418,35 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_mes
 // 32 bit System Common and Real Time
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_message() {
   static_assert(message_size<midi2::ump_message_type::system>() == 1);
-  switch (static_cast<status>((message_[0] >> 16) & 0xFF)) {
-  case status::timing_code:
+  switch (static_cast<system_crt>((message_[0] >> 16) & 0xFF)) {
+  case system_crt::timing_code:
     config_.system.midi_time_code(config_.context, types::system::midi_time_code{message_[0]});
     break;
-  case status::spp:
+  case system_crt::spp:
     config_.system.song_position_pointer(config_.context, types::system::song_position_pointer{message_[0]});
     break;
-  case status::song_select: config_.system.song_select(config_.context, types::system::song_select{message_[0]}); break;
-  case status::tune_request:
+  case system_crt::song_select:
+    config_.system.song_select(config_.context, types::system::song_select{message_[0]});
+    break;
+  case system_crt::tune_request:
     config_.system.tune_request(config_.context, types::system::tune_request{message_[0]});
     break;
-  case status::timing_clock:
+  case system_crt::timing_clock:
     config_.system.timing_clock(config_.context, types::system::timing_clock{message_[0]});
     break;
-  case status::sequence_start: config_.system.seq_start(config_.context, types::system::seq_start{message_[0]}); break;
-  case status::sequence_continue:
-    config_.system.seq_continue(config_.context, types::system::seq_continue{message_[0]});
+  case system_crt::sequence_start:
+    config_.system.seq_start(config_.context, types::system::sequence_start{message_[0]});
     break;
-  case status::sequence_stop: config_.system.seq_stop(config_.context, types::system::seq_stop{message_[0]}); break;
-  case status::activesense:
+  case system_crt::sequence_continue:
+    config_.system.seq_continue(config_.context, types::system::sequence_continue{message_[0]});
+    break;
+  case system_crt::sequence_stop:
+    config_.system.seq_stop(config_.context, types::system::sequence_stop{message_[0]});
+    break;
+  case system_crt::active_sense:
     config_.system.active_sensing(config_.context, types::system::active_sensing{message_[0]});
     break;
-  case status::systemreset: config_.system.reset(config_.context, types::system::reset{message_[0]}); break;
+  case system_crt::system_reset: config_.system.reset(config_.context, types::system::reset{message_[0]}); break;
   default:
     config_.utility.unknown(config_.context,
                             std::span{message_.data(), message_size<midi2::ump_message_type::system>()});

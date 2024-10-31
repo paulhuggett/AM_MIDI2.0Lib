@@ -72,9 +72,9 @@ struct system_base {
   virtual void song_select(context_type, midi2::types::system::song_select) = 0;
   virtual void tune_request(context_type, midi2::types::system::tune_request) = 0;
   virtual void timing_clock(context_type, midi2::types::system::timing_clock) = 0;
-  virtual void seq_start(context_type, midi2::types::system::seq_start) = 0;
-  virtual void seq_continue(context_type, midi2::types::system::seq_continue) = 0;
-  virtual void seq_stop(context_type, midi2::types::system::seq_stop) = 0;
+  virtual void seq_start(context_type, midi2::types::system::sequence_start) = 0;
+  virtual void seq_continue(context_type, midi2::types::system::sequence_continue) = 0;
+  virtual void seq_stop(context_type, midi2::types::system::sequence_stop) = 0;
   virtual void active_sensing(context_type, midi2::types::system::active_sensing) = 0;
   virtual void reset(context_type, midi2::types::system::reset) = 0;
 };
@@ -85,9 +85,9 @@ public:
   MOCK_METHOD(void, song_select, (context_type, midi2::types::system::song_select), (override));
   MOCK_METHOD(void, tune_request, (context_type, midi2::types::system::tune_request), (override));
   MOCK_METHOD(void, timing_clock, (context_type, midi2::types::system::timing_clock), (override));
-  MOCK_METHOD(void, seq_start, (context_type, midi2::types::system::seq_start), (override));
-  MOCK_METHOD(void, seq_continue, (context_type, midi2::types::system::seq_continue), (override));
-  MOCK_METHOD(void, seq_stop, (context_type, midi2::types::system::seq_stop), (override));
+  MOCK_METHOD(void, seq_start, (context_type, midi2::types::system::sequence_start), (override));
+  MOCK_METHOD(void, seq_continue, (context_type, midi2::types::system::sequence_continue), (override));
+  MOCK_METHOD(void, seq_stop, (context_type, midi2::types::system::sequence_stop), (override));
   MOCK_METHOD(void, active_sensing, (context_type, midi2::types::system::active_sensing), (override));
   MOCK_METHOD(void, reset, (context_type, midi2::types::system::reset), (override));
 };
@@ -437,31 +437,25 @@ TEST_F(UMPDispatcherSystem, TimingClock) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Start) {
-  midi2::types::system::seq_start message;
+  midi2::types::system::sequence_start message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::sequence_start);
   EXPECT_CALL(config_.system, seq_start(config_.context, message));
   dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Continue) {
-  midi2::types::system::seq_continue message;
+  midi2::types::system::sequence_continue message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::sequence_continue);
   EXPECT_CALL(config_.system, seq_continue(config_.context, message));
   dispatcher_.processUMP(w0);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, Stop) {
-  midi2::types::system::seq_stop message;
+  midi2::types::system::sequence_stop message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::sequence_stop);
   EXPECT_CALL(config_.system, seq_stop(config_.context, message));
   dispatcher_.processUMP(w0);
 }
