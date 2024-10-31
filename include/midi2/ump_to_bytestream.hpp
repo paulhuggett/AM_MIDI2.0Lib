@@ -218,7 +218,11 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO: implement!
+        static_assert(bytestream_message_size<status::channel_pressure>() == 2);
+        static_assert(std::tuple_size_v<decltype(types::m1cvm::channel_pressure::w)> == 1);
+        auto const &w0 = get<0>(in.w);
+        ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{w0.channel.value()});
+        ctxt->push_back(std::byte{w0.data.value()});
       }
       static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
         if (ctxt->filter_message(in)) {
