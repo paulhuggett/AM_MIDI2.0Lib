@@ -336,9 +336,7 @@ public:
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
     message_[pos_++] = ump;
-
-    auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF);
-    if (pos_ >= ump_message_size(mt)) {
+    if (auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
       switch (mt) {
       case ump_message_type::utility: this->utility_message(); break;
       case ump_message_type::system: this->system_message(); break;
