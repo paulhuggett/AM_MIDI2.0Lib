@@ -183,6 +183,21 @@ TEST(UMPToByteStream, SystemSongPositionPointer) {
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 // NOLINTNEXTLINE
+TEST(UMPToByteStream, SystemSongSelect) {
+  auto const group = 1U;
+  auto const song = 0x64U;
+  midi2::types::system::song_select message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+  w0.song = song;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const expected{std::byte{to_underlying(midi2::status::song_select)}, std::byte{song}};
+  EXPECT_THAT(convert(input), ElementsAreArray(expected));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTuneRequest) {
   midi2::types::system::tune_request message;
   std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};

@@ -109,7 +109,11 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO
+        static_assert(std::tuple_size_v<decltype(types::system::song_select::w)> == 1);
+        static_assert(bytestream_message_size<status::song_select>() == 2);
+        auto const &w0 = get<0>(in.w);
+        ctxt->push_back(std::byte{to_underlying(status::song_select)});
+        ctxt->push_back(std::byte{w0.song.value()});
       }
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
         if (ctxt->filter_message(in)) {
