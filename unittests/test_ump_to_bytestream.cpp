@@ -158,6 +158,26 @@ TEST(UMPToBytestream, ControlChangeFilteredGroup) {
   auto const actual = convert(input, std::uint16_t{group});
   EXPECT_THAT(actual, IsEmpty());
 }
+// NOLINTNEXTLINE
+TEST(UMPToBytestream, M1CVMPitchBend) {
+  constexpr auto group = 1U;
+  constexpr auto channel = 2U;
+  constexpr auto lsb = 0b00110011;
+  constexpr auto msb = 0b01100110;
+
+  midi2::types::m1cvm::pitch_bend message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+  w0.channel = channel;
+  w0.lsb_data = lsb;
+  w0.msb_data = msb;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::pitch_bend)} | std::byte{channel},
+                                  std::byte{lsb}, std::byte{msb}));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimeCode) {

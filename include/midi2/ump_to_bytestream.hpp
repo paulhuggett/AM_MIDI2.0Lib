@@ -224,7 +224,12 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO: implement!
+        static_assert(bytestream_message_size<status::pitch_bend>() == 3);
+        static_assert(std::tuple_size_v<decltype(types::m1cvm::pitch_bend::w)> == 1);
+        auto const &w0 = get<0>(in.w);
+        ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{w0.channel.value()});
+        ctxt->push_back(std::byte{w0.lsb_data.value()});
+        ctxt->push_back(std::byte{w0.msb_data.value()});
       }
     };
     struct data64 {
