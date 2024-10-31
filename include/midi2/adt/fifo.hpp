@@ -9,13 +9,9 @@
 #include <type_traits>
 #include <utility>
 
-namespace midi2 {
+#include "midi2/utils.hpp"
 
-/// \returns True if the input value is a power of 2.
-template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) noexcept {
-  // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
-  return n > 0U && !(n & (n - 1U));
-}
+namespace midi2 {
 
 /// \returns  The number of bits required for value.
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -35,7 +31,8 @@ template <std::unsigned_integral T> consteval unsigned bits_required(T const val
 /// \tparam ElementType The type of the elements held by this container.
 /// \tparam Elements The number of elements in the FIFO. Must be less than 2^32.
 template <typename ElementType, std::uint32_t Elements>
-requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31) class fifo {
+  requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31)
+class fifo {
 public:
   /// \brief Inserts an element at the end.
   /// \param value  The value of the element to append.

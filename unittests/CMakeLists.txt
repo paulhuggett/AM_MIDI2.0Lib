@@ -9,17 +9,20 @@
 add_executable (m2unittests
   test_bitfield.cpp
   test_bytestream_to_ump.cpp
+  test_cache.cpp
   test_ci7.cpp
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp
   test_ci_types.cpp
   test_fifo.cpp
+  test_iumap.cpp
+  test_lru.cpp
   test_mcoded7.cpp
   test_scale.cpp
+  test_ump_bytestream_round_trip.cpp
   test_ump_dispatcher.cpp
   test_ump_to_bytestream.cpp
   test_ump_to_midi1.cpp
-  test_ump_bytestream_round_trip.cpp
 )
 target_compile_definitions (m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)
 target_link_libraries(m2unittests PRIVATE midi2)
@@ -35,13 +38,13 @@ target_compile_options (
     $<$<CXX_COMPILER_ID:MSVC>:${msvc_options}>
 )
 
-include(GoogleTest)
-gtest_discover_tests(m2unittests)
-
 if (MIDI2_FUZZTEST)
   target_link_libraries (m2unittests PRIVATE gtest gmock)
   link_fuzztest (m2unittests)
-  gtest_discover_tests (m2unittests)
 else ()
   target_link_libraries (m2unittests PRIVATE gmock_main)
 endif (MIDI2_FUZZTEST)
+
+include(GoogleTest)
+gtest_discover_tests(m2unittests)
+       

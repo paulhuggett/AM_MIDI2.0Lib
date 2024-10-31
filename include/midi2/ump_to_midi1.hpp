@@ -12,7 +12,8 @@
 #include <cstdint>
 #include <tuple>
 
-#include "midi2/fifo.hpp"
+#include "midi2/adt/cache.hpp"
+#include "midi2/adt/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"
 #include "midi2/ump_types.hpp"
 
@@ -21,7 +22,7 @@ namespace midi2 {
 class ump_to_midi1 {
 public:
   [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
-  [[nodiscard]] std::uint32_t readUMP() { return context_.output.pop_front(); }
+  [[nodiscard]] std::uint32_t read() { return context_.output.pop_front(); }
 
   void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
 
@@ -37,8 +38,19 @@ private:
       }
     }
 
+    struct pn_cache_key {
+      bool operator==(pn_cache_key const &) const noexcept = default;
+
+      std::uint8_t group : 4 = 0;
+      std::uint8_t channel : 4 = 0;
+      bool is_rpn = false;
+    };
+
+    // value is 14 bit MIDI 1 controller number (bank/index).
+    cache<pn_cache_key, std::pair<std::uint8_t, std::uint8_t>, 16> pn_cache;
     fifo<std::uint32_t, 4> output;
   };
+  friend struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key>;
 
   struct to_midi1_config {
     // system messages go straight through.
@@ -80,7 +92,8 @@ private:
       static void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
     };
     // m2cvm messages are translated to m1cvm messages.
-    struct m2cvm {
+    class m2cvm {
+    public:
       static void note_off(context_type *ctxt, types::m2cvm::note_off const &in);
       static void note_on(context_type *ctxt, types::m2cvm::note_on const &in);
       static void poly_pressure(context_type *ctxt, types::m2cvm::poly_pressure const &in);
@@ -116,13 +129,17 @@ private:
       static constexpr void per_note_pitch_bend(context_type const *, types::m2cvm::per_note_pitch_bend const &) {
         // do nothing: cannot be translated to MIDI 1
       }
+
+    private:
+      static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
+                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t const value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};
     [[no_unique_address]] struct system system{};
     [[no_unique_address]] struct m1cvm m1cvm{};
     [[no_unique_address]] struct data64 data64{};
-    [[no_unique_address]] struct m2cvm m2cvm{};
+    [[no_unique_address]] class m2cvm m2cvm{};
     [[no_unique_address]] data128_null<decltype(context)> data128{};
     [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream{};
     [[no_unique_address]] flex_data_null<decltype(context)> flex{};
@@ -132,5 +149,12 @@ private:
 };
 
 }  // end namespace midi2
+
+template <> struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key> {
+  std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
+    return std::hash<unsigned>{}(static_cast<unsigned>(key.group << 5) | static_cast<unsigned>(key.channel << 1) |
+                                 static_cast<unsigned>(key.is_rpn));
+  }
+};
 
 #endif  // MIDI2_UMPTOMIDI1_HPP

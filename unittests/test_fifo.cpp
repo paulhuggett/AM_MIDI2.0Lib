@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/fifo.hpp"
+#include "midi2/adt/fifo.hpp"
 
 // Standard library
 #include <queue>

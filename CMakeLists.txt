@@ -24,18 +24,21 @@ add_subdirectory (icubaby)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(MIDI2_HEADERS
-  "${INCLUDE_DIR}/midi2/bitfield.hpp"
+  "${INCLUDE_DIR}/midi2/adt/bitfield.hpp"
+  "${INCLUDE_DIR}/midi2/adt/cache.hpp"
+  "${INCLUDE_DIR}/midi2/adt/fifo.hpp"
+  "${INCLUDE_DIR}/midi2/adt/iumap.hpp"
+  "${INCLUDE_DIR}/midi2/adt/lru_list.hpp"
   "${INCLUDE_DIR}/midi2/bytestream_to_ump.hpp"
   "${INCLUDE_DIR}/midi2/ci7text.hpp"
-  "${INCLUDE_DIR}/midi2/ci_types.hpp"
-  "${INCLUDE_DIR}/midi2/fifo.hpp"
-  "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/ci_create_message.hpp"
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
+  "${INCLUDE_DIR}/midi2/ci_types.hpp"
+  "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
-  "${INCLUDE_DIR}/midi2/ump_types.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
+  "${INCLUDE_DIR}/midi2/ump_types.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 

@@ -7,8 +7,10 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/bitfield.hpp"
 #include "midi2/ump_dispatcher.hpp"
+
+// MIDI2 library
+#include "midi2/adt/bitfield.hpp"
 #include "midi2/ump_types.hpp"
 
 // Standard library

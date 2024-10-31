@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "midi2/fifo.hpp"
+#include "midi2/adt/fifo.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {

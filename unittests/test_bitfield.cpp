@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/bitfield.hpp"
+#include "midi2/adt/bitfield.hpp"
 
 // Standard Library
 #include <bit>
