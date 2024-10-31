@@ -463,9 +463,7 @@ TEST_F(UMPDispatcherSystem, Stop) {
 TEST_F(UMPDispatcherSystem, ActiveSensing) {
   midi2::types::system::active_sensing message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::activesense);
   EXPECT_CALL(config_.system, active_sensing(config_.context, message));
   dispatcher_.processUMP(w0);
 }

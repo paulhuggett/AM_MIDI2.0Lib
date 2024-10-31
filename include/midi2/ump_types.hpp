@@ -337,7 +337,7 @@ struct sequence_stop {
 
 struct active_sensing {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, system_crt::active_sensing)
     ump_bitfield<28, 4> mt;  // Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  // Always 0xFE
@@ -354,7 +354,7 @@ struct active_sensing {
 
 struct reset {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, system_crt::system_reset)
     ump_bitfield<28, 4> mt;  // Always 0x1
     ump_bitfield<24, 4> group;
     ump_bitfield<16, 8> status;  // Always 0xFF

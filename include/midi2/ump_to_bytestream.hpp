@@ -37,12 +37,12 @@ template <> struct bytestream_message_size<midi2::status::spp> : std::integral_c
 template <> struct bytestream_message_size<midi2::status::song_select> : std::integral_constant<unsigned, 2> {};
 template <> struct bytestream_message_size<midi2::status::tune_request> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::sysex_stop> : std::integral_constant<unsigned, 1> {};
-
+// System Realtime Messages
 template <> struct bytestream_message_size<midi2::status::timing_clock> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::sequence_start> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::sequence_continue> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::sequence_stop> : std::integral_constant<unsigned, 1> {};
-template <> struct bytestream_message_size<midi2::status::activesense> : std::integral_constant<unsigned, 1> {};
+template <> struct bytestream_message_size<midi2::status::active_sensing> : std::integral_constant<unsigned, 1> {};
 template <> struct bytestream_message_size<midi2::status::systemreset> : std::integral_constant<unsigned, 1> {};
 
 class ump_to_bytestream {
@@ -73,6 +73,10 @@ private:
     }
 
     /// \returns true if the message should be filtered; false if the message should be allowed.
+    constexpr bool filter_message(unsigned const group) const {
+      assert(group < 16U);
+      return (only_groups & (1U << group)) == 0U;
+    }
     template <typename T> constexpr bool filter_message(T const &in) const {
       return (only_groups & (1U << get<0>(in.w).group)) == 0U;
     }
@@ -86,86 +90,79 @@ private:
   struct to_bytestream_config {
     struct system {
       static void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::midi_time_code::w)> == 1);
         static_assert(bytestream_message_size<status::timing_code>() == 2);
-        ctxt->push_back(std::byte{to_underlying(status::timing_code)});
-        ctxt->push_back(std::byte{get<0>(in.w).time_code.value()});
+        auto const &w0 = get<0>(in.w);
+        system::push(ctxt, w0.group.value(), status::timing_code, std::byte{w0.time_code.value()});
       }
       static void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::song_position_pointer::w)> == 1);
         static_assert(bytestream_message_size<status::spp>() == 3);
         auto const &w0 = get<0>(in.w);
-        ctxt->push_back(std::byte{to_underlying(status::spp)});
-        ctxt->push_back(std::byte{w0.position_lsb.value()});
-        ctxt->push_back(std::byte{w0.position_msb.value()});
+        system::push(ctxt, w0.group.value(), status::spp, std::byte{w0.position_lsb.value()},
+                     std::byte{w0.position_msb.value()});
       }
       static void song_select(context_type *const ctxt, types::system::song_select const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::song_select::w)> == 1);
         static_assert(bytestream_message_size<status::song_select>() == 2);
         auto const &w0 = get<0>(in.w);
-        ctxt->push_back(std::byte{to_underlying(status::song_select)});
-        ctxt->push_back(std::byte{w0.song.value()});
+        system::push(ctxt, w0.group.value(), status::song_select, std::byte{w0.song.value()});
       }
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::tune_request::w)> == 1);
         static_assert(bytestream_message_size<status::tune_request>() == 1);
-        ctxt->push_back(std::byte{to_underlying(status::tune_request)});
+        system::push(ctxt, std::get<0>(in.w).group, status::tune_request);
       }
       static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::timing_clock::w)> == 1);
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
-        ctxt->push_back(std::byte{to_underlying(status::timing_clock)});
+        system::push(ctxt, std::get<0>(in.w).group, status::timing_clock);
       }
       static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::sequence_start::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_start>() == 1);
-        ctxt->push_back(std::byte{to_underlying(status::sequence_start)});
+        system::push(ctxt, std::get<0>(in.w).group, status::sequence_start);
       }
       static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::sequence_continue::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_continue>() == 1);
-        ctxt->push_back(std::byte{to_underlying(status::sequence_continue)});
+        system::push(ctxt, std::get<0>(in.w).group, status::sequence_continue);
       }
       static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
         static_assert(std::tuple_size_v<decltype(types::system::sequence_stop::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_stop>() == 1);
-        ctxt->push_back(std::byte{to_underlying(status::sequence_stop)});
+        system::push(ctxt, std::get<0>(in.w).group, status::sequence_stop);
       }
       static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
-        }
-        // TODO
+        static_assert(std::tuple_size_v<decltype(types::system::active_sensing::w)> == 1);
+        static_assert(bytestream_message_size<status::active_sensing>() == 1);
+        system::push(ctxt, std::get<0>(in.w).group, status::active_sensing);
       }
       static void reset(context_type *const ctxt, types::system::reset const &in) {
-        if (ctxt->filter_message(in)) {
-          return;
+        static_assert(std::tuple_size_v<decltype(types::system::reset::w)> == 1);
+        static_assert(bytestream_message_size<status::systemreset>() == 1);
+        system::push(ctxt, std::get<0>(in.w).group, status::systemreset);
+      }
+
+    private:
+      static void push(context_type *const ctxt, unsigned const group, status const s) {
+        if (!ctxt->filter_message(group)) {
+          ctxt->push_back(std::byte{to_underlying(s)});
         }
-        // TODO
+      }
+      static void push(context_type *const ctxt, unsigned const group, status const s, std::byte const b1) {
+        if (!ctxt->filter_message(group)) {
+          ctxt->push_back(std::byte{to_underlying(s)});
+          ctxt->push_back(b1);
+        }
+      }
+      static void push(context_type *const ctxt, unsigned const group, status const s, std::byte const b1,
+                       std::byte const b2) {
+        if (!ctxt->filter_message(group)) {
+          ctxt->push_back(std::byte{to_underlying(s)});
+          ctxt->push_back(b1);
+          ctxt->push_back(b2);
+        }
       }
     };
     struct m1cvm {
@@ -246,7 +243,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        // TODO: check for messages interleaved on different channels?
         ctxt->push_back(sysex_start);
         data64::write_sysex_bytes(ctxt, in);
       }
@@ -256,7 +252,6 @@ private:
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
           return;
         }
-        // TODO: check for messages interleaved on different channels?
         data64::write_sysex_bytes(ctxt, in);
       }
       static void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) {
@@ -265,7 +260,6 @@ private:
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
           return;
         }
-        // TODO: check for messages interleaves on different channels.
         data64::write_sysex_bytes(ctxt, in);
         ctxt->push_back(sysex_stop);
       }

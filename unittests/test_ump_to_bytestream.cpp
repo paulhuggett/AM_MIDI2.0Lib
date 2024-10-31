@@ -250,6 +250,31 @@ TEST(UMPToBytestream, SystemTimingClock) {
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
 }
 // NOLINTNEXTLINE
+TEST(UMPToBytestream, SystemActiveSensing) {
+  auto const group = 1U;
+  midi2::types::system::active_sensing message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::active_sensing)}));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+// NOLINTNEXTLINE
+TEST(UMPToBytestream, SystemReset) {
+  auto const group = 1U;
+  midi2::types::system::reset message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::systemreset)}));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, ProgramChangeTwoBytes) {
   std::array const input{std::uint32_t{0x20C64000}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xC6}, std::byte{0x40}));

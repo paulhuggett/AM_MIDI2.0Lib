@@ -70,7 +70,7 @@ enum class status : std::uint8_t {
   sequence_continue = 0xFB,  // Continue at the point the sequence was stopped
   sequence_stop = 0xFC,      // Stop the current sequence
   reserved4 = 0xFD,
-  activesense = 0xFE,
+  active_sensing = 0xFE,
   systemreset = 0xFF,
 };
 
@@ -80,7 +80,7 @@ constexpr bool is_system_real_time_message(std::byte const midi1Byte) {
   case status::sequence_start:
   case status::sequence_continue:
   case status::sequence_stop:
-  case status::activesense:
+  case status::active_sensing:
   case status::systemreset: return true;
   default: return false;
   }
@@ -141,7 +141,7 @@ enum class system_crt : std::uint8_t {
   sequence_start = 0xFA,     ///< Start the current sequence playing
   sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
   sequence_stop = 0xFC,      ///< Stop the current sequence
-  active_sense = 0xFE,
+  active_sensing = 0xFE,
   system_reset = 0xFF,
 };
 

@@ -441,7 +441,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_mess
   case system_crt::sequence_stop:
     config_.system.seq_stop(config_.context, types::system::sequence_stop{message_[0]});
     break;
-  case system_crt::active_sense:
+  case system_crt::active_sensing:
     config_.system.active_sensing(config_.context, types::system::active_sensing{message_[0]});
     break;
   case system_crt::system_reset: config_.system.reset(config_.context, types::system::reset{message_[0]}); break;
