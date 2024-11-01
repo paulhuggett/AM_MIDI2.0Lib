@@ -65,6 +65,7 @@ private:
     case 0x0D: return 2;  // Channel Pressure
     case 0x0E: return 3;  // Pitch-bend Change
     case 0x0F: return 1;  // Single byte
+    default: break;
     }
     return 0;
   }
