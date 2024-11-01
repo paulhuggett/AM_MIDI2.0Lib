@@ -11,6 +11,7 @@
 
 // Standard Library
 #include <algorithm>
+#include <any>
 #include <array>
 #include <vector>
 
@@ -32,6 +33,7 @@ auto convert(InputIterator first, InputIterator last) {
   return output;
 }
 
+using testing::ContainerEq;
 using testing::ElementsAre;
 using testing::ElementsAreArray;
 
@@ -213,7 +215,7 @@ TEST(UMPToMIDI1, M2PerNotePitchBend) {
   std::array const input{std::bit_cast<std::uint32_t>(w0), std::bit_cast<std::uint32_t>(w1)};
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAre());
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2RPNController) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
@@ -261,7 +263,7 @@ TEST(UMPToMIDI1, M2RPNController) {
               ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
                           std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
@@ -358,7 +360,7 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
 
   EXPECT_THAT(convert(std::begin(input), std::end(input)), ElementsAreArray(expected));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2NRPNController) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
@@ -406,6 +408,7 @@ TEST(UMPToMIDI1, M2NRPNController) {
   EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(out0), std::bit_cast<std::uint32_t>(out1),
                                   std::bit_cast<std::uint32_t>(out2), std::bit_cast<std::uint32_t>(out3)));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, PitchBend) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
@@ -429,7 +432,7 @@ TEST(UMPToMIDI1, PitchBend) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
 }
-
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOff) {
   midi2::types::m1cvm::note_off noff;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(noff.w));
@@ -437,6 +440,7 @@ TEST(UMPToMIDI1, M1NoteOff) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOn) {
   midi2::types::m1cvm::note_on non;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(non.w));
@@ -444,6 +448,7 @@ TEST(UMPToMIDI1, M1NoteOn) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1PolyPressure) {
   midi2::types::m1cvm::poly_pressure poly_pressure;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(poly_pressure.w));
@@ -451,6 +456,7 @@ TEST(UMPToMIDI1, M1PolyPressure) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1ControlChange) {
   midi2::types::m1cvm::control_change control_change;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(control_change.w));
@@ -458,6 +464,7 @@ TEST(UMPToMIDI1, M1ControlChange) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1ProgramChange) {
   midi2::types::m1cvm::program_change program_change;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(program_change.w));
@@ -465,6 +472,7 @@ TEST(UMPToMIDI1, M1ProgramChange) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1ChannelPressure) {
   midi2::types::m1cvm::channel_pressure channel_pressure;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(channel_pressure.w));
@@ -472,6 +480,7 @@ TEST(UMPToMIDI1, M1ChannelPressure) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1PitchBend) {
   midi2::types::m1cvm::pitch_bend pitch_bend;
   auto const ump = std::bit_cast<std::uint32_t>(get<0>(pitch_bend.w));
@@ -479,5 +488,35 @@ TEST(UMPToMIDI1, M1PitchBend) {
   auto const actual = convert(std::begin(input), std::end(input));
   EXPECT_THAT(actual, ElementsAre(ump));
 }
+// NOLINTNEXTLINE
+TEST(UMPToMIDI1, SystemMessagePassThrough) {
+  midi2::ump_to_midi1 ump2m1;
+  std::vector<std::uint32_t> output;
+  std::vector<std::uint32_t> input;
+
+  auto add = [&input]<typename T>(T const &ump) {
+    static_assert (std::tuple_size_v<decltype(T::w)> == 1);
+    input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
+  };
+
+  add(midi2::types::system::song_position_pointer{});
+  add(midi2::types::system::song_select{});
+  add(midi2::types::system::tune_request{});
+  add(midi2::types::system::timing_clock{});
+  add(midi2::types::system::sequence_start{});
+  add(midi2::types::system::sequence_continue{});
+  add(midi2::types::system::sequence_stop{});
+  add(midi2::types::system::active_sensing{});
+  add(midi2::types::system::reset{});
+
+  for (auto const message: input) {
+    ump2m1.UMPStreamParse(message);
+    while (ump2m1.available()) {
+      output.push_back(ump2m1.read());
+    }
+  }
+  EXPECT_THAT(input, ContainerEq(output));
+}
+
 
 }  // end anonymous namespace
