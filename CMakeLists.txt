@@ -39,6 +39,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
+  "${INCLUDE_DIR}/midi2/usbm1_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 
