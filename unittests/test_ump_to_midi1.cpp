@@ -499,6 +499,7 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
     input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
   };
 
+  add(midi2::types::system::midi_time_code{});
   add(midi2::types::system::song_position_pointer{});
   add(midi2::types::system::song_select{});
   add(midi2::types::system::tune_request{});
