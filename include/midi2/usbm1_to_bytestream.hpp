@@ -47,22 +47,31 @@ private:
   static constexpr std::uint8_t cable(std::uint32_t const p) noexcept { return (p >> 28) & 0x0F; }
   static constexpr std::uint8_t get_cin(std::uint32_t const p) noexcept { return (p >> 24) & 0x0F; }
   static constexpr unsigned midi_x_size(std::uint8_t const cin) noexcept {
-    assert(cin < 0x10U);
+    assert(cin < 0x10U && "code index number should be four bits");
+    // The contents of this switch are based on Table 4-1: "Code Index Number Classifications" in the "Universal
+    // Serial Bus Device Class Definition for MIDI Devices" (Release 1.0 Nov 1, 1999)
     switch (cin) {
-    case 0x00: return 0;  // Reserved for future extension
-    case 0x01: return 0;  // Reserved for future expansion
-    case 0x02: return 2;  // Two-byte System Common messages
-    case 0x03: return 3;  // Three-byte System Common messages
-    case 0x04: return 3;  // SysEx starts or continues
-    case 0x05: return 1;  // Single-byte System Common/SysEx end Message
-    case 0x06: return 2;  // SysEx ends with following two bytes
-    case 0x07: return 3;  // SysEx ends with following three bytes
-    case 0x08: return 3;  // Note-off
-    case 0x09: return 3;  // Note-on
-    case 0x0A: return 3;  // Poly Key Press
-    case 0x0B: return 3;  // Control Change
-    case 0x0C: return 2;  // Program Change
-    case 0x0D: return 2;  // Channel Pressure
+    case 0x00:  // Reserved for future extension
+    case 0x01:  // Reserved for future expansion
+      return 0;
+    case 0x02:  // Two-byte System Common messages
+      return 2;
+    case 0x03:  // Three-byte System Common messages
+    case 0x04:  // SysEx starts or continues
+      return 3;
+    case 0x05:  // Single-byte System Common/SysEx end Message
+      return 1;
+    case 0x06:  // SysEx ends with following two bytes
+      return 2;
+    case 0x07:  // SysEx ends with following three bytes
+    case 0x08:  // Note-off
+    case 0x09:  // Note-on
+    case 0x0A:  // Poly Key Press
+    case 0x0B:  // Control Change
+      return 3;
+    case 0x0C:  // Program Change
+    case 0x0D:  // Channel Pressure
+      return 2;
     case 0x0E: return 3;  // Pitch-bend Change
     case 0x0F: return 1;  // Single byte
     default: break;
