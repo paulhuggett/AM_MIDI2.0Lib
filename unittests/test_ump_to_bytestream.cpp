@@ -177,6 +177,26 @@ TEST(UMPToBytestream, M1CVMChannelPressure) {
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
 // NOLINTNEXTLINE
+TEST(UMPToBytestream, M1CVMPolyPressure) {
+  constexpr auto group = 1U;
+  constexpr auto channel = 3U;
+  constexpr auto note = 0b0101010U;
+  constexpr auto pressure = 0b0110011U;
+
+  midi2::types::m1cvm::poly_pressure message;
+  auto& w0 = get<0>(message.w);
+  w0.group = group;
+  w0.channel = channel;
+  w0.note = note;
+  w0.pressure = pressure;
+
+  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::poly_pressure)} | std::byte{channel},
+                                  std::byte{note}, std::byte{pressure}));
+  EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
+}
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, M1CVMPitchBend) {
   constexpr auto group = 1U;
   constexpr auto channel = 2U;

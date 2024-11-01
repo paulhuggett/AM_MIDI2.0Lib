@@ -73,11 +73,11 @@ private:
     }
 
     /// \returns true if the message should be filtered; false if the message should be allowed.
-    constexpr bool filter_message(unsigned const group) const {
+    [[nodiscard]] constexpr bool filter_message(unsigned const group) const {
       assert(group < 16U);
       return (only_groups & (1U << group)) == 0U;
     }
-    template <typename T> constexpr bool filter_message(T const &in) const {
+    template <typename T> [[nodiscard]] constexpr bool filter_message(T const &in) const {
       return (only_groups & (1U << get<0>(in.w).group)) == 0U;
     }
 
@@ -167,70 +167,76 @@ private:
     };
     struct m1cvm {
       static void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::note_off::w)> == 1);
         static_assert(bytestream_message_size<status::note_off>() == 3);
-        auto const &w0 = get<0>(in.w);
         ctxt->push_back(std::byte{to_underlying(status::note_off)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.note.value()});
         ctxt->push_back(std::byte{w0.velocity.value()});
       }
       static void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::note_on::w)> == 1);
         static_assert(bytestream_message_size<status::note_on>() == 3);
-        auto const &w0 = get<0>(in.w);
         ctxt->push_back(std::byte{to_underlying(status::note_on)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.note.value()});
         ctxt->push_back(std::byte{w0.velocity.value()});
       }
       static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
-        // TODO: implement!
+        static_assert(std::tuple_size_v<decltype(types::m1cvm::poly_pressure::w)> == 1);
+        static_assert(bytestream_message_size<status::poly_pressure>() == 3);
+        ctxt->push_back(std::byte{to_underlying(status::poly_pressure)} | std::byte{w0.channel.value()});
+        ctxt->push_back(std::byte{w0.note.value()});
+        ctxt->push_back(std::byte{w0.pressure.value()});
       }
       static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::control_change::w)> == 1);
         static_assert(bytestream_message_size<status::cc>() == 3);
-        auto const &w0 = get<0>(in.w);
         ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.controller.value()});
         ctxt->push_back(std::byte{w0.value.value()});
       }
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::program_change::w)> == 1);
-        auto const &w0 = get<0>(in.w);
-        ctxt->push_back((std::byte{w0.status.value()} << 4) | std::byte{w0.channel.value()});
+        static_assert(bytestream_message_size<status::program_change>() == 2);
+        ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.program.value()});
       }
       static void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(bytestream_message_size<status::channel_pressure>() == 2);
         static_assert(std::tuple_size_v<decltype(types::m1cvm::channel_pressure::w)> == 1);
-        auto const &w0 = get<0>(in.w);
         ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.data.value()});
       }
       static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
-        if (ctxt->filter_message(in)) {
+        auto const &w0 = get<0>(in.w);
+        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
           return;
         }
         static_assert(bytestream_message_size<status::pitch_bend>() == 3);
         static_assert(std::tuple_size_v<decltype(types::m1cvm::pitch_bend::w)> == 1);
-        auto const &w0 = get<0>(in.w);
         ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{w0.channel.value()});
         ctxt->push_back(std::byte{w0.lsb_data.value()});
         ctxt->push_back(std::byte{w0.msb_data.value()});
