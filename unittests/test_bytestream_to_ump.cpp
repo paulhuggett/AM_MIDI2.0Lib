@@ -54,7 +54,7 @@ template <std::size_t Size> auto convert(midi2::bytestream_to_ump bs2ump, std::a
   std::vector<std::uint32_t> output;
   for (std::byte const b : input) {
     bs2ump.bytestreamParse(b);
-    while (bs2ump.available()) {
+    while (!bs2ump.empty()) {
       output.push_back(bs2ump.read());
     }
   }
@@ -651,7 +651,7 @@ void NeverCrashes(std::vector<std::byte> const& bytes) {
   midi2::bytestream_to_ump bs2ump;
   for (auto const b : bytes) {
     bs2ump.bytestreamParse(b);
-    while (bs2ump.available()) {
+    while (!bs2ump.empty()) {
       (void)bs2ump.read();
     }
   }

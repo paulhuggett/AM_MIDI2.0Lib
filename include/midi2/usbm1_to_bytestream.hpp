@@ -20,10 +20,10 @@ public:
     assert(cable < 16U && "cable number must be four bits");
   }
 
-  [[nodiscard]] constexpr bool available() const { return !output_.empty(); }
-  [[nodiscard]] std::byte read() { return output_.pop_front(); }
+  [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
+  [[nodiscard]] constexpr std::byte read() { return output_.pop_front(); }
 
-  void receive(std::uint32_t const usbm1) {
+  constexpr void receive(std::uint32_t const usbm1) {
     if (cable(usbm1) != cable_) {
       return;
     }

@@ -21,14 +21,17 @@ namespace midi2 {
 
 class ump_to_midi1 {
 public:
-  [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
-  [[nodiscard]] std::uint32_t read() { return context_.output.pop_front(); }
+  /// Checks if the output is empty
+  [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+  [[nodiscard]] constexpr std::uint32_t read() { return context_.output.pop_front(); }
 
   void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
 
 private:
   struct context_type {
-    template <typename T, unsigned Index = 0> requires(std::tuple_size_v<T> >= 0) void push(T const &value) {
+    template <typename T, unsigned Index = 0>
+      requires(std::tuple_size_v<T> >= 0)
+    constexpr void push(T const &value) {
       if constexpr (Index >= std::tuple_size_v<T>) {
         return;
       } else {
@@ -55,41 +58,66 @@ private:
   struct to_midi1_config {
     // system messages go straight through.
     struct system {
-      static void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
+      static constexpr void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
         ctxt->push(in.w);
       }
-      static void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) {
+      static constexpr void song_position_pointer(context_type *const ctxt,
+                                                  types::system::song_position_pointer const &in) {
         ctxt->push(in.w);
       }
-      static void song_select(context_type *const ctxt, types::system::song_select const &in) { ctxt->push(in.w); }
-      static void tune_request(context_type *const ctxt, types::system::tune_request const &in) { ctxt->push(in.w); }
-      static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) { ctxt->push(in.w); }
-      static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) { ctxt->push(in.w); }
-      static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) { ctxt->push(in.w); }
-      static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) { ctxt->push(in.w); }
-      static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
+      static constexpr void song_select(context_type *const ctxt, types::system::song_select const &in) {
         ctxt->push(in.w);
       }
-      static void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in.w); }
+      static constexpr void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in.w); }
     };
     // m1cvm messages go straight through.
     struct m1cvm {
-      static void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) { ctxt->push(in.w); }
-      static void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) { ctxt->push(in.w); }
-      static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) { ctxt->push(in.w); }
-      static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) { ctxt->push(in.w); }
-      static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) { ctxt->push(in.w); }
-      static void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
+      static constexpr void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) { ctxt->push(in.w); }
+      static constexpr void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) { ctxt->push(in.w); }
+      static constexpr void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
         ctxt->push(in.w);
       }
-      static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) { ctxt->push(in.w); }
+      static constexpr void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
+        ctxt->push(in.w);
+      }
     };
     // data64 messages go straight through.
     struct data64 {
-      static void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
-      static void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
-      static void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
-      static void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) {
+        ctxt->push(in.w);
+      }
+      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
     };
     // m2cvm messages are translated to m1cvm messages.
     class m2cvm {

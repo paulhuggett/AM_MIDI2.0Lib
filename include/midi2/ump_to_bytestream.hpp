@@ -49,8 +49,9 @@ class ump_to_bytestream {
 public:
   ump_to_bytestream() = default;
 
-  [[nodiscard]] constexpr bool available() const { return !context_.output.empty(); }
-  [[nodiscard]] std::byte read() { return context_.output.pop_front(); }
+  /// Checks if the output has no elements
+  [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+  [[nodiscard]] constexpr std::byte read() { return context_.output.pop_front(); }
 
   void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
 

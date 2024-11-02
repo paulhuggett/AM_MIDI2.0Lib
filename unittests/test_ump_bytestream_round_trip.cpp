@@ -34,7 +34,7 @@ ump_vector bytesToUMP(byte_vector const& in) {
   ump_vector out;
   for (auto const v : in) {
     bs2ump.bytestreamParse(v);
-    while (bs2ump.available()) {
+    while (!bs2ump.empty()) {
       out.push_back(bs2ump.read());
     }
   }
@@ -46,7 +46,7 @@ byte_vector umpToBytes(ump_vector const& in) {
   byte_vector out;
   for (auto const v : in) {
     ump2bs.UMPStreamParse(v);
-    while (ump2bs.available()) {
+    while (!ump2bs.empty()) {
       out.push_back(ump2bs.read());
     }
   }

@@ -30,8 +30,8 @@ public:
 
   void set_output_midi2(bool enabled) { outputMIDI2_ = enabled; }
 
-  [[nodiscard]] constexpr bool available() const { return !output_.empty(); }
-  [[nodiscard]] std::uint32_t read() {
+  [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
+  [[nodiscard]] constexpr std::uint32_t read() {
     assert(!output_.empty());
     return output_.pop_front();
   }

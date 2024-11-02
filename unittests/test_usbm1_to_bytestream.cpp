@@ -30,7 +30,7 @@ template <std::ranges::input_range Range> auto convert(std::uint8_t const cable,
   midi2::usbm1_to_bytestream m1tobs{cable};
   for (std::uint32_t const m1 : range) {
     m1tobs.receive(m1);
-    while (m1tobs.available()) {
+    while (!m1tobs.empty()) {
       output.push_back(m1tobs.read());
     }
   }

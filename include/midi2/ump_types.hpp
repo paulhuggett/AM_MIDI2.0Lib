@@ -19,7 +19,7 @@
 #include "midi2/utils.hpp"
 
 #define UMP_MEMBERS0(name, st)                                                 \
-  name() {                                                                     \
+  constexpr name() {                                                           \
     static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
     std::memset(this, 0, sizeof(*this));                                       \
     this->mt = to_underlying(status_to_message_type(st));                      \

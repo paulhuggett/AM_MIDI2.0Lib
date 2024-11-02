@@ -26,7 +26,7 @@ auto convert(InputIterator first, InputIterator last) {
   midi2::ump_to_midi1 ump2m1;
   std::for_each(first, last, [&output, &ump2m1](std::uint32_t const ump) {
     ump2m1.UMPStreamParse(ump);
-    while (ump2m1.available()) {
+    while (!ump2m1.empty()) {
       output.push_back(ump2m1.read());
     }
   });
@@ -512,7 +512,7 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
 
   for (auto const message: input) {
     ump2m1.UMPStreamParse(message);
-    while (ump2m1.available()) {
+    while (!ump2m1.empty()) {
       output.push_back(ump2m1.read());
     }
   }
