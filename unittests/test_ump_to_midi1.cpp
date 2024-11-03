@@ -25,9 +25,9 @@ auto convert(InputIterator first, InputIterator last) {
   std::vector<std::uint32_t> output;
   midi2::ump_to_midi1 ump2m1;
   std::for_each(first, last, [&output, &ump2m1](std::uint32_t const ump) {
-    ump2m1.UMPStreamParse(ump);
+    ump2m1.push(ump);
     while (!ump2m1.empty()) {
-      output.push_back(ump2m1.read());
+      output.push_back(ump2m1.pop());
     }
   });
   return output;
@@ -511,9 +511,9 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
   add(midi2::types::system::reset{});
 
   for (auto const message: input) {
-    ump2m1.UMPStreamParse(message);
+    ump2m1.push(message);
     while (!ump2m1.empty()) {
-      output.push_back(ump2m1.read());
+      output.push_back(ump2m1.pop());
     }
   }
   EXPECT_THAT(input, ContainerEq(output));

@@ -21,11 +21,14 @@ namespace midi2 {
 
 class ump_to_midi1 {
 public:
+  using input_type = std::uint32_t;
+  using output_type = std::uint32_t;
+
   /// Checks if the output is empty
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
-  [[nodiscard]] constexpr std::uint32_t read() { return context_.output.pop_front(); }
+  [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
 
-  void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
+  void push(input_type const ump) { p_.processUMP(ump); }
 
 private:
   struct context_type {

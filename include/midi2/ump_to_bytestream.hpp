@@ -47,13 +47,16 @@ template <> struct bytestream_message_size<midi2::status::systemreset> : std::in
 
 class ump_to_bytestream {
 public:
+  using input_type = std::uint32_t;
+  using output_type = std::byte;
+
   ump_to_bytestream() = default;
 
   /// Checks if the output has no elements
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
-  [[nodiscard]] constexpr std::byte read() { return context_.output.pop_front(); }
+  [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
 
-  void UMPStreamParse(std::uint32_t const ump) { p_.processUMP(ump); }
+  void push(input_type const ump) { p_.processUMP(ump); }
 
   void group_filter(std::uint16_t const group_bitmap) {
     context_.only_groups = group_bitmap == 0 ? std::uint16_t{0xFFFF} : group_bitmap;

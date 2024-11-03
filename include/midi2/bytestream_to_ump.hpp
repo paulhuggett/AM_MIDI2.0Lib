@@ -22,6 +22,9 @@ namespace midi2 {
 
 class bytestream_to_ump {
 public:
+  using input_type = std::byte;
+  using output_type = std::uint32_t;
+
   bytestream_to_ump() = default;
   explicit bytestream_to_ump(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
       : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
@@ -31,12 +34,12 @@ public:
   void set_output_midi2(bool enabled) { outputMIDI2_ = enabled; }
 
   [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
-  [[nodiscard]] constexpr std::uint32_t read() {
+  [[nodiscard]] constexpr output_type pop() {
     assert(!output_.empty());
     return output_.pop_front();
   }
 
-  void bytestreamParse(std::byte midi1Byte);
+  void push(input_type midi1Byte);
 
 private:
   static constexpr auto unknown = std::byte{0xFF};

@@ -142,7 +142,7 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
 
 }  // end anonymous namespace
 
-void bytestream_to_ump::bytestreamParse(std::byte const midi1Byte) {
+void bytestream_to_ump::push(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
   if (is_status_byte(midi1Byte)) {

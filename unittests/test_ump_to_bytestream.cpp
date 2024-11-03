@@ -27,9 +27,9 @@ std::vector<std::byte> convert(Range const& range, std::uint16_t group_filter = 
 
   std::vector<std::byte> output;
   for (auto const ump : range) {
-    ump2bs.UMPStreamParse(ump);
+    ump2bs.push(ump);
     while (!ump2bs.empty()) {
-      output.push_back(ump2bs.read());
+      output.push_back(ump2bs.pop());
     }
   }
   return output;

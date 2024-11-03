@@ -33,9 +33,9 @@ ump_vector bytesToUMP(byte_vector const& in) {
   midi2::bytestream_to_ump bs2ump;
   ump_vector out;
   for (auto const v : in) {
-    bs2ump.bytestreamParse(v);
+    bs2ump.push(v);
     while (!bs2ump.empty()) {
-      out.push_back(bs2ump.read());
+      out.push_back(bs2ump.pop());
     }
   }
   return out;
@@ -45,9 +45,9 @@ byte_vector umpToBytes(ump_vector const& in) {
   midi2::ump_to_bytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
-    ump2bs.UMPStreamParse(v);
+    ump2bs.push(v);
     while (!ump2bs.empty()) {
-      out.push_back(ump2bs.read());
+      out.push_back(ump2bs.pop());
     }
   }
   return out;

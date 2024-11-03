@@ -53,9 +53,9 @@ template <typename ArrayLike> HexContainer(ArrayLike const&) -> HexContainer<Arr
 template <std::size_t Size> auto convert(midi2::bytestream_to_ump bs2ump, std::array<std::byte, Size> const& input) {
   std::vector<std::uint32_t> output;
   for (std::byte const b : input) {
-    bs2ump.bytestreamParse(b);
+    bs2ump.push(b);
     while (!bs2ump.empty()) {
-      output.push_back(bs2ump.read());
+      output.push_back(bs2ump.pop());
     }
   }
   return output;
@@ -650,9 +650,9 @@ void NeverCrashes(std::vector<std::byte> const& bytes) {
   // This test simply gets bytestream_to_ump to consume a random buffer.
   midi2::bytestream_to_ump bs2ump;
   for (auto const b : bytes) {
-    bs2ump.bytestreamParse(b);
+    bs2ump.push(b);
     while (!bs2ump.empty()) {
-      (void)bs2ump.read();
+      (void)bs2ump.pop();
     }
   }
 }
