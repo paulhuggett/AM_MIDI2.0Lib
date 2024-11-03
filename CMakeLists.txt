@@ -38,6 +38,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
+  "${INCLUDE_DIR}/midi2/ump_to_midi2.hpp"
   "${INCLUDE_DIR}/midi2/ump_types.hpp"
   "${INCLUDE_DIR}/midi2/usbm1_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
@@ -47,6 +48,7 @@ add_library(midi2 ${MIDI2_HEADERS}
   src/bytestream_to_ump.cpp
   src/ump_to_bytestream.cpp
   src/ump_to_midi1.cpp
+  src/ump_to_midi2.cpp
 )
 setup_target(midi2)
 
