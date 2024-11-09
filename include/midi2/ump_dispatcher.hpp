@@ -95,10 +95,10 @@ concept m1cvm_backend = requires(T v, Context context) {
 };
 template <typename T, typename Context>
 concept data64_backend = requires(T v, Context context) {
-  { v.sysex7_in_1(context, types::data64::sysex7{}) } -> std::same_as<void>;
-  { v.sysex7_start(context, types::data64::sysex7{}) } -> std::same_as<void>;
-  { v.sysex7_continue(context, types::data64::sysex7{}) } -> std::same_as<void>;
-  { v.sysex7_end(context, types::data64::sysex7{}) } -> std::same_as<void>;
+  { v.sysex7_in_1(context, types::data64::sysex7_in_1{}) } -> std::same_as<void>;
+  { v.sysex7_start(context, types::data64::sysex7_start{}) } -> std::same_as<void>;
+  { v.sysex7_continue(context, types::data64::sysex7_continue{}) } -> std::same_as<void>;
+  { v.sysex7_end(context, types::data64::sysex7_end{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept m2cvm_backend = requires(T v, Context context) {
@@ -222,10 +222,10 @@ template <typename Context> struct m1cvm_null {
   constexpr static void pitch_bend(Context, types::m1cvm::pitch_bend const &) { /* do nothing */ }
 };
 template <typename Context> struct data64_null {
-  constexpr static void sysex7_in_1(Context, types::data64::sysex7 const &) { /* do nothing */ }
-  constexpr static void sysex7_start(Context, types::data64::sysex7 const &) { /* do nothing */ }
-  constexpr static void sysex7_continue(Context, types::data64::sysex7 const &) { /* do nothing */ }
-  constexpr static void sysex7_end(Context, types::data64::sysex7 const &) { /* do nothing */ }
+  constexpr static void sysex7_in_1(Context, types::data64::sysex7_in_1 const &) { /* do nothing */ }
+  constexpr static void sysex7_start(Context, types::data64::sysex7_start const &) { /* do nothing */ }
+  constexpr static void sysex7_continue(Context, types::data64::sysex7_continue const &) { /* do nothing */ }
+  constexpr static void sysex7_end(Context, types::data64::sysex7_end const &) { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_null {
   constexpr static void note_off(Context, types::m2cvm::note_off const &) { /* do nothing */ }
@@ -491,12 +491,13 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
   assert(pos_ >= ump_message_size(midi2::ump_message_type::data64));
 
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
-  types::data64::sysex7 message{span};
-  switch (static_cast<data64>(get<0>(message.w).status.value())) {
-  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, message); break;
-  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, message); break;
-  case data64::sysex7_continue: config_.data64.sysex7_continue(config_.context, message); break;
-  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, message); break;
+  switch (static_cast<data64>((message_[0] >> 20) & 0x0F)) {
+  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, types::data64::sysex7_in_1{span}); break;
+  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, types::data64::sysex7_start{span}); break;
+  case data64::sysex7_continue:
+    config_.data64.sysex7_continue(config_.context, types::data64::sysex7_continue{span});
+    break;
+  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, types::data64::sysex7_end{span}); break;
   default: config_.utility.unknown(config_.context, span); break;
   }
 }

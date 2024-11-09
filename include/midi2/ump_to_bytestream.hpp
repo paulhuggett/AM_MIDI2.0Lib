@@ -248,7 +248,7 @@ private:
     };
     struct data64 {
     public:
-      static void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -258,14 +258,14 @@ private:
           ctxt->push_back(sysex_stop);
         }
       }
-      static void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         ctxt->push_back(sysex_start);
         data64::write_sysex_bytes(ctxt, in);
       }
-      static void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) {
         // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
@@ -273,7 +273,7 @@ private:
         }
         data64::write_sysex_bytes(ctxt, in);
       }
-      static void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) {
         // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {

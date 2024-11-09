@@ -142,6 +142,23 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
 
 }  // end anonymous namespace
 
+template <typename T> void bytestream_to_ump::push_sysex7() {
+  T t;
+  static_assert(std::tuple_size_v<decltype(T::w)> == 2);
+  auto& w0 = get<0>(t.w);
+  auto& w1 = get<1>(t.w);
+  w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
+  w0.number_of_bytes = sysex7_.pos;
+  w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
+  w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
+  w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
+  w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
+  w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
+  w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
+  output_.push_back(std::bit_cast<std::uint32_t>(w0));
+  output_.push_back(std::bit_cast<std::uint32_t>(w1));
+}
+
 void bytestream_to_ump::push(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
@@ -162,48 +179,26 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
       sysex7_.pos = 0;
     } else if (midi1int == status::sysex_stop) {
       using enum sysex7::status;
-      types::data64::sysex7 message;
-      auto& w0 = get<0>(message.w);
-      auto& w1 = get<1>(message.w);
-      w0.mt = to_underlying(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = to_underlying(sysex7_.state == start ? data64::sysex7_in_1 : data64::sysex7_end);
-      w0.number_of_bytes = sysex7_.pos;
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
-      w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
-      w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
-      w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
+      switch (sysex7_.state) {
+      case start: push_sysex7<types::data64::sysex7_in_1>(); break;
+      case cont: push_sysex7<types::data64::sysex7_end>(); break;
+      case single_ump:
+      default:
+        // Do nothing. We received a sysex_stop without a preceeding sysex_start
+        break;
+      }
 
       sysex7_.reset();
       sysex7_.state = single_ump;
     }
-  } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont ||
-             sysex7_.state == sysex7::status::end) {
+  } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      types::data64::sysex7 message;
-      auto& w0 = get<0>(message.w);
-      auto& w1 = get<1>(message.w);
-      w0.mt = to_underlying(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = static_cast<std::uint8_t>(sysex7_.state);
-      w0.number_of_bytes = std::uint8_t{6};
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
-      w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
-      w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
-      w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
-
+      switch (sysex7_.state) {
+      case sysex7::status::single_ump:
+      case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
+      case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
+      default: assert(false); break;
+      }
       sysex7_.reset();
       sysex7_.state = sysex7::status::cont;
       sysex7_.pos = 0;

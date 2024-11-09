@@ -343,6 +343,15 @@ TEST(BytestreamToUMP, SysEx) {
       << "\n Expected: " << HexContainer(expected);
 }
 
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, LonelySysExEnd) {
+  using u8 = std::byte;
+  constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
+  std::array const input{stop};
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
+  EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
+}
+
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
   constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
@@ -375,20 +384,16 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
 
   constexpr auto group = std::uint32_t{0};
   auto in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
-    midi2::types::data64::sysex7::word0 w0{};
-    w0.mt = to_underlying(midi2::ump_message_type::data64);
+    midi2::types::data64::sysex7_in_1::word0 w0{};
     w0.group = group;
-    w0.status = to_underlying(midi2::data64::sysex7_in_1);
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;
     return std::bit_cast<std::uint32_t>(w0);
   };
   auto start_message = [](u8 data0, u8 data1) {
-    midi2::types::data64::sysex7::word0 w0{};
-    w0.mt = to_underlying(midi2::ump_message_type::data64);
+    midi2::types::data64::sysex7_start::word0 w0{};
     w0.group = group;
-    w0.status = to_underlying(midi2::data64::sysex7_start);
     w0.number_of_bytes = std::uint8_t{6};
     w0.data0 = data0;
     w0.data1 = data1;
@@ -396,10 +401,8 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   };
   auto end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
-    midi2::types::data64::sysex7::word0 w0{};
-    w0.mt = to_underlying(midi2::ump_message_type::data64);
+    midi2::types::data64::sysex7_end::word0 w0{};
     w0.group = group;
-    w0.status = to_underlying(midi2::data64::sysex7_end);
     w0.number_of_bytes = number_of_bytes;
     w0.data0 = data0;
     w0.data1 = data1;

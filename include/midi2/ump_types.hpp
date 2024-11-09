@@ -530,12 +530,12 @@ struct pitch_bend {
 namespace data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
-struct sysex7 {
+struct sysex7_in_1 {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::data64::sysex7_in_1)
     ump_bitfield<28, 4> mt;  ///< Always 0x3
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // 0b0000..0b0011
+    ump_bitfield<20, 4> status;  ///< Always 0x0
     ump_bitfield<16, 4> number_of_bytes;
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> data0;
@@ -554,9 +554,101 @@ struct sysex7 {
     ump_bitfield<0, 7> data5;
   };
 
-  sysex7() = default;
-  explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7 const &, sysex7 const &) = default;
+  sysex7_in_1() = default;
+  explicit sysex7_in_1(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend bool operator==(sysex7_in_1 const &, sysex7_in_1 const &) = default;
+
+  std::tuple<word0, word1> w;
+};
+
+struct sysex7_start {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::data64::sysex7_start)
+    ump_bitfield<28, 4> mt;  ///< Always 0x3
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0x1
+    ump_bitfield<16, 4> number_of_bytes;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> data0;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> data1;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> data2;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> data3;
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> data4;
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> data5;
+  };
+
+  sysex7_start() = default;
+  explicit sysex7_start(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend bool operator==(sysex7_start const &, sysex7_start const &) = default;
+
+  std::tuple<word0, word1> w;
+};
+
+struct sysex7_continue {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::data64::sysex7_continue)
+    ump_bitfield<28, 4> mt;  ///< Always 0x3
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0x2
+    ump_bitfield<16, 4> number_of_bytes;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> data0;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> data1;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> data2;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> data3;
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> data4;
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> data5;
+  };
+
+  sysex7_continue() = default;
+  explicit sysex7_continue(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend bool operator==(sysex7_continue const &, sysex7_continue const &) = default;
+
+  std::tuple<word0, word1> w;
+};
+struct sysex7_end {
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::data64::sysex7_end)
+    ump_bitfield<28, 4> mt;  ///< Always 0x3
+    ump_bitfield<24, 4> group;
+    ump_bitfield<20, 4> status;  ///< Always 0x3
+    ump_bitfield<16, 4> number_of_bytes;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> data0;
+    ump_bitfield<7, 1> reserved1;
+    ump_bitfield<0, 7> data1;
+  };
+  union word1 {
+    UMP_MEMBERS(word1)
+    ump_bitfield<31, 1> reserved0;
+    ump_bitfield<24, 7> data2;
+    ump_bitfield<23, 1> reserved1;
+    ump_bitfield<16, 7> data3;
+    ump_bitfield<15, 1> reserved2;
+    ump_bitfield<8, 7> data4;
+    ump_bitfield<7, 1> reserved3;
+    ump_bitfield<0, 7> data5;
+  };
+
+  sysex7_end() = default;
+  explicit sysex7_end(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend bool operator==(sysex7_end const &, sysex7_end const &) = default;
 
   std::tuple<word0, word1> w;
 };

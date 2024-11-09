@@ -127,17 +127,17 @@ struct data64_base {
   [[maybe_unused]] data64_base &operator=(data64_base const &) = default;
   [[maybe_unused]] data64_base &operator=(data64_base &&) noexcept = default;
 
-  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_start(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_end(context_type, midi2::types::data64::sysex7) = 0;
+  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7_in_1) = 0;
+  virtual void sysex7_start(context_type, midi2::types::data64::sysex7_start) = 0;
+  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7_continue) = 0;
+  virtual void sysex7_end(context_type, midi2::types::data64::sysex7_end) = 0;
 };
 class Data64Mocks : public data64_base {
 public:
-  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7), (override));
+  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7_in_1), (override));
+  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7_start), (override));
+  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7_continue), (override));
+  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7_end), (override));
 };
 struct m2cvm_base {
   m2cvm_base() = default;
@@ -563,12 +563,10 @@ TEST_F(UMPDispatcherMIDI1, ChannelPressure) {
 //*                                 *
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64SysExIn1) {
-  midi2::types::data64::sysex7 m0;
+  midi2::types::data64::sysex7_in_1 m0;
   auto &w0 = get<0>(m0.w);
   auto &w1 = get<1>(m0.w);
-  w0.mt = to_underlying(midi2::ump_message_type::data64);
   w0.group = 0;
-  w0.status = to_underlying(midi2::data64::sysex7_in_1);
   w0.number_of_bytes = 4;
   w0.data0 = 2;
   w0.data1 = 3;
@@ -580,14 +578,11 @@ TEST_F(UMPDispatcher, Data64SysExIn1) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
-  using midi2::types::data64::sysex7;
 
-  sysex7 m0;
+  midi2::types::data64::sysex7_start m0;
   auto &m0w0 = get<0>(m0.w);
   auto &m0w1 = get<1>(m0.w);
-  m0w0.mt = to_underlying(midi2::ump_message_type::data64);
   m0w0.group = group;
-  m0w0.status = to_underlying(midi2::data64::sysex7_start);
   m0w0.number_of_bytes = 6;
   m0w0.data0 = 2;
   m0w0.data1 = 3;
@@ -596,12 +591,10 @@ TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   m0w1.data4 = 11;
   m0w1.data5 = 13;
 
-  sysex7 m1;
+  midi2::types::data64::sysex7_continue m1;
   auto &m1w0 = get<0>(m1.w);
   auto &m1w1 = get<1>(m1.w);
-  m1w0.mt = to_underlying(midi2::ump_message_type::data64);
   m1w0.group = group;
-  m1w0.status = to_underlying(midi2::data64::sysex7_continue);
   m1w0.number_of_bytes = 6;
   m1w0.data0 = 17;
   m1w0.data1 = 19;
@@ -610,12 +603,10 @@ TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   m1w1.data4 = 31;
   m1w1.data5 = 37;
 
-  sysex7 m2;
+  midi2::types::data64::sysex7_end m2;
   auto &m2w0 = get<0>(m2.w);
   auto &m2w1 = get<1>(m2.w);
-  m2w0.mt = to_underlying(midi2::ump_message_type::data64);
   m2w0.group = group;
-  m2w0.status = to_underlying(midi2::data64::sysex7_end);
   m2w0.number_of_bytes = 4;
   m2w0.data0 = 41;
   m2w0.data1 = 43;

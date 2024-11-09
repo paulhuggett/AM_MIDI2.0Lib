@@ -51,10 +51,9 @@ private:
 
   struct sysex7 {
     enum class status : std::uint8_t {
-      single_ump = 0x0,  ///< A complete sysex message in one UMP
-      start = 0x1,       ///< Sysex start
-      cont = 0x02,       ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
-      end = 0x03,        ///< Sysex end
+      single_ump,  ///< A complete sysex message in one UMP
+      start,       ///< Sysex start
+      cont,        ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
     };
     status state = status::single_ump;
     /// The number of system exclusive bytes in the current UMP [0,6]
@@ -91,6 +90,8 @@ private:
 
   void controllerToUMP(std::byte b0, std::byte b1, std::byte b2);
   void bsToUMP(std::byte b0, std::byte b1, std::byte b2);
+
+  template <typename T> void push_sysex7();
 };
 
 }  // end namespace midi2

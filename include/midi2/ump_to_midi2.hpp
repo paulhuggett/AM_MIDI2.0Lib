@@ -318,14 +318,10 @@ private:
     };
     // data64 messages go straight through.
     struct data64 {
-      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
-      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) {
-        ctxt->push(in.w);
-      }
-      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) {
-        ctxt->push(in.w);
-      }
-      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) { ctxt->push(in.w); }
     };
     // m2cvm messages go straight through.
     struct m2cvm {
@@ -346,15 +342,45 @@ private:
       static constexpr void pitch_bend(context_type * const ctxt, midi2::types::m2cvm::pitch_bend const &in) { ctxt->push(in.w); }
       static constexpr void per_note_pitch_bend(context_type * const ctxt, midi2::types::m2cvm::per_note_pitch_bend const &in) { ctxt->push(in.w); }
     };
+    struct data128 {
+      constexpr static void sysex8_in_1(context_type *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_start(context_type *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_continue(context_type *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_end(context_type *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
+      constexpr static void mds_header(context_type *const ctxt, types::data128::mds_header const &in) { ctxt->push(in.w); }
+      constexpr static void mds_payload(context_type *const ctxt, types::data128::mds_payload const &in) { ctxt->push(in.w); }
+    };
+    struct ump_stream {
+      constexpr static void endpoint_discovery(context_type *const ctxt, types::ump_stream::endpoint_discovery const &in) { ctxt->push(in.w); }
+      constexpr static void endpoint_info_notification(context_type *const ctxt, types::ump_stream::endpoint_info_notification const &in) { ctxt->push(in.w); }
+      constexpr static void device_identity_notification(context_type *const ctxt, types::ump_stream::device_identity_notification const &in) { ctxt->push(in.w); }
+      constexpr static void endpoint_name_notification(context_type *const ctxt, types::ump_stream::endpoint_name_notification const &in) { ctxt->push(in.w); }
+      constexpr static void product_instance_id_notification(context_type *const ctxt, types::ump_stream::product_instance_id_notification const &in) { ctxt->push(in.w); }
+      constexpr static void jr_configuration_request(context_type *const ctxt, types::ump_stream::jr_configuration_request const &in) { ctxt->push(in.w); }
+      constexpr static void jr_configuration_notification( context_type *const ctxt, types::ump_stream::jr_configuration_notification const &in) { ctxt->push(in.w); }
+      constexpr static void function_block_discovery(context_type *const ctxt, types::ump_stream::function_block_discovery const &in) { ctxt->push(in.w); }
+      constexpr static void function_block_info_notification(context_type *const ctxt, types::ump_stream::function_block_info_notification const &in) { ctxt->push(in.w); }
+      constexpr static void function_block_name_notification(context_type *const ctxt, types::ump_stream::function_block_name_notification const &in) { ctxt->push(in.w); }
+      constexpr static void start_of_clip(context_type *const ctxt, types::ump_stream::start_of_clip const &in) { ctxt->push(in.w); }
+      constexpr static void end_of_clip(context_type *const ctxt, types::ump_stream::end_of_clip const &in) { ctxt->push(in.w); }
+    };
+    struct flex_data {
+      constexpr static void set_tempo(context_type *const ctxt, types::flex_data::set_tempo const &in) { ctxt->push(in.w); }
+      constexpr static void set_time_signature(context_type *const ctxt, types::flex_data::set_time_signature const &in) { ctxt->push(in.w); }
+      constexpr static void set_metronome(context_type *const ctxt, types::flex_data::set_metronome const &in) { ctxt->push(in.w); }
+      constexpr static void set_key_signature(context_type *const ctxt, types::flex_data::set_key_signature const &in) { ctxt->push(in.w); }
+      constexpr static void set_chord_name(context_type *const ctxt, types::flex_data::set_chord_name const &in) { ctxt->push(in.w); }
+      constexpr static void text(context_type *const ctxt, types::flex_data::text_common const &in) { ctxt->push(in.w); }
+    };
     context_type *context = nullptr;
     [[no_unique_address]] struct utility utility{};
     [[no_unique_address]] struct system system{};
     [[no_unique_address]] class m1cvm m1cvm{};
     [[no_unique_address]] struct data64 data64{};
     [[no_unique_address]] struct m2cvm m2cvm{};
-    [[no_unique_address]] data128_null<decltype(context)> data128{};
-    [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream{};
-    [[no_unique_address]] flex_data_null<decltype(context)> flex{};
+    [[no_unique_address]] struct data128 data128{};
+    [[no_unique_address]] struct ump_stream ump_stream{};
+    [[no_unique_address]] struct flex_data flex{};
   };
 
   context_type context_;

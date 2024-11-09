@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using testing::ContainerEq;
 using testing::ElementsAre;
 
 namespace {
@@ -118,6 +119,62 @@ TEST(UMPToMidi2, PitchBend) {
 
   std::array const input{std::bit_cast<std::uint32_t>(m10)};
   EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToMidi2, SystemMessagePassThrough) {
+  midi2::ump_to_midi2 ump2m2{0};
+  std::vector<std::uint32_t> output;
+  std::vector<std::uint32_t> input;
+
+  auto add = [&input]<typename T>(T const& ump) {
+    static_assert(std::tuple_size_v<decltype(T::w)> == 1);
+    input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
+  };
+
+  add(midi2::types::system::midi_time_code{});
+  add(midi2::types::system::song_position_pointer{});
+  add(midi2::types::system::song_select{});
+  add(midi2::types::system::tune_request{});
+  add(midi2::types::system::timing_clock{});
+  add(midi2::types::system::sequence_start{});
+  add(midi2::types::system::sequence_continue{});
+  add(midi2::types::system::sequence_stop{});
+  add(midi2::types::system::active_sensing{});
+  add(midi2::types::system::reset{});
+
+  for (auto const message : input) {
+    ump2m2.push(message);
+    while (!ump2m2.empty()) {
+      output.push_back(ump2m2.pop());
+    }
+  }
+  EXPECT_THAT(input, ContainerEq(output));
+}
+
+TEST(UMPToMidi2, Data64MessagePassThrough) {
+  midi2::ump_to_midi2 ump2m2{0};
+  std::vector<std::uint32_t> output;
+  std::vector<std::uint32_t> input;
+
+  auto add = [&input]<typename T>(T const& ump) {
+    static_assert(std::tuple_size_v<decltype(T::w)> == 2);
+    input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
+    input.emplace_back(std::bit_cast<std::uint32_t>(get<1>(ump.w)));
+  };
+
+  add(midi2::types::data64::sysex7_in_1{});
+  add(midi2::types::data64::sysex7_start{});
+  add(midi2::types::data64::sysex7_continue{});
+  add(midi2::types::data64::sysex7_end{});
+
+  for (auto const message : input) {
+    ump2m2.push(message);
+    while (!ump2m2.empty()) {
+      output.push_back(ump2m2.pop());
+    }
+  }
+  EXPECT_THAT(input, ContainerEq(output));
 }
 
 }  // end anonymous namespace
