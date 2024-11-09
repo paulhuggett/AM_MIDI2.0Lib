@@ -135,7 +135,8 @@ void ump_to_midi2::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
 
 namespace {
 
-/// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
+#if 0
+  /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
 constexpr bool isOneByteMessage(std::byte const midi1Byte) {
   using status_type = std::underlying_type_t<status>;
   auto const value = std::to_integer<status_type>(midi1Byte);
@@ -143,6 +144,7 @@ constexpr bool isOneByteMessage(std::byte const midi1Byte) {
   return top_nibble == to_underlying(status::program_change) || top_nibble == to_underlying(status::channel_pressure) ||
          value == to_underlying(status::timing_code) || value == to_underlying(status::song_select);
 }
+#endif
 
 }  // end anonymous namespace
 

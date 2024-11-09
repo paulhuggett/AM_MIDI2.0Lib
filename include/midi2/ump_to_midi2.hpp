@@ -164,7 +164,7 @@ private:
         w0.attribute = 0;
         constexpr auto m1bits = bits_v<decltype(noff_in.velocity)>;
         constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
-        w1.velocity = mcm_scale<m1bits, m2bits>(noff_in.velocity);
+        w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(noff_in.velocity));
         w1.attribute = 0;
         ctxt->push(noff.w);
       }
@@ -180,7 +180,7 @@ private:
         w0.attribute = 0;
         constexpr auto m1bits = bits_v<decltype(non_in.velocity)>;
         constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
-        w1.velocity = mcm_scale<m1bits, m2bits>(non_in.velocity);
+        w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(non_in.velocity));
         w1.attribute = 0;
         ctxt->push(non.w);
       }
@@ -284,7 +284,8 @@ private:
         }
         ctxt->push(out.w);
       }
-      static constexpr void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
+      static constexpr void channel_pressure(context_type *const /*ctxt*/,
+                                             types::m1cvm::channel_pressure const & /*in*/) {
         /* TODO: implement! */
       }
       static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
@@ -297,7 +298,9 @@ private:
         w0.channel = pb_in.channel.value();
         constexpr auto lsb_bits = bits_v<decltype(pb_in.lsb_data)>;
         constexpr auto msb_bits = bits_v<decltype(pb_in.msb_data)>;
-        w1 = mcm_scale<lsb_bits + msb_bits, bits_v<decltype(w1)>>((pb_in.msb_data << lsb_bits) | pb_in.lsb_data);
+        static_assert(lsb_bits + msb_bits <= 16);
+        w1 = mcm_scale<lsb_bits + msb_bits, bits_v<decltype(w1)>>(
+            static_cast<std::uint16_t>((pb_in.msb_data << lsb_bits) | pb_in.lsb_data));
         ctxt->push(out.w);
       }
 
