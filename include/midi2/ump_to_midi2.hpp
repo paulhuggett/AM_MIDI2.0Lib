@@ -41,9 +41,9 @@ public:
   using input_type = std::uint32_t;
   using output_type = std::uint32_t;
 
-  constexpr ump_to_midi2() = default;
-  explicit constexpr ump_to_midi2(std::uint8_t const default_group) : defaultGroup_{default_group} {
-    assert(default_group <= 0b1111);
+  explicit constexpr ump_to_midi2(std::uint8_t const group) {
+    assert(group <= 0b1111);
+    context_.group = group;
   }
 
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
@@ -55,52 +55,6 @@ public:
   void push(input_type const ump) { p_.processUMP(ump); }
 
 private:
-  static constexpr auto unknown = std::byte{0xFF};
-  std::byte defaultGroup_ = std::byte{0};
-
-  struct sysex7 {
-    enum class status : std::uint8_t {
-      single_ump = 0x0,  ///< A complete sysex message in one UMP
-      start = 0x1,       ///< Sysex start
-      cont = 0x02,       ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
-      end = 0x03,        ///< Sysex end
-    };
-    status state = status::single_ump;
-    /// The number of system exclusive bytes in the current UMP [0,6]
-    std::uint8_t pos = 0;
-    /// System exclusive message bytes gathered for the current UMP
-    std::array<std::byte, 6> bytes{};
-
-    void reset() { std::ranges::fill(bytes, std::byte{0}); }
-  };
-  sysex7 sysex7_;
-  // fifo<std::uint32_t, 4> output_{};
-
-  // Channel Based Data
-  struct channel {
-    std::byte bankMSB = std::byte{0xFF};
-    std::byte bankLSB = std::byte{0xFF};
-    bool rpnMode = true;
-    std::byte rpnMsbValue = std::byte{0xFF};
-    std::byte rpnMsb = std::byte{0xFF};
-    std::byte rpnLsb = std::byte{0xFF};
-  };
-  std::array<channel, 16> channel_{};
-
-  [[nodiscard]] static constexpr std::uint32_t pack(std::byte const b0, std::byte const b1, std::byte const b2,
-                                                    std::byte const b3) {
-    return (std::to_integer<std::uint32_t>(b0) << 24) | (std::to_integer<std::uint32_t>(b1) << 16) |
-           (std::to_integer<std::uint32_t>(b2) << 8) | std::to_integer<std::uint32_t>(b3);
-  }
-
-  [[nodiscard]] constexpr std::uint32_t pack(ump_message_type const message_type, std::byte const b1,
-                                             std::byte const b2, std::byte const b3) const {
-    return pack((static_cast<std::byte>(message_type) << 4) | defaultGroup_, b1, b2, b3);
-  }
-
-  void controllerToUMP(std::byte b0, std::byte b1, std::byte b2);
-  void bsToUMP(std::byte b0, std::byte b1, std::byte b2);
-
   struct context_type {
     template <typename T, unsigned Index = 0>
       requires(std::tuple_size_v<T> >= 0)
@@ -108,12 +62,67 @@ private:
       if constexpr (Index >= std::tuple_size_v<T>) {
         return;
       } else {
-        auto const value32 = std::bit_cast<std::uint32_t>(std::get<Index>(value));
-        output.push_back(value32);
+        output.push_back(std::bit_cast<std::uint32_t>(std::get<Index>(value)));
         push<T, Index + 1>(value);
       }
     }
 
+    struct bank {
+      std::uint8_t msb_valid : 1 = false;
+      std::uint8_t msb : 7 = 0;  // Set by bank_select control
+      std::uint8_t lsb_valid : 1 = false;
+      std::uint8_t lsb : 7 = 0;  // Set by bank_select_lsb control
+
+      constexpr void set_msb(std::uint8_t const value) noexcept {
+        assert(value < 0x80);
+        msb = value;
+        msb_valid = true;
+      }
+      constexpr void set_lsb(std::uint8_t const value) noexcept {
+        assert(value < 0x80);
+        lsb = value;
+        lsb_valid = true;
+      }
+      constexpr bool is_valid() const noexcept { return lsb_valid && msb_valid; }
+    };
+
+    /// Represents the status of registered (RPN) or non-registered/assignable (NRPN) parameters
+    struct parameter_number {
+      bool pn_is_rpn = false;  ///< Is this nrpn or rpn?
+      std::uint8_t pn_msb_valid : 1 = false;
+      std::uint8_t pn_msb : 7 = 0;  ///< Set by nrpn_msb/rpn_msb
+      std::uint8_t pn_lsb_valid : 1 = false;
+      std::uint8_t pn_lsb : 7 = 0;  ///< Set by nrpn_lsb/rpn_lsb
+
+      std::uint8_t value_msb_valid : 1 = false;
+      std::uint8_t value_msb : 7 = 0;
+
+      constexpr void set_number_msb(std::uint8_t const value) noexcept {
+        assert(value < 0x80);
+        pn_msb = value;
+        pn_msb_valid = true;
+      }
+      constexpr void set_number_lsb(std::uint8_t const value) noexcept {
+        assert(value < 0x80);
+        pn_lsb = value;
+        pn_lsb_valid = true;
+      }
+      constexpr void reset_number() noexcept {
+        pn_msb_valid = false;
+        pn_msb = 0;
+        pn_lsb_valid = false;
+        pn_lsb = 0;
+      }
+      constexpr void set_value_msb(std::uint8_t const value) noexcept {
+        assert(value < 0x80);
+        value_msb = value;
+        value_msb_valid = true;
+      }
+    };
+
+    std::uint8_t group = 0;
+    std::array<bank, 16> bank{};
+    std::array<parameter_number, 16> parameter_number{};
     fifo<std::uint32_t, 4> output;
   };
 
@@ -141,7 +150,8 @@ private:
       static constexpr void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in.w); }
     };
     // m1cvm messages are converted to m2cvm messages.
-    struct m1cvm {
+    class m1cvm {
+    public:
       static void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) {
         auto const & noff_in = get<0>(in.w);
 
@@ -188,16 +198,96 @@ private:
         w1 = mcm_scale<m1bits, m2bits>(pp_in.pressure);
         ctxt->push(out.w);
       }
-      static constexpr void control_change(context_type *const ctxt, types::m1cvm::control_change const & in) {
-        /* TODO: implement! */
+      static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
+        auto const &cc_in0 = get<0>(in.w);
+
+        auto const group = cc_in0.group.value();
+        auto const channel = cc_in0.channel.value();
+        auto const controller = cc_in0.controller.value();
+        auto const value = cc_in0.value.value();
+
+        auto &c = ctxt->parameter_number[channel];
+        switch (controller) {
+        case control::bank_select: ctxt->bank[channel].set_msb(value); break;
+        case control::bank_select_lsb: ctxt->bank[channel].set_lsb(value); break;
+
+        case control::nrpn_msb:
+          c.pn_is_rpn = false;
+          c.set_number_msb(value);
+          break;
+        case control::nrpn_lsb:
+          c.pn_is_rpn = false;
+          c.pn_lsb_valid = true;
+          c.pn_lsb = value;
+          break;
+
+        case control::rpn_msb:
+          c.pn_is_rpn = true;
+          c.set_number_msb(value);
+          break;
+        case control::rpn_lsb:
+          // Setting RPN to 7FH,7FH will disable the data entry, data increment, and data decrement controllers
+          // until a new RPN or NRPN is selected. (MIDI 1.0 Approved Protocol JMSC-0011)
+          if (c.pn_is_rpn && c.pn_msb_valid && c.pn_msb == 0x7F && value == 0x7F) {
+            c.reset_number();
+          } else {
+            c.pn_is_rpn = true;
+            c.set_number_lsb(value);
+          }
+          break;
+
+        case control::data_entry_msb: c.set_value_msb(value); break;
+
+        case control::data_entry_lsb:
+          if (c.pn_msb_valid && c.pn_lsb_valid && c.value_msb_valid) {
+            if (c.pn_is_rpn) {
+              pn_control_message<types::m2cvm::rpn_controller>(ctxt, c, group, channel, value);
+            } else {
+              pn_control_message<types::m2cvm::nrpn_controller>(ctxt, c, group, channel, value);
+            }
+          }
+          break;
+
+        case control::reset_all_controllers: c.reset_number(); [[fallthrough]];
+
+        default: {
+          types::m2cvm::control_change out;
+          auto &out0 = get<0>(out.w);
+          out0.group = group;
+          out0.channel = channel;
+          out0.controller = controller;
+          auto &out1 = get<1>(out.w);
+          out1 = midi2::mcm_scale<bits_v<decltype(cc_in0.value)>, bits_v<decltype(out1)>>(value);
+          ctxt->push(out.w);
+          break;
+        }
+        }
       }
-      static constexpr void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
-        /* TODO: implement! */
+
+      static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
+        auto const &in0 = get<0>(in.w);
+        auto const group = in0.group.value();
+        // TODO: filter group
+        auto const channel = in0.channel.value();
+
+        types::m2cvm::program_change out;
+        auto &out0 = get<0>(out.w);
+        auto &out1 = get<1>(out.w);
+        out0.group = group;
+        out0.channel = channel;
+        out1.program = in0.program.value();
+
+        if (auto const &b = ctxt->bank[channel]; b.is_valid()) {
+          out0.bank_valid = 1;
+          out1.bank_msb = b.msb;
+          out1.bank_lsb = b.lsb;
+        }
+        ctxt->push(out.w);
       }
       static constexpr void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
         /* TODO: implement! */
       }
-      static constexpr void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
+      static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
         auto const &pb_in = get<0>(in.w);
 
         types::m2cvm::pitch_bend out;
@@ -207,8 +297,22 @@ private:
         w0.channel = pb_in.channel.value();
         constexpr auto lsb_bits = bits_v<decltype(pb_in.lsb_data)>;
         constexpr auto msb_bits = bits_v<decltype(pb_in.msb_data)>;
-        constexpr auto m2bits = bits_v<decltype(w1)>;
-        w1 = mcm_scale<lsb_bits + msb_bits, m2bits>((pb_in.msb_data << lsb_bits) | pb_in.lsb_data);
+        w1 = mcm_scale<lsb_bits + msb_bits, bits_v<decltype(w1)>>((pb_in.msb_data << lsb_bits) | pb_in.lsb_data);
+        ctxt->push(out.w);
+      }
+
+    private:
+      template <typename T>
+      static void pn_control_message(context_type *const ctxt, struct context_type::parameter_number const &c,
+                                     std::uint8_t const group, std::uint8_t const channel, std::uint8_t const value) {
+        T out;
+        auto &out0 = get<0>(out.w);
+        out0.group = group;
+        out0.channel = channel;
+        out0.bank = c.pn_msb;
+        out0.index = c.pn_lsb;
+        get<1>(out.w) =
+            mcm_scale<14, 32>((static_cast<std::uint32_t>(c.value_msb) << 7) | static_cast<std::uint32_t>(value));
         ctxt->push(out.w);
       }
     };
@@ -245,7 +349,7 @@ private:
     context_type *context = nullptr;
     [[no_unique_address]] struct utility utility{};
     [[no_unique_address]] struct system system{};
-    [[no_unique_address]] struct m1cvm m1cvm{};
+    [[no_unique_address]] class m1cvm m1cvm{};
     [[no_unique_address]] struct data64 data64{};
     [[no_unique_address]] struct m2cvm m2cvm{};
     [[no_unique_address]] data128_null<decltype(context)> data128{};

@@ -16,7 +16,7 @@ namespace {
 
 template <std::ranges::input_range Range> auto convert(Range const& input) {
   std::vector<std::uint32_t> output;
-  midi2::ump_to_midi2 ump2m2;
+  midi2::ump_to_midi2 ump2m2{0};
   for (auto const message : input) {
     ump2m2.push(message);
     while (!ump2m2.empty()) {

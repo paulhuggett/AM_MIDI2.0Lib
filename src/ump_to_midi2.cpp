@@ -19,6 +19,7 @@
 
 namespace midi2 {
 
+#if 0
 void ump_to_midi2::controllerToUMP(std::byte const b0, std::byte const b1, std::byte const b2) {
   auto const channel = b0 & std::byte{0x0F};
   auto& c = channel_[std::to_integer<unsigned>(channel)];
@@ -68,9 +69,10 @@ void ump_to_midi2::controllerToUMP(std::byte const b0, std::byte const b1, std::
     break;
   }
 }
+#endif
 
-void ump_to_midi2::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
 #if 0
+void ump_to_midi2::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
   assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
          "The top bit of b1 and b2 must be zero");
   using midi2::mcm_scale;
@@ -128,8 +130,8 @@ void ump_to_midi2::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
     // Unknown message
     break;
   }
-#endif
 }
+#endif
 
 namespace {
 
