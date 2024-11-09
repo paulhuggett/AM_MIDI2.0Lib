@@ -121,8 +121,13 @@ private:
     };
 
     std::uint8_t group = 0;
-    std::array<bank, 16> bank{};
-    std::array<parameter_number, 16> parameter_number{};
+
+    /// An alias template for a two-dimensional std::array
+    template <typename T, std::size_t Row, std::size_t Col> using array2d = std::array<std::array<T, Col>, Row>;
+
+
+    array2d<bank, 16, 16> bank{};
+    array2d<parameter_number, 16, 16> parameter_number{};
     fifo<std::uint32_t, 4> output;
   };
 
@@ -206,10 +211,10 @@ private:
         auto const controller = cc_in0.controller.value();
         auto const value = cc_in0.value.value();
 
-        auto &c = ctxt->parameter_number[channel];
+        auto &c = ctxt->parameter_number[group][channel];
         switch (controller) {
-        case control::bank_select: ctxt->bank[channel].set_msb(value); break;
-        case control::bank_select_lsb: ctxt->bank[channel].set_lsb(value); break;
+        case control::bank_select: ctxt->bank[group][channel].set_msb(value); break;
+        case control::bank_select_lsb: ctxt->bank[group][channel].set_lsb(value); break;
 
         case control::nrpn_msb:
           c.pn_is_rpn = false;
@@ -267,7 +272,6 @@ private:
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
         auto const &in0 = get<0>(in.w);
         auto const group = in0.group.value();
-        // TODO: filter group
         auto const channel = in0.channel.value();
 
         types::m2cvm::program_change out;
@@ -277,7 +281,7 @@ private:
         out0.channel = channel;
         out1.program = in0.program.value();
 
-        if (auto const &b = ctxt->bank[channel]; b.is_valid()) {
+        if (auto const &b = ctxt->bank[group][channel]; b.is_valid()) {
           out0.bank_valid = 1;
           out1.bank_msb = b.msb;
           out1.bank_lsb = b.lsb;
