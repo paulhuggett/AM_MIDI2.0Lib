@@ -121,59 +121,90 @@ TEST(UMPToMidi2, PitchBend) {
   EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
 }
 
+template <typename T> class UMPToMidi2PassThrough : public testing::Test {
+public:
+  template <typename T2>
+    requires(std::tuple_size_v<decltype(T2::w)> == 1)
+  std::vector<std::uint32_t> add(T2 const& ump) {
+    return {std::bit_cast<std::uint32_t>(get<0>(ump.w))};
+  }
+
+  template <typename T2>
+    requires(std::tuple_size_v<decltype(T2::w)> == 2)
+  std::vector<std::uint32_t> add(T2 const& ump) {
+    return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w))};
+  }
+
+  template <typename T2>
+    requires(std::tuple_size_v<decltype(T2::w)> == 4)
+  std::vector<std::uint32_t> add(T2 const& ump) {
+    return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w)),
+            std::bit_cast<std::uint32_t>(get<2>(ump.w)), std::bit_cast<std::uint32_t>(get<3>(ump.w))};
+  }
+};
+
+// clang-format off
+using PassThroughTypes = ::testing::Types<
+  midi2::types::system::midi_time_code,
+  midi2::types::system::song_position_pointer,
+  midi2::types::system::song_select,
+  midi2::types::system::tune_request,
+  midi2::types::system::timing_clock,
+  midi2::types::system::sequence_start,
+  midi2::types::system::sequence_continue,
+  midi2::types::system::sequence_stop,
+  midi2::types::system::active_sensing,
+  midi2::types::system::reset,
+
+  midi2::types::data64::sysex7_in_1,
+  midi2::types::data64::sysex7_start,
+  midi2::types::data64::sysex7_continue,
+  midi2::types::data64::sysex7_end,
+
+  midi2::types::m2cvm::note_off,
+  midi2::types::m2cvm::note_on,
+  midi2::types::m2cvm::poly_pressure,
+  midi2::types::m2cvm::program_change,
+  midi2::types::m2cvm::channel_pressure,
+  midi2::types::m2cvm::rpn_controller,
+  midi2::types::m2cvm::nrpn_controller,
+  midi2::types::m2cvm::rpn_per_note_controller,
+  midi2::types::m2cvm::nrpn_per_note_controller,
+  midi2::types::m2cvm::rpn_relative_controller,
+  midi2::types::m2cvm::nrpn_relative_controller,
+  midi2::types::m2cvm::per_note_management,
+  midi2::types::m2cvm::control_change,
+  midi2::types::m2cvm::pitch_bend,
+  midi2::types::m2cvm::per_note_pitch_bend,
+
+  midi2::types::ump_stream::endpoint_discovery,
+  midi2::types::ump_stream::endpoint_info_notification,
+  midi2::types::ump_stream::device_identity_notification,
+  midi2::types::ump_stream::endpoint_name_notification,
+  midi2::types::ump_stream::product_instance_id_notification,
+  midi2::types::ump_stream::jr_configuration_request,
+  midi2::types::ump_stream::jr_configuration_notification,
+  midi2::types::ump_stream::function_block_discovery,
+  midi2::types::ump_stream::function_block_info_notification,
+  midi2::types::ump_stream::function_block_name_notification,
+  midi2::types::ump_stream::start_of_clip,
+  midi2::types::ump_stream::end_of_clip,
+
+  midi2::types::flex_data::set_tempo,
+  midi2::types::flex_data::set_time_signature,
+  midi2::types::flex_data::set_metronome,
+  midi2::types::flex_data::set_key_signature,
+  midi2::types::flex_data::set_chord_name
+  // TODO: text common format
+  //  midi2::types::flex_data::text_common
+>;
+// clang-format on
+TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);
+
 // NOLINTNEXTLINE
-TEST(UMPToMidi2, SystemMessagePassThrough) {
-  midi2::ump_to_midi2 ump2m2{0};
-  std::vector<std::uint32_t> output;
-  std::vector<std::uint32_t> input;
-
-  auto add = [&input]<typename T>(T const& ump) {
-    static_assert(std::tuple_size_v<decltype(T::w)> == 1);
-    input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
-  };
-
-  add(midi2::types::system::midi_time_code{});
-  add(midi2::types::system::song_position_pointer{});
-  add(midi2::types::system::song_select{});
-  add(midi2::types::system::tune_request{});
-  add(midi2::types::system::timing_clock{});
-  add(midi2::types::system::sequence_start{});
-  add(midi2::types::system::sequence_continue{});
-  add(midi2::types::system::sequence_stop{});
-  add(midi2::types::system::active_sensing{});
-  add(midi2::types::system::reset{});
-
-  for (auto const message : input) {
-    ump2m2.push(message);
-    while (!ump2m2.empty()) {
-      output.push_back(ump2m2.pop());
-    }
-  }
-  EXPECT_THAT(input, ContainerEq(output));
-}
-
-TEST(UMPToMidi2, Data64MessagePassThrough) {
-  midi2::ump_to_midi2 ump2m2{0};
-  std::vector<std::uint32_t> output;
-  std::vector<std::uint32_t> input;
-
-  auto add = [&input]<typename T>(T const& ump) {
-    static_assert(std::tuple_size_v<decltype(T::w)> == 2);
-    input.emplace_back(std::bit_cast<std::uint32_t>(get<0>(ump.w)));
-    input.emplace_back(std::bit_cast<std::uint32_t>(get<1>(ump.w)));
-  };
-
-  add(midi2::types::data64::sysex7_in_1{});
-  add(midi2::types::data64::sysex7_start{});
-  add(midi2::types::data64::sysex7_continue{});
-  add(midi2::types::data64::sysex7_end{});
-
-  for (auto const message : input) {
-    ump2m2.push(message);
-    while (!ump2m2.empty()) {
-      output.push_back(ump2m2.pop());
-    }
-  }
+TYPED_TEST(UMPToMidi2PassThrough, PassThrough) {
+  auto const input = this->add(TypeParam{});
+  auto const output = convert(input);
   EXPECT_THAT(input, ContainerEq(output));
 }
 
