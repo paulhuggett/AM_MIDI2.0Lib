@@ -127,6 +127,80 @@ TEST(UMPToMidi2, PitchBend) {
   EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
 }
 
+// NOLINTNEXTLINE
+TEST(UMPToMidi2, SimpleProgramChange) {
+  constexpr auto program = std::uint8_t{0b01010101};
+  constexpr auto group = std::uint8_t{0x1};
+  constexpr auto channel = std::uint8_t{0xF};
+
+  midi2::types::m1cvm::program_change m1;
+  auto& m10 = get<0>(m1.w);
+  m10.group = group;
+  m10.channel = channel;
+  m10.program = program;
+
+  midi2::types::m2cvm::program_change m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m20.option_flags = 0;
+  m20.bank_valid = 0;
+  m21.program = program;
+  m21.bank_msb = 0;
+  m21.bank_lsb = 0;
+
+  std::array const input{std::bit_cast<std::uint32_t>(m10)};
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToMidi2, ProgramChangeWithBank) {
+  constexpr auto program = std::uint8_t{0b01010101};
+  constexpr auto group = std::uint8_t{0x1};
+  constexpr auto channel = std::uint8_t{0xF};
+  constexpr auto bank_msb = std::uint8_t{0b01110001};
+  constexpr auto bank_lsb = std::uint8_t{0b01001110};
+
+  std::vector<std::uint32_t> input;
+
+  {
+    midi2::types::m1cvm::control_change m1cc_bank_msb;
+    get<0>(m1cc_bank_msb.w).group = group;
+    get<0>(m1cc_bank_msb.w).channel = channel;
+    get<0>(m1cc_bank_msb.w).controller = midi2::control::bank_select;
+    get<0>(m1cc_bank_msb.w).value = bank_msb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1cc_bank_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change m1cc_bank_lsb;
+    get<0>(m1cc_bank_lsb.w).group = group;
+    get<0>(m1cc_bank_lsb.w).channel = channel;
+    get<0>(m1cc_bank_lsb.w).controller = midi2::control::bank_select_lsb;
+    get<0>(m1cc_bank_lsb.w).value = bank_lsb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1cc_bank_lsb.w)));
+  }
+  {
+    midi2::types::m1cvm::program_change m1;
+    get<0>(m1.w).group = group;
+    get<0>(m1.w).channel = channel;
+    get<0>(m1.w).program = program;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1.w)));
+  }
+
+  midi2::types::m2cvm::program_change m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m20.option_flags = 0;
+  m20.bank_valid = 1;
+  m21.program = program;
+  m21.bank_msb = bank_msb;
+  m21.bank_lsb = bank_lsb;
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
 template <typename T> class UMPToMidi2PassThrough : public testing::Test {
 public:
   template <typename T2>
@@ -192,6 +266,8 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::data128::sysex8_start,
   midi2::types::data128::sysex8_continue,
   midi2::types::data128::sysex8_end,
+  midi2::types::data128::mds_header,
+  midi2::types::data128::mds_payload,
 
   midi2::types::ump_stream::endpoint_discovery,
   midi2::types::ump_stream::endpoint_info_notification,
