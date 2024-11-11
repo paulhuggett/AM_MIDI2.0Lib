@@ -12,6 +12,8 @@
 
 using testing::ContainerEq;
 using testing::ElementsAre;
+using testing::ElementsAreArray;
+using testing::IsEmpty;
 
 namespace {
 
@@ -27,6 +29,7 @@ template <std::ranges::input_range Range> auto convert(Range const& input) {
   return output;
 }
 
+// NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOff) {
   constexpr auto note = 64;
 
@@ -52,6 +55,7 @@ TEST(UMPToMidi2, NoteOff) {
               ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
 }
 
+// NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOn) {
   constexpr auto note = 64;
 
@@ -77,6 +81,7 @@ TEST(UMPToMidi2, NoteOn) {
               ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
 }
 
+// NOLINTNEXTLINE
 TEST(UMPToMidi2, PolyPressure) {
   constexpr auto note = 64;
 
@@ -100,6 +105,7 @@ TEST(UMPToMidi2, PolyPressure) {
               ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
 }
 
+// NOLINTNEXTLINE
 TEST(UMPToMidi2, PitchBend) {
   constexpr auto pb14 = 0b0010101010101010U;  // A 14-bit value for the pitch bend
 
@@ -145,6 +151,11 @@ public:
 
 // clang-format off
 using PassThroughTypes = ::testing::Types<
+  midi2::types::utility::jr_clock,
+  midi2::types::utility::jr_timestamp,
+  midi2::types::utility::delta_clockstamp_tpqn,
+  midi2::types::utility::delta_clockstamp,
+
   midi2::types::system::midi_time_code,
   midi2::types::system::song_position_pointer,
   midi2::types::system::song_select,
@@ -210,7 +221,46 @@ TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);
 TYPED_TEST(UMPToMidi2PassThrough, PassThrough) {
   auto const input = this->add(TypeParam{});
   auto const output = convert(input);
-  EXPECT_THAT(input, ContainerEq(output));
+  EXPECT_THAT(output, ContainerEq(input));
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToMidi2PassThroughExtras, Noop) {
+  constexpr auto input = std::array{std::uint32_t{0}};
+  auto const output = convert(input);
+  EXPECT_THAT(output, IsEmpty()) << "NOOP messages should be removed";
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToMidi2PassThroughExtras, Unknown) {
+  constexpr auto input = std::array{std::uint32_t{0xFFFFFFFF}};
+  auto const output = convert(input);
+  EXPECT_THAT(output, IsEmpty()) << "Unknown messages should be removed";
+}
+
+// NOLINTNEXTLINE
+TEST(UMPToMidi2PassThroughExtras, Text) {
+  using u32 = std::uint32_t;
+  midi2::types::flex_data::text_common message;
+  auto& w0 = get<0>(message.w);
+  auto& w1 = get<1>(message.w);
+  auto& w2 = get<2>(message.w);
+  auto& w3 = get<3>(message.w);
+  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
+  w0.group = 0;
+  w0.form = 0;
+  w0.addrs = 1;
+  w0.channel = 3;
+  w0.status_bank = 1;
+  w0.status = 4;
+  w1 = (u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0);
+  w2 = (u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0);
+  w3 = (u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0);
+
+  auto input =
+      std::array{std::bit_cast<u32>(w0), std::bit_cast<u32>(w1), std::bit_cast<u32>(w2), std::bit_cast<u32>(w3)};
+  auto const output = convert(input);
+  EXPECT_THAT(output, ElementsAreArray(input));
 }
 
 }  // end anonymous namespace
