@@ -307,7 +307,7 @@ private:
 
     private:
       template <typename T>
-      static void pn_control_message(context *const ctxt, struct context::parameter_number const &c,
+      static void pn_control_message(struct context *const ctxt, struct context::parameter_number const &c,
                                      std::uint8_t const group, std::uint8_t const channel, std::uint8_t const value) {
         T out;
         auto &out0 = get<0>(out.w);
