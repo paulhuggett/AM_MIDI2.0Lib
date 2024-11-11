@@ -156,9 +156,9 @@ TEST(UMPToMidi2, SimpleProgramChange) {
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, ProgramChangeWithBank) {
-  constexpr auto program = std::uint8_t{0b01010101};
   constexpr auto group = std::uint8_t{0x1};
   constexpr auto channel = std::uint8_t{0xF};
+  constexpr auto program = std::uint8_t{0b01010101};
   constexpr auto bank_msb = std::uint8_t{0b01110001};
   constexpr auto bank_lsb = std::uint8_t{0b01001110};
 
@@ -198,6 +198,146 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
   m21.program = program;
   m21.bank_msb = bank_msb;
   m21.bank_lsb = bank_lsb;
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
+TEST(UMPToMidi2, ControlChangeRPN) {
+  constexpr auto group = std::uint8_t{0x1};
+  constexpr auto channel = std::uint8_t{0xF};
+  constexpr auto control_msb = std::uint8_t{0b01010101};
+  constexpr auto control_lsb = std::uint8_t{0b01101010};
+  constexpr auto value_msb = std::uint8_t{0b00011001};
+  constexpr auto value_lsb = std::uint8_t{0b01100110};
+
+  std::vector<std::uint32_t> input;
+
+  {
+    midi2::types::m1cvm::control_change pn_msb;
+    get<0>(pn_msb.w).group = group;
+    get<0>(pn_msb.w).channel = channel;
+    get<0>(pn_msb.w).controller = midi2::control::rpn_msb;
+    get<0>(pn_msb.w).value = control_msb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change pn_lsb;
+    get<0>(pn_lsb.w).group = group;
+    get<0>(pn_lsb.w).channel = channel;
+    get<0>(pn_lsb.w).controller = midi2::control::rpn_lsb;
+    get<0>(pn_lsb.w).value = control_lsb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_lsb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change param_value_msb;
+    get<0>(param_value_msb.w).group = group;
+    get<0>(param_value_msb.w).channel = channel;
+    get<0>(param_value_msb.w).controller = midi2::control::data_entry_msb;
+    get<0>(param_value_msb.w).value = value_msb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change param_value_lsb;
+    get<0>(param_value_lsb.w).group = group;
+    get<0>(param_value_lsb.w).channel = channel;
+    get<0>(param_value_lsb.w).controller = midi2::control::data_entry_lsb;
+    get<0>(param_value_lsb.w).value = value_lsb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_lsb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change null_msb;
+    get<0>(null_msb.w).group = group;
+    get<0>(null_msb.w).channel = channel;
+    get<0>(null_msb.w).controller = midi2::control::rpn_msb;
+    get<0>(null_msb.w).value = 0x7F;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change null_lsb;
+    get<0>(null_lsb.w).group = group;
+    get<0>(null_lsb.w).channel = channel;
+    get<0>(null_lsb.w).controller = midi2::control::rpn_lsb;
+    get<0>(null_lsb.w).value = 0x7F;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_lsb.w)));
+  }
+
+  midi2::types::m2cvm::rpn_controller m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m20.bank = control_msb;
+  m20.index = control_lsb;
+  m21 = midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb});
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
+TEST(UMPToMidi2, ControlChangeNRPN) {
+  constexpr auto group = std::uint8_t{0x1};
+  constexpr auto channel = std::uint8_t{0xF};
+  constexpr auto control_msb = std::uint8_t{0b01010101};
+  constexpr auto control_lsb = std::uint8_t{0b01101010};
+  constexpr auto value_msb = std::uint8_t{0b00011001};
+  constexpr auto value_lsb = std::uint8_t{0b01100110};
+
+  std::vector<std::uint32_t> input;
+
+  {
+    midi2::types::m1cvm::control_change pn_msb;
+    get<0>(pn_msb.w).group = group;
+    get<0>(pn_msb.w).channel = channel;
+    get<0>(pn_msb.w).controller = midi2::control::nrpn_msb;
+    get<0>(pn_msb.w).value = control_msb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change pn_lsb;
+    get<0>(pn_lsb.w).group = group;
+    get<0>(pn_lsb.w).channel = channel;
+    get<0>(pn_lsb.w).controller = midi2::control::nrpn_lsb;
+    get<0>(pn_lsb.w).value = control_lsb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_lsb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change param_value_msb;
+    get<0>(param_value_msb.w).group = group;
+    get<0>(param_value_msb.w).channel = channel;
+    get<0>(param_value_msb.w).controller = midi2::control::data_entry_msb;
+    get<0>(param_value_msb.w).value = value_msb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change param_value_lsb;
+    get<0>(param_value_lsb.w).group = group;
+    get<0>(param_value_lsb.w).channel = channel;
+    get<0>(param_value_lsb.w).controller = midi2::control::data_entry_lsb;
+    get<0>(param_value_lsb.w).value = value_lsb;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_lsb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change null_msb;
+    get<0>(null_msb.w).group = group;
+    get<0>(null_msb.w).channel = channel;
+    get<0>(null_msb.w).controller = midi2::control::nrpn_msb;
+    get<0>(null_msb.w).value = 0x7F;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_msb.w)));
+  }
+  {
+    midi2::types::m1cvm::control_change null_lsb;
+    get<0>(null_lsb.w).group = group;
+    get<0>(null_lsb.w).channel = channel;
+    get<0>(null_lsb.w).controller = midi2::control::nrpn_lsb;
+    get<0>(null_lsb.w).value = 0x7F;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_lsb.w)));
+  }
+
+  midi2::types::m2cvm::nrpn_controller m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m20.bank = control_msb;
+  m20.index = control_lsb;
+  m21 = midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb});
   EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
 }
 

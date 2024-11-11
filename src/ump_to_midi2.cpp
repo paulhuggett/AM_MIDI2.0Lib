@@ -19,217 +19,189 @@
 
 namespace midi2 {
 
-#if 0
-void ump_to_midi2::controllerToUMP(std::byte const b0, std::byte const b1, std::byte const b2) {
-  auto const channel = b0 & std::byte{0x0F};
-  auto& c = channel_[std::to_integer<unsigned>(channel)];
-  switch (std::to_integer<std::underlying_type_t<control>>(b1)) {
-  case control::bank_select: c.bankMSB = b2; break;
-  case control::bank_select_lsb: c.bankLSB = b2; break;
+// note off
+// ~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const ctxt,
+                                                    types::m1cvm::note_off const &in) {
+  auto const &noff_in = get<0>(in.w);
 
-  case control::data_entry_msb:  // RPN MSB Value
-    if (c.rpnMsb != std::byte{0xFF} && c.rpnLsb != std::byte{0xFF}) {
-      if (c.rpnMode && c.rpnMsb == std::byte{0} && (c.rpnLsb == std::byte{0} || c.rpnLsb == std::byte{6})) {
-        auto const status = static_cast<std::byte>(c.rpnMode ? midi2status::rpn : midi2status::nrpn);
-        context_.output.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
-        context_.output.push_back(midi2::mcm_scale<14, 32>(std::to_integer<std::uint32_t>(b2) << 7));
-      } else {
-        c.rpnMsbValue = b2;
-      }
-    }
-    break;
-  case control::data_entry_lsb:
-    // RPN LSB Value
-    if (c.rpnMsb != std::byte{0xFF} && c.rpnLsb != std::byte{0xFF}) {
-      auto const status = static_cast<std::byte>(c.rpnMode ? midi2status::rpn : midi2status::nrpn);
-      context_.output.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
-      context_.output.push_back(midi2::mcm_scale<14, 32>((std::to_integer<std::uint32_t>(c.rpnMsbValue) << 7) |
-                                                         std::to_integer<std::uint32_t>(b2)));
-    }
-    break;
+  types::m2cvm::note_off noff;
+  auto &w0 = get<0>(noff.w);
+  auto &w1 = get<1>(noff.w);
+  w0.group = noff_in.group.value();
+  w0.channel = noff_in.channel.value();
+  w0.note = noff_in.note.value();
+  w0.attribute = 0;
+  constexpr auto m1bits = bits_v<decltype(noff_in.velocity)>;
+  constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
+  w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(noff_in.velocity));
+  w1.attribute = 0;
+  ctxt->push(noff.w);
+}
+
+// note on
+// ~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::note_on(ump_to_midi2::context *const ctxt, types::m1cvm::note_on const &in) {
+  auto const &non_in = get<0>(in.w);
+
+  types::m2cvm::note_on non;
+  auto &w0 = get<0>(non.w);
+  auto &w1 = get<1>(non.w);
+  w0.group = non_in.group.value();
+  w0.channel = non_in.channel.value();
+  w0.note = non_in.note.value();
+  w0.attribute = 0;
+  constexpr auto m1bits = bits_v<decltype(non_in.velocity)>;
+  constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
+  w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(non_in.velocity));
+  w1.attribute = 0;
+  ctxt->push(non.w);
+}
+
+// poly pressure
+// ~~~~~~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::poly_pressure(ump_to_midi2::context *const ctxt,
+                                                         types::m1cvm::poly_pressure const &in) {
+  auto const &pp_in = get<0>(in.w);
+
+  types::m2cvm::poly_pressure out;
+  auto &w0 = get<0>(out.w);
+  auto &w1 = get<1>(out.w);
+  w0.group = pp_in.group.value();
+  w0.channel = pp_in.channel.value();
+  w0.note = pp_in.note.value();
+  constexpr auto m1bits = bits_v<decltype(pp_in.pressure)>;
+  constexpr auto m2bits = bits_v<decltype(w1)>;
+  w1 = mcm_scale<m1bits, m2bits>(pp_in.pressure);
+  ctxt->push(out.w);
+}
+
+// control change
+// ~~~~~~~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context *const ctxt,
+                                                          types::m1cvm::control_change const &in) {
+  auto const &cc_in0 = get<0>(in.w);
+
+  auto const group = cc_in0.group.value();
+  auto const channel = cc_in0.channel.value();
+  auto const controller = cc_in0.controller.value();
+  auto const value = cc_in0.value.value();
+
+  auto &c = ctxt->parameter_number[group][channel];
+  switch (controller) {
+  case control::bank_select: ctxt->bank[group][channel].set_msb(value); break;
+  case control::bank_select_lsb: ctxt->bank[group][channel].set_lsb(value); break;
+
   case control::nrpn_msb:
-    c.rpnMode = false;
-    c.rpnMsb = b2;
+    c.pn_is_rpn = false;
+    c.set_number_msb(value);
     break;
   case control::nrpn_lsb:
-    c.rpnMode = false;
-    c.rpnLsb = b2;
+    c.pn_is_rpn = false;
+    c.pn_lsb_valid = true;
+    c.pn_lsb = value;
     break;
+
   case control::rpn_msb:
-    c.rpnMode = true;
-    c.rpnMsb = b2;
+    c.pn_is_rpn = true;
+    c.set_number_msb(value);
     break;
   case control::rpn_lsb:
-    c.rpnMode = true;
-    c.rpnLsb = b2;
-    break;
-  default:
-    context_.output.push_back(pack(ump_message_type::m2cvm, b0, b1, std::byte{0}));
-    context_.output.push_back(midi2::mcm_scale<7, 32>(std::to_integer<std::uint32_t>(b2)));
-    break;
-  }
-}
-#endif
-
-#if 0
-void ump_to_midi2::bsToUMP(std::byte b0, std::byte b1, std::byte b2) {
-  assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
-         "The top bit of b1 and b2 must be zero");
-  using midi2::mcm_scale;
-  auto const channel = b0 & std::byte{0x0F};
-  auto status = static_cast<enum status>(b0 & std::byte{0xF0});
-
-  if (to_underlying(b0) >= to_underlying(status::timing_code)) {
-    output_.push_back(pack(ump_message_type::system, b0, b1, b2));
-    return;
-  }
-  if (status < status::note_off || status > status::pitch_bend) {
-    return;
-  }
-  if (!outputMIDI2_) {
-    output_.push_back(pack(ump_message_type::m1cvm, b0, b1, b2));
-    return;
-  }
-  if (status == status::note_on && b2 == std::byte{0}) {
-    // Map note-on velocity 0 to note-off,
-    status = status::note_off;
-    b0 = static_cast<std::byte>(status) | channel;
-    b2 = std::byte{0x40};
-  }
-  auto message = pack(ump_message_type::m2cvm, static_cast<std::byte>(status) | channel, std::byte{0}, std::byte{0});
-  switch (status) {
-  case status::note_on:
-  case status::note_off:
-  case status::poly_pressure:
-    output_.push_back(message | (std::to_integer<std::uint32_t>(b1) << 8));
-    output_.push_back(mcm_scale<7, 16>(std::to_integer<std::uint32_t>(b2)) << 16);
-    break;
-  case status::pitch_bend:
-    output_.push_back(message);
-    output_.push_back(
-        mcm_scale<14, 32>((std::to_integer<std::uint32_t>(b2) << 7) | std::to_integer<std::uint32_t>(b1)));
-    break;
-  case status::program_change: {
-    auto bank_msb = std::byte{0};
-    auto bank_lsb = std::byte{0};
-    auto const& c = channel_[std::to_integer<unsigned>(channel)];
-    if (c.bankMSB != std::byte{0xFF} && c.bankLSB != std::byte{0xFF}) {
-      message |= 0x01U;  // Set the "bank valid" bit.
-      bank_msb = c.bankMSB;
-      bank_lsb = c.bankLSB;
+    // Setting RPN to 7FH,7FH will disable the data entry, data increment, and data decrement controllers
+    // until a new RPN or NRPN is selected. (MIDI 1.0 Approved Protocol JMSC-0011)
+    if (c.pn_is_rpn && c.pn_msb_valid && c.pn_msb == 0x7F && value == 0x7F) {
+      c.reset_number();
+    } else {
+      c.pn_is_rpn = true;
+      c.set_number_lsb(value);
     }
-    output_.push_back(message);
-    output_.push_back(pack(b1, std::byte{0}, bank_msb, bank_lsb));
-  } break;
-  case status::channel_pressure:
-    output_.push_back(message);
-    output_.push_back(mcm_scale<7, 32>(std::to_integer<unsigned>(b1)));
     break;
-  case status::cc: this->controllerToUMP(b0, b1, b2); break;
-  default:
-    // Unknown message
-    break;
-  }
-}
-#endif
 
-namespace {
+  case control::data_entry_msb: c.set_value_msb(value); break;
 
-#if 0
-  /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
-constexpr bool isOneByteMessage(std::byte const midi1Byte) {
-  using status_type = std::underlying_type_t<status>;
-  auto const value = std::to_integer<status_type>(midi1Byte);
-  auto const top_nibble = std::to_integer<status_type>(midi1Byte & std::byte{0xF0});
-  return top_nibble == to_underlying(status::program_change) || top_nibble == to_underlying(status::channel_pressure) ||
-         value == to_underlying(status::timing_code) || value == to_underlying(status::song_select);
-}
-#endif
-
-}  // end anonymous namespace
-
-#if 0
-void ump_to_midi2::push(std::byte const midi1Byte) {
-  auto const midi1int = static_cast<status>(midi1Byte);
-
-  if (is_status_byte(midi1Byte)) {
-    if (midi1int == status::tune_request || is_system_real_time_message(midi1Byte)) {
-      if (midi1int == status::tune_request) {
-        d0_ = midi1Byte;
+  case control::data_entry_lsb:
+    if (c.pn_msb_valid && c.pn_lsb_valid && c.value_msb_valid) {
+      if (c.pn_is_rpn) {
+        pn_control_message<types::m2cvm::rpn_controller>(ctxt, c, group, channel, value);
+      } else {
+        pn_control_message<types::m2cvm::nrpn_controller>(ctxt, c, group, channel, value);
       }
-      this->bsToUMP(midi1Byte, std::byte{0}, std::byte{0});
-      return;
     }
+    break;
 
-    d0_ = midi1Byte;
-    d1_ = unknown;
+  case control::reset_all_controllers: c.reset_number(); [[fallthrough]];
 
-    if (midi1int == status::sysex_start) {
-      sysex7_.state = sysex7::status::start;
-      sysex7_.pos = 0;
-    } else if (midi1int == status::sysex_stop) {
-      using enum sysex7::status;
-      types::data64::sysex7 message;
-      auto& w0 = get<0>(message.w);
-      auto& w1 = get<1>(message.w);
-      w0.mt = to_underlying(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = to_underlying(sysex7_.state == start ? data64::sysex7_in_1 : data64::sysex7_end);
-      w0.number_of_bytes = sysex7_.pos;
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
-      w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
-      w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
-      w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
-
-      sysex7_.reset();
-      sysex7_.state = single_ump;
-    }
-  } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont ||
-             sysex7_.state == sysex7::status::end) {
-    if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      types::data64::sysex7 message;
-      auto& w0 = get<0>(message.w);
-      auto& w1 = get<1>(message.w);
-      w0.mt = to_underlying(ump_message_type::data64);
-      w0.group = std::to_integer<std::uint8_t>(defaultGroup_);
-      w0.status = static_cast<std::uint8_t>(sysex7_.state);
-      w0.number_of_bytes = std::uint8_t{6};
-      w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-      w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-      w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
-      w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
-      w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
-      w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-      auto const w0_32 = std::bit_cast<std::uint32_t>(w0);
-      output_.push_back(w0_32);
-      auto const w1_32 = std::bit_cast<std::uint32_t>(w1);
-      output_.push_back(w1_32);
-
-      sysex7_.reset();
-      sysex7_.state = sysex7::status::cont;
-      sysex7_.pos = 0;
-    }
-
-    sysex7_.bytes[sysex7_.pos] = midi1Byte;
-    ++sysex7_.pos;
-  } else if (d1_ != unknown) {  // Second byte
-    this->bsToUMP(d0_, d1_, midi1Byte);
-    d1_ = unknown;
-  } else if (d0_ != std::byte{0}) {  // status byte set
-    if (isOneByteMessage(d0_)) {
-      this->bsToUMP(d0_, midi1Byte, std::byte{0});
-    } else if (d0_ < std::byte{to_underlying(status::sysex_start)} || d0_ == std::byte{to_underlying(status::spp)}) {
-      // This is the first of a two data byte message.
-      d1_ = midi1Byte;
-    }
+  default: {
+    types::m2cvm::control_change out;
+    auto &out0 = get<0>(out.w);
+    out0.group = group;
+    out0.channel = channel;
+    out0.controller = controller;
+    auto &out1 = get<1>(out.w);
+    out1 = midi2::mcm_scale<bits_v<decltype(cc_in0.value)>, bits_v<decltype(out1)>>(value);
+    ctxt->push(out.w);
+    break;
+  }
   }
 }
-#endif
+
+// program change
+// ~~~~~~~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::program_change(ump_to_midi2::context *const ctxt,
+                                                          types::m1cvm::program_change const &in) {
+  auto const &in0 = get<0>(in.w);
+  auto const group = in0.group.value();
+  auto const channel = in0.channel.value();
+
+  types::m2cvm::program_change out;
+  auto &out0 = get<0>(out.w);
+  auto &out1 = get<1>(out.w);
+  out0.group = group;
+  out0.channel = channel;
+  out1.program = in0.program.value();
+
+  if (auto const &b = ctxt->bank[group][channel]; b.is_valid()) {
+    out0.bank_valid = 1;
+    out1.bank_msb = b.msb;
+    out1.bank_lsb = b.lsb;
+  }
+  ctxt->push(out.w);
+}
+
+// channel pressure
+// ~~~~~~~~~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::channel_pressure(ump_to_midi2::context *const ctxt,
+                                                            types::m1cvm::channel_pressure const &in) {
+  auto const &cp_in = get<0>(in.w);
+
+  types::m2cvm::channel_pressure out;
+  auto &w0 = get<0>(out.w);
+  auto &w1 = get<1>(out.w);
+  w0.group = cp_in.group.value();
+  w0.channel = cp_in.channel.value();
+  constexpr auto m1bits = bits_v<decltype(cp_in.data)>;
+  constexpr auto m2bits = bits_v<decltype(w1)>;
+  w1 = mcm_scale<m1bits, m2bits>(cp_in.data);
+  ctxt->push(out.w);
+}
+
+// pitch bend
+// ~~~~~~~~~~
+void ump_to_midi2::to_midi2_config::m1cvm::pitch_bend(ump_to_midi2::context *const ctxt,
+                                                      types::m1cvm::pitch_bend const &in) {
+  auto const &pb_in = get<0>(in.w);
+
+  types::m2cvm::pitch_bend out;
+  auto &w0 = get<0>(out.w);
+  auto &w1 = get<1>(out.w);
+  w0.group = pb_in.group.value();
+  w0.channel = pb_in.channel.value();
+  constexpr auto lsb_bits = bits_v<decltype(pb_in.lsb_data)>;
+  constexpr auto msb_bits = bits_v<decltype(pb_in.msb_data)>;
+  static_assert(lsb_bits + msb_bits <= 16);
+  w1 = mcm_scale<lsb_bits + msb_bits, bits_v<decltype(w1)>>(
+      static_cast<std::uint16_t>((pb_in.msb_data << lsb_bits) | pb_in.lsb_data));
+  ctxt->push(out.w);
+}
 
 }  // end namespace midi2
