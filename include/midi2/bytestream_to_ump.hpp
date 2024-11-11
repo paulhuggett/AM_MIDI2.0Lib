@@ -26,7 +26,7 @@ public:
   using output_type = std::uint32_t;
 
   bytestream_to_ump() = default;
-  explicit bytestream_to_ump(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
+  explicit bytestream_to_ump(bool const outputMIDI2, std::uint8_t const defaultGroup)
       : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
     assert(defaultGroup <= 0b1111);
   }

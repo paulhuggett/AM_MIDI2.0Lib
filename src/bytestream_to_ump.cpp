@@ -157,6 +157,9 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
   output_.push_back(std::bit_cast<std::uint32_t>(w0));
   output_.push_back(std::bit_cast<std::uint32_t>(w1));
+
+  sysex7_.reset();
+  sysex7_.state = sysex7::status::single_ump;
 }
 
 void bytestream_to_ump::push(std::byte const midi1Byte) {
@@ -177,24 +180,17 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     if (midi1int == status::sysex_start) {
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
-    } else if (midi1int == status::sysex_stop) {
-      using enum sysex7::status;
+    } else {
       switch (sysex7_.state) {
-      case start: push_sysex7<types::data64::sysex7_in_1>(); break;
-      case cont: push_sysex7<types::data64::sysex7_end>(); break;
-      case single_ump:
-      default:
-        // Do nothing. We received a sysex_stop without a preceeding sysex_start
-        break;
+      case sysex7::status::start: this->push_sysex7<types::data64::sysex7_in_1>(); break;
+      case sysex7::status::cont: this->push_sysex7<types::data64::sysex7_end>(); break;
+      case sysex7::status::single_ump:
+      default: break;
       }
-
-      sysex7_.reset();
-      sysex7_.state = single_ump;
     }
   } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
     if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
       switch (sysex7_.state) {
-      case sysex7::status::single_ump:
       case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
       case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
       default: assert(false); break;
@@ -203,7 +199,6 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
       sysex7_.state = sysex7::status::cont;
       sysex7_.pos = 0;
     }
-
     sysex7_.bytes[sysex7_.pos] = midi1Byte;
     ++sysex7_.pos;
   } else if (d1_ != unknown) {  // Second byte
