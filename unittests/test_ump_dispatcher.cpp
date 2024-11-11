@@ -203,19 +203,19 @@ struct data128_base {
   [[maybe_unused]] data128_base &operator=(data128_base const &) = default;
   [[maybe_unused]] data128_base &operator=(data128_base &&) noexcept = default;
 
-  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_start(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_end(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8_in_1 const &) = 0;
+  virtual void sysex8_start(context_type, midi2::types::data128::sysex8_start const &) = 0;
+  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8_continue const &) = 0;
+  virtual void sysex8_end(context_type, midi2::types::data128::sysex8_end const &) = 0;
   virtual void mds_header(context_type, midi2::types::data128::mds_header const &) = 0;
   virtual void mds_payload(context_type, midi2::types::data128::mds_payload const &) = 0;
 };
 class Data128Mocks : public data128_base {
 public:
-  MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_start, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_continue, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_end, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::types::data128::sysex8_in_1 const &), (override));
+  MOCK_METHOD(void, sysex8_start, (context_type, midi2::types::data128::sysex8_start const &), (override));
+  MOCK_METHOD(void, sysex8_continue, (context_type, midi2::types::data128::sysex8_continue const &), (override));
+  MOCK_METHOD(void, sysex8_end, (context_type, midi2::types::data128::sysex8_end const &), (override));
   MOCK_METHOD(void, mds_header, (context_type, midi2::types::data128::mds_header const &), (override));
   MOCK_METHOD(void, mds_payload, (context_type, midi2::types::data128::mds_payload const &), (override));
 };
@@ -753,14 +753,12 @@ TEST_F(UMPDispatcherData128, Sysex8In1) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
-  midi2::types::data128::sysex8 message;
+  midi2::types::data128::sysex8_in_1 message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::data128);
   w0.group = group;
-  w0.status = to_underlying(midi2::data128::sysex8_in_1);
   w0.number_of_bytes = 10;
   w0.stream_id = stream_id;
   w0.data0 = 2;
@@ -781,10 +779,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
-  midi2::types::data128::sysex8 part0;
-  get<0>(part0.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_start part0;
   get<0>(part0.w).group = group;
-  get<0>(part0.w).status = to_underlying(midi2::data128::sysex8_start);
   get<0>(part0.w).number_of_bytes = 13;
   get<0>(part0.w).stream_id = stream_id;
   get<0>(part0.w).data0 = 2;
@@ -800,10 +796,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   get<3>(part0.w).data10 = 31;
   get<3>(part0.w).data11 = 37;
   get<3>(part0.w).data12 = 41;
-  midi2::types::data128::sysex8 part1;
-  get<0>(part1.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_continue part1;
   get<0>(part1.w).group = group;
-  get<0>(part1.w).status = to_underlying(midi2::data128::sysex8_continue);
   get<0>(part1.w).number_of_bytes = 13;
   get<0>(part1.w).stream_id = stream_id;
   get<0>(part1.w).data0 = 43;
@@ -819,10 +813,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   get<3>(part1.w).data10 = 89;
   get<3>(part1.w).data11 = 97;
   get<3>(part1.w).data12 = 101;
-  midi2::types::data128::sysex8 part2;
-  get<0>(part2.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_end part2;
   get<0>(part2.w).group = group;
-  get<0>(part2.w).status = to_underlying(midi2::data128::sysex8_end);
   get<0>(part2.w).number_of_bytes = 4;
   get<0>(part2.w).stream_id = stream_id;
   get<0>(part2.w).data0 = 103;
@@ -848,9 +840,7 @@ TEST_F(UMPDispatcherData128, MixedDatSet) {
   constexpr auto mds_id = std::uint8_t{0b1010};
 
   midi2::types::data128::mds_header header;
-  get<0>(header.w).mt = to_underlying(midi2::ump_message_type::data128);
   get<0>(header.w).group = group;
-  get<0>(header.w).status = to_underlying(midi2::data128::mixed_data_set_header);
   get<0>(header.w).mds_id = mds_id;
   get<0>(header.w).bytes_in_chunk = 2;
 
@@ -862,9 +852,7 @@ TEST_F(UMPDispatcherData128, MixedDatSet) {
   get<3>(header.w).sub_id_2 = 23;
 
   midi2::types::data128::mds_payload payload;
-  get<0>(payload.w).mt = to_underlying(midi2::ump_message_type::data128);
   get<0>(payload.w).group = group;
-  get<0>(payload.w).status = to_underlying(midi2::data128::mixed_data_set_payload);
   get<0>(payload.w).mds_id = mds_id;
   get<0>(payload.w).data0 = std::uint16_t{0xFFFF};
   get<1>(payload.w) = 0xFFFFFFFF;

@@ -177,6 +177,11 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::m2cvm::pitch_bend,
   midi2::types::m2cvm::per_note_pitch_bend,
 
+  midi2::types::data128::sysex8_in_1,
+  midi2::types::data128::sysex8_start,
+  midi2::types::data128::sysex8_continue,
+  midi2::types::data128::sysex8_end,
+
   midi2::types::ump_stream::endpoint_discovery,
   midi2::types::ump_stream::endpoint_info_notification,
   midi2::types::ump_stream::device_identity_notification,

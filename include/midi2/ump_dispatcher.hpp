@@ -136,10 +136,10 @@ concept m2cvm_backend = requires(T v, Context context) {
 template <typename T, typename Context>
 concept data128_backend = requires(T v, Context context) {
   // 7.8 System Exclusive 8 (8-Bit) Messages
-  { v.sysex8_in_1(context, types::data128::sysex8{}) } -> std::same_as<void>;
-  { v.sysex8_start(context, types::data128::sysex8{}) } -> std::same_as<void>;
-  { v.sysex8_continue(context, types::data128::sysex8{}) } -> std::same_as<void>;
-  { v.sysex8_end(context, types::data128::sysex8{}) } -> std::same_as<void>;
+  { v.sysex8_in_1(context, types::data128::sysex8_in_1{}) } -> std::same_as<void>;
+  { v.sysex8_start(context, types::data128::sysex8_start{}) } -> std::same_as<void>;
+  { v.sysex8_continue(context, types::data128::sysex8_continue{}) } -> std::same_as<void>;
+  { v.sysex8_end(context, types::data128::sysex8_end{}) } -> std::same_as<void>;
   // 7.9 Mixed Data Set Message
   { v.mds_header(context, types::data128::mds_header{}) } -> std::same_as<void>;
   { v.mds_payload(context, types::data128::mds_payload{}) } -> std::same_as<void>;
@@ -257,10 +257,10 @@ template <typename Context> struct m2cvm_null {
   constexpr static void per_note_pitch_bend(Context, types::m2cvm::per_note_pitch_bend const &) { /* do nothing */ }
 };
 template <typename Context> struct data128_null {
-  constexpr static void sysex8_in_1(Context, types::data128::sysex8 const &) { /* do nothing */ }
-  constexpr static void sysex8_start(Context, types::data128::sysex8 const &) { /* do nothing */ }
-  constexpr static void sysex8_continue(Context, types::data128::sysex8 const &) { /* do nothing */ }
-  constexpr static void sysex8_end(Context, types::data128::sysex8 const &) { /* do nothing */ }
+  constexpr static void sysex8_in_1(Context, types::data128::sysex8_in_1 const &) { /* do nothing */ }
+  constexpr static void sysex8_start(Context, types::data128::sysex8_start const &) { /* do nothing */ }
+  constexpr static void sysex8_continue(Context, types::data128::sysex8_continue const &) { /* do nothing */ }
+  constexpr static void sysex8_end(Context, types::data128::sysex8_end const &) { /* do nothing */ }
   constexpr static void mds_header(Context, types::data128::mds_header const &) { /* do nothing */ }
   constexpr static void mds_payload(Context, types::data128::mds_payload const &) { /* do nothing */ }
 };
@@ -630,19 +630,20 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_
 // data128 message
 // ~~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_message() {
-  using types::data128::mds_header;
-  using types::data128::mds_payload;
-  using types::data128::sysex8;
   static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
-  case data128::sysex8_in_1: config_.data128.sysex8_in_1(config_.context, sysex8{span}); break;
-  case data128::sysex8_start: config_.data128.sysex8_start(config_.context, sysex8{span}); break;
-  case data128::sysex8_continue: config_.data128.sysex8_continue(config_.context, sysex8{span}); break;
-  case data128::sysex8_end: config_.data128.sysex8_end(config_.context, sysex8{span}); break;
-  case data128::mixed_data_set_header: config_.data128.mds_header(config_.context, mds_header{span}); break;
+  case data128::sysex8_in_1: config_.data128.sysex8_in_1(config_.context, types::data128::sysex8_in_1{span}); break;
+  case data128::sysex8_start: config_.data128.sysex8_start(config_.context, types::data128::sysex8_start{span}); break;
+  case data128::sysex8_continue:
+    config_.data128.sysex8_continue(config_.context, types::data128::sysex8_continue{span});
+    break;
+  case data128::sysex8_end: config_.data128.sysex8_end(config_.context, types::data128::sysex8_end{span}); break;
+  case data128::mixed_data_set_header:
+    config_.data128.mds_header(config_.context, types::data128::mds_header{span});
+    break;
   case data128::mixed_data_set_payload:
     config_.data128.mds_payload(config_.context, types::data128::mds_payload{span});
     break;

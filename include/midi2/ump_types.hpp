@@ -19,7 +19,7 @@
 #include "midi2/utils.hpp"
 
 #define UMP_MEMBERS0(name, st)                                                 \
-  name() {                                                           \
+  name() {                                                                     \
     static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
     std::memset(this, 0, sizeof(*this));                                       \
     this->mt = to_underlying(status_to_message_type(st));                      \
@@ -371,6 +371,11 @@ struct reset {
 
 }  // end namespace system
 
+//*        _                 *
+//*  _ __ / |  ____ ___ __   *
+//* | '  \| | / _\ V / '  \  *
+//* |_|_|_|_| \__|\_/|_|_|_| *
+//*                          *
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
@@ -530,12 +535,14 @@ struct pitch_bend {
 namespace data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
-struct sysex7_in_1 {
+namespace details {
+
+template <midi2::data64 Status> struct sysex7 {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::data64::sysex7_in_1)
+    UMP_MEMBERS0(word0, Status)
     ump_bitfield<28, 4> mt;  ///< Always 0x3
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x0
+    ump_bitfield<20, 4> status;
     ump_bitfield<16, 4> number_of_bytes;
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> data0;
@@ -554,104 +561,19 @@ struct sysex7_in_1 {
     ump_bitfield<0, 7> data5;
   };
 
-  sysex7_in_1() = default;
-  explicit sysex7_in_1(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7_in_1 const &, sysex7_in_1 const &) = default;
+  sysex7() = default;
+  explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  friend bool operator==(sysex7 const &, sysex7 const &) = default;
 
   std::tuple<word0, word1> w;
 };
 
-struct sysex7_start {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::data64::sysex7_start)
-    ump_bitfield<28, 4> mt;  ///< Always 0x3
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x1
-    ump_bitfield<16, 4> number_of_bytes;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data0;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data1;
-  };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<31, 1> reserved0;
-    ump_bitfield<24, 7> data2;
-    ump_bitfield<23, 1> reserved1;
-    ump_bitfield<16, 7> data3;
-    ump_bitfield<15, 1> reserved2;
-    ump_bitfield<8, 7> data4;
-    ump_bitfield<7, 1> reserved3;
-    ump_bitfield<0, 7> data5;
-  };
+}  // end namespace details
 
-  sysex7_start() = default;
-  explicit sysex7_start(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7_start const &, sysex7_start const &) = default;
-
-  std::tuple<word0, word1> w;
-};
-
-struct sysex7_continue {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::data64::sysex7_continue)
-    ump_bitfield<28, 4> mt;  ///< Always 0x3
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x2
-    ump_bitfield<16, 4> number_of_bytes;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data0;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data1;
-  };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<31, 1> reserved0;
-    ump_bitfield<24, 7> data2;
-    ump_bitfield<23, 1> reserved1;
-    ump_bitfield<16, 7> data3;
-    ump_bitfield<15, 1> reserved2;
-    ump_bitfield<8, 7> data4;
-    ump_bitfield<7, 1> reserved3;
-    ump_bitfield<0, 7> data5;
-  };
-
-  sysex7_continue() = default;
-  explicit sysex7_continue(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7_continue const &, sysex7_continue const &) = default;
-
-  std::tuple<word0, word1> w;
-};
-struct sysex7_end {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::data64::sysex7_end)
-    ump_bitfield<28, 4> mt;  ///< Always 0x3
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x3
-    ump_bitfield<16, 4> number_of_bytes;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data0;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data1;
-  };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<31, 1> reserved0;
-    ump_bitfield<24, 7> data2;
-    ump_bitfield<23, 1> reserved1;
-    ump_bitfield<16, 7> data3;
-    ump_bitfield<15, 1> reserved2;
-    ump_bitfield<8, 7> data4;
-    ump_bitfield<7, 1> reserved3;
-    ump_bitfield<0, 7> data5;
-  };
-
-  sysex7_end() = default;
-  explicit sysex7_end(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7_end const &, sysex7_end const &) = default;
-
-  std::tuple<word0, word1> w;
-};
+using sysex7_in_1 = details::sysex7<midi2::data64::sysex7_in_1>;
+using sysex7_start = details::sysex7<midi2::data64::sysex7_start>;
+using sysex7_continue = details::sysex7<midi2::data64::sysex7_continue>;
+using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 
 }  // end namespace data64
 
@@ -1001,6 +923,11 @@ struct per_note_pitch_bend {
 
 }  // end namespace m2cvm
 
+//*                       _                       *
+//*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
+//* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
+//*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
+//*            |_|                                *
 namespace ump_stream {
 
 // 7.1.1 Endpoint Discovery Message
@@ -1364,6 +1291,11 @@ struct end_of_clip {
 
 };  // end namespace ump_stream
 
+//*   __ _              _      _         *
+//*  / _| |_____ __  __| |__ _| |_ __ _  *
+//* |  _| / -_) \ / / _` / _` |  _/ _` | *
+//* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
+//*                                      *
 namespace flex_data {
 
 union flex_data_w0 {
@@ -1619,20 +1551,25 @@ struct text_common {
 
 }  // end namespace flex_data
 
+//*     _      _          _ ___ ___  *
+//*  __| |__ _| |_ __ _  / |_  | _ ) *
+//* / _` / _` |  _/ _` | | |/ // _ \ *
+//* \__,_\__,_|\__\__,_| |_/___\___/ *
+//*                                  *
 namespace data128 {
 
-// F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
-// Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
-// 8 and Mixed Data Set
+// 7.8 System Exclusive 8 (8-Bit) Messages
 
 // SysEx8 in 1 UMP (word 1)
 // SysEx8 Start (word 1)
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
-struct sysex8 {
+namespace details {
+
+template <midi2::data128 Status> struct sysex8 {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, Status)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;
     ump_bitfield<16, 4> number_of_bytes;
@@ -1668,16 +1605,22 @@ struct sysex8 {
   std::tuple<word0, word1, word2, word3> w;
 };
 
+}  // end namespace details
+
+using sysex8_in_1 = details::sysex8<midi2::data128::sysex8_in_1>;
+using sysex8_start = details::sysex8<midi2::data128::sysex8_start>;
+using sysex8_continue = details::sysex8<midi2::data128::sysex8_continue>;
+using sysex8_end = details::sysex8<midi2::data128::sysex8_end>;
+
 // 7.9 Mixed Data Set Message
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
-
 struct mds_header {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, midi2::data128::mixed_data_set_header)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // Always 0x08
+    ump_bitfield<20, 4> status;  ///< Always 0x08
     ump_bitfield<16, 4> mds_id;
     ump_bitfield<0, 16> bytes_in_chunk;
   };
@@ -1706,10 +1649,10 @@ struct mds_header {
 
 struct mds_payload {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, midi2::data128::mixed_data_set_payload)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // Always 0x09
+    ump_bitfield<20, 4> status;  ///< Always 0x09
     ump_bitfield<16, 4> mds_id;
     ump_bitfield<0, 16> data0;
   };

@@ -347,10 +347,10 @@ private:
       static constexpr void per_note_pitch_bend(context *const ctxt, types::m2cvm::per_note_pitch_bend const &in) { ctxt->push(in.w); }
     };
     struct data128 {
-      constexpr static void sysex8_in_1(context *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
-      constexpr static void sysex8_start(context *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
-      constexpr static void sysex8_continue(context *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
-      constexpr static void sysex8_end(context *const ctxt, types::data128::sysex8 const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_in_1(context *const ctxt, types::data128::sysex8_in_1 const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_start(context *const ctxt, types::data128::sysex8_start const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_continue(context *const ctxt, types::data128::sysex8_continue const &in) { ctxt->push(in.w); }
+      constexpr static void sysex8_end(context *const ctxt, types::data128::sysex8_end const &in) { ctxt->push(in.w); }
       constexpr static void mds_header(context *const ctxt, types::data128::mds_header const &in) { ctxt->push(in.w); }
       constexpr static void mds_payload(context *const ctxt, types::data128::mds_payload const &in) { ctxt->push(in.w); }
     };
