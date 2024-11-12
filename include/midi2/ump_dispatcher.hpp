@@ -508,51 +508,47 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
-  switch (static_cast<midi2status>((message_[0] >> 16) & 0xF0)) {
+  switch (static_cast<m2cvm>((message_[0] >> 20) & 0xF)) {
   // 7.4.1 MIDI 2.0 Note Off Message
-  case midi2status::note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note_off{span}); break;
+  case m2cvm::note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note_off{span}); break;
   // 7.4.2 MIDI 2.0 Note On Message
-  case midi2status::note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note_on{span}); break;
+  case m2cvm::note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note_on{span}); break;
   // 7.4.3 MIDI 2.0 Poly Pressure Message
-  case midi2status::poly_pressure:
-    config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span});
-    break;
+  case m2cvm::poly_pressure: config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span}); break;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
-  case midi2status::rpn_pernote:
+  case m2cvm::rpn_pernote:
     config_.m2cvm.rpn_per_note_controller(config_.context, types::m2cvm::rpn_per_note_controller{span});
     break;
   // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
-  case midi2status::nrpn_pernote:
+  case m2cvm::nrpn_pernote:
     config_.m2cvm.nrpn_per_note_controller(config_.context, types::m2cvm::nrpn_per_note_controller{span});
     break;
   // 7.4.5 MIDI 2.0 Per-Note Management Message
-  case midi2status::pernote_manage:
+  case m2cvm::pernote_manage:
     config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management{span});
     break;
   // 7.4.6 MIDI 2.0 Control Change Message
-  case midi2status::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
+  case m2cvm::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case midi2status::rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
-  case midi2status::nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
+  case m2cvm::rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
+  case m2cvm::nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case midi2status::rpn_relative:
+  case m2cvm::rpn_relative:
     config_.m2cvm.rpn_relative_controller(config_.context, types::m2cvm::rpn_relative_controller{span});
     break;
-  case midi2status::nrpn_relative:
+  case m2cvm::nrpn_relative:
     config_.m2cvm.nrpn_relative_controller(config_.context, types::m2cvm::nrpn_relative_controller{span});
     break;
   // 7.4.9 MIDI 2.0 Program Change Message
-  case midi2status::program_change:
-    config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span});
-    break;
+  case m2cvm::program_change: config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span}); break;
   // 7.4.10 MIDI 2.0 Channel Pressure Message
-  case midi2status::channel_pressure:
+  case m2cvm::channel_pressure:
     config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure{span});
     break;
   // 7.4.11 MIDI 2.0 Pitch Bend Message
-  case midi2status::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
+  case m2cvm::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
   // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-  case midi2status::pitch_bend_pernote:
+  case m2cvm::pitch_bend_pernote:
     config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend{span});
     break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 2}); break;

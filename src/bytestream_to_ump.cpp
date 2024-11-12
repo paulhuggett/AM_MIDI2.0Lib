@@ -29,8 +29,8 @@ void bytestream_to_ump::controllerToUMP(std::byte const b0, std::byte const b1, 
   case control::data_entry_msb:  // RPN MSB Value
     if (c.rpnMsb != std::byte{0xFF} && c.rpnLsb != std::byte{0xFF}) {
       if (c.rpnMode && c.rpnMsb == std::byte{0} && (c.rpnLsb == std::byte{0} || c.rpnLsb == std::byte{6})) {
-        auto const status = static_cast<std::byte>(c.rpnMode ? midi2status::rpn : midi2status::nrpn);
-        output_.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
+        auto const status = static_cast<std::byte>(c.rpnMode ? m2cvm::rpn : m2cvm::nrpn);
+        output_.push_back(pack(ump_message_type::m2cvm, (status << 4) | channel, c.rpnMsb, c.rpnLsb));
         output_.push_back(midi2::mcm_scale<14, 32>(std::to_integer<std::uint32_t>(b2) << 7));
       } else {
         c.rpnMsbValue = b2;
@@ -40,8 +40,8 @@ void bytestream_to_ump::controllerToUMP(std::byte const b0, std::byte const b1, 
   case control::data_entry_lsb:
     // RPN LSB Value
     if (c.rpnMsb != std::byte{0xFF} && c.rpnLsb != std::byte{0xFF}) {
-      auto const status = static_cast<std::byte>(c.rpnMode ? midi2status::rpn : midi2status::nrpn);
-      output_.push_back(pack(ump_message_type::m2cvm, status | channel, c.rpnMsb, c.rpnLsb));
+      auto const status = static_cast<std::byte>(c.rpnMode ? m2cvm::rpn : m2cvm::nrpn);
+      output_.push_back(pack(ump_message_type::m2cvm, (status << 4) | channel, c.rpnMsb, c.rpnLsb));
       output_.push_back(midi2::mcm_scale<14, 32>((std::to_integer<std::uint32_t>(c.rpnMsbValue) << 7) |
                                                  std::to_integer<std::uint32_t>(b2)));
     }

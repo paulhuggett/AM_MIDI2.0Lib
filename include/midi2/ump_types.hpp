@@ -60,7 +60,7 @@ constexpr auto status_to_message_type(status) {
 constexpr auto status_to_message_type(system_crt) {
   return ump_message_type::system;
 }
-constexpr auto status_to_message_type(midi2status) {
+constexpr auto status_to_message_type(m2cvm) {
   return ump_message_type::m2cvm;
 }
 constexpr auto status_to_message_type(ump_utility) {
@@ -85,10 +85,6 @@ template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint
 
 template <typename T> constexpr auto status_to_ump_status(T status) {
   return to_underlying(status);
-}
-template <> constexpr auto status_to_ump_status(midi2status status) {
-  auto const s = to_underlying(status);
-  return static_cast<std::uint8_t>(s <= to_underlying(midi2status::pernote_manage) ? s >> 4 : s);
 }
 template <> constexpr auto status_to_ump_status(status status) {
   auto const s = to_underlying(status);
@@ -589,7 +585,7 @@ namespace m2cvm {
 // 7.4.1 MIDI 2.0 Note Off Message
 struct note_off {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::note_off)
+    UMP_MEMBERS0(word0, midi2::m2cvm::note_off)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
@@ -614,7 +610,7 @@ struct note_off {
 // 7.4.2 MIDI 2.0 Note On Message
 struct note_on {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::note_on)
+    UMP_MEMBERS0(word0, midi2::m2cvm::note_on)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Note-on=0x9
@@ -639,7 +635,7 @@ struct note_on {
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 struct poly_pressure {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::poly_pressure)
+    UMP_MEMBERS0(word0, midi2::m2cvm::poly_pressure)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xA
@@ -660,7 +656,7 @@ struct poly_pressure {
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 struct rpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::rpn_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Per-Note Controller=0x0
@@ -681,7 +677,7 @@ struct rpn_per_note_controller {
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
 struct nrpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::nrpn_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Per-Note Controller=0x1
@@ -705,7 +701,7 @@ struct nrpn_per_note_controller {
 /// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
 struct rpn_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::rpn)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Control (RPN)=0x2
@@ -727,7 +723,7 @@ struct rpn_controller {
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::nrpn)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Control (RPN)=0x3
@@ -749,7 +745,7 @@ struct nrpn_controller {
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 struct rpn_relative_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::rpn_relative)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn_relative)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Relative Control (RPN)=0x4
@@ -770,7 +766,7 @@ struct rpn_relative_controller {
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_relative_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::nrpn_relative)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn_relative)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Relative Control (NRPN)=0x5
@@ -791,7 +787,7 @@ struct nrpn_relative_controller {
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 struct per_note_management {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::pernote_manage)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pernote_manage)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Per-Note Management=0xF
@@ -814,7 +810,7 @@ struct per_note_management {
 // 7.4.6 MIDI 2.0 Control Change Message
 struct control_change {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::cc)
+    UMP_MEMBERS0(word0, midi2::m2cvm::cc)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xB
@@ -834,7 +830,7 @@ struct control_change {
 // 7.4.9 MIDI 2.0 Program Change Message
 struct program_change {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::program_change)
+    UMP_MEMBERS0(word0, midi2::m2cvm::program_change)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xC
@@ -863,7 +859,7 @@ struct program_change {
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 struct channel_pressure {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::channel_pressure)
+    UMP_MEMBERS0(word0, midi2::m2cvm::channel_pressure)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xD
@@ -883,7 +879,7 @@ struct channel_pressure {
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 struct pitch_bend {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::pitch_bend)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xE
@@ -903,7 +899,7 @@ struct pitch_bend {
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 struct per_note_pitch_bend {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::pitch_bend_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0x6

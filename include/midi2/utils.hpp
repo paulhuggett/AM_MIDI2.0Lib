@@ -93,44 +93,6 @@ constexpr bool is_status_byte(std::byte const midi1Byte) {
 constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
 constexpr auto S7MIDICI = std::byte{0x0D};
 
-// Status codes added in MIDI 2.
-enum midi2status : std::uint8_t {
-  rpn_pernote = 0x00,
-  nrpn_pernote = 0x10,
-  rpn = 0x20,   ///< Registered Parameter Number
-  nrpn = 0x30,  ///< Assignable Controller Number
-  rpn_relative = 0x40,
-  nrpn_relative = 0x50,
-  pitch_bend_pernote = 0x60,
-
-  // Channel voice messages
-  note_off = 0x80,
-  note_on = 0x90,
-  poly_pressure = 0xA0,
-  cc = 0xB0,  // Continuous Controller
-  program_change = 0xC0,
-  channel_pressure = 0xD0,  // Channel Pressure (Aftertouch).
-  pitch_bend = 0xE0,
-
-  // System Common Messages
-  pernote_manage = 0xF0,  // MIDI 1.0 sysex_start = 0xF0,
-  timing_code = 0xF1,
-  spp = 0xF2,  // Song Position Pointer
-  song_select = 0xF3,
-  reserved1 = 0xF4,
-  reserved2 = 0xF5,
-  tune_request = 0xF6,
-  sysex_stop = 0xF7,  // End of system exclusive
-  timingclock = 0xF8,
-  reserved3 = 0xF9,
-  seqstart = 0xFA,  // Start the current sequence playing
-  seqcont = 0xFB,   // Continue at the point the sequence was stopped
-  seqstop = 0xFC,   // Stop the current sequence
-  reserved4 = 0xFD,
-  activesense = 0xFE,
-  systemreset = 0xFF,
-};
-
 // Here, CRT is short for "common and real-time".
 enum class system_crt : std::uint8_t {
   timing_code = 0xF1,
@@ -163,6 +125,26 @@ enum control : std::uint8_t {
   /// When a device receives the Reset All Controllers message, it should reset the
   /// condition of all its controllers what it considers an ideal initial state.
   reset_all_controllers = 0x79,
+};
+
+enum class m2cvm : std::uint8_t {
+  rpn_pernote = 0x0,
+  nrpn_pernote = 0x1,
+  rpn = 0x2,   ///< Registered Parameter Number
+  nrpn = 0x3,  ///< Assignable Controller Number
+  rpn_relative = 0x4,
+  nrpn_relative = 0x5,
+  pitch_bend_pernote = 0x6,
+
+  // Channel voice messages
+  note_off = 0x8,
+  note_on = 0x9,
+  poly_pressure = 0xA,
+  cc = 0xB,  // Continuous Controller
+  program_change = 0xC,
+  channel_pressure = 0xD,  // Channel Pressure (Aftertouch).
+  pitch_bend = 0xE,
+  pernote_manage = 0xF,
 };
 
 enum class data64 : std::uint8_t {

@@ -536,7 +536,8 @@ TEST(BytestreamToUMP, Midi2RPN) {
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
-                    ((midi2::midi2status::rpn | std::to_integer<std::uint32_t>(channel)) << 16) | (bank << 8) | index},
+                    (((to_underlying(midi2::m2cvm::rpn) << 4) | std::to_integer<std::uint32_t>(channel)) << 16) |
+                    (bank << 8) | index},
       data,
   };
 
@@ -616,7 +617,8 @@ TEST(BytestreamToUMP, Midi2NonRegisteredParameterSetMSBAndLSB) {
 
   std::array const expected{
       std::uint32_t{(message_type << 28) | (group << 24) |
-                    ((midi2::midi2status::nrpn | std::to_integer<std::uint32_t>(channel)) << 16) | (bank << 8) | index},
+                    (((to_underlying(midi2::m2cvm::nrpn) << 4) | std::to_integer<std::uint32_t>(channel)) << 16) |
+                    (bank << 8) | index},
       midi2::mcm_scale<14, 32>((std::to_integer<std::uint32_t>(data_msb) << 7) |
                                std::to_integer<std::uint32_t>(data_lsb)),
   };
