@@ -159,7 +159,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   output_.push_back(std::bit_cast<std::uint32_t>(w1));
 
   sysex7_.reset();
-  sysex7_.state = sysex7::status::single_ump;
+  sysex7_.state = sysex7::status::none;
 }
 
 void bytestream_to_ump::push(std::byte const midi1Byte) {
@@ -177,16 +177,16 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     d0_ = midi1Byte;
     d1_ = unknown;
 
+    switch (sysex7_.state) {
+    case sysex7::status::start: this->push_sysex7<types::data64::sysex7_in_1>(); break;
+    case sysex7::status::cont: this->push_sysex7<types::data64::sysex7_end>(); break;
+    case sysex7::status::none:
+    default: break;
+    }
+
     if (midi1int == status::sysex_start) {
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
-    } else {
-      switch (sysex7_.state) {
-      case sysex7::status::start: this->push_sysex7<types::data64::sysex7_in_1>(); break;
-      case sysex7::status::cont: this->push_sysex7<types::data64::sysex7_end>(); break;
-      case sysex7::status::single_ump:
-      default: break;
-      }
     }
   } else {
     // Data byte handling.

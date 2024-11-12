@@ -408,6 +408,54 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
 
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
+  using b8 = std::byte;
+  constexpr auto group = std::uint8_t{1};
+  constexpr auto channel = std::uint8_t{1};
+  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
+  ;
+  constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
+  constexpr auto note_number = std::uint8_t{62};
+  std::array const input{
+      start, b8{1}, b8{2}, b8{3}, start, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel}, b8{note_number}, b8{0}};
+
+  std::vector<std::uint32_t> expected;
+  {
+    midi2::types::data64::sysex7_in_1 block1;
+    get<0>(block1.w).group = group;
+    get<0>(block1.w).number_of_bytes = 3U;
+    get<0>(block1.w).data0 = std::uint8_t{1};
+    get<0>(block1.w).data1 = std::uint8_t{2};
+    get<1>(block1.w).data2 = std::uint8_t{3};
+    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block1.w)));
+    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block1.w)));
+  }
+  {
+    midi2::types::data64::sysex7_in_1 block2;
+    get<0>(block2.w).group = group;
+    get<0>(block2.w).number_of_bytes = 4U;
+    get<0>(block2.w).data0 = std::uint8_t{4};
+    get<0>(block2.w).data1 = std::uint8_t{5};
+    get<1>(block2.w).data2 = std::uint8_t{6};
+    get<1>(block2.w).data3 = std::uint8_t{7};
+    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block2.w)));
+    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block2.w)));
+  }
+  {
+    midi2::types::m1cvm::note_off noff;
+    get<0>(noff.w).group = group;
+    get<0>(noff.w).channel = channel;
+    get<0>(noff.w).note = note_number;
+    get<0>(noff.w).velocity = std::uint8_t{0};
+    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(noff.w)));
+  }
+
+  auto const actual = convert(midi2::bytestream_to_ump{false, group}, input);
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
+}
+
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
   constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
