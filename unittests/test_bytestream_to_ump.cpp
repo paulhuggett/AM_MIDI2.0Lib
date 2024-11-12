@@ -326,13 +326,13 @@ TEST(BytestreamToUMP, ProgramChangeTwoBytes) {
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SysEx) {
-  using u8 = std::byte;
-  constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
-  constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
-  std::array const input{start,    u8{0x7E}, u8{0x7F}, u8{0x0D}, u8{0x70}, u8{0x02}, u8{0x4B}, u8{0x60},
-                         u8{0x7A}, u8{0x73}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7F}, u8{0x7D}, u8{0x00},
-                         u8{0x00}, u8{0x00}, u8{0x00}, u8{0x01}, u8{0x00}, u8{0x00}, u8{0x00}, u8{0x03},
-                         u8{0x00}, u8{0x00}, u8{0x00}, u8{0x10}, u8{0x00}, u8{0x00}, u8{0x00}, stop};
+  using b8 = std::byte;
+  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
+  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
+  std::array const input{start,    b8{0x7E}, b8{0x7F}, b8{0x0D}, b8{0x70}, b8{0x02}, b8{0x4B}, b8{0x60},
+                         b8{0x7A}, b8{0x73}, b8{0x7F}, b8{0x7F}, b8{0x7F}, b8{0x7F}, b8{0x7D}, b8{0x00},
+                         b8{0x00}, b8{0x00}, b8{0x00}, b8{0x01}, b8{0x00}, b8{0x00}, b8{0x00}, b8{0x03},
+                         b8{0x00}, b8{0x00}, b8{0x00}, b8{0x10}, b8{0x00}, b8{0x00}, b8{0x00}, stop};
   std::array const expected{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
                             std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
                             std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
@@ -345,9 +345,18 @@ TEST(BytestreamToUMP, SysEx) {
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, LonelySysExEnd) {
-  using u8 = std::byte;
-  constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
+  using b8 = std::byte;
+  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
   std::array const input{stop};
+  auto const actual = convert(midi2::bytestream_to_ump{}, input);
+  EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
+}
+
+// NOLINTNEXTLINE
+TEST(BytestreamToUMP, SysExEndFollowedByDataBytes) {
+  using b8 = std::byte;
+  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
+  std::array const input{stop, b8{1}, b8{2}, stop};
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
 }
@@ -429,8 +438,8 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
       static_cast<std::byte>(stop),  // end sysex
   };
 
-  constexpr auto group = std::uint32_t{0};
-  auto in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+  constexpr auto group = std::uint8_t{0xF};
+  auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     midi2::types::data64::sysex7_in_1::word0 w0{};
     w0.group = group;
     w0.number_of_bytes = number_of_bytes;
@@ -438,7 +447,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.data1 = data1;
     return std::bit_cast<std::uint32_t>(w0);
   };
-  auto start_message = [](u8 data0, u8 data1) {
+  auto const start_message = [](u8 data0, u8 data1) {
     midi2::types::data64::sysex7_start::word0 w0{};
     w0.group = group;
     w0.number_of_bytes = std::uint8_t{6};
@@ -446,7 +455,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.data1 = data1;
     return std::bit_cast<std::uint32_t>(w0);
   };
-  auto end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+  auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
     midi2::types::data64::sysex7_end::word0 w0{};
     w0.group = group;
@@ -467,7 +476,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
       in_one_message(2, 0x7A, 0x7B), midi2::pack(0, 0, 0, 0),
   };
 
-  auto const actual = convert(midi2::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream_to_ump{false, group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);

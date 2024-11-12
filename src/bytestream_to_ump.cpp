@@ -188,28 +188,31 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
       default: break;
       }
     }
-  } else if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
-    if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-      switch (sysex7_.state) {
-      case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
-      case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
-      default: assert(false); break;
+  } else {
+    // Data byte handling.
+    if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
+      if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
+        switch (sysex7_.state) {
+        case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
+        case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
+        default: assert(false); break;
+        }
+        sysex7_.reset();
+        sysex7_.state = sysex7::status::cont;
+        sysex7_.pos = 0;
       }
-      sysex7_.reset();
-      sysex7_.state = sysex7::status::cont;
-      sysex7_.pos = 0;
-    }
-    sysex7_.bytes[sysex7_.pos] = midi1Byte;
-    ++sysex7_.pos;
-  } else if (d1_ != unknown) {  // Second byte
-    this->bsToUMP(d0_, d1_, midi1Byte);
-    d1_ = unknown;
-  } else if (d0_ != std::byte{0}) {  // status byte set
-    if (isOneByteMessage(d0_)) {
-      this->bsToUMP(d0_, midi1Byte, std::byte{0});
-    } else if (d0_ < std::byte{to_underlying(status::sysex_start)} || d0_ == std::byte{to_underlying(status::spp)}) {
-      // This is the first of a two data byte message.
-      d1_ = midi1Byte;
+      sysex7_.bytes[sysex7_.pos] = midi1Byte;
+      ++sysex7_.pos;
+    } else if (d1_ != unknown) {  // Second byte
+      this->bsToUMP(d0_, d1_, midi1Byte);
+      d1_ = unknown;
+    } else if (d0_ != std::byte{0}) {  // status byte set
+      if (isOneByteMessage(d0_)) {
+        this->bsToUMP(d0_, midi1Byte, std::byte{0});
+      } else if (d0_ < std::byte{to_underlying(status::sysex_start)} || d0_ == std::byte{to_underlying(status::spp)}) {
+        // This is the first of a two data byte message.
+        d1_ = midi1Byte;
+      }
     }
   }
 }
