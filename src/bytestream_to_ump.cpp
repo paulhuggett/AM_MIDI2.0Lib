@@ -66,14 +66,26 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   sysex7_.state = sysex7::status::none;
 }
 
+void bytestream_to_ump::sysex_data_byte (std::byte const midi1Byte) {
+  if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
+    switch (sysex7_.state) {
+    case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
+    case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
+    default: assert(false); break;
+    }
+    sysex7_.reset();
+    sysex7_.state = sysex7::status::cont;
+    sysex7_.pos = 0;
+  }
+  sysex7_.bytes[sysex7_.pos] = midi1Byte;
+  ++sysex7_.pos;
+}
+
 void bytestream_to_ump::push(std::byte const midi1Byte) {
   auto const midi1int = static_cast<status>(midi1Byte);
 
   if (is_status_byte(midi1Byte)) {
-    if (midi1int == status::tune_request || is_system_real_time_message(midi1Byte)) {
-      if (midi1int == status::tune_request) {
-        d0_ = midi1Byte;
-      }
+    if (is_system_real_time_message(midi1Byte)) {
       this->to_ump(midi1Byte, std::byte{0}, std::byte{0});
       return;
     }
@@ -81,32 +93,29 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     d0_ = midi1Byte;
     d1_ = unknown;
 
+    // Except for real-time messages, receiving a status byte will implicitly end any in-progress
+    // sysex sequence.
     switch (sysex7_.state) {
     case sysex7::status::start: this->push_sysex7<types::data64::sysex7_in_1>(); break;
     case sysex7::status::cont: this->push_sysex7<types::data64::sysex7_end>(); break;
-    case sysex7::status::none:
     default: break;
     }
 
-    if (midi1int == status::sysex_start) {
+    switch (midi1int) {
+    case status::tune_request:
+      this->to_ump(midi1Byte, std::byte{0}, std::byte{0});
+      break;
+    case status::sysex_start:
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
+      break;
+    default:
+      break;
     }
   } else {
     // Data byte handling.
     if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
-      if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
-        switch (sysex7_.state) {
-        case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
-        case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
-        default: assert(false); break;
-        }
-        sysex7_.reset();
-        sysex7_.state = sysex7::status::cont;
-        sysex7_.pos = 0;
-      }
-      sysex7_.bytes[sysex7_.pos] = midi1Byte;
-      ++sysex7_.pos;
+      this->sysex_data_byte (midi1Byte);
     } else if (d1_ != unknown) {  // Second byte
       this->to_ump(d0_, d1_, midi1Byte);
       d1_ = unknown;
