@@ -1,8 +1,7 @@
 # AM MIDI 2.0 Lib 
 A MIDI 2.0 Library
 
-This is a general purpose Library for building MIDI 2.0 Devices and Applications. This library aims to work on everything from embedded devices through to large scale applications. It provides the building blocks, processing and 
-translations needed for most MIDI 2.0 Devices and Applications
+This is a general purpose Library which provides the building blocks, processing and translations needed for most MIDI 2.0 devices and applications. This library aims to work on everything from embedded devices through to large scale applications with minimal code and data footprint.
 
 This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM_MIDI2.0Lib>. It has been heavily modified with a number of goals:
 
