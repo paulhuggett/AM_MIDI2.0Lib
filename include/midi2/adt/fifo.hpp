@@ -44,6 +44,13 @@ public:
     arr_[(writeIndex_++) & mask_] = value;
     return true;
   }
+  constexpr bool push_back(ElementType&& value) {
+    if (this->full()) {
+      return false;
+    }
+    arr_[(writeIndex_++) & mask_] = std::move(value);
+    return true;
+  }
   /// \brief Removes the first element of the container and returns it.
   /// If there are no elements in the container, the behavior is undefined.
   /// \returns The first element in the container.
