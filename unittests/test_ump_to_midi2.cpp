@@ -6,9 +6,12 @@
 #include <ranges>
 #include <vector>
 
-// Google Test/Mock
+// Google Test/Mock/Fuzz
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+#include <fuzztest/fuzztest.h>
+#endif
 
 using testing::ContainerEq;
 using testing::ElementsAre;
@@ -528,6 +531,28 @@ TEST(UMPToMidi2PassThroughExtras, Text) {
       std::array{std::bit_cast<u32>(w0), std::bit_cast<u32>(w1), std::bit_cast<u32>(w2), std::bit_cast<u32>(w3)};
   auto const output = convert(input);
   EXPECT_THAT(output, ElementsAreArray(input));
+}
+
+void NeverCrashes(std::uint8_t group, std::vector<std::uint32_t> const& packets) {
+  if (group > 0xF) {
+    return;
+  }
+  // This test simply gets ump_to_midi2 to consume a random buffer.
+  midi2::ump_to_midi2 ump2m2{group};
+  for (auto const b : packets) {
+    ump2m2.push(b);
+    while (!ump2m2.empty()) {
+      (void)ump2m2.pop();
+    }
+  }
+}
+
+#if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
+// NOLINTNEXTLINE
+FUZZ_TEST(UMPToMidi2Fuzz, NeverCrashes);
+#endif
+TEST(UMPToMidi2Fuzz, Empty) {
+  NeverCrashes(0, {});
 }
 
 }  // end anonymous namespace
