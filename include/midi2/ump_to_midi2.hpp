@@ -132,12 +132,12 @@ private:
   struct to_midi2_config {
     // utility messages go straight through.
     struct utility {
-      static constexpr void noop(context *const) { /* Just consume NOOP messages */ }
+      static constexpr void noop(context const *const) { /* Just consume NOOP messages */ }
       static constexpr void jr_clock(context *const ctxt, types::utility::jr_clock const &in) { ctxt->push(in.w); }
       static constexpr void jr_timestamp(context *const ctxt, types::utility::jr_timestamp const &in) { ctxt->push(in.w); }
       static constexpr void delta_clockstamp_tpqn(context *const ctxt, types::utility::delta_clockstamp_tpqn const &in) { ctxt->push(in.w); }
       static constexpr void delta_clockstamp(context *const ctxt, types::utility::delta_clockstamp const &in) { ctxt->push(in.w); }
-      static constexpr void unknown(context *const, std::span<std::uint32_t>) { /* Just drop bad messages */ }
+      static constexpr void unknown(context const *, std::span<std::uint32_t>) { /* Just drop bad messages */ }
     };
     // system messages go straight through.
     struct system {

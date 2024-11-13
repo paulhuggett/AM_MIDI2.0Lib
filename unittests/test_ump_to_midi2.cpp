@@ -399,19 +399,19 @@ template <typename T> class UMPToMidi2PassThrough : public testing::Test {
 public:
   template <typename T2>
     requires(std::tuple_size_v<decltype(T2::w)> == 1)
-  std::vector<std::uint32_t> add(T2 const& ump) {
+  static std::vector<std::uint32_t> add(T2 const& ump) {
     return {std::bit_cast<std::uint32_t>(get<0>(ump.w))};
   }
 
   template <typename T2>
     requires(std::tuple_size_v<decltype(T2::w)> == 2)
-  std::vector<std::uint32_t> add(T2 const& ump) {
+  static std::vector<std::uint32_t> add(T2 const& ump) {
     return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w))};
   }
 
   template <typename T2>
     requires(std::tuple_size_v<decltype(T2::w)> == 4)
-  std::vector<std::uint32_t> add(T2 const& ump) {
+  static std::vector<std::uint32_t> add(T2 const& ump) {
     return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w)),
             std::bit_cast<std::uint32_t>(get<2>(ump.w)), std::bit_cast<std::uint32_t>(get<3>(ump.w))};
   }

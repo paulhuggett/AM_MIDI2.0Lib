@@ -491,13 +491,12 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
   assert(pos_ >= ump_message_size(midi2::ump_message_type::data64));
 
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
+  using enum data64;
   switch (static_cast<data64>((message_[0] >> 20) & 0x0F)) {
-  case data64::sysex7_in_1: config_.data64.sysex7_in_1(config_.context, types::data64::sysex7_in_1{span}); break;
-  case data64::sysex7_start: config_.data64.sysex7_start(config_.context, types::data64::sysex7_start{span}); break;
-  case data64::sysex7_continue:
-    config_.data64.sysex7_continue(config_.context, types::data64::sysex7_continue{span});
-    break;
-  case data64::sysex7_end: config_.data64.sysex7_end(config_.context, types::data64::sysex7_end{span}); break;
+  case sysex7_in_1: config_.data64.sysex7_in_1(config_.context, types::data64::sysex7_in_1{span}); break;
+  case sysex7_start: config_.data64.sysex7_start(config_.context, types::data64::sysex7_start{span}); break;
+  case sysex7_continue: config_.data64.sysex7_continue(config_.context, types::data64::sysex7_continue{span}); break;
+  case sysex7_end: config_.data64.sysex7_end(config_.context, types::data64::sysex7_end{span}); break;
   default: config_.utility.unknown(config_.context, span); break;
   }
 }
@@ -508,47 +507,46 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
+  using enum m2cvm;
   switch (static_cast<m2cvm>((message_[0] >> 20) & 0xF)) {
   // 7.4.1 MIDI 2.0 Note Off Message
-  case m2cvm::note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note_off{span}); break;
+  case note_off: config_.m2cvm.note_off(config_.context, types::m2cvm::note_off{span}); break;
   // 7.4.2 MIDI 2.0 Note On Message
-  case m2cvm::note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note_on{span}); break;
+  case note_on: config_.m2cvm.note_on(config_.context, types::m2cvm::note_on{span}); break;
   // 7.4.3 MIDI 2.0 Poly Pressure Message
-  case m2cvm::poly_pressure: config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span}); break;
+  case poly_pressure: config_.m2cvm.poly_pressure(config_.context, types::m2cvm::poly_pressure{span}); break;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
-  case m2cvm::rpn_pernote:
+  case rpn_pernote:
     config_.m2cvm.rpn_per_note_controller(config_.context, types::m2cvm::rpn_per_note_controller{span});
     break;
   // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
-  case m2cvm::nrpn_pernote:
+  case nrpn_pernote:
     config_.m2cvm.nrpn_per_note_controller(config_.context, types::m2cvm::nrpn_per_note_controller{span});
     break;
   // 7.4.5 MIDI 2.0 Per-Note Management Message
-  case m2cvm::pernote_manage:
+  case pernote_manage:
     config_.m2cvm.per_note_management(config_.context, types::m2cvm::per_note_management{span});
     break;
   // 7.4.6 MIDI 2.0 Control Change Message
-  case m2cvm::cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
+  case cc: config_.m2cvm.control_change(config_.context, types::m2cvm::control_change{span}); break;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case m2cvm::rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
-  case m2cvm::nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
+  case rpn: config_.m2cvm.rpn_controller(config_.context, types::m2cvm::rpn_controller{span}); break;
+  case nrpn: config_.m2cvm.nrpn_controller(config_.context, types::m2cvm::nrpn_controller{span}); break;
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case m2cvm::rpn_relative:
+  case rpn_relative:
     config_.m2cvm.rpn_relative_controller(config_.context, types::m2cvm::rpn_relative_controller{span});
     break;
-  case m2cvm::nrpn_relative:
+  case nrpn_relative:
     config_.m2cvm.nrpn_relative_controller(config_.context, types::m2cvm::nrpn_relative_controller{span});
     break;
   // 7.4.9 MIDI 2.0 Program Change Message
-  case m2cvm::program_change: config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span}); break;
+  case program_change: config_.m2cvm.program_change(config_.context, types::m2cvm::program_change{span}); break;
   // 7.4.10 MIDI 2.0 Channel Pressure Message
-  case m2cvm::channel_pressure:
-    config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure{span});
-    break;
+  case channel_pressure: config_.m2cvm.channel_pressure(config_.context, types::m2cvm::channel_pressure{span}); break;
   // 7.4.11 MIDI 2.0 Pitch Bend Message
-  case m2cvm::pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
+  case pitch_bend: config_.m2cvm.pitch_bend(config_.context, types::m2cvm::pitch_bend{span}); break;
   // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-  case m2cvm::pitch_bend_pernote:
+  case pitch_bend_pernote:
     config_.m2cvm.per_note_pitch_bend(config_.context, types::m2cvm::per_note_pitch_bend{span});
     break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 2}); break;
