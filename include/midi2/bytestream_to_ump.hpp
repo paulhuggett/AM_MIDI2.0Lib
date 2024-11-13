@@ -25,13 +25,8 @@ public:
   using input_type = std::byte;
   using output_type = std::uint32_t;
 
-  bytestream_to_ump() = default;
-  explicit bytestream_to_ump(bool const outputMIDI2, std::uint8_t const defaultGroup = 0)
-      : outputMIDI2_{outputMIDI2}, defaultGroup_{defaultGroup} {
-    assert(defaultGroup <= 0b1111);
-  }
-
-  void set_output_midi2(bool enabled) { outputMIDI2_ = enabled; }
+  constexpr bytestream_to_ump() = default;
+  explicit constexpr bytestream_to_ump(std::uint8_t const group) : group_{group} { assert(group <= 0b1111); }
 
   [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
   [[nodiscard]] constexpr output_type pop() {
@@ -43,20 +38,18 @@ public:
 
 private:
   static constexpr auto unknown = std::byte{0xFF};
-  bool outputMIDI2_ = false;
-  std::byte defaultGroup_ = std::byte{0};
+  std::byte group_ = std::byte{0};
 
-  std::byte d0_{};
+  std::byte d0_ = std::byte{0};
   std::byte d1_ = unknown;
 
   struct sysex7 {
     enum class status : std::uint8_t {
-      single_ump = 0x0,  ///< A complete sysex message in one UMP
-      start = 0x1,       ///< Sysex start
-      cont = 0x02,       ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
-      end = 0x03,        ///< Sysex end
+      none,   ///< Not consuming a sysex message
+      start,  ///< Sysex start
+      cont,   ///< Sysex continue UMP. There might be multiple 'cont' UMPs in a single message.
     };
-    status state = status::single_ump;
+    status state = status::none;
     /// The number of system exclusive bytes in the current UMP [0,6]
     std::uint8_t pos = 0;
     /// System exclusive message bytes gathered for the current UMP
@@ -67,17 +60,6 @@ private:
   sysex7 sysex7_;
   fifo<std::uint32_t, 4> output_{};
 
-  // Channel Based Data
-  struct channel {
-    std::byte bankMSB = std::byte{0xFF};
-    std::byte bankLSB = std::byte{0xFF};
-    bool rpnMode = true;
-    std::byte rpnMsbValue = std::byte{0xFF};
-    std::byte rpnMsb = std::byte{0xFF};
-    std::byte rpnLsb = std::byte{0xFF};
-  };
-  std::array<channel, 16> channel_{};
-
   [[nodiscard]] static constexpr std::uint32_t pack(std::byte const b0, std::byte const b1, std::byte const b2,
                                                     std::byte const b3) {
     return (std::to_integer<std::uint32_t>(b0) << 24) | (std::to_integer<std::uint32_t>(b1) << 16) |
@@ -86,11 +68,13 @@ private:
 
   [[nodiscard]] constexpr std::uint32_t pack(ump_message_type const message_type, std::byte const b1,
                                              std::byte const b2, std::byte const b3) const {
-    return pack((static_cast<std::byte>(message_type) << 4) | defaultGroup_, b1, b2, b3);
+    return pack((static_cast<std::byte>(message_type) << 4) | group_, b1, b2, b3);
   }
 
-  void controllerToUMP(std::byte b0, std::byte b1, std::byte b2);
-  void bsToUMP(std::byte b0, std::byte b1, std::byte b2);
+  void to_ump(std::byte b0, std::byte b1, std::byte b2);
+
+  template <typename T> void push_sysex7();
+  void sysex_data_byte (std::byte midi1Byte);
 };
 
 }  // end namespace midi2

@@ -113,14 +113,14 @@ private:
     };
     // data64 messages go straight through.
     struct data64 {
-      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
-      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) {
         ctxt->push(in.w);
       }
-      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7 const &in) {
+      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) {
         ctxt->push(in.w);
       }
-      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) { ctxt->push(in.w); }
     };
     // m2cvm messages are translated to m1cvm messages.
     class m2cvm {

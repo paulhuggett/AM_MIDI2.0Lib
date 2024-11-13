@@ -127,17 +127,17 @@ struct data64_base {
   [[maybe_unused]] data64_base &operator=(data64_base const &) = default;
   [[maybe_unused]] data64_base &operator=(data64_base &&) noexcept = default;
 
-  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_start(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7) = 0;
-  virtual void sysex7_end(context_type, midi2::types::data64::sysex7) = 0;
+  virtual void sysex7_in_1(context_type, midi2::types::data64::sysex7_in_1) = 0;
+  virtual void sysex7_start(context_type, midi2::types::data64::sysex7_start) = 0;
+  virtual void sysex7_continue(context_type, midi2::types::data64::sysex7_continue) = 0;
+  virtual void sysex7_end(context_type, midi2::types::data64::sysex7_end) = 0;
 };
 class Data64Mocks : public data64_base {
 public:
-  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7), (override));
-  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7), (override));
+  MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::types::data64::sysex7_in_1), (override));
+  MOCK_METHOD(void, sysex7_start, (context_type, midi2::types::data64::sysex7_start), (override));
+  MOCK_METHOD(void, sysex7_continue, (context_type, midi2::types::data64::sysex7_continue), (override));
+  MOCK_METHOD(void, sysex7_end, (context_type, midi2::types::data64::sysex7_end), (override));
 };
 struct m2cvm_base {
   m2cvm_base() = default;
@@ -203,19 +203,19 @@ struct data128_base {
   [[maybe_unused]] data128_base &operator=(data128_base const &) = default;
   [[maybe_unused]] data128_base &operator=(data128_base &&) noexcept = default;
 
-  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_start(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8 const &) = 0;
-  virtual void sysex8_end(context_type, midi2::types::data128::sysex8 const &) = 0;
+  virtual void sysex8_in_1(context_type, midi2::types::data128::sysex8_in_1 const &) = 0;
+  virtual void sysex8_start(context_type, midi2::types::data128::sysex8_start const &) = 0;
+  virtual void sysex8_continue(context_type, midi2::types::data128::sysex8_continue const &) = 0;
+  virtual void sysex8_end(context_type, midi2::types::data128::sysex8_end const &) = 0;
   virtual void mds_header(context_type, midi2::types::data128::mds_header const &) = 0;
   virtual void mds_payload(context_type, midi2::types::data128::mds_payload const &) = 0;
 };
 class Data128Mocks : public data128_base {
 public:
-  MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_start, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_continue, (context_type, midi2::types::data128::sysex8 const &), (override));
-  MOCK_METHOD(void, sysex8_end, (context_type, midi2::types::data128::sysex8 const &), (override));
+  MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::types::data128::sysex8_in_1 const &), (override));
+  MOCK_METHOD(void, sysex8_start, (context_type, midi2::types::data128::sysex8_start const &), (override));
+  MOCK_METHOD(void, sysex8_continue, (context_type, midi2::types::data128::sysex8_continue const &), (override));
+  MOCK_METHOD(void, sysex8_end, (context_type, midi2::types::data128::sysex8_end const &), (override));
   MOCK_METHOD(void, mds_header, (context_type, midi2::types::data128::mds_header const &), (override));
   MOCK_METHOD(void, mds_payload, (context_type, midi2::types::data128::mds_payload const &), (override));
 };
@@ -398,9 +398,7 @@ TEST_F(UMPDispatcherSystem, MIDITimeCode) {
 TEST_F(UMPDispatcherSystem, SongPositionPointer) {
   midi2::types::system::song_position_pointer message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::spp);
   w0.position_lsb = 0b1010101;
   w0.position_msb = 0b1111111;
   EXPECT_CALL(config_.system, song_position_pointer(config_.context, message));
@@ -410,9 +408,7 @@ TEST_F(UMPDispatcherSystem, SongPositionPointer) {
 TEST_F(UMPDispatcherSystem, SongSelect) {
   midi2::types::system::song_select message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::song_select);
   w0.song = 0b1010101;
   EXPECT_CALL(config_.system, song_select(config_.context, message));
   dispatcher_.processUMP(w0);
@@ -421,9 +417,7 @@ TEST_F(UMPDispatcherSystem, SongSelect) {
 TEST_F(UMPDispatcherSystem, TuneRequest) {
   midi2::types::system::tune_request message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::tune_request);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -471,9 +465,7 @@ TEST_F(UMPDispatcherSystem, ActiveSensing) {
 TEST_F(UMPDispatcherSystem, Reset) {
   midi2::types::system::reset message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
-  w0.status = to_underlying(midi2::status::systemreset);
   EXPECT_CALL(config_.system, reset(config_.context, message));
   dispatcher_.processUMP(w0);
 }
@@ -481,7 +473,6 @@ TEST_F(UMPDispatcherSystem, Reset) {
 TEST_F(UMPDispatcherSystem, BadStatus) {
   midi2::types::system::reset message;
   auto &w0 = std::get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::system);
   w0.group = 0;
   w0.status = 0x00;
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(w0.word())));
@@ -563,12 +554,10 @@ TEST_F(UMPDispatcherMIDI1, ChannelPressure) {
 //*                                 *
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64SysExIn1) {
-  midi2::types::data64::sysex7 m0;
+  midi2::types::data64::sysex7_in_1 m0;
   auto &w0 = get<0>(m0.w);
   auto &w1 = get<1>(m0.w);
-  w0.mt = to_underlying(midi2::ump_message_type::data64);
   w0.group = 0;
-  w0.status = to_underlying(midi2::data64::sysex7_in_1);
   w0.number_of_bytes = 4;
   w0.data0 = 2;
   w0.data1 = 3;
@@ -580,14 +569,11 @@ TEST_F(UMPDispatcher, Data64SysExIn1) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
-  using midi2::types::data64::sysex7;
 
-  sysex7 m0;
+  midi2::types::data64::sysex7_start m0;
   auto &m0w0 = get<0>(m0.w);
   auto &m0w1 = get<1>(m0.w);
-  m0w0.mt = to_underlying(midi2::ump_message_type::data64);
   m0w0.group = group;
-  m0w0.status = to_underlying(midi2::data64::sysex7_start);
   m0w0.number_of_bytes = 6;
   m0w0.data0 = 2;
   m0w0.data1 = 3;
@@ -596,12 +582,10 @@ TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   m0w1.data4 = 11;
   m0w1.data5 = 13;
 
-  sysex7 m1;
+  midi2::types::data64::sysex7_continue m1;
   auto &m1w0 = get<0>(m1.w);
   auto &m1w1 = get<1>(m1.w);
-  m1w0.mt = to_underlying(midi2::ump_message_type::data64);
   m1w0.group = group;
-  m1w0.status = to_underlying(midi2::data64::sysex7_continue);
   m1w0.number_of_bytes = 6;
   m1w0.data0 = 17;
   m1w0.data1 = 19;
@@ -610,12 +594,10 @@ TEST_F(UMPDispatcher, Data64Sysex8StartAndEnd) {
   m1w1.data4 = 31;
   m1w1.data5 = 37;
 
-  sysex7 m2;
+  midi2::types::data64::sysex7_end m2;
   auto &m2w0 = get<0>(m2.w);
   auto &m2w1 = get<1>(m2.w);
-  m2w0.mt = to_underlying(midi2::ump_message_type::data64);
   m2w0.group = group;
-  m2w0.status = to_underlying(midi2::data64::sysex7_end);
   m2w0.number_of_bytes = 4;
   m2w0.data0 = 41;
   m2w0.data1 = 43;
@@ -672,9 +654,7 @@ TEST_F(UMPDispatcherMIDI2CVM, ProgramChange) {
   midi2::types::m2cvm::program_change message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::m2cvm);
   w0.group = std::uint8_t{0};
-  w0.status = ump_cvm(midi2::status::program_change);
   w0.channel = std::uint8_t{3};
   w0.reserved = 0;
   w0.option_flags = 0;
@@ -773,14 +753,12 @@ TEST_F(UMPDispatcherData128, Sysex8In1) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
-  midi2::types::data128::sysex8 message;
+  midi2::types::data128::sysex8_in_1 message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::data128);
   w0.group = group;
-  w0.status = to_underlying(midi2::data128::sysex8_in_1);
   w0.number_of_bytes = 10;
   w0.stream_id = stream_id;
   w0.data0 = 2;
@@ -801,10 +779,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   constexpr auto group = std::uint8_t{0};
   constexpr auto stream_id = std::uint8_t{0};
 
-  midi2::types::data128::sysex8 part0;
-  get<0>(part0.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_start part0;
   get<0>(part0.w).group = group;
-  get<0>(part0.w).status = to_underlying(midi2::data128::sysex8_start);
   get<0>(part0.w).number_of_bytes = 13;
   get<0>(part0.w).stream_id = stream_id;
   get<0>(part0.w).data0 = 2;
@@ -820,10 +796,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   get<3>(part0.w).data10 = 31;
   get<3>(part0.w).data11 = 37;
   get<3>(part0.w).data12 = 41;
-  midi2::types::data128::sysex8 part1;
-  get<0>(part1.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_continue part1;
   get<0>(part1.w).group = group;
-  get<0>(part1.w).status = to_underlying(midi2::data128::sysex8_continue);
   get<0>(part1.w).number_of_bytes = 13;
   get<0>(part1.w).stream_id = stream_id;
   get<0>(part1.w).data0 = 43;
@@ -839,10 +813,8 @@ TEST_F(UMPDispatcherData128, Sysex8StartAndEnd) {
   get<3>(part1.w).data10 = 89;
   get<3>(part1.w).data11 = 97;
   get<3>(part1.w).data12 = 101;
-  midi2::types::data128::sysex8 part2;
-  get<0>(part2.w).mt = to_underlying(midi2::ump_message_type::data128);
+  midi2::types::data128::sysex8_end part2;
   get<0>(part2.w).group = group;
-  get<0>(part2.w).status = to_underlying(midi2::data128::sysex8_end);
   get<0>(part2.w).number_of_bytes = 4;
   get<0>(part2.w).stream_id = stream_id;
   get<0>(part2.w).data0 = 103;
@@ -868,9 +840,7 @@ TEST_F(UMPDispatcherData128, MixedDatSet) {
   constexpr auto mds_id = std::uint8_t{0b1010};
 
   midi2::types::data128::mds_header header;
-  get<0>(header.w).mt = to_underlying(midi2::ump_message_type::data128);
   get<0>(header.w).group = group;
-  get<0>(header.w).status = to_underlying(midi2::data128::mixed_data_set_header);
   get<0>(header.w).mds_id = mds_id;
   get<0>(header.w).bytes_in_chunk = 2;
 
@@ -882,9 +852,7 @@ TEST_F(UMPDispatcherData128, MixedDatSet) {
   get<3>(header.w).sub_id_2 = 23;
 
   midi2::types::data128::mds_payload payload;
-  get<0>(payload.w).mt = to_underlying(midi2::ump_message_type::data128);
   get<0>(payload.w).group = group;
-  get<0>(payload.w).status = to_underlying(midi2::data128::mixed_data_set_payload);
   get<0>(payload.w).mds_id = mds_id;
   get<0>(payload.w).data0 = std::uint16_t{0xFFFF};
   get<1>(payload.w) = 0xFFFFFFFF;
@@ -936,9 +904,7 @@ class UMPDispatcherStream : public UMPDispatcher {};
 TEST_F(UMPDispatcherStream, EndpointDiscovery) {
   midi2::types::ump_stream::endpoint_discovery message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x03;
-  w0.status = to_underlying(midi2::ump_stream::endpoint_discovery);
   w0.version_major = 0x01;
   w0.version_minor = 0x01;
   get<1>(message.w).filter = 0b00011111;
@@ -950,9 +916,7 @@ TEST_F(UMPDispatcherStream, EndpointInfoNotification) {
   midi2::types::ump_stream::endpoint_info_notification message{};
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::endpoint_info_notification);
   w0.version_major = 0x01;
   w0.version_minor = 0x01;
   w1.static_function_blocks = 1;
@@ -971,9 +935,7 @@ TEST_F(UMPDispatcherStream, DeviceIdentityNotification) {
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::device_identity_notification);
   w1.dev_manuf_sysex_id_1 = 1;
   w1.dev_manuf_sysex_id_2 = 1;
   w1.dev_manuf_sysex_id_3 = 0;
@@ -995,9 +957,7 @@ TEST_F(UMPDispatcherStream, EndpointNameNotification) {
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::endpoint_name_notification);
   w0.name1 = std::uint8_t{'a'};
   w0.name2 = std::uint8_t{'b'};
   w1.name3 = std::uint8_t{'c'};
@@ -1022,9 +982,7 @@ TEST_F(UMPDispatcherStream, ProductInstanceIdNotification) {
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::product_instance_id_notification);
   w0.pid1 = 0x22;
   w0.pid2 = 0x33;
   w1.pid3 = 0x44;
@@ -1047,9 +1005,7 @@ TEST_F(UMPDispatcherStream, ProductInstanceIdNotification) {
 TEST_F(UMPDispatcherStream, JRConfigurationRequest) {
   midi2::types::ump_stream::jr_configuration_request message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::jr_configuration_request);
   w0.protocol = 0x02;
   w0.rxjr = 1;
   w0.txjr = 0;
@@ -1060,9 +1016,7 @@ TEST_F(UMPDispatcherStream, JRConfigurationRequest) {
 TEST_F(UMPDispatcherStream, JRConfigurationNotification) {
   midi2::types::ump_stream::jr_configuration_notification message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::jr_configuration_notification);
   w0.protocol = 0x02;
   w0.rxjr = 1;
   w0.txjr = 0;
@@ -1073,9 +1027,7 @@ TEST_F(UMPDispatcherStream, JRConfigurationNotification) {
 TEST_F(UMPDispatcherStream, FunctionBlockDiscovery) {
   midi2::types::ump_stream::function_block_discovery message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::function_block_discovery);
   w0.block_num = 0xFF;
   w0.filter = 0x03;
   EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, message)).Times(1);
@@ -1086,9 +1038,7 @@ TEST_F(UMPDispatcherStream, FunctionBlockInfoNotification) {
   midi2::types::ump_stream::function_block_info_notification message{};
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::function_block_info_notification);
   w0.block_active = 1;
   w0.block_num = 0x1F;
   w0.ui_hint = 0b10;
@@ -1108,9 +1058,7 @@ TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::function_block_name_notification);
   w0.block_num = 0x1F;
   w0.name0 = 'a';
   w1.name1 = 'b';
@@ -1132,9 +1080,7 @@ TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
 TEST_F(UMPDispatcherStream, StartOfClip) {
   midi2::types::ump_stream::start_of_clip message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::start_of_clip);
   EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, message)).Times(1);
   dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
 }
@@ -1142,9 +1088,7 @@ TEST_F(UMPDispatcherStream, StartOfClip) {
 TEST_F(UMPDispatcherStream, EndOfClip) {
   midi2::types::ump_stream::end_of_clip message{};
   auto &w0 = get<0>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::ump_stream);
   w0.format = 0x00;
-  w0.status = to_underlying(midi2::ump_stream::end_of_clip);
   EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, message)).Times(1);
   dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
 }
@@ -1161,13 +1105,11 @@ TEST_F(UMPDispatcherFlexData, SetTempo) {
   midi2::types::flex_data::set_tempo message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = 0;
   w0.form = 0;
   w0.addrs = 1;
   w0.channel = 0;
   w0.status_bank = 0;
-  w0.status = to_underlying(midi2::flex_data::set_tempo);
   w1 = std::uint32_t{0xF0F0F0F0};
   EXPECT_CALL(config_.flex, set_tempo(config_.context, message)).Times(1);
   dispatcher_.processUMP(get<0>(message.w));
@@ -1180,13 +1122,11 @@ TEST_F(UMPDispatcherFlexData, SetTimeSignature) {
   midi2::types::flex_data::set_time_signature message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = 0;
   w0.form = 0;
   w0.addrs = 1;
   w0.channel = 3;
   w0.status_bank = 0;
-  w0.status = to_underlying(midi2::flex_data::set_time_signature);
   w1.numerator = 1;
   w1.denominator = 2;
   w1.number_of_32_notes = 16;
@@ -1199,13 +1139,11 @@ TEST_F(UMPDispatcherFlexData, SetMetronome) {
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = 0;
   w0.form = 0;
   w0.addrs = 1;
   w0.channel = 3;
   w0.status_bank = 0;
-  w0.status = to_underlying(midi2::flex_data::set_metronome);
   w1.num_clocks_per_primary_click = 24;
   w1.bar_accent_part_1 = 4;
   w1.bar_accent_part_2 = 0;
@@ -1221,13 +1159,11 @@ TEST_F(UMPDispatcherFlexData, SetKeySignature) {
   midi2::types::flex_data::set_key_signature message;
   auto &w0 = get<0>(message.w);
   auto &w1 = get<1>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = 0;
   w0.form = 0;
   w0.addrs = 1;
   w0.channel = 3;
   w0.status_bank = 0;
-  w0.status = to_underlying(midi2::flex_data::set_key_signature);
   w1.sharps_flats = 0b100;  // (-8)
   w1.tonic_note = static_cast<std::uint8_t>(midi2::types::flex_data::note::E);
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
@@ -1240,13 +1176,11 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
   auto &w1 = get<1>(message.w);
   auto &w2 = get<2>(message.w);
   auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
   w0.group = 0x0F;
   w0.form = 0x0;
   w0.addrs = 3;
   w0.channel = 3;
   w0.status_bank = 0x00;
-  w0.status = to_underlying(midi2::flex_data::set_chord_name);
   w1.tonic_sharps_flats = 0x1;
   w1.chord_tonic = midi2::to_underlying(midi2::types::flex_data::note::E);
   w1.chord_type = midi2::to_underlying(midi2::types::flex_data::chord_type::augmented);

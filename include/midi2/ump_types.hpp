@@ -19,7 +19,7 @@
 #include "midi2/utils.hpp"
 
 #define UMP_MEMBERS0(name, st)                                                 \
-  name() {                                                           \
+  name() {                                                                     \
     static_assert(sizeof(name) == sizeof(std::uint32_t));                      \
     std::memset(this, 0, sizeof(*this));                                       \
     this->mt = to_underlying(status_to_message_type(st));                      \
@@ -60,7 +60,7 @@ constexpr auto status_to_message_type(status) {
 constexpr auto status_to_message_type(system_crt) {
   return ump_message_type::system;
 }
-constexpr auto status_to_message_type(midi2status) {
+constexpr auto status_to_message_type(m2cvm) {
   return ump_message_type::m2cvm;
 }
 constexpr auto status_to_message_type(ump_utility) {
@@ -85,10 +85,6 @@ template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint
 
 template <typename T> constexpr auto status_to_ump_status(T status) {
   return to_underlying(status);
-}
-template <> constexpr auto status_to_ump_status(midi2status status) {
-  auto const s = to_underlying(status);
-  return static_cast<std::uint8_t>(s < to_underlying(midi2status::pernote_manage) ? s >> 4 : s);
 }
 template <> constexpr auto status_to_ump_status(status status) {
   auto const s = to_underlying(status);
@@ -371,6 +367,11 @@ struct reset {
 
 }  // end namespace system
 
+//*        _                 *
+//*  _ __ / |  ____ ___ __   *
+//* | '  \| | / _\ V / '  \  *
+//* |_|_|_|_| \__|\_/|_|_|_| *
+//*                          *
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
@@ -530,12 +531,14 @@ struct pitch_bend {
 namespace data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
-struct sysex7 {
+namespace details {
+
+template <midi2::data64 Status> struct sysex7 {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, Status)
     ump_bitfield<28, 4> mt;  ///< Always 0x3
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // 0b0000..0b0011
+    ump_bitfield<20, 4> status;
     ump_bitfield<16, 4> number_of_bytes;
     ump_bitfield<15, 1> reserved0;
     ump_bitfield<8, 7> data0;
@@ -561,6 +564,13 @@ struct sysex7 {
   std::tuple<word0, word1> w;
 };
 
+}  // end namespace details
+
+using sysex7_in_1 = details::sysex7<midi2::data64::sysex7_in_1>;
+using sysex7_start = details::sysex7<midi2::data64::sysex7_start>;
+using sysex7_continue = details::sysex7<midi2::data64::sysex7_continue>;
+using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
+
 }  // end namespace data64
 
 //*        ___               *
@@ -575,7 +585,7 @@ namespace m2cvm {
 // 7.4.1 MIDI 2.0 Note Off Message
 struct note_off {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::note_off)
+    UMP_MEMBERS0(word0, midi2::m2cvm::note_off)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
@@ -600,7 +610,7 @@ struct note_off {
 // 7.4.2 MIDI 2.0 Note On Message
 struct note_on {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::note_on)
+    UMP_MEMBERS0(word0, midi2::m2cvm::note_on)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Note-on=0x9
@@ -625,7 +635,7 @@ struct note_on {
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 struct poly_pressure {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::poly_pressure)
+    UMP_MEMBERS0(word0, midi2::m2cvm::poly_pressure)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xA
@@ -646,7 +656,7 @@ struct poly_pressure {
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 struct rpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::rpn_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Per-Note Controller=0x0
@@ -667,7 +677,7 @@ struct rpn_per_note_controller {
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
 struct nrpn_per_note_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::nrpn_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Per-Note Controller=0x1
@@ -691,7 +701,7 @@ struct nrpn_per_note_controller {
 /// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
 struct rpn_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::rpn)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Control (RPN)=0x2
@@ -713,7 +723,7 @@ struct rpn_controller {
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::nrpn)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Control (RPN)=0x3
@@ -735,7 +745,7 @@ struct nrpn_controller {
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 struct rpn_relative_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::rpn_relative)
+    UMP_MEMBERS0(word0, midi2::m2cvm::rpn_relative)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Registered Relative Control (RPN)=0x4
@@ -756,7 +766,7 @@ struct rpn_relative_controller {
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_relative_controller {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::midi2status::nrpn_relative)
+    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn_relative)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Assignable Relative Control (NRPN)=0x5
@@ -777,10 +787,10 @@ struct nrpn_relative_controller {
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 struct per_note_management {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pernote_manage)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;
+    ump_bitfield<20, 4> status;  ///< Per-Note Management=0xF
     ump_bitfield<16, 4> channel;
     ump_bitfield<15, 1> reserved;
     ump_bitfield<8, 7> note;
@@ -800,13 +810,14 @@ struct per_note_management {
 // 7.4.6 MIDI 2.0 Control Change Message
 struct control_change {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::cc)
+    UMP_MEMBERS0(word0, midi2::m2cvm::cc)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xB
     ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> controller;
-    ump_bitfield<0, 7> reserved0;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> controller;
+    ump_bitfield<0, 8> reserved1;
   };
   using word1 = std::uint32_t;
 
@@ -820,7 +831,7 @@ struct control_change {
 // 7.4.9 MIDI 2.0 Program Change Message
 struct program_change {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::program_change)
+    UMP_MEMBERS0(word0, midi2::m2cvm::program_change)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xC
@@ -849,7 +860,7 @@ struct program_change {
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 struct channel_pressure {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::channel_pressure)
+    UMP_MEMBERS0(word0, midi2::m2cvm::channel_pressure)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xD
@@ -869,7 +880,7 @@ struct channel_pressure {
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 struct pitch_bend {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::pitch_bend)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xE
@@ -889,7 +900,7 @@ struct pitch_bend {
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 struct per_note_pitch_bend {
   union word0 {
-    UMP_MEMBERS0(word0, midi2status::pitch_bend_pernote)
+    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend_pernote)
     ump_bitfield<28, 4> mt;  ///< Always 0x4
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0x6
@@ -909,12 +920,17 @@ struct per_note_pitch_bend {
 
 }  // end namespace m2cvm
 
+//*                       _                       *
+//*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
+//* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
+//*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
+//*            |_|                                *
 namespace ump_stream {
 
 // 7.1.1 Endpoint Discovery Message
 struct endpoint_discovery {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::endpoint_discovery)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x00
@@ -939,7 +955,7 @@ struct endpoint_discovery {
 // 7.1.2 Endpoint Info Notification Message
 struct endpoint_info_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::endpoint_info_notification)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x01
@@ -970,7 +986,7 @@ struct endpoint_info_notification {
 // 7.1.3 Device Identity Notification Message
 struct device_identity_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::device_identity_notification)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x02
@@ -1018,7 +1034,7 @@ struct device_identity_notification {
 // 7.1.4 Endpoint Name Notification
 struct endpoint_name_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::endpoint_name_notification)
     ump_bitfield<28, 4> mt;  // 0x0F
     ump_bitfield<26, 2> format;
     ump_bitfield<16, 10> status;  // 0x03
@@ -1056,7 +1072,7 @@ struct endpoint_name_notification {
 // 7.1.5 Product Instance Id Notification Message
 struct product_instance_id_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::product_instance_id_notification)
     ump_bitfield<28, 4> mt;
     ump_bitfield<26, 2> format;
     ump_bitfield<16, 10> status;
@@ -1096,7 +1112,7 @@ struct product_instance_id_notification {
 // 7.1.6.2 JR Stream Configuration Request
 struct jr_configuration_request {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::jr_configuration_request)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x05
@@ -1119,7 +1135,7 @@ struct jr_configuration_request {
 // 7.1.6.3 JR Stream Configuration Notification Message
 struct jr_configuration_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::jr_configuration_notification)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x06
@@ -1142,7 +1158,7 @@ struct jr_configuration_notification {
 // 7.1.7 Function Block Discovery Message
 struct function_block_discovery {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::function_block_discovery)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x10
@@ -1163,7 +1179,7 @@ struct function_block_discovery {
 // 7.1.8 Function Block Info Notification
 struct function_block_info_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::function_block_info_notification)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x11
@@ -1194,7 +1210,7 @@ struct function_block_info_notification {
 // 7.1.9 Function Block Name Notification
 struct function_block_name_notification {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::function_block_name_notification)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x12
@@ -1233,7 +1249,7 @@ struct function_block_name_notification {
 // 7.1.10 Start of Clip Message
 struct start_of_clip {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::start_of_clip)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x20
@@ -1253,7 +1269,7 @@ struct start_of_clip {
 // 7.1.11 End of Clip Message
 struct end_of_clip {
   union word0 {
-    UMP_MEMBERS(word0)
+    UMP_MEMBERS0(word0, midi2::ump_stream::end_of_clip)
     ump_bitfield<28, 4> mt;       // 0x0F
     ump_bitfield<26, 2> format;   // 0x00
     ump_bitfield<16, 10> status;  // 0x21
@@ -1272,6 +1288,11 @@ struct end_of_clip {
 
 };  // end namespace ump_stream
 
+//*   __ _              _      _         *
+//*  / _| |_____ __  __| |__ _| |_ __ _  *
+//* |  _| / -_) \ / / _` / _` |  _/ _` | *
+//* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
+//*                                      *
 namespace flex_data {
 
 union flex_data_w0 {
@@ -1287,7 +1308,16 @@ union flex_data_w0 {
 
 // 7.5.3 Set Tempo Message
 struct set_tempo {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::flex_data::set_tempo)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   using word1 = std::uint32_t;
   using word2 = std::uint32_t;
   using word3 = std::uint32_t;
@@ -1301,7 +1331,16 @@ struct set_tempo {
 
 // 7.5.4 Set Time Signature Message
 struct set_time_signature {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::flex_data::set_time_signature)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   union word1 {
     UMP_MEMBERS(word1)
     ump_bitfield<24, 8> numerator;
@@ -1322,7 +1361,16 @@ struct set_time_signature {
 // 7.5.5 Set Metronome Message
 
 struct set_metronome {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::flex_data::set_metronome)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   union word1 {
     UMP_MEMBERS(word1)
     ump_bitfield<24, 8> num_clocks_per_primary_click;
@@ -1347,7 +1395,16 @@ struct set_metronome {
 
 // 7.5.7 Set Key Signature Message
 struct set_key_signature {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::flex_data::set_key_signature)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   union word1 {
     UMP_MEMBERS(word1)
     ump_bitfield<28, 4> sharps_flats;
@@ -1420,7 +1477,16 @@ enum class chord_type : std::uint8_t {
 };
 
 struct set_chord_name {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS0(word0, midi2::flex_data::set_chord_name)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   union word1 {
     UMP_MEMBERS(word1)
     ump_bitfield<28, 4> tonic_sharps_flats;  // 2's compl
@@ -1459,7 +1525,16 @@ struct set_chord_name {
 
 // 7.5.9 Text Messages Common Format
 struct text_common {
-  using word0 = flex_data_w0;
+  union word0 {
+    UMP_MEMBERS(word0)
+    ump_bitfield<28, 4> mt;  // 0x0D
+    ump_bitfield<24, 4> group;
+    ump_bitfield<22, 2> form;
+    ump_bitfield<20, 2> addrs;
+    ump_bitfield<16, 4> channel;
+    ump_bitfield<8, 8> status_bank;
+    ump_bitfield<0, 8> status;
+  };
   using word1 = std::uint32_t;
   using word2 = std::uint32_t;
   using word3 = std::uint32_t;
@@ -1473,20 +1548,25 @@ struct text_common {
 
 }  // end namespace flex_data
 
+//*     _      _          _ ___ ___  *
+//*  __| |__ _| |_ __ _  / |_  | _ ) *
+//* / _` / _` |  _/ _` | | |/ // _ \ *
+//* \__,_\__,_|\__\__,_| |_/___\___/ *
+//*                                  *
 namespace data128 {
 
-// F.3.1 Message Type 0x5: 16-byte Data Messages (System Exclusive 8 and Mixed
-// Data Set) Table 31 16-Byte UMP Formats for Message Type 0x5: System Exclusive
-// 8 and Mixed Data Set
+// 7.8 System Exclusive 8 (8-Bit) Messages
 
 // SysEx8 in 1 UMP (word 1)
 // SysEx8 Start (word 1)
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
-struct sysex8 {
+namespace details {
+
+template <midi2::data128 Status> struct sysex8 {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, Status)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;
     ump_bitfield<16, 4> number_of_bytes;
@@ -1522,16 +1602,22 @@ struct sysex8 {
   std::tuple<word0, word1, word2, word3> w;
 };
 
+}  // end namespace details
+
+using sysex8_in_1 = details::sysex8<midi2::data128::sysex8_in_1>;
+using sysex8_start = details::sysex8<midi2::data128::sysex8_start>;
+using sysex8_continue = details::sysex8<midi2::data128::sysex8_continue>;
+using sysex8_end = details::sysex8<midi2::data128::sysex8_end>;
+
 // 7.9 Mixed Data Set Message
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
-
 struct mds_header {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, midi2::data128::mixed_data_set_header)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // Always 0x08
+    ump_bitfield<20, 4> status;  ///< Always 0x08
     ump_bitfield<16, 4> mds_id;
     ump_bitfield<0, 16> bytes_in_chunk;
   };
@@ -1560,10 +1646,10 @@ struct mds_header {
 
 struct mds_payload {
   union word0 {
-    UMP_MEMBERS(word0)
-    ump_bitfield<28, 4> mt;  // Always 0x05
+    UMP_MEMBERS0(word0, midi2::data128::mixed_data_set_payload)
+    ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // Always 0x09
+    ump_bitfield<20, 4> status;  ///< Always 0x09
     ump_bitfield<16, 4> mds_id;
     ump_bitfield<0, 16> data0;
   };

@@ -339,12 +339,10 @@ TEST(UMPToBytestream, ProgramChangeTwoBytes) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SysexInOne) {
-  midi2::types::data64::sysex7 message;
+  midi2::types::data64::sysex7_in_1 message;
   auto& m0 = std::get<0>(message.w);
   auto& m1 = std::get<1>(message.w);
-  m0.mt = to_underlying(midi2::ump_message_type::data64);
   m0.group = 0;
-  m0.status = to_underlying(midi2::data64::sysex7_in_1);
   m0.number_of_bytes = 4;
   m0.data0 = 0x7E;
   m0.data1 = 0x7F;
