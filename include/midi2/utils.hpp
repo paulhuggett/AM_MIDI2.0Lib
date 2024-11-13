@@ -55,15 +55,15 @@ enum class status : std::uint8_t {
   channel_pressure = 0xD0,  // Channel Pressure (Aftertouch).
   pitch_bend = 0xE0,
 
-  // System Common Messages
-  sysex_start = 0xF0,
+  // System Common/Real Time/Exclusive Messages
+  sysex_start = 0xF0,  ///< Begin system exclusive data
   timing_code = 0xF1,
-  spp = 0xF2,  // Song Position Pointer
+  spp = 0xF2,  ///< Song Position Pointer
   song_select = 0xF3,
   reserved1 = 0xF4,
   reserved2 = 0xF5,
   tune_request = 0xF6,
-  sysex_stop = 0xF7,  // End of system exclusive
+  sysex_stop = 0xF7,  ///< End of system exclusive
   timing_clock = 0xF8,
   reserved3 = 0xF9,
   sequence_start = 0xFA,     // Start the current sequence playing

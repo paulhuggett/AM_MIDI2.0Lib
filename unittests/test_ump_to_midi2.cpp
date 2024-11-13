@@ -81,6 +81,57 @@ TEST(UMPToMidi2, NoteOn) {
               ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
 }
 
+// UMPToMidi2
+TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
+  constexpr auto note_number = std::uint8_t{60};
+  constexpr auto velocity = std::uint8_t{0x60};
+  constexpr auto group = std::uint8_t{3};
+  constexpr auto channel = std::uint8_t{5};
+
+  // A note on message followed by a note-on with velocity 0. The second of
+  // these should become a note-off.
+  std::vector<std::uint32_t> input;
+  {
+    midi2::types::m1cvm::note_on in_non_1;
+    get<0>(in_non_1.w).group = group;
+    get<0>(in_non_1.w).channel = channel;
+    get<0>(in_non_1.w).note = note_number;
+    get<0>(in_non_1.w).velocity = velocity;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_1.w)));
+  }
+  {
+    midi2::types::m1cvm::note_on in_non_2;
+    get<0>(in_non_2.w).group = group;
+    get<0>(in_non_2.w).channel = channel;
+    get<0>(in_non_2.w).note = note_number;
+    get<0>(in_non_2.w).velocity = 0;
+    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_2.w)));
+  }
+
+  std::vector<std::uint32_t> expected;
+  {
+    midi2::types::m2cvm::note_on expected_non;
+    get<0>(expected_non.w).group = group;
+    get<0>(expected_non.w).channel = channel;
+    get<0>(expected_non.w).note = note_number;
+    get<1>(expected_non.w).velocity = static_cast<std::uint16_t>(midi2::mcm_scale<7, 16>(velocity));
+    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_non.w)));
+    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_non.w)));
+  }
+  {
+    midi2::types::m2cvm::note_on expected_noff;
+    get<0>(expected_noff.w).group = group;
+    get<0>(expected_noff.w).channel = channel;
+    get<0>(expected_noff.w).note = note_number;
+    get<1>(expected_noff.w).velocity = 0;
+    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_noff.w)));
+    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_noff.w)));
+  }
+
+  auto const actual = convert(input);
+  EXPECT_THAT(actual, ElementsAreArray(expected));
+}
+
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, PolyPressure) {
   constexpr auto note = 64;
