@@ -815,8 +815,9 @@ struct control_change {
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0xB
     ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> controller;
-    ump_bitfield<0, 7> reserved0;
+    ump_bitfield<15, 1> reserved0;
+    ump_bitfield<8, 7> controller;
+    ump_bitfield<0, 8> reserved1;
   };
   using word1 = std::uint32_t;
 

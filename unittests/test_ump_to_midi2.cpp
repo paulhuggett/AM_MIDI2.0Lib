@@ -182,6 +182,54 @@ TEST(UMPToMidi2, PitchBend) {
 }
 
 // NOLINTNEXTLINE
+TEST(UMPToMidi2, ChannelPressure) {
+  constexpr auto pressure = 0b0101010;
+  constexpr auto group = std::uint8_t{3};
+  constexpr auto channel = std::uint8_t{7};
+
+  midi2::types::m1cvm::channel_pressure m1;
+  auto& m10 = get<0>(m1.w);
+  m10.group = group;
+  m10.channel = channel;
+  m10.data = pressure;
+
+  midi2::types::m2cvm::channel_pressure m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m21 = midi2::mcm_scale<7, 32>(pressure);
+
+  std::array const input{std::bit_cast<std::uint32_t>(m10)};
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+// NOLINTNEXTLINE
+TEST(UMPToMidi2, SimpleContinuousController) {
+  constexpr auto controller = 0b01100110;
+  constexpr auto value = 0b01010101;
+  constexpr auto group = std::uint8_t{3};
+  constexpr auto channel = std::uint8_t{7};
+
+  midi2::types::m1cvm::control_change m1;
+  auto& m10 = get<0>(m1.w);
+  m10.group = group;
+  m10.channel = channel;
+  m10.controller = controller;
+  m10.value = value;
+
+  midi2::types::m2cvm::control_change m2;
+  auto& m20 = get<0>(m2.w);
+  auto& m21 = get<1>(m2.w);
+  m20.group = group;
+  m20.channel = channel;
+  m20.controller = controller;
+  m21 = midi2::mcm_scale<7, 32>(value);
+
+  std::array const input{std::bit_cast<std::uint32_t>(m10)};
+  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+}
+
+// NOLINTNEXTLINE
 TEST(UMPToMidi2, SimpleProgramChange) {
   constexpr auto program = std::uint8_t{0b01010101};
   constexpr auto group = std::uint8_t{0x1};
