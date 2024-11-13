@@ -268,7 +268,7 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   using b8 = std::byte;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
-  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));;
+  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
   constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
   std::array const input{start, b8{1}, b8{2}, b8{3}, b8{4}, b8{5}, b8{6}, b8{7},
@@ -316,7 +316,6 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
   constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
-  ;
   constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
   std::array const input{
