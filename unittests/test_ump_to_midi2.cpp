@@ -481,8 +481,6 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::flex_data::set_metronome,
   midi2::types::flex_data::set_key_signature,
   midi2::types::flex_data::set_chord_name
-  // TODO: text common format
-  //  midi2::types::flex_data::text_common
 >;
 // clang-format on
 TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);
