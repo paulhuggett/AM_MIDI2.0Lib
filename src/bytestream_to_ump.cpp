@@ -47,7 +47,7 @@ void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
 }
 
 template <typename T> void bytestream_to_ump::push_sysex7() {
-  T t;
+  T t{};
   static_assert(std::tuple_size_v<decltype(T::w)> == 2);
   auto& w0 = get<0>(t.w);
   auto& w1 = get<1>(t.w);

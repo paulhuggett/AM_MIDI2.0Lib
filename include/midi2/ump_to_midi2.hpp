@@ -83,7 +83,7 @@ private:
         lsb = value;
         lsb_valid = true;
       }
-      constexpr bool is_valid() const noexcept { return lsb_valid && msb_valid; }
+      [[nodiscard]] constexpr bool is_valid() const noexcept { return lsb_valid && msb_valid; }
     };
 
     /// Represents the status of registered (RPN) or non-registered/assignable (NRPN) parameters
@@ -160,8 +160,8 @@ private:
       static void poly_pressure(context *ctxt, types::m1cvm::poly_pressure const &in);
       static void control_change(context *ctxt, types::m1cvm::control_change const &in);
       static void program_change(context *ctxt, types::m1cvm::program_change const &in);
-      static void channel_pressure(context *const ctxt, types::m1cvm::channel_pressure const &in);
-      static void pitch_bend(context *const ctxt, types::m1cvm::pitch_bend const &in);
+      static void channel_pressure(context *ctxt, types::m1cvm::channel_pressure const &in);
+      static void pitch_bend(context *ctxt, types::m1cvm::pitch_bend const &in);
 
     private:
       template <typename T>

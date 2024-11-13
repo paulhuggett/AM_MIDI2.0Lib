@@ -44,7 +44,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const
 void ump_to_midi2::to_midi2_config::m1cvm::note_on(ump_to_midi2::context *const ctxt, types::m1cvm::note_on const &in) {
   auto const &non_in = get<0>(in.w);
 
-  types::m2cvm::note_on non;
+  types::m2cvm::note_on non{};
   auto &w0 = get<0>(non.w);
   auto &w1 = get<1>(non.w);
   w0.group = non_in.group.value();
