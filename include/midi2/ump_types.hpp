@@ -60,54 +60,6 @@ concept bitfield_type = requires(T) {
   std::unsigned_integral<typename T::bits::value_type>;
 };
 
-namespace details {
-
-template <unsigned Index, unsigned Bits> struct bitfield {
-  using index = std::integral_constant<unsigned, Index>;
-  using bits = std::integral_constant<unsigned, Bits>;
-};
-
-class word_base {
-public:
-  using value_type = std::uint32_t;
-
-  constexpr word_base() = default;
-  constexpr explicit word_base(std::uint32_t const v) : value_{v} {}
-
-  [[nodiscard]] constexpr auto word() const { return value_; }
-  friend constexpr bool operator==(word_base const &a, word_base const &b) { return a.value_ == b.value_; }
-
-  template <bitfield_type BitRange> constexpr word_base &set(unsigned v) {
-    constexpr auto index = typename BitRange::index();
-    constexpr auto bits = typename BitRange::bits();
-    constexpr auto mask = max_value<value_type, bits>();
-    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
-             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
-    return *this;
-  }
-
-  template <typename RangeValue> word_base &operator=(RangeValue const &rv) {
-    return this->set<typename RangeValue::bit_range>(rv.value);
-  }
-
-  template <unsigned Bits>
-  using small_type = std::conditional_t<
-      Bits <= 8, std::uint8_t,
-      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
-
-  template <bitfield_type BitRange> constexpr small_type<BitRange::bits::value> get() const {
-    constexpr auto index = typename BitRange::index();
-    constexpr auto bits = typename BitRange::bits();
-    constexpr auto mask = max_value<value_type, bits>();
-    return (value_ >> index) & mask;
-  }
-
-private:
-  value_type value_ = 0;
-};
-
-}  // end namespace details
-
 constexpr auto status_to_message_type(status) {
   return ump_message_type::m1cvm;
 }
@@ -135,8 +87,6 @@ constexpr auto status_to_message_type(ump_stream) {
   return ump_message_type::ump_stream;
 }
 
-template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
-
 template <typename T> constexpr auto status_to_ump_status(T status) {
   return to_underlying(status);
 }
@@ -144,6 +94,59 @@ template <> constexpr auto status_to_ump_status(status status) {
   auto const s = to_underlying(status);
   return static_cast<std::uint8_t>(s < to_underlying(status::sysex_start) ? s >> 4 : s);
 }
+
+namespace details {
+
+template <unsigned Index, unsigned Bits> struct bitfield {
+  using index = std::integral_constant<unsigned, Index>;
+  using bits = std::integral_constant<unsigned, Bits>;
+};
+
+class word_base {
+public:
+  using value_type = std::uint32_t;
+
+  constexpr word_base() = default;
+  constexpr explicit word_base(std::uint32_t const v) : value_{v} {}
+
+  [[nodiscard]] constexpr auto word() const { return value_; }
+  friend constexpr bool operator==(word_base const &a, word_base const &b) { return a.value_ == b.value_; }
+
+  template <bitfield_type BitRange> constexpr word_base &set(unsigned v) {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<value_type, bits>();
+    assert(v <= mask);
+    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
+             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
+    return *this;
+  }
+
+  template <unsigned Bits>
+  using small_type = std::conditional_t<
+      Bits <= 8, std::uint8_t,
+      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
+
+  template <bitfield_type BitRange> constexpr small_type<BitRange::bits::value> get() const {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<value_type, bits>();
+    return (value_ >> index) & mask;
+  }
+
+protected:
+  template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) {
+    this->set<MtField>(to_underlying(status_to_message_type(status)));
+    this->set<StatusField>(status_to_ump_status(status));
+  }
+
+private:
+  value_type value_ = 0;
+};
+
+}  // end namespace details
+
+template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint32_t, Index, Bits>;
 
 //*       _   _ _ _ _         *
 //*  _  _| |_(_) (_) |_ _  _  *
@@ -159,12 +162,9 @@ struct noop {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(ump_utility::noop)));
-      set<status>(status_to_ump_status(ump_utility::noop));
-    }
+    constexpr word0() { this->init<mt, status>(ump_utility::noop); }
+
     using mt = details::bitfield<28, 4>;
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;
@@ -182,12 +182,9 @@ struct jr_clock {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(ump_utility::jr_clock)));
-      set<status>(status_to_ump_status(ump_utility::jr_clock));
-    }
+    constexpr word0() { this->init<mt, status>(ump_utility::jr_clock); }
+
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  // 0b0001
@@ -207,12 +204,9 @@ struct jr_timestamp {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(ump_utility::jr_ts)));
-      set<status>(status_to_ump_status(ump_utility::jr_ts));
-    }
+    constexpr word0() { this->init<mt, status>(ump_utility::jr_ts); }
+
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  // 0b0010
@@ -232,12 +226,9 @@ struct delta_clockstamp_tpqn {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(ump_utility::delta_clock_tick)));
-      set<status>(status_to_ump_status(ump_utility::delta_clock_tick));
-    }
+    constexpr word0() { this->init<mt, status>(ump_utility::delta_clock_tick); }
+
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  // 0b0011
@@ -257,12 +248,9 @@ struct delta_clockstamp {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(ump_utility::delta_clock_since)));
-      set<status>(status_to_ump_status(ump_utility::delta_clock_since));
-    }
+    constexpr word0() { this->init<mt, status>(ump_utility::delta_clock_since); }
+
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  // 0b0100
@@ -291,13 +279,9 @@ struct midi_time_code {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::timing_code;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::timing_code); }
+
     using mt = details::bitfield<28U, 4U>;  ///< Always 0x1
     using group = details::bitfield<24U, 4U>;
     using status = details::bitfield<16U, 8U>;  ///< Always 0xF1
@@ -317,13 +301,9 @@ struct song_position_pointer {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::spp;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::spp); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF2
@@ -339,17 +319,14 @@ struct song_position_pointer {
 
   std::tuple<word0> w;
 };
+
 struct song_select {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::song_select;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::song_select); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF3
@@ -370,13 +347,9 @@ struct tune_request {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::tune_request;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::tune_request); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF6
@@ -395,13 +368,9 @@ struct timing_clock {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::timing_clock;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::timing_clock); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF8
@@ -420,13 +389,9 @@ struct sequence_start {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::sequence_start;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::sequence_start); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFA
@@ -445,13 +410,9 @@ struct sequence_continue {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::sequence_continue;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::sequence_continue); }
+
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFB
@@ -470,13 +431,9 @@ struct sequence_stop {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::sequence_stop;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::sequence_stop); }
+
     using mt = details::bitfield<28, 4>;  // Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  // Always 0xFC
@@ -495,16 +452,12 @@ struct active_sensing {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::active_sensing;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
-    using mt = details::bitfield<28, 4>;  // Always 0x1
+    constexpr word0() { this->init<mt, status>(system_crt::active_sensing); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  // Always 0xFE
+    using status = details::bitfield<16, 8>;  ///< Always 0xFE
     using reserved0 = details::bitfield<8, 8>;
     using reserved1 = details::bitfield<0, 8>;
   };
@@ -520,13 +473,9 @@ struct reset {
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      constexpr auto status = system_crt::system_reset;
-      set<mt>(to_underlying(status_to_message_type(status)));
-      set<word0::status>(status_to_ump_status(status));
-    }
+    constexpr word0() { this->init<mt, status>(system_crt::system_reset); }
+
     using mt = details::bitfield<28, 4>;  // Always 0x1
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  // Always 0xFF
