@@ -328,7 +328,8 @@ public:
   }
   void processUMP() { /* nothing to do */ }
   template <typename First, typename... Rest>
-  requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>) void processUMP(First ump, Rest &&...rest) {
+    requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>)
+  void processUMP(First ump, Rest &&...rest) {
     this->processUMP(ump.word(), std::forward<Rest>(rest)...);
   }
   template <typename... Rest> void processUMP(std::uint32_t ump, Rest &&...rest) {

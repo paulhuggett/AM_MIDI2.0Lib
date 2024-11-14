@@ -241,7 +241,7 @@ TEST(BytestreamToUMP, SysEx) {
                             std::uint32_t{0x10000000}};
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual:   " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -277,24 +277,28 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   std::vector<std::uint32_t> expected;
   {
     midi2::types::data64::sysex7_start sx_start;
-    get<0>(sx_start.w).group = group;
-    get<0>(sx_start.w).number_of_bytes = 6U;
-    get<0>(sx_start.w).data0 = std::uint8_t{1};
-    get<0>(sx_start.w).data1 = std::uint8_t{2};
-    get<1>(sx_start.w).data2 = std::uint8_t{3};
-    get<1>(sx_start.w).data3 = std::uint8_t{4};
-    get<1>(sx_start.w).data4 = std::uint8_t{5};
-    get<1>(sx_start.w).data5 = std::uint8_t{6};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(sx_start.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(sx_start.w)));
+    using word0 = midi2::types::data64::sysex7_start::word0;
+    using word1 = midi2::types::data64::sysex7_start::word1;
+    get<word0>(sx_start.w).template set<word0::group>(group);
+    get<word0>(sx_start.w).template set<word0::number_of_bytes>(6U);
+    get<word0>(sx_start.w).template set<word0::data0>(1U);
+    get<word0>(sx_start.w).template set<word0::data1>(2U);
+    get<word1>(sx_start.w).template set<word1::data2>(3U);
+    get<word1>(sx_start.w).template set<word1::data3>(4U);
+    get<word1>(sx_start.w).template set<word1::data4>(5U);
+    get<word1>(sx_start.w).template set<word1::data5>(6U);
+    expected.push_back(get<word0>(sx_start.w).word());
+    expected.push_back(get<word1>(sx_start.w).word());
   }
   {
     midi2::types::data64::sysex7_end sx_end;
-    get<0>(sx_end.w).group = group;
-    get<0>(sx_end.w).number_of_bytes = std::uint8_t{1};
-    get<0>(sx_end.w).data0 = std::uint8_t{7};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(sx_end.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(sx_end.w)));
+    using word0 = midi2::types::data64::sysex7_end::word0;
+    using word1 = midi2::types::data64::sysex7_end::word1;
+    get<word0>(sx_end.w).template set<word0::group>(group);
+    get<word0>(sx_end.w).template set<word0::number_of_bytes>(std::uint8_t{1});
+    get<word0>(sx_end.w).template set<word0::data0>(std::uint8_t{7});
+    expected.push_back(get<word0>(sx_end.w).word());
+    expected.push_back(get<word1>(sx_end.w).word());
   }
   {
     midi2::types::m1cvm::note_off noff;
@@ -324,24 +328,28 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   std::vector<std::uint32_t> expected;
   {
     midi2::types::data64::sysex7_in_1 block1;
-    get<0>(block1.w).group = group;
-    get<0>(block1.w).number_of_bytes = 3U;
-    get<0>(block1.w).data0 = std::uint8_t{1};
-    get<0>(block1.w).data1 = std::uint8_t{2};
-    get<1>(block1.w).data2 = std::uint8_t{3};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block1.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block1.w)));
+    using word0 = decltype(block1)::word0;
+    using word1 = decltype(block1)::word1;
+    get<word0>(block1.w).template set<word0::group>(group);
+    get<word0>(block1.w).template set<word0::number_of_bytes>(3U);
+    get<word0>(block1.w).template set<word0::data0>(std::uint8_t{1});
+    get<word0>(block1.w).template set<word0::data1>(std::uint8_t{2});
+    get<word1>(block1.w).template set<word1::data2>(std::uint8_t{3});
+    expected.push_back(get<word0>(block1.w).word());
+    expected.push_back(get<word1>(block1.w).word());
   }
   {
     midi2::types::data64::sysex7_in_1 block2;
-    get<0>(block2.w).group = group;
-    get<0>(block2.w).number_of_bytes = 4U;
-    get<0>(block2.w).data0 = std::uint8_t{4};
-    get<0>(block2.w).data1 = std::uint8_t{5};
-    get<1>(block2.w).data2 = std::uint8_t{6};
-    get<1>(block2.w).data3 = std::uint8_t{7};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block2.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block2.w)));
+    using word0 = decltype(block2)::word0;
+    using word1 = decltype(block2)::word1;
+    get<word0>(block2.w).template set<word0::group>(group);
+    get<word0>(block2.w).template set<word0::number_of_bytes>(4U);
+    get<word0>(block2.w).template set<word0::data0>(std::uint8_t{4});
+    get<word0>(block2.w).template set<word0::data1>(std::uint8_t{5});
+    get<word1>(block2.w).template set<word1::data2>(std::uint8_t{6});
+    get<word1>(block2.w).template set<word1::data3>(std::uint8_t{7});
+    expected.push_back(get<word0>(block2.w).word());
+    expected.push_back(get<word1>(block2.w).word());
   }
   {
     midi2::types::m1cvm::note_off noff;
@@ -390,27 +398,27 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   constexpr auto group = std::uint8_t{0xF};
   auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     midi2::types::data64::sysex7_in_1::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = number_of_bytes;
-    w0.data0 = data0;
-    w0.data1 = data1;
-    return std::bit_cast<std::uint32_t>(w0);
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
+    return w0.word();
   };
   auto const start_message = [](u8 data0, u8 data1) {
     midi2::types::data64::sysex7_start::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = std::uint8_t{6};
-    w0.data0 = data0;
-    w0.data1 = data1;
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(6U);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
     return std::bit_cast<std::uint32_t>(w0);
   };
   auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
     midi2::types::data64::sysex7_end::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = number_of_bytes;
-    w0.data0 = data0;
-    w0.data1 = data1;
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
     return std::bit_cast<std::uint32_t>(w0);
   };
 

@@ -221,8 +221,11 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
 TEST(UMPToBytestream, SystemTimeCode) {
   midi2::types::system::midi_time_code message;
   auto const tc = 0b1010101;
-  get<0>(message.w).time_code = tc;
-  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+
+  using word0 = decltype(message)::word0;
+  get<word0>(message.w).set<word0::time_code>(tc);
+
+  std::array const input{std::get<word0>(message.w).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_code)}, std::byte{tc}));
 }
@@ -231,11 +234,12 @@ TEST(UMPToByteStream, SystemSongPositionPointer) {
   auto const lsb = 0b01111000;
   auto const msb = 0b00001111;
   midi2::types::system::song_position_pointer message;
-  auto& w0 = get<0>(message.w);
-  w0.position_lsb = lsb;
-  w0.position_msb = msb;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::position_lsb>(lsb);
+  w0.set<word0::position_msb>(msb);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   std::array const expected{std::byte{to_underlying(midi2::status::spp)}, std::byte{lsb}, std::byte{msb}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -245,11 +249,12 @@ TEST(UMPToByteStream, SystemSongSelect) {
   auto const group = 1U;
   auto const song = 0x64U;
   midi2::types::system::song_select message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
-  w0.song = song;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
+  w0.set<word0::song>(song);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   std::array const expected{std::byte{to_underlying(midi2::status::song_select)}, std::byte{song}};
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
@@ -258,8 +263,9 @@ TEST(UMPToByteStream, SystemSongSelect) {
 TEST(UMPToByteStream, SystemSequenceStart) {
   auto const group = 1U;
   midi2::types::system::sequence_start message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
 
   std::array const input{std::bit_cast<std::uint32_t>(w0)};
   std::array const expected{std::byte{to_underlying(midi2::status::sequence_start)}};
@@ -271,10 +277,11 @@ TEST(UMPToByteStream, SystemSequenceStart) {
 TEST(UMPToByteStream, SystemSequenceContinue) {
   auto const group = 1U;
   midi2::types::system::sequence_continue message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   std::array const expected{std::byte{to_underlying(midi2::status::sequence_continue)}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -284,10 +291,11 @@ TEST(UMPToByteStream, SystemSequenceContinue) {
 TEST(UMPToByteStream, SystemSequenceStop) {
   auto const group = 1U;
   midi2::types::system::sequence_stop message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   std::array const expected{std::byte{to_underlying(midi2::status::sequence_stop)}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -296,14 +304,14 @@ TEST(UMPToByteStream, SystemSequenceStop) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTuneRequest) {
   midi2::types::system::tune_request message;
-  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+  std::array const input{get<0>(message.w).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::tune_request)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimingClock) {
   midi2::types::system::timing_clock message;
-  std::array const input{std::bit_cast<std::uint32_t>(std::get<0>(message.w))};
+  std::array const input{get<0>(message.w).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
 }
@@ -311,10 +319,11 @@ TEST(UMPToBytestream, SystemTimingClock) {
 TEST(UMPToBytestream, SystemActiveSensing) {
   auto const group = 1U;
   midi2::types::system::active_sensing message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::active_sensing)}));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
@@ -323,10 +332,11 @@ TEST(UMPToBytestream, SystemActiveSensing) {
 TEST(UMPToBytestream, SystemReset) {
   auto const group = 1U;
   midi2::types::system::reset message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
+  using word0 = decltype(message)::word0;
+  auto& w0 = get<word0>(message.w);
+  w0.set<word0::group>(group);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{w0.word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::systemreset)}));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
@@ -340,14 +350,16 @@ TEST(UMPToBytestream, ProgramChangeTwoBytes) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SysexInOne) {
   midi2::types::data64::sysex7_in_1 message;
-  auto& m0 = std::get<0>(message.w);
-  auto& m1 = std::get<1>(message.w);
-  m0.group = 0;
-  m0.number_of_bytes = 4;
-  m0.data0 = 0x7E;
-  m0.data1 = 0x7F;
-  m1.data2 = 0x07;
-  m1.data3 = 0x0D;
+  using word0 = decltype(message)::word0;
+  using word1 = decltype(message)::word1;
+  word0& m0 = std::get<0>(message.w);
+  word1& m1 = std::get<1>(message.w);
+  m0.set<word0::group>(0);
+  m0.set<word0::number_of_bytes>(4);
+  m0.set<word0::data0>(0x7E);
+  m0.set<word0::data1>(0x7F);
+  m1.set<word1::data2>(0x07);
+  m1.set<word1::data3>(0x0D);
   std::array const input{std::bit_cast<std::uint32_t>(m0), std::bit_cast<std::uint32_t>(m1)};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x07},
                                           std::byte{0x0D}, std::byte{0xF7}));

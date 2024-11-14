@@ -54,6 +54,60 @@
 
 namespace midi2::types {
 
+template <typename T>
+concept bitfield_type = requires(T) {
+  std::unsigned_integral<typename T::index::value_type>;
+  std::unsigned_integral<typename T::bits::value_type>;
+};
+
+namespace details {
+
+template <unsigned Index, unsigned Bits> struct bitfield {
+  using index = std::integral_constant<unsigned, Index>;
+  using bits = std::integral_constant<unsigned, Bits>;
+};
+
+class word_base {
+public:
+  using value_type = std::uint32_t;
+
+  constexpr word_base() = default;
+  constexpr explicit word_base(std::uint32_t const v) : value_{v} {}
+
+  [[nodiscard]] constexpr auto word() const { return value_; }
+  friend constexpr bool operator==(word_base const &a, word_base const &b) { return a.value_ == b.value_; }
+
+  template <bitfield_type BitRange> constexpr word_base &set(unsigned v) {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<value_type, bits>();
+    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
+             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
+    return *this;
+  }
+
+  template <typename RangeValue> word_base &operator=(RangeValue const &rv) {
+    return this->set<typename RangeValue::bit_range>(rv.value);
+  }
+
+  template <unsigned Bits>
+  using small_type = std::conditional_t<
+      Bits <= 8, std::uint8_t,
+      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
+
+  template <bitfield_type BitRange> constexpr small_type<BitRange::bits::value> get() const {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<value_type, bits>();
+    return (value_ >> index) & mask;
+  }
+
+private:
+  value_type value_ = 0;
+};
+
+}  // end namespace details
+
 constexpr auto status_to_message_type(status) {
   return ump_message_type::m1cvm;
 }
@@ -101,23 +155,44 @@ namespace utility {
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
 // NOOP
-union noop {
-  UMP_MEMBERS0(noop, ump_utility::noop)
-  ump_bitfield<28, 4> mt;  // 0x0
-  ump_bitfield<24, 4> reserved0;
-  ump_bitfield<20, 4> status;  // 0b0000
-  ump_bitfield<0, 20> data;    // 0b0000'00000000'00000000
+struct noop {
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(ump_utility::noop)));
+      set<status>(status_to_ump_status(ump_utility::noop));
+    }
+    using mt = details::bitfield<28, 4>;
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;
+  };
+
+  noop() = default;
+  explicit noop(std::uint32_t const w0) : w{w0} {}
+  friend bool operator==(noop const &, noop const &) = default;
+
+  std::tuple<word0> w;
 };
 
 // 7.2.2.1 JR Clock Message
 struct jr_clock {
-  union word0 {
-    UMP_MEMBERS0(word0, ump_utility::jr_clock)
-    ump_bitfield<28, 4> mt;  // 0x0
-    ump_bitfield<24, 4> reserved0;
-    ump_bitfield<20, 4> status;  // 0b0001
-    ump_bitfield<16, 4> reserved1;
-    ump_bitfield<0, 16> sender_clock_time;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(ump_utility::jr_clock)));
+      set<status>(status_to_ump_status(ump_utility::jr_clock));
+    }
+    using mt = details::bitfield<28, 4>;  // 0x0
+    using reserved0 = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  // 0b0001
+    using reserved1 = details::bitfield<16, 4>;
+    using sender_clock_time = details::bitfield<0, 16>;
   };
 
   jr_clock() = default;
@@ -129,17 +204,24 @@ struct jr_clock {
 
 // 7.2.2.2 JR Timestamp Message
 struct jr_timestamp {
-  union word0 {
-    UMP_MEMBERS0(word0, ump_utility::jr_ts)
-    ump_bitfield<28, 4> mt;  // 0x0
-    ump_bitfield<24, 4> reserved0;
-    ump_bitfield<20, 4> status;  // 0b0010
-    ump_bitfield<16, 4> reserved1;
-    ump_bitfield<0, 16> timestamp;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(ump_utility::jr_ts)));
+      set<status>(status_to_ump_status(ump_utility::jr_ts));
+    }
+    using mt = details::bitfield<28, 4>;  // 0x0
+    using reserved0 = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  // 0b0010
+    using reserved1 = details::bitfield<16, 4>;
+    using timestamp = details::bitfield<0, 16>;
   };
 
   jr_timestamp() = default;
-  explicit jr_timestamp(std::uint32_t const w0_) : w{w0_} {}
+  explicit jr_timestamp(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(jr_timestamp const &, jr_timestamp const &) = default;
 
   std::tuple<word0> w;
@@ -147,13 +229,20 @@ struct jr_timestamp {
 
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
 struct delta_clockstamp_tpqn {
-  union word0 {
-    UMP_MEMBERS0(word0, ump_utility::delta_clock_tick)
-    ump_bitfield<28, 4> mt;  // 0x0
-    ump_bitfield<24, 4> reserved0;
-    ump_bitfield<20, 4> status;  // 0b0011
-    ump_bitfield<16, 4> reserved1;
-    ump_bitfield<0, 16> ticks_pqn;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(ump_utility::delta_clock_tick)));
+      set<status>(status_to_ump_status(ump_utility::delta_clock_tick));
+    }
+    using mt = details::bitfield<28, 4>;  // 0x0
+    using reserved0 = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  // 0b0011
+    using reserved1 = details::bitfield<16, 4>;
+    using ticks_pqn = details::bitfield<0, 16>;
   };
 
   delta_clockstamp_tpqn() = default;
@@ -165,12 +254,19 @@ struct delta_clockstamp_tpqn {
 
 // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
 struct delta_clockstamp {
-  union word0 {
-    UMP_MEMBERS0(word0, ump_utility::delta_clock_since)
-    ump_bitfield<28, 4> mt;  // 0x0
-    ump_bitfield<24, 4> reserved0;
-    ump_bitfield<20, 4> status;  // 0b0100
-    ump_bitfield<0, 20> ticks_per_quarter_note;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(ump_utility::delta_clock_since)));
+      set<status>(status_to_ump_status(ump_utility::delta_clock_since));
+    }
+    using mt = details::bitfield<28, 4>;  // 0x0
+    using reserved0 = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  // 0b0100
+    using ticks_per_quarter_note = details::bitfield<0, 20>;
   };
 
   delta_clockstamp() = default;
@@ -192,15 +288,23 @@ struct delta_clockstamp {
 namespace system {
 
 struct midi_time_code {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::timing_code)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xF1
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> time_code;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> reeserved2;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::timing_code;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28U, 4U>;  ///< Always 0x1
+    using group = details::bitfield<24U, 4U>;
+    using status = details::bitfield<16U, 8U>;  ///< Always 0xF1
+    using reserved0 = details::bitfield<15, 1>;
+    using time_code = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using reserved2 = details::bitfield<0, 7>;
   };
 
   midi_time_code() = default;
@@ -210,15 +314,23 @@ struct midi_time_code {
   std::tuple<word0> w;
 };
 struct song_position_pointer {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::spp)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xF2
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> position_lsb;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> position_msb;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::spp;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xF2
+    using reserved0 = details::bitfield<15, 1>;
+    using position_lsb = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using position_msb = details::bitfield<0, 7>;
   };
 
   song_position_pointer() = default;
@@ -228,15 +340,23 @@ struct song_position_pointer {
   std::tuple<word0> w;
 };
 struct song_select {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::song_select)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xF3
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> song;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> reserved2;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::song_select;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xF3
+    using reserved0 = details::bitfield<15, 1>;
+    using song = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using reserved2 = details::bitfield<0, 7>;
   };
 
   song_select() = default;
@@ -247,13 +367,21 @@ struct song_select {
 };
 
 struct tune_request {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::tune_request)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xF6
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::tune_request;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xF6
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   tune_request() = default;
@@ -264,13 +392,21 @@ struct tune_request {
 };
 
 struct timing_clock {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::timing_clock)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xF8
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::timing_clock;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xF8
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   timing_clock() = default;
@@ -281,13 +417,21 @@ struct timing_clock {
 };
 
 struct sequence_start {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::sequence_start)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xFA
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::sequence_start;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xFA
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   sequence_start() = default;
@@ -298,13 +442,21 @@ struct sequence_start {
 };
 
 struct sequence_continue {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::sequence_continue)
-    ump_bitfield<28, 4> mt;  ///< Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  ///< Always 0xFB
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::sequence_continue;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  ///< Always 0xFB
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   sequence_continue() = default;
@@ -315,13 +467,21 @@ struct sequence_continue {
 };
 
 struct sequence_stop {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::sequence_stop)
-    ump_bitfield<28, 4> mt;  // Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xFC
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::sequence_stop;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  // Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  // Always 0xFC
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   sequence_stop() = default;
@@ -332,13 +492,21 @@ struct sequence_stop {
 };
 
 struct active_sensing {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::active_sensing)
-    ump_bitfield<28, 4> mt;  // Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xFE
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::active_sensing;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  // Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  // Always 0xFE
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   active_sensing() = default;
@@ -349,13 +517,21 @@ struct active_sensing {
 };
 
 struct reset {
-  union word0 {
-    UMP_MEMBERS0(word0, system_crt::system_reset)
-    ump_bitfield<28, 4> mt;  // Always 0x1
-    ump_bitfield<24, 4> group;
-    ump_bitfield<16, 8> status;  // Always 0xFF
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      constexpr auto status = system_crt::system_reset;
+      set<mt>(to_underlying(status_to_message_type(status)));
+      set<word0::status>(status_to_ump_status(status));
+    }
+    using mt = details::bitfield<28, 4>;  // Always 0x1
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<16, 8>;  // Always 0xFF
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   reset() = default;
@@ -534,34 +710,45 @@ namespace data64 {
 namespace details {
 
 template <midi2::data64 Status> struct sysex7 {
-  union word0 {
-    UMP_MEMBERS0(word0, Status)
-    ump_bitfield<28, 4> mt;  ///< Always 0x3
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;
-    ump_bitfield<16, 4> number_of_bytes;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data0;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> data1;
+  class word0 : public ::midi2::types::details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    constexpr word0() {
+      set<mt>(to_underlying(status_to_message_type(Status)));
+      set<status>(status_to_ump_status(Status));
+    }
+    using mt = midi2::types::details::bitfield<28, 4>;
+    using group = midi2::types::details::bitfield<24, 4>;
+    using status = midi2::types::details::bitfield<20, 4>;
+    using number_of_bytes = midi2::types::details::bitfield<16, 4>;
+    using reserved0 = midi2::types::details::bitfield<15, 1>;
+    using data0 = midi2::types::details::bitfield<8, 7>;
+    using reserved1 = midi2::types::details::bitfield<7, 1>;
+    using data1 = midi2::types::details::bitfield<0, 7>;
   };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<31, 1> reserved0;
-    ump_bitfield<24, 7> data2;
-    ump_bitfield<23, 1> reserved1;
-    ump_bitfield<16, 7> data3;
-    ump_bitfield<15, 1> reserved2;
-    ump_bitfield<8, 7> data4;
-    ump_bitfield<7, 1> reserved3;
-    ump_bitfield<0, 7> data5;
+  class word1 : public midi2::types::details::word_base {
+  public:
+    using word_base::word_base;
+    using word_base::operator=;
+
+    using reserved0 = midi2::types::details::bitfield<31, 1>;
+    using data2 = midi2::types::details::bitfield<24, 7>;
+    using reserved1 = midi2::types::details::bitfield<23, 1>;
+    using data3 = midi2::types::details::bitfield<16, 7>;
+    using reserved2 = midi2::types::details::bitfield<15, 1>;
+    using data4 = midi2::types::details::bitfield<8, 7>;
+    using reserved3 = midi2::types::details::bitfield<7, 1>;
+    using data5 = midi2::types::details::bitfield<0, 7>;
   };
 
-  sysex7() = default;
+  sysex7() : w{word0{}, word1{}} {}
+
   explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend bool operator==(sysex7 const &, sysex7 const &) = default;
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> w{};
 };
 
 }  // end namespace details
