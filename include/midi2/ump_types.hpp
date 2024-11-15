@@ -217,9 +217,15 @@ struct jr_timestamp {
     using timestamp = details::bitfield<0, 16>;
   };
 
-  jr_timestamp() = default;
-  explicit jr_timestamp(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(jr_timestamp const &, jr_timestamp const &) = default;
+  constexpr jr_timestamp() = default;
+  constexpr explicit jr_timestamp(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto timestamp() const { return get<word0>(w).get<word0::timestamp>(); }
+
+  constexpr auto &timestamp(std::uint16_t const v) { get<word0>(w).set<word0::timestamp>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -239,9 +245,15 @@ struct delta_clockstamp_tpqn {
     using ticks_pqn = details::bitfield<0, 16>;
   };
 
-  delta_clockstamp_tpqn() = default;
-  explicit delta_clockstamp_tpqn(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) = default;
+  constexpr delta_clockstamp_tpqn() = default;
+  constexpr explicit delta_clockstamp_tpqn(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto ticks_pqn() const { return get<word0>(w).get<word0::ticks_pqn>(); }
+
+  constexpr auto &ticks_pqn(std::uint16_t const v) { get<word0>(w).set<word0::ticks_pqn>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -294,17 +306,17 @@ struct midi_time_code {
     using reserved2 = details::bitfield<0, 7>;
   };
 
-  midi_time_code() = default;
-  explicit midi_time_code(std::uint32_t const w0_) : w{w0_} {}
-  friend bool operator==(midi_time_code const &, midi_time_code const &) = default;
+  constexpr midi_time_code() = default;
+  constexpr explicit midi_time_code(std::uint32_t const w0_) : w{w0_} {}
+  friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) = default;
 
   constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
   constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
   constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
   constexpr auto time_code() const { return get<word0>(w).get<word0::time_code>(); }
 
-  constexpr auto & group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
-  constexpr auto & time_code(std::uint8_t const v) { get<word0>(w).set<word0::time_code>(v); return *this; }
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto &time_code(std::uint8_t const v) { get<word0>(w).set<word0::time_code>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -324,9 +336,18 @@ struct song_position_pointer {
     using position_msb = details::bitfield<0, 7>;
   };
 
-  song_position_pointer() = default;
-  explicit song_position_pointer(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
+  constexpr song_position_pointer() = default;
+  constexpr explicit song_position_pointer(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto position_lsb() const { return get<word0>(w).get<word0::position_lsb>(); }
+  constexpr auto position_msb() const { return get<word0>(w).get<word0::position_msb>(); }
+
+  constexpr auto &position_lsb(std::uint8_t const v) { get<word0>(w).set<word0::position_lsb>(v); return *this; }
+  constexpr auto &position_msb(std::uint8_t const v) { get<word0>(w).set<word0::position_msb>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -347,9 +368,17 @@ struct song_select {
     using reserved2 = details::bitfield<0, 7>;
   };
 
-  song_select() = default;
-  explicit song_select(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(song_select const &, song_select const &) = default;
+  constexpr song_select() = default;
+  constexpr explicit song_select(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(song_select const &, song_select const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto song() const { return get<word0>(w).get<word0::song>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto &song(std::uint8_t const v) { get<word0>(w).set<word0::song>(v); return *this; }
 
   std::tuple<word0> w;
 };

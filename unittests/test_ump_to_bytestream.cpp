@@ -211,13 +211,8 @@ TEST(UMPToBytestream, SystemTimeCode) {
 TEST(UMPToByteStream, SystemSongPositionPointer) {
   auto const lsb = 0b01111000;
   auto const msb = 0b00001111;
-  midi2::types::system::song_position_pointer message;
-  using word0 = decltype(message)::word0;
-  auto& w0 = get<word0>(message.w);
-  w0.set<word0::position_lsb>(lsb);
-  w0.set<word0::position_msb>(msb);
-
-  std::array const input{w0.word()};
+  constexpr auto message = midi2::types::system::song_position_pointer{}.position_lsb(lsb).position_msb(msb);
+  std::array const input{get<0>(message.w).word()};
   std::array const expected{std::byte{to_underlying(midi2::status::spp)}, std::byte{lsb}, std::byte{msb}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -226,13 +221,8 @@ TEST(UMPToByteStream, SystemSongPositionPointer) {
 TEST(UMPToByteStream, SystemSongSelect) {
   auto const group = 1U;
   auto const song = 0x64U;
-  midi2::types::system::song_select message;
-  using word0 = decltype(message)::word0;
-  auto& w0 = get<word0>(message.w);
-  w0.set<word0::group>(group);
-  w0.set<word0::song>(song);
-
-  std::array const input{w0.word()};
+  constexpr auto message = midi2::types::system::song_select{}.group(group).song(song);
+  std::array const input{get<0>(message.w).word()};
   std::array const expected{std::byte{to_underlying(midi2::status::song_select)}, std::byte{song}};
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
