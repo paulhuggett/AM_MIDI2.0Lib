@@ -92,8 +92,6 @@ TEST(UMPToBytestream, NoteOn) {
   constexpr auto velocity1 = 0;
 
   std::array<midi2::types::m1cvm::note_on, 2> message;
-  auto& w0 = get<0>(message[0].w);
-  auto& w1 = get<0>(message[1].w);
   message[0].channel(channel).note(note0).velocity(velocity0);
   message[1].channel(channel).note(note1).velocity(velocity1);
   std::array const input{get<0>(message[0].w).word(), get<0>(message[1].w).word()};

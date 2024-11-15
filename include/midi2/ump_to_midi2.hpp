@@ -174,7 +174,7 @@ private:
         out0.bank = c.pn_msb;
         out0.index = c.pn_lsb;
         get<1>(out.w) =
-            mcm_scale<14, 32>((static_cast<std::uint32_t>(c.value_msb) << 7) | static_cast<std::uint32_t>(value));
+            mcm_scale<14, 32>(static_cast<std::uint16_t>((static_cast<std::uint16_t>(c.value_msb) << 7) | value));
         ctxt->push(out.w);
       }
     };
