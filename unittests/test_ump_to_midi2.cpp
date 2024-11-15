@@ -34,54 +34,26 @@ template <std::ranges::input_range Range> auto convert(Range const& input) {
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOff) {
-  constexpr auto note = 64;
+  constexpr auto note = 64U;
+  constexpr auto in = midi2::types::m1cvm::note_off{}.group(0).channel(0).note(note).velocity(0x60);
+  constexpr auto expected =
+      midi2::types::m2cvm::note_off{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  midi2::types::m1cvm::note_off in;
-  auto& in0 = get<0>(in.w);
-  in0.group = 0;
-  in0.channel = 0;
-  in0.note = note;
-  in0.velocity = 0x60;
-
-  midi2::types::m2cvm::note_off expected;
-  auto& expected0 = get<0>(expected.w);
-  auto& expected1 = get<1>(expected.w);
-  expected0.group = 0;
-  expected0.channel = 0;
-  expected0.note = note;
-  expected0.attribute = 0;
-  expected1.velocity = 0xC104;
-  expected1.attribute = 0;
-
-  std::array const input{std::bit_cast<std::uint32_t>(in0)};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
+  std::array const input{get<0>(in.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
 }
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOn) {
-  constexpr auto note = 64;
+  constexpr auto note = 64U;
 
-  midi2::types::m1cvm::note_on in;
-  auto& in0 = get<0>(in.w);
-  in0.group = 0;
-  in0.channel = 0;
-  in0.note = note;
-  in0.velocity = 0x60;
+  constexpr auto in = midi2::types::m1cvm::note_on{}.group(0).channel(0).note(note).velocity(0x60);
 
-  midi2::types::m2cvm::note_on expected;
-  auto& expected0 = get<0>(expected.w);
-  auto& expected1 = get<1>(expected.w);
-  expected0.group = 0;
-  expected0.channel = 0;
-  expected0.note = note;
-  expected0.attribute = 0;
-  expected1.velocity = 0xC104;
-  expected1.attribute = 0;
+  constexpr auto expected =
+      midi2::types::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{std::bit_cast<std::uint32_t>(in0)};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
+  std::array const input{get<0>(in.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
 }
 
 // UMPToMidi2
@@ -95,40 +67,31 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
   // these should become a note-off.
   std::vector<std::uint32_t> input;
   {
-    midi2::types::m1cvm::note_on in_non_1;
-    get<0>(in_non_1.w).group = group;
-    get<0>(in_non_1.w).channel = channel;
-    get<0>(in_non_1.w).note = note_number;
-    get<0>(in_non_1.w).velocity = velocity;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_1.w)));
+    constexpr auto in_non_1 =
+        midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
+    input.push_back(get<0>(in_non_1.w).word());
   }
   {
-    midi2::types::m1cvm::note_on in_non_2;
-    get<0>(in_non_2.w).group = group;
-    get<0>(in_non_2.w).channel = channel;
-    get<0>(in_non_2.w).note = note_number;
-    get<0>(in_non_2.w).velocity = 0;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_2.w)));
+    constexpr auto in_non_2 =
+        midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
+    input.push_back(get<0>(in_non_2.w).word());
   }
 
   std::vector<std::uint32_t> expected;
   {
-    midi2::types::m2cvm::note_on expected_non;
-    get<0>(expected_non.w).group = group;
-    get<0>(expected_non.w).channel = channel;
-    get<0>(expected_non.w).note = note_number;
-    get<1>(expected_non.w).velocity = static_cast<std::uint16_t>(midi2::mcm_scale<7, 16>(velocity));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_non.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_non.w)));
+    constexpr auto expected_non = midi2::types::m2cvm::note_on{}
+                                      .group(group)
+                                      .channel(channel)
+                                      .note(note_number)
+                                      .velocity(midi2::mcm_scale<7, 16>(velocity));
+    expected.push_back(get<0>(expected_non.w).word());
+    expected.push_back(get<1>(expected_non.w).word());
   }
   {
-    midi2::types::m2cvm::note_on expected_noff;
-    get<0>(expected_noff.w).group = group;
-    get<0>(expected_noff.w).channel = channel;
-    get<0>(expected_noff.w).note = note_number;
-    get<1>(expected_noff.w).velocity = 0;
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_noff.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_noff.w)));
+    constexpr auto expected_noff =
+        midi2::types::m2cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
+    expected.push_back(get<0>(expected_noff.w).word());
+    expected.push_back(get<1>(expected_noff.w).word());
   }
 
   auto const actual = convert(input);

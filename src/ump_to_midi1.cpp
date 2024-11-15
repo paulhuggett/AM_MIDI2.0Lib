@@ -19,30 +19,26 @@ namespace midi2 {
 // note off
 // ~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt, types::m2cvm::note_off const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-  types::m1cvm::note_off out;
-  auto &out0 = get<0>(out.w);
-  out0.group = in0.group.value();
-  out0.channel = in0.channel.value();
-  out0.note = in0.note.value();
-  out0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity.value()));
+  constexpr auto m2v = types::m2cvm::note_off::word1::velocity::bits();
+  constexpr auto m1v = types::m1cvm::note_off::word0::velocity::bits();
+  auto const out = types::m1cvm::note_off{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .velocity(mcm_scale<m2v, m1v>(in.velocity()));
   ctxt->push(out.w);
 }
 
 // note on
 // ~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, types::m2cvm::note_on const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-  types::m1cvm::note_on out;
-  auto &out0 = get<0>(out.w);
-  out0.group = in0.group.value();
-  out0.channel = in0.channel.value();
-  out0.note = in0.note.value();
-  out0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity));
+  constexpr auto m2v = types::m2cvm::note_on::word1::velocity::bits();
+  constexpr auto m1v = types::m1cvm::note_on::word0::velocity::bits();
+  auto const out = types::m1cvm::note_on{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .velocity(mcm_scale<m2v, m1v>(in.velocity()));
   ctxt->push(out.w);
 }
 

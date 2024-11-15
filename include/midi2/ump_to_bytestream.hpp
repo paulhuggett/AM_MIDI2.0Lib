@@ -182,26 +182,24 @@ private:
     };
     struct m1cvm {
       static void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::note_off::w)> == 1);
         static_assert(bytestream_message_size<status::note_off>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::note_off)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.note.value()});
-        ctxt->push_back(std::byte{w0.velocity.value()});
+        ctxt->push_back(std::byte{to_underlying(status::note_off)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.note()});
+        ctxt->push_back(std::byte{in.velocity()});
       }
       static void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::note_on::w)> == 1);
         static_assert(bytestream_message_size<status::note_on>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::note_on)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.note.value()});
-        ctxt->push_back(std::byte{w0.velocity.value()});
+        ctxt->push_back(std::byte{to_underlying(status::note_on)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.note()});
+        ctxt->push_back(std::byte{in.velocity()});
       }
       static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
         auto const &w0 = get<0>(in.w);

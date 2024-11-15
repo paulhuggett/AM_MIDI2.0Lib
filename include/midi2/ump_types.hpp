@@ -295,6 +295,14 @@ struct midi_time_code {
   explicit midi_time_code(std::uint32_t const w0_) : w{w0_} {}
   friend bool operator==(midi_time_code const &, midi_time_code const &) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto time_code() const { return get<word0>(w).get<word0::time_code>(); }
+
+  constexpr auto & group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto & time_code(std::uint8_t const v) { get<word0>(w).set<word0::time_code>(v); return *this; }
+
   std::tuple<word0> w;
 };
 struct song_position_pointer {
@@ -504,42 +512,74 @@ namespace m1cvm {
 
 // 7.3.2 MIDI 1.0 Note On Message
 struct note_on {
-  union word0 {
-    UMP_MEMBERS0(word0, status::note_on)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  /// Always 0x09.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> velocity;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::note_on); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x09.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using velocity = details::bitfield<0, 7>;
   };
 
   note_on() = default;
   explicit note_on(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(note_on const &, note_on const &) = default;
 
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr std::uint8_t velocity() const { return get<word0>(w).get<word0::velocity>(); }
+
+  constexpr auto & group(std::uint8_t const v){ get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto & channel(std::uint8_t const v) { get<word0>(w).set<word0::channel>(v); return *this; }
+  constexpr auto & note(std::uint8_t const v) { get<word0>(w).set<word0::note>(v); return *this; }
+  constexpr auto & velocity(std::uint8_t const v) { get<word0>(w).set<word0::velocity>(v); return *this; }
+
   std::tuple<word0> w;
 };
 
 // 7.3.1 MIDI 1.0 Note Off Message
 struct note_off {
-  union word0 {
-    UMP_MEMBERS0(word0, status::note_off)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  /// Always 0x08.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> velocity;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::note_off); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x08.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using velocity = details::bitfield<0, 7>;
   };
 
   note_off() = default;
   explicit note_off(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(note_off const &, note_off const &) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr std::uint8_t velocity() const { return get<word0>(w).get<word0::velocity>(); }
+
+  constexpr auto & group(std::uint8_t const v){ get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto & channel(std::uint8_t const v) { get<word0>(w).set<word0::channel>(v); return *this; }
+  constexpr auto & note(std::uint8_t const v) { get<word0>(w).set<word0::note>(v); return *this; }
+  constexpr auto & velocity(std::uint8_t const v) { get<word0>(w).set<word0::velocity>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -720,50 +760,94 @@ namespace m2cvm {
 
 // 7.4.1 MIDI 2.0 Note Off Message
 struct note_off {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::note_off)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Note-off=0x8, note-on=0x9
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<0, 8> attribute;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::note_off); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Note-off=0x8, note-on=0x9
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using attribute_type = details::bitfield<0, 8>;
   };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<16, 16> velocity;
-    ump_bitfield<0, 16> attribute;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    using velocity = details::bitfield<16, 16>;
+    using attribute = details::bitfield<0, 16>;
   };
 
   note_off() = default;
   explicit note_off(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_off const &a, note_off const &b) = default;
 
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr std::uint8_t attribute_type() const { return get<word0>(w).get<word0::attribute_type>(); }
+  constexpr std::uint16_t velocity() const { return get<word1>(w).get<word1::velocity>(); }
+  constexpr std::uint16_t attribute() const { return get<word1>(w).get<word1::attribute>(); }
+
+  constexpr auto & group(std::uint8_t const v){ get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto & channel(std::uint8_t const v) { get<word0>(w).set<word0::channel>(v); return *this; }
+  constexpr auto & note(std::uint8_t const v) { get<word0>(w).set<word0::note>(v); return *this; }
+  constexpr auto & attribute_type(std::uint8_t const v) { get<word0>(w).set<word0::attribute_type>(v); return *this; }
+  constexpr auto & velocity(std::uint16_t const v) { get<word1>(w).set<word1::velocity>(v); return *this; }
+  constexpr auto & attribute(std::uint16_t const v) { get<word1>(w).set<word1::attribute>(v); return *this; }
+
   std::tuple<word0, word1> w;
 };
 
 // 7.4.2 MIDI 2.0 Note On Message
 struct note_on {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::note_on)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Note-on=0x9
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<0, 8> attribute;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::note_on); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Note-on=0x9
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using attribute_type = details::bitfield<0, 8>;
   };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<16, 16> velocity;
-    ump_bitfield<0, 16> attribute;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    using velocity = details::bitfield<16, 16>;
+    using attribute = details::bitfield<0, 16>;
   };
 
   note_on() = default;
   explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_on const &a, note_on const &b) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr std::uint8_t attribute_type() const { return get<word0>(w).get<word0::attribute_type>(); }
+  constexpr std::uint16_t velocity() const { return get<word1>(w).get<word1::velocity>(); }
+  constexpr std::uint16_t attribute() const { return get<word1>(w).get<word1::attribute>(); }
+
+  constexpr auto & group(std::uint8_t const v){ get<word0>(w).set<word0::group>(v); return *this; }
+  constexpr auto & channel(std::uint8_t const v) { get<word0>(w).set<word0::channel>(v); return *this; }
+  constexpr auto & note(std::uint8_t const v) { get<word0>(w).set<word0::note>(v); return *this; }
+  constexpr auto & attribute_type(std::uint8_t const v) { get<word0>(w).set<word0::attribute_type>(v); return *this; }
+  constexpr auto & velocity(std::uint16_t const v) { get<word1>(w).set<word1::velocity>(v); return *this; }
+  constexpr auto & attribute(std::uint16_t const v) { get<word1>(w).set<word1::attribute>(v); return *this; }
 
   std::tuple<word0, word1> w;
 };

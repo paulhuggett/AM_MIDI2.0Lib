@@ -23,38 +23,26 @@ namespace midi2 {
 // ~~~~~~~~
 void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const ctxt,
                                                     types::m1cvm::note_off const &in) {
-  auto const &noff_in = get<0>(in.w);
-
-  types::m2cvm::note_off noff;
-  auto &w0 = get<0>(noff.w);
-  auto &w1 = get<1>(noff.w);
-  w0.group = noff_in.group.value();
-  w0.channel = noff_in.channel.value();
-  w0.note = noff_in.note.value();
-  w0.attribute = 0;
-  constexpr auto m1bits = bits_v<decltype(noff_in.velocity)>;
-  constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
-  w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(noff_in.velocity));
-  w1.attribute = 0;
+  constexpr auto m1bits = types::m1cvm::note_off::word0::velocity::bits();
+  constexpr auto m2bits = types::m2cvm::note_off::word1::velocity::bits();
+  auto const noff = types::m2cvm::note_off{}
+                        .group(in.group())
+                        .channel(in.channel())
+                        .note(in.note())
+                        .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
   ctxt->push(noff.w);
 }
 
 // note on
 // ~~~~~~~
 void ump_to_midi2::to_midi2_config::m1cvm::note_on(ump_to_midi2::context *const ctxt, types::m1cvm::note_on const &in) {
-  auto const &non_in = get<0>(in.w);
-
-  types::m2cvm::note_on non{};
-  auto &w0 = get<0>(non.w);
-  auto &w1 = get<1>(non.w);
-  w0.group = non_in.group.value();
-  w0.channel = non_in.channel.value();
-  w0.note = non_in.note.value();
-  w0.attribute = 0;
-  constexpr auto m1bits = bits_v<decltype(non_in.velocity)>;
-  constexpr auto m2bits = bits_v<decltype(w1.velocity)>;
-  w1.velocity = static_cast<decltype(w1.velocity)::small_type>(mcm_scale<m1bits, m2bits>(non_in.velocity));
-  w1.attribute = 0;
+  constexpr auto m1bits = types::m1cvm::note_on::word0::velocity::bits();
+  constexpr auto m2bits = types::m2cvm::note_on::word1::velocity::bits();
+  auto const non = types::m2cvm::note_on{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
   ctxt->push(non.w);
 }
 

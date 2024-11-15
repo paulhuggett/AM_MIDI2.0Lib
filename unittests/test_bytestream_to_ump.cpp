@@ -279,14 +279,14 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
     midi2::types::data64::sysex7_start sx_start;
     using word0 = midi2::types::data64::sysex7_start::word0;
     using word1 = midi2::types::data64::sysex7_start::word1;
-    get<word0>(sx_start.w).template set<word0::group>(group);
-    get<word0>(sx_start.w).template set<word0::number_of_bytes>(6U);
-    get<word0>(sx_start.w).template set<word0::data0>(1U);
-    get<word0>(sx_start.w).template set<word0::data1>(2U);
-    get<word1>(sx_start.w).template set<word1::data2>(3U);
-    get<word1>(sx_start.w).template set<word1::data3>(4U);
-    get<word1>(sx_start.w).template set<word1::data4>(5U);
-    get<word1>(sx_start.w).template set<word1::data5>(6U);
+    get<word0>(sx_start.w).set<word0::group>(group);
+    get<word0>(sx_start.w).set<word0::number_of_bytes>(6U);
+    get<word0>(sx_start.w).set<word0::data0>(1U);
+    get<word0>(sx_start.w).set<word0::data1>(2U);
+    get<word1>(sx_start.w).set<word1::data2>(3U);
+    get<word1>(sx_start.w).set<word1::data3>(4U);
+    get<word1>(sx_start.w).set<word1::data4>(5U);
+    get<word1>(sx_start.w).set<word1::data5>(6U);
     expected.push_back(get<word0>(sx_start.w).word());
     expected.push_back(get<word1>(sx_start.w).word());
   }
@@ -294,19 +294,15 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
     midi2::types::data64::sysex7_end sx_end;
     using word0 = midi2::types::data64::sysex7_end::word0;
     using word1 = midi2::types::data64::sysex7_end::word1;
-    get<word0>(sx_end.w).template set<word0::group>(group);
-    get<word0>(sx_end.w).template set<word0::number_of_bytes>(std::uint8_t{1});
-    get<word0>(sx_end.w).template set<word0::data0>(std::uint8_t{7});
+    get<word0>(sx_end.w).set<word0::group>(group);
+    get<word0>(sx_end.w).set<word0::number_of_bytes>(std::uint8_t{1});
+    get<word0>(sx_end.w).set<word0::data0>(std::uint8_t{7});
     expected.push_back(get<word0>(sx_end.w).word());
     expected.push_back(get<word1>(sx_end.w).word());
   }
   {
-    midi2::types::m1cvm::note_off noff;
-    get<0>(noff.w).group = group;
-    get<0>(noff.w).channel = channel;
-    get<0>(noff.w).note = note_number;
-    get<0>(noff.w).velocity = std::uint8_t{0};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(noff.w)));
+    auto const noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
+    expected.push_back(get<0>(noff.w).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);
@@ -352,12 +348,8 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
     expected.push_back(get<word1>(block2.w).word());
   }
   {
-    midi2::types::m1cvm::note_off noff;
-    get<0>(noff.w).group = group;
-    get<0>(noff.w).channel = channel;
-    get<0>(noff.w).note = note_number;
-    get<0>(noff.w).velocity = std::uint8_t{0};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(noff.w)));
+    constexpr auto noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
+    expected.push_back(get<0>(noff.w).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);
