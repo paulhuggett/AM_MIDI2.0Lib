@@ -327,18 +327,9 @@ TEST(UMPToBytestream, ProgramChangeTwoBytes) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SysexInOne) {
-  midi2::types::data64::sysex7_in_1 message;
-  using word0 = decltype(message)::word0;
-  using word1 = decltype(message)::word1;
-  word0& m0 = std::get<0>(message.w);
-  word1& m1 = std::get<1>(message.w);
-  m0.set<word0::group>(0);
-  m0.set<word0::number_of_bytes>(4);
-  m0.set<word0::data0>(0x7E);
-  m0.set<word0::data1>(0x7F);
-  m1.set<word1::data2>(0x07);
-  m1.set<word1::data3>(0x0D);
-  std::array const input{std::bit_cast<std::uint32_t>(m0), std::bit_cast<std::uint32_t>(m1)};
+  constexpr auto message =
+      midi2::types::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  std::array const input{get<0>(message.w).word(), get<1>(message.w).word()};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x07},
                                           std::byte{0x0D}, std::byte{0xF7}));
 }

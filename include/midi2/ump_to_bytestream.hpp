@@ -261,7 +261,7 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        if (get<0>(in.w).get<typename types::data64::sysex7_in_1::word0::number_of_bytes>() > 0) {
+        if (in.number_of_bytes() > 0) {
           ctxt->push_back(sysex_start);
           data64::write_sysex_bytes(ctxt, in);
           ctxt->push_back(sysex_stop);
@@ -297,30 +297,24 @@ private:
       static constexpr auto sysex_stop = std::byte{to_underlying(status::sysex_stop)};
 
       template <typename T> static void write_sysex_bytes(context_type *const ctxt, T const &in) {
-        static_assert(std::tuple_size_v<decltype(T::w)> == 2);
-        using word0 = typename T::word0;
-        using word1 = typename T::word1;
-
-        auto const &w0 = get<word0>(in.w);
-        auto const &w1 = get<word1>(in.w);
-        auto const number_of_bytes = w0.template get<typename word0::number_of_bytes>();
+        auto const number_of_bytes = in.number_of_bytes();
         if (number_of_bytes > 0) {
-          ctxt->push_back(static_cast<std::byte>(w0.template get<typename word0::data0>()));
+          ctxt->push_back(std::byte{in.data0()});
         }
         if (number_of_bytes > 1) {
-          ctxt->push_back(static_cast<std::byte>(w0.template get<typename word0::data1>()));
+          ctxt->push_back(std::byte{in.data1()});
         }
         if (number_of_bytes > 2) {
-          ctxt->push_back(static_cast<std::byte>(w1.template get<typename word1::data2>()));
+          ctxt->push_back(std::byte{in.data2()});
         }
         if (number_of_bytes > 3) {
-          ctxt->push_back(static_cast<std::byte>(w1.template get<typename word1::data3>()));
+          ctxt->push_back(std::byte{in.data3()});
         }
         if (number_of_bytes > 4) {
-          ctxt->push_back(static_cast<std::byte>(w1.template get<typename word1::data4>()));
+          ctxt->push_back(std::byte{in.data4()});
         }
         if (number_of_bytes > 5) {
-          ctxt->push_back(static_cast<std::byte>(w1.template get<typename word1::data5>()));
+          ctxt->push_back(std::byte{in.data5()});
         }
       }
     };

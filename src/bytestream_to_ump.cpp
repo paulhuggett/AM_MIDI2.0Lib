@@ -62,7 +62,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   w1.template set<typename word1::data4>(std::to_integer<std::uint8_t>(sysex7_.bytes[4]));
   w1.template set<typename word1::data5>(std::to_integer<std::uint8_t>(sysex7_.bytes[5]));
   output_.push_back(w0.word());
-  output_.push_back(std::bit_cast<std::uint32_t>(w1));
+  output_.push_back(w1.word());
 
   sysex7_.reset();
   sysex7_.state = sysex7::status::none;

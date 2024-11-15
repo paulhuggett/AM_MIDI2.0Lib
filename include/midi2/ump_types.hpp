@@ -122,11 +122,6 @@ public:
     return *this;
   }
 
-  template <unsigned Bits>
-  using small_type = std::conditional_t<
-      Bits <= 8, std::uint8_t,
-      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
-
   template <bitfield_type BitRange> constexpr small_type<BitRange::bits::value> get() const {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
@@ -157,7 +152,7 @@ namespace utility {
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
-// NOOP
+// 7.2.1 NOOP
 struct noop {
   class word0 : public details::word_base {
   public:
@@ -166,13 +161,12 @@ struct noop {
     constexpr word0() { this->init<mt, status>(ump_utility::noop); }
 
     using mt = details::bitfield<28, 4>;
-    using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;
   };
 
-  noop() = default;
-  explicit noop(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(noop const &, noop const &) = default;
+  constexpr noop() = default;
+  constexpr explicit noop(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(noop const &, noop const &) = default;
 
   std::tuple<word0> w;
 };
@@ -192,9 +186,18 @@ struct jr_clock {
     using sender_clock_time = details::bitfield<0, 16>;
   };
 
-  jr_clock() = default;
-  explicit jr_clock(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(jr_clock const &, jr_clock const &) = default;
+  constexpr jr_clock() = default;
+  constexpr explicit jr_clock(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(jr_clock const &, jr_clock const &) = default;
+
+  constexpr auto mt() const { return get<0>(w).get<word0::mt>(); }
+  constexpr auto status() const { return get<0>(w).get<word0::status>(); }
+  constexpr auto sender_clock_time() const { return get<0>(w).get<word0::sender_clock_time>(); }
+
+  constexpr auto &sender_clock_time(std::uint16_t const v) {
+    get<0>(w).set<word0::sender_clock_time>(v);
+    return *this;
+  }
 
   std::tuple<word0> w;
 };
@@ -702,12 +705,8 @@ template <midi2::data64 Status> struct sysex7 {
   class word0 : public ::midi2::types::details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
-    constexpr word0() {
-      set<mt>(to_underlying(status_to_message_type(Status)));
-      set<status>(status_to_ump_status(Status));
-    }
+    constexpr word0() { this->init<mt, status>(Status); }
     using mt = midi2::types::details::bitfield<28, 4>;
     using group = midi2::types::details::bitfield<24, 4>;
     using status = midi2::types::details::bitfield<20, 4>;
@@ -720,7 +719,6 @@ template <midi2::data64 Status> struct sysex7 {
   class word1 : public midi2::types::details::word_base {
   public:
     using word_base::word_base;
-    using word_base::operator=;
 
     using reserved0 = midi2::types::details::bitfield<31, 1>;
     using data2 = midi2::types::details::bitfield<24, 7>;
@@ -732,10 +730,30 @@ template <midi2::data64 Status> struct sysex7 {
     using data5 = midi2::types::details::bitfield<0, 7>;
   };
 
-  sysex7() : w{word0{}, word1{}} {}
+  constexpr sysex7() : w{word0{}, word1{}} {}
 
   explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend bool operator==(sysex7 const &, sysex7 const &) = default;
+  friend constexpr bool operator==(sysex7 const &, sysex7 const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).template get<typename word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).template get<typename word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).template get<typename word0::status>(); }
+  constexpr auto number_of_bytes() const { return get<word0>(w).template get<typename word0::number_of_bytes>(); }
+  constexpr auto data0() const { return get<word0>(w).template get<typename word0::data0>(); }
+  constexpr auto data1() const { return get<word0>(w).template get<typename word0::data1>(); }
+  constexpr auto data2() const { return get<word1>(w).template get<typename word1::data2>(); }
+  constexpr auto data3() const { return get<word1>(w).template get<typename word1::data3>(); }
+  constexpr auto data4() const { return get<word1>(w).template get<typename word1::data4>(); }
+  constexpr auto data5() const { return get<word1>(w).template get<typename word1::data5>(); }
+
+  constexpr auto & group(std::uint8_t const v) { get<word0>(w).template set<typename word0::group>(v); return *this; }
+  constexpr auto & number_of_bytes(std::uint8_t const v) { get<word0>(w).template set<typename word0::number_of_bytes>(v); return *this; }
+  constexpr auto & data0(std::uint8_t const v) { get<word0>(w).template set<typename word0::data0>(v); return *this; }
+  constexpr auto & data1(std::uint8_t const v) { get<word0>(w).template set<typename word0::data1>(v); return *this; }
+  constexpr auto & data2(std::uint8_t const v) { get<word1>(w).template set<typename word1::data2>(v); return *this; }
+  constexpr auto & data3(std::uint8_t const v) { get<word1>(w).template set<typename word1::data3>(v); return *this; }
+  constexpr auto & data4(std::uint8_t const v) { get<word1>(w).template set<typename word1::data4>(v); return *this; }
+  constexpr auto & data5(std::uint8_t const v) { get<word1>(w).template set<typename word1::data5>(v); return *this; }
 
   std::tuple<word0, word1> w{};
 };
@@ -782,8 +800,8 @@ struct note_off {
     using attribute = details::bitfield<0, 16>;
   };
 
-  note_off() = default;
-  explicit note_off(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr note_off() = default;
+  constexpr explicit note_off(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_off const &a, note_off const &b) = default;
 
   constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
@@ -829,8 +847,8 @@ struct note_on {
     using attribute = details::bitfield<0, 16>;
   };
 
-  note_on() = default;
-  explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr note_on() = default;
+  constexpr explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_on const &a, note_on const &b) = default;
 
   constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
