@@ -346,6 +346,7 @@ struct song_position_pointer {
   constexpr auto position_lsb() const { return get<word0>(w).get<word0::position_lsb>(); }
   constexpr auto position_msb() const { return get<word0>(w).get<word0::position_msb>(); }
 
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
   constexpr auto &position_lsb(std::uint8_t const v) { get<word0>(w).set<word0::position_lsb>(v); return *this; }
   constexpr auto &position_msb(std::uint8_t const v) { get<word0>(w).set<word0::position_msb>(v); return *this; }
 
@@ -397,9 +398,15 @@ struct tune_request {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  tune_request() = default;
-  explicit tune_request(std::uint32_t const w0_) : w{w0_} {}
-  friend bool operator==(tune_request const &, tune_request const &) = default;
+  constexpr tune_request() = default;
+  constexpr explicit tune_request(std::uint32_t const w0_) : w{w0_} {}
+  friend constexpr bool operator==(tune_request const &, tune_request const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -418,9 +425,15 @@ struct timing_clock {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  timing_clock() = default;
-  explicit timing_clock(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(timing_clock const &, timing_clock const &) = default;
+  constexpr timing_clock() = default;
+  constexpr explicit timing_clock(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(timing_clock const &, timing_clock const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -439,10 +452,16 @@ struct sequence_start {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  sequence_start() = default;
-  explicit sequence_start(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(sequence_start const &, sequence_start const &) = default;
+  constexpr sequence_start() = default;
+  constexpr explicit sequence_start(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(sequence_start const &, sequence_start const &) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
+  
   std::tuple<word0> w;
 };
 
@@ -460,9 +479,15 @@ struct sequence_continue {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  sequence_continue() = default;
-  explicit sequence_continue(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(sequence_continue const &, sequence_continue const &) = default;
+  constexpr sequence_continue() = default;
+  constexpr explicit sequence_continue(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -474,16 +499,22 @@ struct sequence_stop {
 
     constexpr word0() { this->init<mt, status>(system_crt::sequence_stop); }
 
-    using mt = details::bitfield<28, 4>;  // Always 0x1
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  // Always 0xFC
+    using status = details::bitfield<16, 8>;  ///< Always 0xFC
     using reserved0 = details::bitfield<8, 8>;
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  sequence_stop() = default;
-  explicit sequence_stop(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(sequence_stop const &, sequence_stop const &) = default;
+  constexpr sequence_stop() = default;
+  constexpr explicit sequence_stop(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -502,9 +533,15 @@ struct active_sensing {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  active_sensing() = default;
-  explicit active_sensing(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(active_sensing const &, active_sensing const &) = default;
+  constexpr active_sensing() = default;
+  constexpr explicit active_sensing(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(active_sensing const &, active_sensing const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };
@@ -516,16 +553,22 @@ struct reset {
 
     constexpr word0() { this->init<mt, status>(system_crt::system_reset); }
 
-    using mt = details::bitfield<28, 4>;  // Always 0x1
+    using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  // Always 0xFF
+    using status = details::bitfield<16, 8>;  ///< Always 0xFF
     using reserved0 = details::bitfield<8, 8>;
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  reset() = default;
-  explicit reset(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(reset const &, reset const &) = default;
+  constexpr reset() = default;
+  constexpr explicit reset(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(reset const &, reset const &) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+
+  constexpr auto &group(std::uint8_t const v) { get<word0>(w).set<word0::group>(v); return *this; }
 
   std::tuple<word0> w;
 };

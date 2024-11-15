@@ -391,43 +391,28 @@ TEST_F(UMPDispatcherUtility, BadMessage) {
 class UMPDispatcherSystem : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, MIDITimeCode) {
-  midi2::types::system::midi_time_code message;
-  using word0 = decltype(message)::word0;
-  auto &w0 = std::get<0>(message.w);
-  w0.set<word0::group>(0);
-  w0.set<word0::time_code>(0b1010101);
+  constexpr auto message = midi2::types::system::midi_time_code{}.group(0).time_code(0b1010101);
   EXPECT_CALL(config_.system, midi_time_code(config_.context, message));
-  dispatcher_.processUMP(w0);
+  dispatcher_.processUMP(get<0>(message.w).word());
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, SongPositionPointer) {
-  midi2::types::system::song_position_pointer message;
-  using word0 = decltype(message)::word0;
-  auto &w0 = std::get<0>(message.w);
-  w0.set<word0::group>(0);
-  w0.set<word0::position_lsb>(0b1010101);
-  w0.set<word0::position_msb>(0b1111111);
+  constexpr auto message =
+      midi2::types::system::song_position_pointer{}.group(0).position_lsb(0b1010101).position_msb(0b1111111);
   EXPECT_CALL(config_.system, song_position_pointer(config_.context, message));
-  dispatcher_.processUMP(w0);
+  dispatcher_.processUMP(get<0>(message.w).word());
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, SongSelect) {
-  midi2::types::system::song_select message;
-  using word0 = decltype(message)::word0;
-  auto &w0 = std::get<0>(message.w);
-  w0.set<word0::group>(0);
-  w0.set<word0::song>(0b1010101);
+  constexpr auto message = midi2::types::system::song_select{}.group(3).song(0b1010101);
   EXPECT_CALL(config_.system, song_select(config_.context, message));
-  dispatcher_.processUMP(w0);
+  dispatcher_.processUMP(get<0>(message.w).word());
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, TuneRequest) {
-  midi2::types::system::tune_request message;
-  using word0 = decltype(message)::word0;
-  auto &w0 = std::get<0>(message.w);
-  w0.set<word0::group>(0);
+  constexpr auto message = midi2::types::system::tune_request{}.group(1);
   EXPECT_CALL(config_.system, tune_request(config_.context, message));
-  dispatcher_.processUMP(w0);
+  dispatcher_.processUMP(get<0>(message.w).word());
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, TimingClock) {
