@@ -262,7 +262,6 @@ TEST(BytestreamToUMP, SysExEndFollowedByDataBytes) {
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
 }
-
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MissingSysExEnd) {
   using b8 = std::byte;
@@ -285,13 +284,13 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
                                   .data3(4U)
                                   .data4(5U)
                                   .data5(6U);
-    expected.push_back(get<0>(sx_start.w).word());
-    expected.push_back(get<1>(sx_start.w).word());
+    expected.push_back(get<0>(sx_start).word());
+    expected.push_back(get<1>(sx_start).word());
   }
   {
     constexpr auto sx_end = midi2::types::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
-    expected.push_back(get<0>(sx_end.w).word());
-    expected.push_back(get<1>(sx_end.w).word());
+    expected.push_back(get<0>(sx_end).word());
+    expected.push_back(get<1>(sx_end).word());
   }
   {
     auto const noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
@@ -302,7 +301,6 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
-
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   using b8 = std::byte;
@@ -318,13 +316,13 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   std::vector<std::uint32_t> expected;
   {
     constexpr auto block1 = sysex7_in_1{}.group(group).number_of_bytes(3).data0(1).data1(2).data2(3);
-    expected.push_back(get<0>(block1.w).word());
-    expected.push_back(get<1>(block1.w).word());
+    expected.push_back(get<0>(block1).word());
+    expected.push_back(get<1>(block1).word());
   }
   {
     constexpr auto block2 = sysex7_in_1{}.group(group).number_of_bytes(4).data0(4).data1(5).data2(6).data3(7);
-    expected.push_back(get<0>(block2.w).word());
-    expected.push_back(get<1>(block2.w).word());
+    expected.push_back(get<0>(block2).word());
+    expected.push_back(get<1>(block2).word());
   }
   {
     constexpr auto noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
@@ -335,7 +333,7 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
-
+// NOLINTNEXTLINE
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
   constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));

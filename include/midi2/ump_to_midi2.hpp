@@ -62,7 +62,7 @@ private:
       if constexpr (Index >= std::tuple_size_v<T>) {
         return;
       } else {
-        output.push_back(std::bit_cast<std::uint32_t>(std::get<Index>(value)));
+        output.push_back(get<Index>(value).word());
         push<T, Index + 1>(value);
       }
     }
@@ -167,42 +167,66 @@ private:
       template <typename T>
       static void pn_control_message(struct context *const ctxt, struct context::parameter_number const &c,
                                      std::uint8_t const group, std::uint8_t const channel, std::uint8_t const value) {
-        T out;
-        auto &out0 = get<0>(out.w);
-        out0.group = group;
-        out0.channel = channel;
-        out0.bank = c.pn_msb;
-        out0.index = c.pn_lsb;
-        get<1>(out.w) =
-            mcm_scale<14, 32>(static_cast<std::uint16_t>((static_cast<std::uint16_t>(c.value_msb) << 7) | value));
+        auto const out = T{}.group(group).channel(channel).bank(c.pn_msb).index(c.pn_lsb).value(
+            mcm_scale<14, 32>(static_cast<std::uint16_t>((static_cast<std::uint16_t>(c.value_msb) << 7) | value)));
         ctxt->push(out.w);
       }
     };
     // data64 messages go straight through.
     struct data64 {
-      static constexpr void sysex7_in_1(context *const ctxt, types::data64::sysex7_in_1 const &in) { ctxt->push(in.w); }
-      static constexpr void sysex7_start(context *const ctxt, types::data64::sysex7_start const &in) { ctxt->push(in.w); }
-      static constexpr void sysex7_continue(context *const ctxt, types::data64::sysex7_continue const &in) { ctxt->push(in.w); }
-      static constexpr void sysex7_end(context *const ctxt, types::data64::sysex7_end const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_in_1(context *const ctxt, types::data64::sysex7_in_1 const &in) { ctxt->push(in); }
+      static constexpr void sysex7_start(context *const ctxt, types::data64::sysex7_start const &in) { ctxt->push(in); }
+      static constexpr void sysex7_continue(context *const ctxt, types::data64::sysex7_continue const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void sysex7_end(context *const ctxt, types::data64::sysex7_end const &in) { ctxt->push(in); }
     };
     // m2cvm messages go straight through.
     struct m2cvm {
     public:
-      static constexpr void note_off(context *const ctxt, types::m2cvm::note_off const &in) { ctxt->push(in.w); }
-      static constexpr void note_on(context *const ctxt, types::m2cvm::note_on const &in) { ctxt->push(in.w); }
-      static constexpr void poly_pressure(context *const ctxt, types::m2cvm::poly_pressure const &in) { ctxt->push(in.w); }
-      static constexpr void program_change(context *const ctxt, types::m2cvm::program_change const &in) { ctxt->push(in.w); }
-      static constexpr void channel_pressure(context *const ctxt, types::m2cvm::channel_pressure const &in) { ctxt->push(in.w); }
-      static constexpr void rpn_controller(context *const ctxt, types::m2cvm::rpn_controller const &in) { ctxt->push(in.w); }
-      static constexpr void nrpn_controller(context *const ctxt, types::m2cvm::nrpn_controller const &in) { ctxt->push(in.w); }
-      static constexpr void rpn_per_note_controller(context *const ctxt, types::m2cvm::rpn_per_note_controller const &in) { ctxt->push(in.w); }
-      static constexpr void nrpn_per_note_controller(context *const ctxt, types::m2cvm::nrpn_per_note_controller const &in) { ctxt->push(in.w); }
-      static constexpr void rpn_relative_controller(context *const ctxt, types::m2cvm::rpn_relative_controller const &in) { ctxt->push(in.w); }
-      static constexpr void nrpn_relative_controller(context *const ctxt, types::m2cvm::nrpn_relative_controller const &in) { ctxt->push(in.w); }
-      static constexpr void per_note_management(context *const ctxt, types::m2cvm::per_note_management const &in) { ctxt->push(in.w); }
-      static constexpr void control_change(context *const ctxt, types::m2cvm::control_change const &in) { ctxt->push(in.w); }
-      static constexpr void pitch_bend(context *const ctxt, types::m2cvm::pitch_bend const &in) { ctxt->push(in.w); }
-      static constexpr void per_note_pitch_bend(context *const ctxt, types::m2cvm::per_note_pitch_bend const &in) { ctxt->push(in.w); }
+      static constexpr void note_off(context *const ctxt, types::m2cvm::note_off const &in) { ctxt->push(in); }
+      static constexpr void note_on(context *const ctxt, types::m2cvm::note_on const &in) { ctxt->push(in); }
+      static constexpr void poly_pressure(context *const ctxt, types::m2cvm::poly_pressure const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void program_change(context *const ctxt, types::m2cvm::program_change const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void channel_pressure(context *const ctxt, types::m2cvm::channel_pressure const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void rpn_controller(context *const ctxt, types::m2cvm::rpn_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void nrpn_controller(context *const ctxt, types::m2cvm::nrpn_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void rpn_per_note_controller(context *const ctxt,
+                                                    types::m2cvm::rpn_per_note_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void nrpn_per_note_controller(context *const ctxt,
+                                                     types::m2cvm::nrpn_per_note_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void rpn_relative_controller(context *const ctxt,
+                                                    types::m2cvm::rpn_relative_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void nrpn_relative_controller(context *const ctxt,
+                                                     types::m2cvm::nrpn_relative_controller const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void per_note_management(context *const ctxt, types::m2cvm::per_note_management const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void control_change(context *const ctxt, types::m2cvm::control_change const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void pitch_bend(context *const ctxt, types::m2cvm::pitch_bend const &in) { ctxt->push(in); }
+      static constexpr void per_note_pitch_bend(context *const ctxt, types::m2cvm::per_note_pitch_bend const &in) {
+        ctxt->push(in);
+      }
     };
     struct data128 {
       constexpr static void sysex8_in_1(context *const ctxt, types::data128::sysex8_in_1 const &in) { ctxt->push(in.w); }

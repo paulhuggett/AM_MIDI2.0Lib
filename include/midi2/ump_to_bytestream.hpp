@@ -82,8 +82,7 @@ private:
       return (only_groups & (1U << group)) == 0U;
     }
     template <typename T> [[nodiscard]] constexpr bool filter_message(T const &in) const {
-      using word0 = T::word0;
-      return (only_groups & (1U << get<word0>(in.w).template get<typename word0::group>())) == 0U;
+      return (only_groups & (1U << in.group())) == 0U;
     }
 
     bool running_status_ = false;
@@ -202,57 +201,52 @@ private:
         ctxt->push_back(std::byte{in.velocity()});
       }
       static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::poly_pressure::w)> == 1);
         static_assert(bytestream_message_size<status::poly_pressure>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::poly_pressure)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.note.value()});
-        ctxt->push_back(std::byte{w0.pressure.value()});
+        ctxt->push_back(std::byte{to_underlying(status::poly_pressure)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.note()});
+        ctxt->push_back(std::byte{in.pressure()});
       }
       static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::control_change::w)> == 1);
         static_assert(bytestream_message_size<status::cc>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.controller.value()});
-        ctxt->push_back(std::byte{w0.value.value()});
+        ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.controller()});
+        ctxt->push_back(std::byte{in.value()});
       }
       static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(std::tuple_size_v<decltype(types::m1cvm::program_change::w)> == 1);
         static_assert(bytestream_message_size<status::program_change>() == 2);
-        ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.program.value()});
+        ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.program()});
       }
       static void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(bytestream_message_size<status::channel_pressure>() == 2);
         static_assert(std::tuple_size_v<decltype(types::m1cvm::channel_pressure::w)> == 1);
-        ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.data.value()});
+        ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.data()});
       }
       static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
-        auto const &w0 = get<0>(in.w);
-        if (ctxt->filter_message(static_cast<unsigned>(w0.group))) {
+        if (ctxt->filter_message(in)) {
           return;
         }
         static_assert(bytestream_message_size<status::pitch_bend>() == 3);
         static_assert(std::tuple_size_v<decltype(types::m1cvm::pitch_bend::w)> == 1);
-        ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{w0.channel.value()});
-        ctxt->push_back(std::byte{w0.lsb_data.value()});
-        ctxt->push_back(std::byte{w0.msb_data.value()});
+        ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{in.channel()});
+        ctxt->push_back(std::byte{in.lsb_data()});
+        ctxt->push_back(std::byte{in.msb_data()});
       }
     };
     struct data64 {

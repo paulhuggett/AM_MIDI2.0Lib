@@ -149,11 +149,22 @@ template <unsigned Index, unsigned Bits> using ump_bitfield = bitfield<std::uint
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
 namespace utility {
+
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
+
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
 // 7.2.1 NOOP
 struct noop {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -173,6 +184,9 @@ struct noop {
 
 // 7.2.2.1 JR Clock Message
 struct jr_clock {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -204,6 +218,9 @@ struct jr_clock {
 
 // 7.2.2.2 JR Timestamp Message
 struct jr_timestamp {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -232,6 +249,9 @@ struct jr_timestamp {
 
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
 struct delta_clockstamp_tpqn {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -260,6 +280,9 @@ struct delta_clockstamp_tpqn {
 
 // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
 struct delta_clockstamp {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -290,7 +313,17 @@ struct delta_clockstamp {
 // 7.6 System Common and System Real Time Messages
 namespace system {
 
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
+
 struct midi_time_code {
+  /// The message consists of one 32-bit word.
+  static constexpr auto size = std::size_t{1};
+
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -320,6 +353,7 @@ struct midi_time_code {
 
   std::tuple<word0> w;
 };
+
 struct song_position_pointer {
   class word0 : public details::word_base {
   public:
@@ -585,6 +619,13 @@ struct reset {
 // Messages
 namespace m1cvm {
 
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
+
 // 7.3.2 MIDI 1.0 Note On Message
 struct note_on {
   class word0 : public details::word_base {
@@ -603,9 +644,9 @@ struct note_on {
     using velocity = details::bitfield<0, 7>;
   };
 
-  note_on() = default;
-  explicit note_on(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(note_on const &, note_on const &) = default;
+  constexpr note_on() = default;
+  constexpr explicit note_on(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(note_on const &, note_on const &) = default;
 
   constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
   constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
@@ -640,9 +681,9 @@ struct note_off {
     using velocity = details::bitfield<0, 7>;
   };
 
-  note_off() = default;
-  explicit note_off(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(note_off const &, note_off const &) = default;
+  constexpr note_off() = default;
+  constexpr explicit note_off(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(note_off const &, note_off const &) = default;
 
   constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
   constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
@@ -661,102 +702,241 @@ struct note_off {
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
 struct poly_pressure {
-  union word0 {
-    UMP_MEMBERS0(word0, status::poly_pressure)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  /// Always 0x0A.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> pressure;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::poly_pressure); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x08.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using pressure = details::bitfield<0, 7>;
   };
 
-  poly_pressure() = default;
-  explicit poly_pressure(std::uint32_t const w0_) : w{w0_} {}
-  friend bool operator==(poly_pressure const &, poly_pressure const &) = default;
+  constexpr poly_pressure() = default;
+  constexpr explicit poly_pressure(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr std::uint8_t pressure() const { return get<word0>(w).get<word0::pressure>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &note(std::uint8_t const v) {
+    get<word0>(w).set<word0::note>(v);
+    return *this;
+  }
+  constexpr auto &pressure(std::uint8_t const v) {
+    get<word0>(w).set<word0::pressure>(v);
+    return *this;
+  }
 
   std::tuple<word0> w;
 };
+
+// template <std::size_t I> auto const & get(poly_pressure const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(poly_pressure & t) noexcept { return get<I>(t.w); }
 
 // 7.3.4 MIDI 1.0 Control Change Message
 struct control_change {
-  union word0 {
-    UMP_MEMBERS0(word0, status::cc)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  /// Always 0x0B.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> controller;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> value;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::cc); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  /// Always 0x0B.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using controller = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using value = details::bitfield<0, 7>;
   };
 
-  control_change() = default;
-  explicit control_change(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(control_change const &, control_change const &) = default;
+  constexpr control_change() = default;
+  constexpr explicit control_change(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(control_change const &, control_change const &) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t controller() const { return get<word0>(w).get<word0::controller>(); }
+  constexpr std::uint8_t value() const { return get<word0>(w).get<word0::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &controller(std::uint8_t const v) {
+    get<word0>(w).set<word0::controller>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint8_t const v) {
+    get<word0>(w).set<word0::value>(v);
+    return *this;
+  }
 
   std::tuple<word0> w;
 };
 
+// template <std::size_t I> auto const & get(control_change const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(control_change & t) noexcept { return get<I>(t.w); }
+
 // 7.3.5 MIDI 1.0 Program Change Message
 struct program_change {
-  union word0 {
-    UMP_MEMBERS0(word0, status::program_change)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x0C.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> program;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::program_change); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x0C.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using program = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
   program_change() = default;
   explicit program_change(std::uint32_t const w0) : w{w0} {}
   friend bool operator==(program_change const &, program_change const &) = default;
 
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t program() const { return get<word0>(w).get<word0::program>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &program(std::uint8_t const v) {
+    get<word0>(w).set<word0::program>(v);
+    return *this;
+  }
+
   std::tuple<word0> w;
 };
 
+// template <std::size_t I> auto const & get(program_change const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(program_change & t) noexcept { return get<I>(t.w); }
+
 // 7.3.6 MIDI 1.0 Channel Pressure Message
 struct channel_pressure {
-  union word0 {
-    UMP_MEMBERS0(word0, status::channel_pressure)
-    ump_bitfield<28, 4> mt;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x0D.
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> data;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::channel_pressure); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x08.
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using data = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<0, 8>;
   };
 
-  channel_pressure() = default;
-  explicit channel_pressure(std::uint32_t const w0_) : w{w0_} {}
-  friend bool operator==(channel_pressure const &, channel_pressure const &) = default;
+  constexpr channel_pressure() = default;
+  constexpr explicit channel_pressure(std::uint32_t const w0_) : w{w0_} {}
+  friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t data() const { return get<word0>(w).get<word0::data>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &data(std::uint8_t const v) {
+    get<word0>(w).set<word0::data>(v);
+    return *this;
+  }
 
   std::tuple<word0> w;
 };
 
 // 7.3.7 MIDI 1.0 Pitch Bend Message
 struct pitch_bend {
-  union word0 {
-    UMP_MEMBERS0(word0, status::pitch_bend)
-    ump_bitfield<28, 4> mt;  // 0x2
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  // 0b1000..0b1110
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> lsb_data;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> msb_data;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::status::pitch_bend); }
+
+    using mt = details::bitfield<28, 4>;  // 0x2
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  // 0b1000..0b1110
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using lsb_data = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using msb_data = details::bitfield<0, 7>;
   };
-  pitch_bend() = default;
-  explicit pitch_bend(std::uint32_t const w0) : w{w0} {}
-  friend bool operator==(pitch_bend const &, pitch_bend const &) = default;
+  constexpr pitch_bend() = default;
+  constexpr explicit pitch_bend(std::uint32_t const w0) : w{w0} {}
+  friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) = default;
+
+  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr std::uint8_t lsb_data() const { return get<word0>(w).get<word0::lsb_data>(); }
+  constexpr std::uint8_t msb_data() const { return get<word0>(w).get<word0::msb_data>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &lsb_data(std::uint8_t const v) {
+    get<word0>(w).set<word0::lsb_data>(v);
+    return *this;
+  }
+  constexpr auto &msb_data(std::uint8_t const v) {
+    get<word0>(w).set<word0::msb_data>(v);
+    return *this;
+  }
 
   std::tuple<word0> w;
 };
@@ -773,7 +953,12 @@ namespace data64 {
 // 7.7 System Exclusive (7-Bit) Messages
 namespace details {
 
-template <midi2::data64 Status> struct sysex7 {
+template <midi2::data64 Status> class sysex7 {
+public:
+  template <std::size_t I, midi2::data64 S> friend auto const &get(sysex7<S> const &) noexcept;
+  template <std::size_t I, midi2::data64 S> friend auto &get(sysex7<S> &) noexcept;
+  friend std::tuple_size<sysex7>;
+
   class word0 : public ::midi2::types::details::word_base {
   public:
     using word_base::word_base;
@@ -804,7 +989,7 @@ template <midi2::data64 Status> struct sysex7 {
 
   constexpr sysex7() : w{word0{}, word1{}} {}
 
-  explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) = default;
 
   constexpr auto mt() const { return get<word0>(w).template get<typename word0::mt>(); }
@@ -827,8 +1012,16 @@ template <midi2::data64 Status> struct sysex7 {
   constexpr auto & data4(std::uint8_t const v) { get<word1>(w).template set<typename word1::data4>(v); return *this; }
   constexpr auto & data5(std::uint8_t const v) { get<word1>(w).template set<typename word1::data5>(v); return *this; }
 
+private:
   std::tuple<word0, word1> w{};
 };
+
+template <std::size_t I, midi2::data64 Status> auto const &get(sysex7<Status> const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, midi2::data64 Status> auto &get(sysex7<Status> &t) noexcept {
+  return get<I>(t.w);
+}
 
 }  // end namespace details
 
@@ -847,6 +1040,13 @@ using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
 namespace m2cvm {
+
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
 
 // 7.4.1 MIDI 2.0 Note Off Message
 struct note_off {
@@ -895,6 +1095,9 @@ struct note_off {
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(note_off const & noff) noexcept { return get<I>(noff.w); }
+// template <std::size_t I> auto & get(note_off & noff) noexcept { return get<I>(noff.w); }
+
 // 7.4.2 MIDI 2.0 Note On Message
 struct note_on {
   class word0 : public details::word_base {
@@ -923,14 +1126,14 @@ struct note_on {
   constexpr explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(note_on const &a, note_on const &b) = default;
 
-  constexpr std::uint8_t mt() const { return get<word0>(w).get<word0::mt>(); }
-  constexpr std::uint8_t group() const { return get<word0>(w).get<word0::group>(); }
-  constexpr std::uint8_t status() const { return get<word0>(w).get<word0::status>(); }
-  constexpr std::uint8_t channel() const { return get<word0>(w).get<word0::channel>(); }
-  constexpr std::uint8_t note() const { return get<word0>(w).get<word0::note>(); }
-  constexpr std::uint8_t attribute_type() const { return get<word0>(w).get<word0::attribute_type>(); }
-  constexpr std::uint16_t velocity() const { return get<word1>(w).get<word1::velocity>(); }
-  constexpr std::uint16_t attribute() const { return get<word1>(w).get<word1::attribute>(); }
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr auto attribute_type() const { return get<word0>(w).get<word0::attribute_type>(); }
+  constexpr auto velocity() const { return get<word1>(w).get<word1::velocity>(); }
+  constexpr auto attribute() const { return get<word1>(w).get<word1::attribute>(); }
 
   constexpr auto & group(std::uint8_t const v){ get<word0>(w).set<word0::group>(v); return *this; }
   constexpr auto & channel(std::uint8_t const v) { get<word0>(w).set<word0::channel>(v); return *this; }
@@ -942,26 +1145,64 @@ struct note_on {
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(note_on const & non) noexcept { return get<I>(non.w); }
+// template <std::size_t I> auto & get(note_on & non) noexcept { return get<I>(non.w); }
+
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 struct poly_pressure {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::poly_pressure)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0xA
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<0, 8> reserved1;
-  };
-  using word1 = std::uint32_t;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
 
-  poly_pressure() = default;
-  explicit poly_pressure(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::poly_pressure); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0xA
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<0, 8>;
+  };
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using pressure = details::bitfield<0, 32>;
+  };
+
+  constexpr poly_pressure() = default;
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr auto pressure() const { return get<word1>(w).get<word1::pressure>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &note(std::uint8_t const v) {
+    get<word0>(w).set<word0::note>(v);
+    return *this;
+  }
+  constexpr auto &pressure(std::uint32_t const v) {
+    get<word1>(w).set<word1::pressure>(v);
+    return *this;
+  }
 
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(poly_pressure const & pp) noexcept { return get<I>(pp.w); }
+// template <std::size_t I> auto & get(poly_pressure & pp) noexcept { return get<I>(pp.w); }
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 struct rpn_per_note_controller {
@@ -975,7 +1216,11 @@ struct rpn_per_note_controller {
     ump_bitfield<8, 7> note;
     ump_bitfield<0, 8> index;
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   rpn_per_note_controller() = default;
   explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
@@ -996,7 +1241,11 @@ struct nrpn_per_note_controller {
     ump_bitfield<8, 7> note;
     ump_bitfield<0, 8> index;
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   nrpn_per_note_controller() = default;
   explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
@@ -1004,75 +1253,200 @@ struct nrpn_per_note_controller {
 
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(nrpn_per_note_controller const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(nrpn_per_note_controller & t) noexcept { return get<I>(t.w); }
+
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
 /// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
 /// map and translate directly to MIDI 1.0 Registered Parameter Numbers and use the same
 /// definitions as MMA/AMEI approved RPN messages. Registered Controllers are organized in 128 Banks
 /// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
 struct rpn_controller {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::rpn)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Registered Control (RPN)=0x2
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;  ///< Corresponds to RPN MSB
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;  ///< Corresponds to RPN LSB
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::rpn); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Registered Control (RPN)=0x2
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using bank = details::bitfield<8, 7>;  ///< Corresponds to RPN MSB
+    using reserved1 = details::bitfield<7, 1>;
+    using index = details::bitfield<0, 7>;  ///< Corresponds to RPN LSB
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   rpn_controller() = default;
   explicit rpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(rpn_controller const &a, rpn_controller const &b) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto bank() const { return get<word0>(w).get<word0::bank>(); }
+  constexpr auto index() const { return get<word0>(w).get<word0::index>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &bank(std::uint8_t const v) {
+    get<word0>(w).set<word0::bank>(v);
+    return *this;
+  }
+  constexpr auto &index(std::uint8_t const v) {
+    get<word0>(w).set<word0::index>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
+
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(rpn_controller const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(rpn_controller & t) noexcept { return get<I>(t.w); }
+
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_controller {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::nrpn)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Assignable Control (RPN)=0x3
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;  ///< Corresponds to NRPN MSB
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;  ///< Corresponds to NRPN LSB
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::nrpn); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Assignable Control (RPN)=0x3
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using bank = details::bitfield<8, 7>;  ///< Corresponds to NRPN MSB
+    using reserved1 = details::bitfield<7, 1>;
+    using index = details::bitfield<0, 7>;  ///< Corresponds to NRPN LSB
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   nrpn_controller() = default;
   explicit nrpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(nrpn_controller const &a, nrpn_controller const &b) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto bank() const { return get<word0>(w).get<word0::bank>(); }
+  constexpr auto index() const { return get<word0>(w).get<word0::index>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &bank(std::uint8_t const v) {
+    get<word0>(w).set<word0::bank>(v);
+    return *this;
+  }
+  constexpr auto &index(std::uint8_t const v) {
+    get<word0>(w).set<word0::index>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
+
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(nrpn_controller const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(nrpn_controller & t) noexcept { return get<I>(t.w); }
+
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 struct rpn_relative_controller {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::rpn_relative)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Registered Relative Control (RPN)=0x4
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> bank;
-    ump_bitfield<7, 1> reserved1;
-    ump_bitfield<0, 7> index;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::rpn_relative); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Registered Relative Control (RPN)=0x4
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using bank = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<7, 1>;
+    using index = details::bitfield<0, 7>;
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   rpn_relative_controller() = default;
   explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(rpn_relative_controller const &a, rpn_relative_controller const &b) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto bank() const { return get<word0>(w).get<word0::bank>(); }
+  constexpr auto index() const { return get<word0>(w).get<word0::index>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &bank(std::uint8_t const v) {
+    get<word0>(w).set<word0::bank>(v);
+    return *this;
+  }
+  constexpr auto &index(std::uint8_t const v) {
+    get<word0>(w).set<word0::index>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
+
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(rpn_relative_controller const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(rpn_relative_controller & t) noexcept { return get<I>(t.w); }
+
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_relative_controller {
   union word0 {
@@ -1086,7 +1460,11 @@ struct nrpn_relative_controller {
     ump_bitfield<7, 1> reserved1;
     ump_bitfield<0, 7> index;
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   nrpn_relative_controller() = default;
   explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
@@ -1094,6 +1472,10 @@ struct nrpn_relative_controller {
 
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(nrpn_relative_controller const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(nrpn_relative_controller & t) noexcept { return get<I>(t.w); }
+
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 struct per_note_management {
   union word0 {
@@ -1108,7 +1490,11 @@ struct per_note_management {
     ump_bitfield<1, 1> detach;  ///< Detach per-note controllers from previously received note(s)
     ump_bitfield<0, 1> set;     ///< Reset (set) per-note controllers to default values
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   per_note_management() = default;
   explicit per_note_management(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
@@ -1117,116 +1503,297 @@ struct per_note_management {
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(per_note_management const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(per_note_management & t) noexcept { return get<I>(t.w); }
+
 // 7.4.6 MIDI 2.0 Control Change Message
 struct control_change {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::cc)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0xB
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> controller;
-    ump_bitfield<0, 8> reserved1;
-  };
-  using word1 = std::uint32_t;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
 
-  control_change() = default;
-  explicit control_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::cc); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0xB
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using controller = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<0, 8>;
+  };
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
+
+  constexpr control_change() = default;
+  constexpr explicit control_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto controller() const { return get<word0>(w).get<word0::controller>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &controller(std::uint8_t const v) {
+    get<word0>(w).set<word0::controller>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
 
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(control_change const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(control_change & t) noexcept { return get<I>(t.w); }
+
 // 7.4.9 MIDI 2.0 Program Change Message
 struct program_change {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::program_change)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0xC
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> reserved;
-    ump_bitfield<1, 7> option_flags;  ///< Reserved option flags
-    ump_bitfield<0, 1> bank_valid;    ///< Bank change is ignored if this bit is zero.
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::program_change); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0xC
+    using channel = details::bitfield<16, 4>;
+    using reserved = details::bitfield<8, 8>;
+    using option_flags = details::bitfield<1, 7>;  ///< Reserved option flags
+    using bank_valid = details::bitfield<0, 1>;    ///< Bank change is ignored if this bit is zero.
   };
-  union word1 {
-    UMP_MEMBERS(word1)
-    ump_bitfield<24, 8> program;
-    ump_bitfield<16, 8> reserved0;
-    ump_bitfield<15, 1> reserved1;
-    ump_bitfield<8, 7> bank_msb;
-    ump_bitfield<7, 1> reserved2;
-    ump_bitfield<0, 7> bank_lsb;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    using program = details::bitfield<24, 8>;
+    using reserved0 = details::bitfield<16, 8>;
+    using reserved1 = details::bitfield<15, 1>;
+    using bank_msb = details::bitfield<8, 7>;
+    using reserved2 = details::bitfield<7, 1>;
+    using bank_lsb = details::bitfield<0, 7>;
   };
 
   program_change() = default;
   explicit program_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(program_change const &a, program_change const &b) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto option_flags() const { return get<word0>(w).get<word0::option_flags>(); }
+  constexpr auto bank_valid() const { return get<word0>(w).get<word0::bank_valid>() != 0; }
+  constexpr auto program() const { return get<word1>(w).get<word1::program>(); }
+  constexpr auto bank_msb() const { return get<word1>(w).get<word1::bank_msb>(); }
+  constexpr auto bank_lsb() const { return get<word1>(w).get<word1::bank_lsb>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &option_flags(std::uint8_t const v) {
+    get<word0>(w).set<word0::option_flags>(v);
+    return *this;
+  }
+  constexpr auto &bank_valid(bool const v) {
+    get<word0>(w).set<word0::bank_valid>(v);
+    return *this;
+  }
+  constexpr auto &program(std::uint8_t const v) {
+    get<word1>(w).set<word1::program>(v);
+    return *this;
+  }
+  constexpr auto &bank_msb(std::uint8_t const v) {
+    get<word1>(w).set<word1::bank_msb>(v);
+    return *this;
+  }
+  constexpr auto &bank_lsb(std::uint8_t const v) {
+    get<word1>(w).set<word1::bank_lsb>(v);
+    return *this;
+  }
+
   std::tuple<word0, word1> w;
 };
 
+// template <std::size_t I> auto const & get(program_change const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(program_change & t) noexcept { return get<I>(t.w); }
+
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 struct channel_pressure {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::channel_pressure)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0xD
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::channel_pressure); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0xD
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
   };
-  using word1 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
 
   channel_pressure() = default;
   explicit channel_pressure(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(channel_pressure const &a, channel_pressure const &b) = default;
 
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
+
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(channel_pressure const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(channel_pressure & t) noexcept { return get<I>(t.w); }
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 struct pitch_bend {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0xE
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<8, 8> reserved0;
-    ump_bitfield<0, 8> reserved1;
-  };
-  using word1 = std::uint32_t;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
 
-  pitch_bend() = default;
-  explicit pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::pitch_bend); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0xE
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<8, 8>;
+    using reserved1 = details::bitfield<0, 8>;
+  };
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
+
+  constexpr pitch_bend() = default;
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
 
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(pitch_bend const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(pitch_bend & t) noexcept { return get<I>(t.w); }
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 struct per_note_pitch_bend {
-  union word0 {
-    UMP_MEMBERS0(word0, midi2::m2cvm::pitch_bend_pernote)
-    ump_bitfield<28, 4> mt;  ///< Always 0x4
-    ump_bitfield<24, 4> group;
-    ump_bitfield<20, 4> status;  ///< Always 0x6
-    ump_bitfield<16, 4> channel;
-    ump_bitfield<15, 1> reserved0;
-    ump_bitfield<8, 7> note;
-    ump_bitfield<0, 8> reserved1;
-  };
-  using word1 = std::uint32_t;
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
 
-  per_note_pitch_bend() = default;
-  explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+    constexpr word0() { this->init<mt, status>(midi2::m2cvm::pitch_bend_pernote); }
+
+    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    using group = details::bitfield<24, 4>;
+    using status = details::bitfield<20, 4>;  ///< Always 0x6
+    using channel = details::bitfield<16, 4>;
+    using reserved0 = details::bitfield<15, 1>;
+    using note = details::bitfield<8, 7>;
+    using reserved1 = details::bitfield<0, 8>;
+  };
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value = details::bitfield<0, 32>;
+  };
+
+  constexpr per_note_pitch_bend() = default;
+  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
   friend constexpr bool operator==(per_note_pitch_bend const &a, per_note_pitch_bend const &b) = default;
+
+  constexpr auto mt() const { return get<word0>(w).get<word0::mt>(); }
+  constexpr auto group() const { return get<word0>(w).get<word0::group>(); }
+  constexpr auto status() const { return get<word0>(w).get<word0::status>(); }
+  constexpr auto channel() const { return get<word0>(w).get<word0::channel>(); }
+  constexpr auto note() const { return get<word0>(w).get<word0::note>(); }
+  constexpr auto value() const { return get<word1>(w).get<word1::value>(); }
+
+  constexpr auto &group(std::uint8_t const v) {
+    get<word0>(w).set<word0::group>(v);
+    return *this;
+  }
+  constexpr auto &channel(std::uint8_t const v) {
+    get<word0>(w).set<word0::channel>(v);
+    return *this;
+  }
+  constexpr auto &note(std::uint8_t const v) {
+    get<word0>(w).set<word0::note>(v);
+    return *this;
+  }
+  constexpr auto &value(std::uint32_t const v) {
+    get<word1>(w).set<word1::value>(v);
+    return *this;
+  }
 
   std::tuple<word0, word1> w;
 };
+
+// template <std::size_t I> auto const & get(per_note_pitch_bend const & t) noexcept { return get<I>(t.w); }
+// template <std::size_t I> auto & get(per_note_pitch_bend & t) noexcept { return get<I>(t.w); }
 
 }  // end namespace m2cvm
 
@@ -1236,6 +1803,13 @@ struct per_note_pitch_bend {
 //*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
 //*            |_|                                *
 namespace ump_stream {
+
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
 
 // 7.1.1 Endpoint Discovery Message
 struct endpoint_discovery {
@@ -1252,8 +1826,16 @@ struct endpoint_discovery {
     ump_bitfield<8, 24> reserved;
     ump_bitfield<0, 8> filter;
   };
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   endpoint_discovery() = default;
   explicit endpoint_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1283,8 +1865,16 @@ struct endpoint_info_notification {
     ump_bitfield<1, 1> receive_jr_timestamp_capability;
     ump_bitfield<0, 1> transmit_jr_timestamp_capability;
   };
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   endpoint_info_notification() = default;
   explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1431,9 +2021,21 @@ struct jr_configuration_request {
     ump_bitfield<1, 1> rxjr;
     ump_bitfield<0, 1> txjr;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   jr_configuration_request() = default;
   explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1454,9 +2056,21 @@ struct jr_configuration_notification {
     ump_bitfield<1, 1> rxjr;
     ump_bitfield<0, 1> txjr;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   jr_configuration_notification() = default;
   explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1475,9 +2089,21 @@ struct function_block_discovery {
     ump_bitfield<8, 8> block_num;
     ump_bitfield<0, 8> filter;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   function_block_discovery() = default;
   explicit function_block_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1507,8 +2133,16 @@ struct function_block_info_notification {
     ump_bitfield<8, 8> ci_message_version;
     ump_bitfield<0, 8> max_sys8_streams;
   };
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   function_block_info_notification() = default;
   explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1565,9 +2199,21 @@ struct start_of_clip {
     ump_bitfield<16, 10> status;  // 0x20
     ump_bitfield<0, 16> reserved0;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   start_of_clip() = default;
   explicit start_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1585,9 +2231,21 @@ struct end_of_clip {
     ump_bitfield<16, 10> status;  // 0x21
     ump_bitfield<0, 16> reserved0;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   end_of_clip() = default;
   explicit end_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1604,6 +2262,13 @@ struct end_of_clip {
 //* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
 //*                                      *
 namespace flex_data {
+
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
 
 union flex_data_w0 {
   UMP_MEMBERS(flex_data_w0)
@@ -1628,9 +2293,21 @@ struct set_tempo {
     ump_bitfield<8, 8> status_bank;
     ump_bitfield<0, 8> status;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   set_tempo() = default;
   explicit set_tempo(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1658,8 +2335,16 @@ struct set_time_signature {
     ump_bitfield<8, 8> number_of_32_notes;
     ump_bitfield<0, 8> reserved0;
   };
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   set_time_signature() = default;
   explicit set_time_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1694,7 +2379,11 @@ struct set_metronome {
     ump_bitfield<16, 8> num_subdivision_clicks_2;
     ump_bitfield<0, 16> reserved0;
   };
-  using word3 = std::uint32_t;
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   set_metronome() = default;
   explicit set_metronome(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1721,8 +2410,16 @@ struct set_key_signature {
     ump_bitfield<24, 4> tonic_note;
     ump_bitfield<0, 24> reserved0;
   };
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   set_key_signature() = default;
   explicit set_key_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1845,9 +2542,21 @@ struct text_common {
     ump_bitfield<8, 8> status_bank;
     ump_bitfield<0, 8> status;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = details::bitfield<0, 32>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = details::bitfield<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = details::bitfield<0, 32>;
+  };
 
   text_common() = default;
   explicit text_common(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1865,6 +2574,13 @@ struct text_common {
 //*                                  *
 namespace data128 {
 
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
+
 // 7.8 System Exclusive 8 (8-Bit) Messages
 
 // SysEx8 in 1 UMP (word 1)
@@ -1872,6 +2588,13 @@ namespace data128 {
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
 namespace details {
+
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.w);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.w);
+}
 
 template <midi2::data128 Status> struct sysex8 {
   union word0 {
@@ -1956,16 +2679,28 @@ struct mds_header {
 
 struct mds_payload {
   union word0 {
-    UMP_MEMBERS0(word0, midi2::data128::mixed_data_set_payload)
+    UMP_MEMBERS0(word0, ::midi2::data128::mixed_data_set_payload)
     ump_bitfield<28, 4> mt;  ///< Always 0x05
     ump_bitfield<24, 4> group;
     ump_bitfield<20, 4> status;  ///< Always 0x09
     ump_bitfield<16, 4> mds_id;
     ump_bitfield<0, 16> data0;
   };
-  using word1 = std::uint32_t;
-  using word2 = std::uint32_t;
-  using word3 = std::uint32_t;
+  class word1 : public ::midi2::types::details::word_base {
+  public:
+    using word_base::word_base;
+    using value1 = ::midi2::types::details::bitfield<0, 32>;
+  };
+  class word2 : public ::midi2::types::details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = ::midi2::types::details::bitfield<0, 32>;
+  };
+  class word3 : public ::midi2::types::details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = ::midi2::types::details::bitfield<0, 32>;
+  };
 
   mds_payload() = default;
   explicit mds_payload(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
@@ -1977,6 +2712,130 @@ struct mds_payload {
 }  // end namespace data128
 
 }  // end namespace midi2::types
+
+namespace std {
+
+template <>
+struct tuple_size<midi2::types::system::song_position_pointer>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::song_position_pointer::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::song_select>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::song_select::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::tune_request>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::tune_request::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::timing_clock>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::timing_clock::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::sequence_start>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_start::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::sequence_continue>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::sequence_continue::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::sequence_stop>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_stop::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::active_sensing>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::active_sensing::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::system::reset>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::reset::w)>::value> {};
+
+template <midi2::data64 Status>
+struct tuple_size<midi2::types::data64::details::sysex7<Status>>
+    : public std::integral_constant<std::size_t,
+                                    tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::w)>> {};
+
+template <>
+struct tuple_size<midi2::types::m1cvm::note_off>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_off ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m1cvm::note_on>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_on ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m1cvm::poly_pressure>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::poly_pressure ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m1cvm::program_change>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::program_change ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m1cvm::channel_pressure>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::channel_pressure::w)>::value> {
+};
+template <>
+struct tuple_size<midi2::types::m1cvm::control_change>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::control_change ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m1cvm::pitch_bend>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::pitch_bend ::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::m2cvm::note_off>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_off ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::note_on>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_on ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::poly_pressure>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::poly_pressure ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::program_change>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::program_change ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::channel_pressure>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::channel_pressure::w)>::value> {
+};
+template <>
+struct tuple_size<midi2::types::m2cvm::rpn_controller>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::rpn_controller ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::nrpn_controller>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::nrpn_controller ::w)>::value> {
+};
+template <>
+struct tuple_size<midi2::types::m2cvm::rpn_per_note_controller>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_per_note_controller ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::nrpn_per_note_controller>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_per_note_controller ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::rpn_relative_controller>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_relative_controller ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::nrpn_relative_controller>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_relative_controller ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::per_note_management>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_management ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::control_change>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::control_change ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::pitch_bend>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::pitch_bend ::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::m2cvm::per_note_pitch_bend>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_pitch_bend ::w)>::value> {};
+
+}  // end namespace std
 
 // NOLINTEND(cppcoreguidelines-pro-type-member-init,cppcoreguidelines-prefer-member-initializer,hicpp-member-init)
 
