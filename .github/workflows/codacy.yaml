@@ -24,7 +24,7 @@ jobs:
       CODACY_URL: https://api.codacy.com
       # The path for clang-tidy output.
       CLANG_TIDY_OUT: /tmp/clang-tidy-out
-      CLANG_VERSION: 18
+      CLANG_VERSION: 19
       # The path for codacy-clang-tidy output.
       CCT_OUT: /tmp/cct-out
 
