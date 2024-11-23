@@ -74,7 +74,7 @@ public:
   constexpr explicit word_base(std::uint32_t const v) : value_{v} {}
 
   [[nodiscard]] constexpr auto word() const { return value_; }
-  friend constexpr bool operator==(word_base const &a, word_base const &b) { return a.value_ == b.value_; }
+  friend constexpr bool operator==(word_base const &a, word_base const &b) = default;
 
   template <bitfield_type BitRange> constexpr auto &set(unsigned v) {
     constexpr auto index = typename BitRange::index();
