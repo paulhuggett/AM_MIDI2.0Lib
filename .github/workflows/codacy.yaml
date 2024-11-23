@@ -44,7 +44,7 @@ jobs:
           sudo apt-get install -y cmake ninja-build
 
       - name: Install Dependencies (LLVM)
-        uses: paulhuggett/install-llvm@ad897b4b1cf03f54c1218ec6d97a23ff4b10b870 # v1.0
+        uses: paulhuggett/install-llvm@1bbdc8d8929c3848ffcf6db968ab0aaabeb6f02d # v1.0.1
         with:
           version: ${{ env.CLANG_VERSION }}
           all: true
