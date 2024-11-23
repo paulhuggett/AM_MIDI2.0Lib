@@ -687,9 +687,6 @@ struct poly_pressure {
   std::tuple<word0> w;
 };
 
-// template <std::size_t I> auto const & get(poly_pressure const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(poly_pressure & t) noexcept { return get<I>(t.w); }
-
 // 7.3.4 MIDI 1.0 Control Change Message
 struct control_change {
   class word0 : public details::word_base {
@@ -722,9 +719,6 @@ struct control_change {
   std::tuple<word0> w;
 };
 
-// template <std::size_t I> auto const & get(control_change const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(control_change & t) noexcept { return get<I>(t.w); }
-
 // 7.3.5 MIDI 1.0 Program Change Message
 struct program_change {
   class word0 : public details::word_base {
@@ -754,9 +748,6 @@ struct program_change {
 
   std::tuple<word0> w;
 };
-
-// template <std::size_t I> auto const & get(program_change const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(program_change & t) noexcept { return get<I>(t.w); }
 
 // 7.3.6 MIDI 1.0 Channel Pressure Message
 struct channel_pressure {
@@ -963,9 +954,6 @@ struct note_off {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(note_off const & noff) noexcept { return get<I>(noff.w); }
-// template <std::size_t I> auto & get(note_off & noff) noexcept { return get<I>(noff.w); }
-
 // 7.4.2 MIDI 2.0 Note On Message
 struct note_on {
   class word0 : public details::word_base {
@@ -1006,9 +994,6 @@ struct note_on {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(note_on const & non) noexcept { return get<I>(non.w); }
-// template <std::size_t I> auto & get(note_on & non) noexcept { return get<I>(non.w); }
-
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 struct poly_pressure {
   class word0 : public details::word_base {
@@ -1044,9 +1029,6 @@ struct poly_pressure {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(poly_pressure const & pp) noexcept { return get<I>(pp.w); }
-// template <std::size_t I> auto & get(poly_pressure & pp) noexcept { return get<I>(pp.w); }
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 struct rpn_per_note_controller {
@@ -1122,9 +1104,6 @@ struct nrpn_per_note_controller {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(nrpn_per_note_controller const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(nrpn_per_note_controller & t) noexcept { return get<I>(t.w); }
-
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
 /// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
 /// map and translate directly to MIDI 1.0 Registered Parameter Numbers and use the same
@@ -1167,9 +1146,6 @@ struct rpn_controller {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(rpn_controller const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(rpn_controller & t) noexcept { return get<I>(t.w); }
-
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_controller {
   class word0 : public details::word_base {
@@ -1207,9 +1183,6 @@ struct nrpn_controller {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(nrpn_controller const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(nrpn_controller & t) noexcept { return get<I>(t.w); }
 
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 struct rpn_relative_controller {
@@ -1249,9 +1222,6 @@ struct rpn_relative_controller {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(rpn_relative_controller const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(rpn_relative_controller & t) noexcept { return get<I>(t.w); }
-
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 struct nrpn_relative_controller {
   class word0 : public details::word_base {
@@ -1290,9 +1260,6 @@ struct nrpn_relative_controller {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(nrpn_relative_controller const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(nrpn_relative_controller & t) noexcept { return get<I>(t.w); }
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 struct per_note_management {
@@ -1335,9 +1302,6 @@ struct per_note_management {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(per_note_management const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(per_note_management & t) noexcept { return get<I>(t.w); }
-
 // 7.4.6 MIDI 2.0 Control Change Message
 struct control_change {
   class word0 : public details::word_base {
@@ -1373,9 +1337,6 @@ struct control_change {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(control_change const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(control_change & t) noexcept { return get<I>(t.w); }
 
 // 7.4.9 MIDI 2.0 Program Change Message
 struct program_change {
@@ -1422,9 +1383,6 @@ struct program_change {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(program_change const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(program_change & t) noexcept { return get<I>(t.w); }
-
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 struct channel_pressure {
   class word0 : public details::word_base {
@@ -1459,9 +1417,6 @@ struct channel_pressure {
   std::tuple<word0, word1> w;
 };
 
-// template <std::size_t I> auto const & get(channel_pressure const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(channel_pressure & t) noexcept { return get<I>(t.w); }
-
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 struct pitch_bend {
   class word0 : public details::word_base {
@@ -1495,9 +1450,6 @@ struct pitch_bend {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(pitch_bend const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(pitch_bend & t) noexcept { return get<I>(t.w); }
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 struct per_note_pitch_bend {
@@ -1534,9 +1486,6 @@ struct per_note_pitch_bend {
 
   std::tuple<word0, word1> w;
 };
-
-// template <std::size_t I> auto const & get(per_note_pitch_bend const & t) noexcept { return get<I>(t.w); }
-// template <std::size_t I> auto & get(per_note_pitch_bend & t) noexcept { return get<I>(t.w); }
 
 }  // end namespace types::m2cvm
 
@@ -3070,6 +3019,8 @@ struct tuple_size<midi2::types::flex_data::text_common>  // NOLINT(cert-dcl58-cp
 
 }  // end namespace std
 
-#undef UMP_MEMBERS
+#undef UMP_GETTER
+#undef UMP_SETTER
+#undef UMP_GETTER_SETTER
 
 #endif  // MIDI2_UMP_TYPES_HPP
