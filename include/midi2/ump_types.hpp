@@ -1749,6 +1749,24 @@ struct endpoint_name_notification {
   constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(endpoint_name_notification const &, endpoint_name_notification const &) = default;
 
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, name1)
+  UMP_GETTER_SETTER(word0, name2)
+  UMP_GETTER_SETTER(word1, name3)
+  UMP_GETTER_SETTER(word1, name4)
+  UMP_GETTER_SETTER(word1, name5)
+  UMP_GETTER_SETTER(word1, name6)
+  UMP_GETTER_SETTER(word2, name7)
+  UMP_GETTER_SETTER(word2, name8)
+  UMP_GETTER_SETTER(word2, name9)
+  UMP_GETTER_SETTER(word2, name10)
+  UMP_GETTER_SETTER(word3, name11)
+  UMP_GETTER_SETTER(word3, name12)
+  UMP_GETTER_SETTER(word3, name13)
+  UMP_GETTER_SETTER(word3, name14)
+
   std::tuple<word0, word1, word2, word3> w;
 };
 
@@ -1795,6 +1813,24 @@ struct product_instance_id_notification {
   friend constexpr bool operator==(product_instance_id_notification const &,
                                    product_instance_id_notification const &) = default;
 
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, pid1)
+  UMP_GETTER_SETTER(word0, pid2)
+  UMP_GETTER_SETTER(word1, pid3)
+  UMP_GETTER_SETTER(word1, pid4)
+  UMP_GETTER_SETTER(word1, pid5)
+  UMP_GETTER_SETTER(word1, pid6)
+  UMP_GETTER_SETTER(word2, pid7)
+  UMP_GETTER_SETTER(word2, pid8)
+  UMP_GETTER_SETTER(word2, pid9)
+  UMP_GETTER_SETTER(word2, pid10)
+  UMP_GETTER_SETTER(word3, pid11)
+  UMP_GETTER_SETTER(word3, pid12)
+  UMP_GETTER_SETTER(word3, pid13)
+  UMP_GETTER_SETTER(word3, pid14)
+
   std::tuple<word0, word1, word2, word3> w;
 };
 
@@ -1835,6 +1871,16 @@ struct jr_configuration_request {
   constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(jr_configuration_request const &, jr_configuration_request const &) = default;
 
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, protocol)
+  UMP_GETTER_SETTER(word0, rxjr)
+  UMP_GETTER_SETTER(word0, txjr)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
+
   std::tuple<word0, word1, word2, word3> w;
 };
 
@@ -1874,6 +1920,16 @@ struct jr_configuration_notification {
   friend constexpr bool operator==(jr_configuration_notification const &,
                                    jr_configuration_notification const &) = default;
 
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, protocol)
+  UMP_GETTER_SETTER(word0, rxjr)
+  UMP_GETTER_SETTER(word0, txjr)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
+
   std::tuple<word0, word1, word2, word3> w;
 };
 
@@ -1909,6 +1965,15 @@ struct function_block_discovery {
   constexpr function_block_discovery() = default;
   constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_discovery const &, function_block_discovery const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, block_num)
+  UMP_GETTER_SETTER(word0, filter)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -1953,6 +2018,21 @@ struct function_block_info_notification {
   constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_info_notification const &,
                                    function_block_info_notification const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, block_active)
+  UMP_GETTER_SETTER(word0, block_num)
+  UMP_GETTER_SETTER(word0, ui_hint)
+  UMP_GETTER_SETTER(word0, midi1)
+  UMP_GETTER_SETTER(word0, direction)
+  UMP_GETTER_SETTER(word1, first_group)
+  UMP_GETTER_SETTER(word1, num_spanned)
+  UMP_GETTER_SETTER(word1, ci_message_version)
+  UMP_GETTER_SETTER(word1, max_sys8_streams)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -1999,6 +2079,24 @@ struct function_block_name_notification {
   constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_name_notification const &,
                                    function_block_name_notification const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word0, block_num)
+  UMP_GETTER_SETTER(word0, name0)
+  UMP_GETTER_SETTER(word1, name1)
+  UMP_GETTER_SETTER(word1, name2)
+  UMP_GETTER_SETTER(word1, name3)
+  UMP_GETTER_SETTER(word1, name4)
+  UMP_GETTER_SETTER(word2, name5)
+  UMP_GETTER_SETTER(word2, name6)
+  UMP_GETTER_SETTER(word2, name7)
+  UMP_GETTER_SETTER(word2, name8)
+  UMP_GETTER_SETTER(word3, name9)
+  UMP_GETTER_SETTER(word3, name10)
+  UMP_GETTER_SETTER(word3, name11)
+  UMP_GETTER_SETTER(word3, name12)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2595,7 +2693,7 @@ struct mds_payload {
     using group = ::midi2::types::details::bitfield<24, 4>;
     using status = ::midi2::types::details::bitfield<20, 4>;  ///< Always 0x09
     using mds_id = ::midi2::types::details::bitfield<16, 4>;
-    using data0 = ::midi2::types::details::bitfield<0, 16>;
+    using value0 = ::midi2::types::details::bitfield<0, 16>;
   };
   class word1 : public ::midi2::types::details::word_base {
   public:
@@ -2621,7 +2719,7 @@ struct mds_payload {
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, mds_id)
-  UMP_GETTER_SETTER(word0, data0)
+  UMP_GETTER_SETTER(word0, value0)
   UMP_GETTER_SETTER(word1, value1)
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
@@ -2766,6 +2864,48 @@ template <>
 struct tuple_size<midi2::types::m2cvm::per_note_pitch_bend>
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::m2cvm::per_note_pitch_bend::w)>::value> {};
+
+template <>
+struct tuple_size<midi2::types::ump_stream::endpoint_discovery>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_discovery::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::endpoint_info_notification>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_info_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::device_identity_notification>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::device_identity_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::endpoint_name_notification>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_name_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::product_instance_id_notification>
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::product_instance_id_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::jr_configuration_request>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_request::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::jr_configuration_notification>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_notification::w)>> {
+};
+template <>
+struct tuple_size<midi2::types::ump_stream::function_block_discovery>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_discovery::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::function_block_info_notification>
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_info_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::function_block_name_notification>
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::w)>> {};
 
 template <midi2::data128 Status>
 struct tuple_size<midi2::types::data128::details::sysex8<Status>>
