@@ -216,7 +216,7 @@ TEST(UMPToByteStream, SystemSequenceStart) {
   auto& w0 = get<word0>(message.w);
   w0.set<word0::group>(group);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message).word()};
   std::array const expected{std::byte{to_underlying(midi2::status::sequence_start)}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
