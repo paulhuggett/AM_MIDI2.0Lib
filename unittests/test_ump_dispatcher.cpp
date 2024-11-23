@@ -938,22 +938,17 @@ TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
   EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, message)).Times(1);
   midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
-#if 0  // FIXME
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, StartOfClip) {
-  midi2::types::ump_stream::start_of_clip message{};
-  auto &w0 = get<0>(message.w);
-  w0.format = 0x00;
+  constexpr auto message = midi2::types::ump_stream::start_of_clip{}.format(0x00);
   EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, EndOfClip) {
-  midi2::types::ump_stream::end_of_clip message{};
-  auto &w0 = get<0>(message.w);
-  w0.format = 0x00;
+  constexpr auto message = midi2::types::ump_stream::end_of_clip{}.format(0x00);
   EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 
 //*  ___ _           ___       _         *
@@ -965,137 +960,102 @@ class UMPDispatcherFlexData : public UMPDispatcher {};
 
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetTempo) {
-  midi2::types::flex_data::set_tempo message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 0;
-  w0.status_bank = 0;
-  w1 = std::uint32_t{0xF0F0F0F0};
+  constexpr auto message =
+      midi2::types::flex_data::set_tempo{}.group(0).form(0).addrs(1).channel(0).status_bank(0).value1(0xF0F0F0F0);
   EXPECT_CALL(config_.flex, set_tempo(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w));
-  dispatcher_.processUMP(get<1>(message.w));
-  dispatcher_.processUMP(get<2>(message.w));
-  dispatcher_.processUMP(get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetTimeSignature) {
-  midi2::types::flex_data::set_time_signature message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 0;
-  w1.numerator = 1;
-  w1.denominator = 2;
-  w1.number_of_32_notes = 16;
+  constexpr auto message = midi2::types::flex_data::set_time_signature{}
+                               .group(0)
+                               .form(0)
+                               .addrs(1)
+                               .channel(3)
+                               .status_bank(0)
+                               .numerator(1)
+                               .denominator(2)
+                               .number_of_32_notes(16);
   EXPECT_CALL(config_.flex, set_time_signature(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetMetronome) {
-  midi2::types::flex_data::set_metronome message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  auto &w2 = get<2>(message.w);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 0;
-  w1.num_clocks_per_primary_click = 24;
-  w1.bar_accent_part_1 = 4;
-  w1.bar_accent_part_2 = 0;
-  w1.bar_accent_part_3 = 0;
-  w2.num_subdivision_clicks_1 = 0;
-  w2.num_subdivision_clicks_2 = 0;
+  constexpr auto message = midi2::types::flex_data::set_metronome{}
+                               .group(0)
+                               .form(0)
+                               .addrs(1)
+                               .channel(3)
+                               .status_bank(0)
+                               .num_clocks_per_primary_click(24)
+                               .bar_accent_part_1(4)
+                               .bar_accent_part_2(0)
+                               .bar_accent_part_3(0)
+                               .num_subdivision_clicks_1(0)
+                               .num_subdivision_clicks_2(0);
   EXPECT_CALL(config_.flex, set_metronome(config_.context, message)).Times(1);
-
-  dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetKeySignature) {
-  midi2::types::flex_data::set_key_signature message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 0;
-  w1.sharps_flats = 0b100;  // (-8)
-  w1.tonic_note = static_cast<std::uint8_t>(midi2::types::flex_data::note::E);
+  constexpr auto message = midi2::types::flex_data::set_key_signature{}
+                               .group(0)
+                               .form(0)
+                               .addrs(1)
+                               .channel(3)
+                               .status_bank(0)
+                               .sharps_flats(0b100)  // (-8)
+                               .tonic_note(midi2::to_underlying(midi2::types::flex_data::note::E));
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w), get<1>(message.w), get<2>(message.w), get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetChordName) {
-  midi2::types::flex_data::set_chord_name message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  auto &w2 = get<2>(message.w);
-  auto &w3 = get<3>(message.w);
-  w0.group = 0x0F;
-  w0.form = 0x0;
-  w0.addrs = 3;
-  w0.channel = 3;
-  w0.status_bank = 0x00;
-  w1.tonic_sharps_flats = 0x1;
-  w1.chord_tonic = midi2::to_underlying(midi2::types::flex_data::note::E);
-  w1.chord_type = midi2::to_underlying(midi2::types::flex_data::chord_type::augmented);
-  w1.alter_1_type = 1;
-  w1.alter_1_degree = 5;
-  w1.alter_2_type = 2;
-  w1.alter_2_degree = 6;
-  w2.alter_3_type = 3;
-  w2.alter_3_degree = 7;
-  w2.alter_4_type = 4;
-  w2.alter_4_degree = 8;
-  w2.reserved = 0x0000;
-  w3.bass_sharps_flats = 0xE;
-  w3.bass_note = midi2::to_underlying(midi2::types::flex_data::note::unknown);
-  w3.bass_chord_type = midi2::to_underlying(midi2::types::flex_data::chord_type::diminished);
-  w3.alter_1_type = 1;
-  w3.alter_1_degree = 3;
-  w3.alter_2_type = 2;
-  w3.alter_2_degree = 4;
+  constexpr auto message = midi2::types::flex_data::set_chord_name{}
+                               .group(0x0F)
+                               .form(0x0)
+                               .addrs(3)
+                               .channel(3)
+                               .status_bank(0x00)
+                               .tonic_sharps_flats(0x1)
+                               .chord_tonic(midi2::to_underlying(midi2::types::flex_data::note::E))
+                               .chord_type(midi2::to_underlying(midi2::types::flex_data::chord_type::augmented))
+                               .alter_1_type(1)
+                               .alter_1_degree(5)
+                               .alter_2_type(2)
+                               .alter_2_degree(6)
+                               .alter_3_type(3)
+                               .alter_3_degree(7)
+                               .alter_4_type(4)
+                               .alter_4_degree(8)
+                               .bass_sharps_flats(0xE)
+                               .bass_note(midi2::to_underlying(midi2::types::flex_data::note::unknown))
+                               .bass_chord_type(midi2::to_underlying(midi2::types::flex_data::chord_type::diminished))
+                               .bass_alter_1_type(1)
+                               .bass_alter_1_degree(3)
+                               .bass_alter_2_type(2)
+                               .bass_alter_2_degree(4);
   EXPECT_CALL(config_.flex, set_chord_name(config_.context, message)).Times(1);
-  dispatcher_.processUMP(get<0>(message.w));
-  dispatcher_.processUMP(get<1>(message.w));
-  dispatcher_.processUMP(get<2>(message.w));
-  dispatcher_.processUMP(get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, Text) {
-  midi2::types::flex_data::text_common message;
-  auto &w0 = get<0>(message.w);
-  auto &w1 = get<1>(message.w);
-  auto &w2 = get<2>(message.w);
-  auto &w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 1;
-  w0.status = 4;
-  w1 =
-      (std::uint32_t{0xC2} << 24) | (std::uint32_t{0xA9} << 16) | (std::uint32_t{'2'} << 8) | (std::uint32_t{'0'} << 0);
-  w2 = (std::uint32_t{'2'} << 24) | (std::uint32_t{'4'} << 16) | (std::uint32_t{' '} << 8) | (std::uint32_t{'P'} << 0);
-  w3 =
-      (std::uint32_t{'B'} << 24) | (std::uint32_t{'H'} << 16) | (std::uint32_t{'\0'} << 8) | (std::uint32_t{'\0'} << 0);
+  constexpr auto message = midi2::types::flex_data::text_common{}
+                               .group(0)
+                               .form(0)
+                               .addrs(1)
+                               .channel(3)
+                               .status_bank(1)
+                               .status(4)
+                               .value1((std::uint32_t{0xC2} << 24) | (std::uint32_t{0xA9} << 16) |
+                                       (std::uint32_t{'2'} << 8) | (std::uint32_t{'0'} << 0))
+                               .value2((std::uint32_t{'2'} << 24) | (std::uint32_t{'4'} << 16) |
+                                       (std::uint32_t{' '} << 8) | (std::uint32_t{'P'} << 0))
+                               .value3((std::uint32_t{'B'} << 24) | (std::uint32_t{'H'} << 16) |
+                                       (std::uint32_t{'\0'} << 8) | (std::uint32_t{'\0'} << 0));
   EXPECT_CALL(config_.flex, text(config_.context, message)).Times(1);
-
-  dispatcher_.processUMP(get<0>(message.w));
-  dispatcher_.processUMP(get<1>(message.w));
-  dispatcher_.processUMP(get<2>(message.w));
-  dispatcher_.processUMP(get<3>(message.w));
+  midi2::types::apply(message, [this](auto const v) { dispatcher_.processUMP(v.word()); });
 }
-#endif
 
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
   midi2::ump_dispatcher p;

@@ -334,32 +334,24 @@ TEST(UMPToMIDI1, M2NRPNController) {
   EXPECT_THAT(actual,
               ElementsAre(get<0>(out0.w).word(), get<0>(out1.w).word(), get<0>(out2.w).word(), get<0>(out3.w).word()));
 }
-#if 0  // FIXME
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, PitchBend) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
   constexpr auto value = std::uint32_t{0xFFFF0000};
 
-  midi2::types::m2cvm::pitch_bend pb;
-  auto& pb0 = get<0>(pb.w);
-  auto& pb1 = get<1>(pb.w);
-  pb0.group = group;
-  pb0.channel = channel;
-  pb1 = value;
+  constexpr auto pb = midi2::types::m2cvm::pitch_bend{}.group(group).channel(channel).value(value);
 
-  midi2::types::m1cvm::pitch_bend expected;
-  auto& expected0 = get<0>(expected.w);
-  expected0.group = group;
-  expected0.channel = channel;
-  expected0.lsb_data = (value >> (32 - 14)) & 0x7F;
-  expected0.msb_data = ((value >> (32 - 14)) >> 7) & 0x7F;
+  constexpr auto expected = midi2::types::m1cvm::pitch_bend{}
+                                .group(group)
+                                .channel(channel)
+                                .lsb_data((value >> (32 - 14)) & 0x7F)
+                                .msb_data(((value >> (32 - 14)) >> 7) & 0x7F);
 
-  std::array const input{std::bit_cast<std::uint32_t>(pb0), std::bit_cast<std::uint32_t>(pb1)};
+  std::array const input{get<0>(pb.w).word(), get<1>(pb.w).word()};
   auto const actual = convert(input);
-  EXPECT_THAT(actual, ElementsAre(std::bit_cast<std::uint32_t>(expected0)));
+  EXPECT_THAT(actual, ElementsAre(get<0>(expected.w).word()));
 }
-#endif
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOff) {
   midi2::types::m1cvm::note_off noff;

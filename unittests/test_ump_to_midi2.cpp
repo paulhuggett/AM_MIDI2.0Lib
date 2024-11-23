@@ -393,9 +393,7 @@ public:
 
 // clang-format off
 using PassThroughTypes = ::testing::Types<
-  midi2::types::utility::jr_clock
-#if 0
-  ,
+  midi2::types::utility::jr_clock,
   midi2::types::utility::jr_timestamp,
   midi2::types::utility::delta_clockstamp_tpqn,
   midi2::types::utility::delta_clockstamp,
@@ -437,9 +435,8 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::data128::sysex8_continue,
   midi2::types::data128::sysex8_end,
   midi2::types::data128::mds_header,
-  midi2::types::data128::mds_payload
-  #endif
-#if 0 // FIXME
+  midi2::types::data128::mds_payload,
+
   midi2::types::ump_stream::endpoint_discovery,
   midi2::types::ump_stream::endpoint_info_notification,
   midi2::types::ump_stream::device_identity_notification,
@@ -458,7 +455,6 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::flex_data::set_metronome,
   midi2::types::flex_data::set_key_signature,
   midi2::types::flex_data::set_chord_name
-#endif
   >;
 // clang-format on
 TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);

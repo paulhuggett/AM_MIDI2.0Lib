@@ -103,7 +103,6 @@ TEST(UMPToBytestream, NoteOn) {
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 
-#if 0  // FIXME
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, ControlChange) {
   constexpr auto channel = 1U;
@@ -116,7 +115,7 @@ TEST(UMPToBytestream, ControlChange) {
   message.controller(controller);
   message.value(value);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message).word()};
   std::array const expected{
       std::byte{to_underlying(midi2::status::cc)} | std::byte{channel},
       std::byte{controller},
@@ -127,14 +126,9 @@ TEST(UMPToBytestream, ControlChange) {
 }
 TEST(UMPToBytestream, ControlChangeFilteredGroup) {
   constexpr auto group = 1U;
-  midi2::types::m1cvm::control_change message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
-  w0.channel = 1;
-  w0.controller = 17;
-  w0.value = 0x71;
+  constexpr auto message = midi2::types::m1cvm::control_change{}.group(group).channel(1).controller(17).value(0x71);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message).word()};
   auto const actual = convert(input, std::uint16_t{group});
   EXPECT_THAT(actual, IsEmpty());
 }
@@ -144,13 +138,9 @@ TEST(UMPToBytestream, M1CVMChannelPressure) {
   constexpr auto channel = 3U;
   constexpr auto data = 0b0101010U;
 
-  midi2::types::m1cvm::channel_pressure message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
-  w0.channel = channel;
-  w0.data = data;
+  constexpr auto message = midi2::types::m1cvm::channel_pressure{}.group(group).channel(channel).data(data);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::channel_pressure)} | std::byte{channel},
                                   std::byte{data}));
@@ -163,14 +153,10 @@ TEST(UMPToBytestream, M1CVMPolyPressure) {
   constexpr auto note = 0b0101010U;
   constexpr auto pressure = 0b0110011U;
 
-  midi2::types::m1cvm::poly_pressure message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
-  w0.channel = channel;
-  w0.note = note;
-  w0.pressure = pressure;
+  constexpr auto message =
+      midi2::types::m1cvm::poly_pressure{}.group(group).channel(channel).note(note).pressure(pressure);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message.w).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::poly_pressure)} | std::byte{channel},
                                   std::byte{note}, std::byte{pressure}));
@@ -183,20 +169,14 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
   constexpr auto lsb = 0b00110011;
   constexpr auto msb = 0b01100110;
 
-  midi2::types::m1cvm::pitch_bend message;
-  auto& w0 = get<0>(message.w);
-  w0.group = group;
-  w0.channel = channel;
-  w0.lsb_data = lsb;
-  w0.msb_data = msb;
+  constexpr auto message = midi2::types::m1cvm::pitch_bend{}.group(group).channel(channel).lsb_data(lsb).msb_data(msb);
 
-  std::array const input{std::bit_cast<std::uint32_t>(w0)};
+  std::array const input{get<0>(message.w).word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::pitch_bend)} | std::byte{channel},
                                   std::byte{lsb}, std::byte{msb}));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
-#endif
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimeCode) {

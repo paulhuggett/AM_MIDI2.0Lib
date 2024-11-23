@@ -2133,6 +2133,13 @@ struct start_of_clip {
   constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(start_of_clip const &, start_of_clip const &) = default;
 
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
+
   std::tuple<word0, word1, word2, word3> w;
 };
 
@@ -2167,6 +2174,13 @@ struct end_of_clip {
   constexpr end_of_clip() = default;
   constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(end_of_clip const &, end_of_clip const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, format)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2221,6 +2235,17 @@ struct set_tempo {
   constexpr set_tempo() = default;
   constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_tempo const &, set_tempo const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, group)
+  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER_SETTER(word0, addrs)
+  UMP_GETTER_SETTER(word0, channel)
+  UMP_GETTER_SETTER(word0, status_bank)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word1, value1)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2299,6 +2324,7 @@ struct set_metronome {
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+
     using num_clocks_per_primary_click = details::bitfield<24, 8>;
     using bar_accent_part_1 = details::bitfield<16, 8>;
     using bar_accent_part_2 = details::bitfield<8, 8>;
@@ -2307,6 +2333,7 @@ struct set_metronome {
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+
     using num_subdivision_clicks_1 = details::bitfield<24, 8>;
     using num_subdivision_clicks_2 = details::bitfield<16, 8>;
     using reserved0 = details::bitfield<0, 16>;
@@ -2314,12 +2341,28 @@ struct set_metronome {
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+
     using value3 = details::bitfield<0, 32>;
   };
 
   constexpr set_metronome() = default;
   constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_metronome const &, set_metronome const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, group)
+  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER_SETTER(word0, addrs)
+  UMP_GETTER_SETTER(word0, channel)
+  UMP_GETTER_SETTER(word0, status_bank)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word1, num_clocks_per_primary_click)
+  UMP_GETTER_SETTER(word1, bar_accent_part_1)
+  UMP_GETTER_SETTER(word1, bar_accent_part_2)
+  UMP_GETTER_SETTER(word1, bar_accent_part_3)
+  UMP_GETTER_SETTER(word2, num_subdivision_clicks_1)
+  UMP_GETTER_SETTER(word2, num_subdivision_clicks_2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2360,6 +2403,18 @@ struct set_key_signature {
   constexpr set_key_signature() = default;
   constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, group)
+  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER_SETTER(word0, addrs)
+  UMP_GETTER_SETTER(word0, channel)
+  UMP_GETTER_SETTER(word0, status_bank)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER(word1, sharps_flats)
+  UMP_GETTER_SETTER(word1, tonic_note)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2436,6 +2491,7 @@ struct set_chord_name {
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+
     using tonic_sharps_flats = details::bitfield<28, 4>;  // 2's compl
     using chord_tonic = details::bitfield<24, 4>;
     using chord_type = details::bitfield<16, 8>;
@@ -2447,6 +2503,7 @@ struct set_chord_name {
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+
     using alter_3_type = details::bitfield<28, 4>;
     using alter_3_degree = details::bitfield<24, 4>;
     using alter_4_type = details::bitfield<20, 4>;
@@ -2456,18 +2513,45 @@ struct set_chord_name {
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+
     using bass_sharps_flats = details::bitfield<28, 4>;  // 2's compl
     using bass_note = details::bitfield<24, 4>;
     using bass_chord_type = details::bitfield<16, 8>;
-    using alter_1_type = details::bitfield<12, 4>;
-    using alter_1_degree = details::bitfield<8, 4>;
-    using alter_2_type = details::bitfield<4, 4>;
-    using alter_2_degree = details::bitfield<0, 4>;
+    using bass_alter_1_type = details::bitfield<12, 4>;
+    using bass_alter_1_degree = details::bitfield<8, 4>;
+    using bass_alter_2_type = details::bitfield<4, 4>;
+    using bass_alter_2_degree = details::bitfield<0, 4>;
   };
 
   constexpr set_chord_name() = default;
   constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, group)
+  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER_SETTER(word0, addrs)
+  UMP_GETTER_SETTER(word0, channel)
+  UMP_GETTER_SETTER(word0, status_bank)
+  UMP_GETTER_SETTER(word0, status)
+  UMP_GETTER_SETTER(word1, tonic_sharps_flats)
+  UMP_GETTER_SETTER(word1, chord_tonic)
+  UMP_GETTER_SETTER(word1, chord_type)
+  UMP_GETTER_SETTER(word1, alter_1_type)
+  UMP_GETTER_SETTER(word1, alter_1_degree)
+  UMP_GETTER_SETTER(word1, alter_2_type)
+  UMP_GETTER_SETTER(word1, alter_2_degree)
+  UMP_GETTER_SETTER(word2, alter_3_type)
+  UMP_GETTER_SETTER(word2, alter_3_degree)
+  UMP_GETTER_SETTER(word2, alter_4_type)
+  UMP_GETTER_SETTER(word2, alter_4_degree)
+  UMP_GETTER_SETTER(word3, bass_sharps_flats)
+  UMP_GETTER_SETTER(word3, bass_note)
+  UMP_GETTER_SETTER(word3, bass_chord_type)
+  UMP_GETTER_SETTER(word3, bass_alter_1_type)
+  UMP_GETTER_SETTER(word3, bass_alter_1_degree)
+  UMP_GETTER_SETTER(word3, bass_alter_2_type)
+  UMP_GETTER_SETTER(word3, bass_alter_2_degree)
 
   std::tuple<word0, word1, word2, word3> w;
 };
@@ -2906,6 +2990,12 @@ template <>
 struct tuple_size<midi2::types::ump_stream::function_block_name_notification>
     : std::integral_constant<
           std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::start_of_clip>
+    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::start_of_clip::w)>> {};
+template <>
+struct tuple_size<midi2::types::ump_stream::end_of_clip>
+    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::end_of_clip::w)>> {};
 
 template <midi2::data128 Status>
 struct tuple_size<midi2::types::data128::details::sysex8<Status>>
@@ -2926,6 +3016,20 @@ template <>
 struct tuple_size<midi2::types::flex_data::set_key_signature>
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::flex_data::set_key_signature::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::flex_data::set_metronome>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_metronome::w)>::value> {
+};
+template <>
+struct tuple_size<midi2::types::flex_data::set_time_signature>
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::flex_data::set_time_signature::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::flex_data::set_tempo>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_tempo::w)>::value> {};
+template <>
+struct tuple_size<midi2::types::flex_data::text_common>
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::text_common::w)>::value> {};
 
 }  // end namespace std
 
