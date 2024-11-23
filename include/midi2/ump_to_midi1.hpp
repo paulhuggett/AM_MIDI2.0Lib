@@ -9,8 +9,10 @@
 #ifndef MIDI2_UMPTOMIDI1_HPP
 #define MIDI2_UMPTOMIDI1_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
+#include <utility>
 
 #include "midi2/adt/cache.hpp"
 #include "midi2/adt/fifo.hpp"
@@ -32,16 +34,10 @@ public:
 
 private:
   struct context_type {
-    template <typename T, unsigned Index = 0>
+    template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      if constexpr (Index >= std::tuple_size_v<T>) {
-        return;
-      } else {
-        auto const value32 = std::bit_cast<std::uint32_t>(std::get<Index>(value));
-        output.push_back(value32);
-        push<T, Index + 1>(value);
-      }
+      types::apply(value, [this](auto const v) { output.push_back(v.word()); });
     }
 
     struct pn_cache_key {
@@ -93,34 +89,36 @@ private:
     };
     // m1cvm messages go straight through.
     struct m1cvm {
-      static constexpr void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) { ctxt->push(in.w); }
-      static constexpr void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) { ctxt->push(in.w); }
+      static constexpr void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) { ctxt->push(in); }
+      static constexpr void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) { ctxt->push(in); }
       static constexpr void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
-      static constexpr void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
-        ctxt->push(in.w);
-      }
+      static constexpr void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) { ctxt->push(in); }
     };
     // data64 messages go straight through.
     struct data64 {
-      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) {
+        ctxt->push(in);
+      }
       static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
-      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) { ctxt->push(in.w); }
+      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) {
+        ctxt->push(in);
+      }
     };
     // m2cvm messages are translated to m1cvm messages.
     class m2cvm {
@@ -163,7 +161,7 @@ private:
 
     private:
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
-                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t const value);
+                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};

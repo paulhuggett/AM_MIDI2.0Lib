@@ -47,20 +47,17 @@ void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
 }
 
 template <typename T> void bytestream_to_ump::push_sysex7() {
-  T t{};
-  static_assert(std::tuple_size_v<decltype(T::w)> == 2);
-  auto& w0 = get<0>(t.w);
-  auto& w1 = get<1>(t.w);
-  w0.group = std::to_integer<std::uint8_t>(group_);
-  w0.number_of_bytes = sysex7_.pos;
-  w0.data0 = std::to_integer<std::uint8_t>(sysex7_.bytes[0]);
-  w0.data1 = std::to_integer<std::uint8_t>(sysex7_.bytes[1]);
-  w1.data2 = std::to_integer<std::uint8_t>(sysex7_.bytes[2]);
-  w1.data3 = std::to_integer<std::uint8_t>(sysex7_.bytes[3]);
-  w1.data4 = std::to_integer<std::uint8_t>(sysex7_.bytes[4]);
-  w1.data5 = std::to_integer<std::uint8_t>(sysex7_.bytes[5]);
-  output_.push_back(std::bit_cast<std::uint32_t>(w0));
-  output_.push_back(std::bit_cast<std::uint32_t>(w1));
+  auto const t = T{}.group(to_integer<std::uint8_t>(group_))
+                     .number_of_bytes(sysex7_.pos)
+                     .data0(to_integer<std::uint8_t>(sysex7_.bytes[0]))
+                     .data1(to_integer<std::uint8_t>(sysex7_.bytes[1]))
+                     .data2(to_integer<std::uint8_t>(sysex7_.bytes[2]))
+                     .data3(to_integer<std::uint8_t>(sysex7_.bytes[3]))
+                     .data4(to_integer<std::uint8_t>(sysex7_.bytes[4]))
+                     .data5(to_integer<std::uint8_t>(sysex7_.bytes[5]));
+  static_assert(std::tuple_size_v<T> == 2);
+  output_.push_back(get<0>(t).word());
+  output_.push_back(get<1>(t).word());
 
   sysex7_.reset();
   sysex7_.state = sysex7::status::none;

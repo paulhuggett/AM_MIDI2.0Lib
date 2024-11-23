@@ -24,7 +24,7 @@ jobs:
       CODACY_URL: https://api.codacy.com
       # The path for clang-tidy output.
       CLANG_TIDY_OUT: /tmp/clang-tidy-out
-      CLANG_VERSION: 18
+      CLANG_VERSION: 19
       # The path for codacy-clang-tidy output.
       CCT_OUT: /tmp/cct-out
 
@@ -44,7 +44,7 @@ jobs:
           sudo apt-get install -y cmake ninja-build
 
       - name: Install Dependencies (LLVM)
-        uses: paulhuggett/install-llvm@ad897b4b1cf03f54c1218ec6d97a23ff4b10b870 # v1.0
+        uses: paulhuggett/install-llvm@1bbdc8d8929c3848ffcf6db968ab0aaabeb6f02d # v1.0.1
         with:
           version: ${{ env.CLANG_VERSION }}
           all: true
@@ -69,7 +69,7 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          find . -name \*.cpp -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" \) -print0 | \
+          find . -name \*.cpp -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" -or -path "./icubaby/*" \) -print0 | \
           xargs -0 -I % "clang-tidy-$CLANG_VERSION" "-p=$BUILD_DIR/compile_commands.json" -header-filter=.* % | \
           tee -a "${{ env.CLANG_TIDY_OUT }}"
 

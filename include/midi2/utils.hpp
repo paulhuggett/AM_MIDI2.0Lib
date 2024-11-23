@@ -311,13 +311,18 @@ constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::
   return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
 }
 
+template <unsigned Bits>
+using small_type = std::conditional_t<
+    Bits <= 8, std::uint8_t,
+    std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, std::uint64_t>>>;
+
 /// Implements the "min-center-max" scaling algorithm from section 3 of the document "M2-115-U MIDI 2.0 Bit Scaling and
 /// Resolution v1.0.1 23-May-2023"
 template <unsigned SourceBits, unsigned DestBits>
-  requires (SourceBits > 1 && DestBits <= 32)
-constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
+  requires(SourceBits > 1 && DestBits <= 32)
+constexpr small_type<DestBits> mcm_scale(small_type<SourceBits> const value) {
   if constexpr (SourceBits >= DestBits) {
-    return value >> (SourceBits - DestBits);
+    return static_cast<small_type<DestBits>>(value >> (SourceBits - DestBits));
   } else {
     if (value == 0) {
       return 0;
@@ -328,7 +333,7 @@ constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
     // Simple bit shift
     auto bit_shifted_value = static_cast<std::uint32_t>(value << scale_bits);
     if (value <= center) {
-      return bit_shifted_value;
+      return static_cast<small_type<DestBits>>(bit_shifted_value);
     }
 
     // expanded bit repeat scheme
@@ -342,7 +347,7 @@ constexpr std::uint32_t mcm_scale(std::uint32_t const value) {
     for (; repeat_value != 0; repeat_value >>= repeat_bits) {
       bit_shifted_value |= repeat_value;  // Fill lower bits with repeat_value
     }
-    return bit_shifted_value;
+    return static_cast<small_type<DestBits>>(bit_shifted_value);
   }
 }
 

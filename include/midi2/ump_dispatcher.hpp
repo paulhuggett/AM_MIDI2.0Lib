@@ -15,7 +15,6 @@
 #include <concepts>
 #include <cstdint>
 #include <span>
-#include <type_traits>
 
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
@@ -24,23 +23,6 @@ namespace midi2 {
 
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
-template <midi2::ump_message_type> struct message_size {};
-template <> struct message_size<midi2::ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::data128> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::ump_message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
 
 constexpr unsigned ump_message_size(ump_message_type const mt) {
   using enum ump_message_type;
@@ -328,7 +310,8 @@ public:
   }
   void processUMP() { /* nothing to do */ }
   template <typename First, typename... Rest>
-  requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>) void processUMP(First ump, Rest &&...rest) {
+    requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>)
+  void processUMP(First ump, Rest &&...rest) {
     this->processUMP(ump.word(), std::forward<Rest>(rest)...);
   }
   template <typename... Rest> void processUMP(std::uint32_t ump, Rest &&...rest) {
@@ -652,9 +635,9 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_m
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  auto const m0 = types::flex_data::flex_data_w0{message_[0]};
-  auto const status = static_cast<flex_data>(m0.status.value());
-  if (m0.status_bank == 0) {
+  auto const status_bank = (message_[0] >> 8) & 0xFF;
+  if (status_bank == 0) {
+    auto const status = static_cast<flex_data>(message_[0] & 0xFF);
     switch (status) {
     // 7.5.3 Set Tempo Message
     case flex_data::set_tempo: config_.flex.set_tempo(config_.context, types::flex_data::set_tempo{span}); break;

@@ -19,30 +19,26 @@ namespace midi2 {
 // note off
 // ~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt, types::m2cvm::note_off const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-  types::m1cvm::note_off out;
-  auto &out0 = get<0>(out.w);
-  out0.group = in0.group.value();
-  out0.channel = in0.channel.value();
-  out0.note = in0.note.value();
-  out0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity.value()));
+  constexpr auto m2v = types::m2cvm::note_off::word1::velocity::bits();
+  constexpr auto m1v = types::m1cvm::note_off::word0::velocity::bits();
+  auto const out = types::m1cvm::note_off{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .velocity(mcm_scale<m2v, m1v>(in.velocity()));
   ctxt->push(out.w);
 }
 
 // note on
 // ~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, types::m2cvm::note_on const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-  types::m1cvm::note_on out;
-  auto &out0 = get<0>(out.w);
-  out0.group = in0.group.value();
-  out0.channel = in0.channel.value();
-  out0.note = in0.note.value();
-  out0.velocity = static_cast<std::uint8_t>(
-      mcm_scale<decltype(in1.velocity)::bits(), decltype(out0.velocity)::bits()>(in1.velocity));
+  constexpr auto m2v = types::m2cvm::note_on::word1::velocity::bits();
+  constexpr auto m1v = types::m1cvm::note_on::word0::velocity::bits();
+  auto const out = types::m1cvm::note_on{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .velocity(mcm_scale<m2v, m1v>(in.velocity()));
   ctxt->push(out.w);
 }
 
@@ -50,14 +46,14 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, typ
 // ~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
                                                          types::m2cvm::poly_pressure const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-  types::m1cvm::poly_pressure out;
-  auto &out0 = get<0>(out.w);
-  out0.group = in0.group.value();
-  out0.channel = in0.channel.value();
-  out0.note = in0.note.value();
-  out0.pressure = static_cast<std::uint8_t>(mcm_scale<32, decltype(out0.pressure)::bits()>(in1));
+  constexpr auto m2v = types::m2cvm::poly_pressure::word1::pressure::bits();
+  constexpr auto m1v = types::m1cvm::poly_pressure::word0::pressure::bits();
+
+  auto const out = types::m1cvm::poly_pressure{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .note(in.note())
+                       .pressure(mcm_scale<m2v, m1v>(in.pressure()));
   ctxt->push(out.w);
 }
 
@@ -65,31 +61,26 @@ void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctx
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
                                                           types::m2cvm::program_change const &in) {
-  auto const &in0 = get<0>(in.w);
-  auto const &in1 = get<1>(in.w);
-
-  auto const group = in0.group.value();
-  auto const channel = in0.channel.value();
-  if (in0.bank_valid) {
+  auto const group = in.group();
+  auto const channel = in.channel();
+  if (in.bank_valid()) {
     // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
     // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
-    types::m1cvm::control_change cc;
-    auto &cc0 = get<0>(cc.w);
-    cc0.group = group;
-    cc0.channel = channel;
-    cc0.controller = control::bank_select;
-    cc0.value = in1.bank_msb.value();
+    auto const cc = types::m1cvm::control_change{}
+                        .group(group)
+                        .channel(channel)
+                        .controller(control::bank_select)
+                        .value(in.bank_msb());
     ctxt->push(cc.w);
 
-    cc0.controller = control::bank_select_lsb;
-    cc0.value = in1.bank_lsb.value();
-    ctxt->push(cc.w);
+    auto const cc2 = types::m1cvm::control_change{}
+                         .group(group)
+                         .channel(channel)
+                         .controller(control::bank_select_lsb)
+                         .value(in.bank_lsb());
+    ctxt->push(cc2.w);
   }
-  types::m1cvm::program_change out;
-  auto &pc0 = get<0>(out.w);
-  pc0.group = group;
-  pc0.channel = channel;
-  pc0.program = in1.program.value();
+  auto const out = types::m1cvm::program_change{}.group(group).channel(channel).program(in.program());
   ctxt->push(out.w);
 }
 
@@ -97,12 +88,11 @@ void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ct
 // ~~~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
                                                             types::m2cvm::channel_pressure const &in) {
-  types::m1cvm::channel_pressure out;
-  types::m1cvm::channel_pressure::word0 &out0 = get<0>(out.w);
-  out0.group = get<0>(in.w).group.value();
-  out0.channel = get<0>(in.w).channel.value();
-  auto const &in1 = get<1>(in.w);
-  out0.data = static_cast<std::uint8_t>(mcm_scale<32, decltype(out0.data)::bits()>(in1));
+  constexpr auto m2p = types::m2cvm::channel_pressure::word1::value::bits();
+  constexpr auto m1p = types::m1cvm::channel_pressure::word0::data::bits();
+
+  const auto out =
+      types::m1cvm::channel_pressure{}.group(in.group()).channel(in.channel()).data(mcm_scale<m2p, m1p>(in.value()));
   ctxt->push(out.w);
 }
 
@@ -110,54 +100,48 @@ void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const 
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
                                                           types::m2cvm::rpn_controller const &in) {
-  auto const &in0 = get<0>(in.w);
-  pn_message(ctxt, context_type::pn_cache_key{in0.group, in0.channel, true},
-             std::make_pair(in0.bank.value(), in0.index.value()), get<1>(in.w));
+  pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), true}, std::make_pair(in.bank(), in.index()),
+             in.value());
 }
 
 // nrpn controller
 // ~~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
                                                            types::m2cvm::nrpn_controller const &in) {
-  auto const &in0 = get<0>(in.w);
-  pn_message(ctxt, context_type::pn_cache_key{in0.group, in0.channel, false},
-             std::make_pair(in0.bank.value(), in0.index.value()), get<1>(in.w));
+  pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), false}, std::make_pair(in.bank(), in.index()),
+             in.value());
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
                                                       std::pair<std::uint8_t, std::uint8_t> const &controller_number,
                                                       std::uint32_t const value) {
   types::m1cvm::control_change cc;
-  auto &cc0 = get<0>(cc.w);
-  cc0.group = key.group;
-  cc0.channel = key.channel;
+  cc.group(key.group).channel(key.channel);
 
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
   if (!ctxt->pn_cache.set(key, controller_number)) {
     // Controller number MSB
-    cc0.controller = key.is_rpn ? control::rpn_msb : control::nrpn_msb;  // 0x65/0x63
-    cc0.value = controller_number.first;
+    cc.controller(key.is_rpn ? control::rpn_msb : control::nrpn_msb);  // 0x65/0x63
+    cc.value(controller_number.first);
     ctxt->push(cc.w);
     // Controller number LSB
-    cc0.controller = key.is_rpn ? control::rpn_lsb : control::nrpn_lsb;  // 0x64/0x62
-    cc0.value = controller_number.second;
+    cc.controller(key.is_rpn ? control::rpn_lsb : control::nrpn_lsb);  // 0x64/0x62
+    cc.value(controller_number.second);
     ctxt->push(cc.w);
   }
 
-  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(value));
+  auto const scaled_value = mcm_scale<32, 14>(value);
 
-  cc0.group = key.group;
-  cc0.channel = key.channel;
   // Data Entry MSB
-  cc0.controller = control::data_entry_msb;  // 0x6
-  cc0.value = static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F);
+  cc.controller(control::data_entry_msb);  // 0x6
+  cc.value(static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F));
   ctxt->push(cc.w);
 
   // Data Entry LSB
-  cc0.controller = control::data_entry_lsb;  // 0x26
-  cc0.value = static_cast<std::uint8_t>(scaled_value & 0x7F);
+  cc.controller(control::data_entry_lsb);  // 0x26
+  cc.value(static_cast<std::uint8_t>(scaled_value & 0x7F));
   ctxt->push(cc.w);
 }
 
@@ -165,28 +149,26 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
                                                           types::m2cvm::control_change const &in) {
-  auto const &in0 = get<0>(in.w);
-  types::m1cvm::control_change cc;
-  auto &cc0 = get<0>(cc.w);
-  cc0.group = in0.group.value();
-  cc0.channel = in0.channel.value();
-  cc0.controller = in0.controller.value();
-  cc0.value = static_cast<std::uint8_t>(mcm_scale<32, decltype(cc0.value)::bits()>(get<1>(in.w)));
+  constexpr auto m1v = types::m1cvm::control_change::word0::value::bits();
+  constexpr auto m2v = types::m2cvm::control_change::word1::value::bits();
+  auto const cc = types::m1cvm::control_change{}
+                      .group(in.group())
+                      .channel(in.channel())
+                      .controller(in.controller())
+                      .value(mcm_scale<m2v, m1v>(in.value()));
   ctxt->push(cc.w);
 }
 
 // pitch bend
 // ~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, types::m2cvm::pitch_bend const &in) {
-  auto const &in0 = get<0>(in.w);
-  types::m1cvm::pitch_bend pb;
-  auto &pb0 = get<0>(pb.w);
-  pb0.group = in0.group.value();
-  pb0.channel = in0.channel.value();
-  auto const scaled_value = get<1>(in.w) >> (32 - 14);
-  pb0.lsb_data = scaled_value & 0x7F;
-  pb0.msb_data = (scaled_value >> 7) & 0x7F;
-  ctxt->push(pb.w);
+  auto const scaled_value = in.value() >> (32 - 14);
+  auto const out = types::m1cvm::pitch_bend{}
+                       .group(in.group())
+                       .channel(in.channel())
+                       .lsb_data(scaled_value & 0x7F)
+                       .msb_data((scaled_value >> 7) & 0x7F);
+  ctxt->push(out.w);
 }
 
 }  // end namespace midi2

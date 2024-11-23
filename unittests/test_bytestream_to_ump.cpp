@@ -241,7 +241,7 @@ TEST(BytestreamToUMP, SysEx) {
                             std::uint32_t{0x10000000}};
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
-      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
+      << " Input: " << HexContainer(input) << "\n Actual:   " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
 }
 
@@ -262,7 +262,6 @@ TEST(BytestreamToUMP, SysExEndFollowedByDataBytes) {
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
 }
-
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MissingSysExEnd) {
   using b8 = std::byte;
@@ -276,43 +275,36 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
 
   std::vector<std::uint32_t> expected;
   {
-    midi2::types::data64::sysex7_start sx_start;
-    get<0>(sx_start.w).group = group;
-    get<0>(sx_start.w).number_of_bytes = 6U;
-    get<0>(sx_start.w).data0 = std::uint8_t{1};
-    get<0>(sx_start.w).data1 = std::uint8_t{2};
-    get<1>(sx_start.w).data2 = std::uint8_t{3};
-    get<1>(sx_start.w).data3 = std::uint8_t{4};
-    get<1>(sx_start.w).data4 = std::uint8_t{5};
-    get<1>(sx_start.w).data5 = std::uint8_t{6};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(sx_start.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(sx_start.w)));
+    constexpr auto sx_start = midi2::types::data64::sysex7_start{}
+                                  .group(group)
+                                  .number_of_bytes(6)
+                                  .data0(1U)
+                                  .data1(2U)
+                                  .data2(3U)
+                                  .data3(4U)
+                                  .data4(5U)
+                                  .data5(6U);
+    expected.push_back(get<0>(sx_start).word());
+    expected.push_back(get<1>(sx_start).word());
   }
   {
-    midi2::types::data64::sysex7_end sx_end;
-    get<0>(sx_end.w).group = group;
-    get<0>(sx_end.w).number_of_bytes = std::uint8_t{1};
-    get<0>(sx_end.w).data0 = std::uint8_t{7};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(sx_end.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(sx_end.w)));
+    constexpr auto sx_end = midi2::types::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
+    expected.push_back(get<0>(sx_end).word());
+    expected.push_back(get<1>(sx_end).word());
   }
   {
-    midi2::types::m1cvm::note_off noff;
-    get<0>(noff.w).group = group;
-    get<0>(noff.w).channel = channel;
-    get<0>(noff.w).note = note_number;
-    get<0>(noff.w).velocity = std::uint8_t{0};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(noff.w)));
+    auto const noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
+    expected.push_back(get<0>(noff.w).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
-
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   using b8 = std::byte;
+  using sysex7_in_1 = midi2::types::data64::sysex7_in_1;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
   constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
@@ -323,40 +315,25 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
 
   std::vector<std::uint32_t> expected;
   {
-    midi2::types::data64::sysex7_in_1 block1;
-    get<0>(block1.w).group = group;
-    get<0>(block1.w).number_of_bytes = 3U;
-    get<0>(block1.w).data0 = std::uint8_t{1};
-    get<0>(block1.w).data1 = std::uint8_t{2};
-    get<1>(block1.w).data2 = std::uint8_t{3};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block1.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block1.w)));
+    constexpr auto block1 = sysex7_in_1{}.group(group).number_of_bytes(3).data0(1).data1(2).data2(3);
+    expected.push_back(get<0>(block1).word());
+    expected.push_back(get<1>(block1).word());
   }
   {
-    midi2::types::data64::sysex7_in_1 block2;
-    get<0>(block2.w).group = group;
-    get<0>(block2.w).number_of_bytes = 4U;
-    get<0>(block2.w).data0 = std::uint8_t{4};
-    get<0>(block2.w).data1 = std::uint8_t{5};
-    get<1>(block2.w).data2 = std::uint8_t{6};
-    get<1>(block2.w).data3 = std::uint8_t{7};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(block2.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(block2.w)));
+    constexpr auto block2 = sysex7_in_1{}.group(group).number_of_bytes(4).data0(4).data1(5).data2(6).data3(7);
+    expected.push_back(get<0>(block2).word());
+    expected.push_back(get<1>(block2).word());
   }
   {
-    midi2::types::m1cvm::note_off noff;
-    get<0>(noff.w).group = group;
-    get<0>(noff.w).channel = channel;
-    get<0>(noff.w).note = note_number;
-    get<0>(noff.w).velocity = std::uint8_t{0};
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(noff.w)));
+    constexpr auto noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
+    expected.push_back(get<0>(noff.w).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
-
+// NOLINTNEXTLINE
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
   constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
@@ -390,27 +367,27 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   constexpr auto group = std::uint8_t{0xF};
   auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     midi2::types::data64::sysex7_in_1::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = number_of_bytes;
-    w0.data0 = data0;
-    w0.data1 = data1;
-    return std::bit_cast<std::uint32_t>(w0);
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
+    return w0.word();
   };
   auto const start_message = [](u8 data0, u8 data1) {
     midi2::types::data64::sysex7_start::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = std::uint8_t{6};
-    w0.data0 = data0;
-    w0.data1 = data1;
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(6U);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
     return std::bit_cast<std::uint32_t>(w0);
   };
   auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
     midi2::types::data64::sysex7_end::word0 w0{};
-    w0.group = group;
-    w0.number_of_bytes = number_of_bytes;
-    w0.data0 = data0;
-    w0.data1 = data1;
+    w0.template set<decltype(w0)::group>(group);
+    w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
+    w0.template set<decltype(w0)::data0>(data0);
+    w0.template set<decltype(w0)::data1>(data1);
     return std::bit_cast<std::uint32_t>(w0);
   };
 

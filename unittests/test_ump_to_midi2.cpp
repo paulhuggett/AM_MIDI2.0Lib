@@ -34,54 +34,26 @@ template <std::ranges::input_range Range> auto convert(Range const& input) {
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOff) {
-  constexpr auto note = 64;
+  constexpr auto note = 64U;
+  constexpr auto in = midi2::types::m1cvm::note_off{}.group(0).channel(0).note(note).velocity(0x60);
+  constexpr auto expected =
+      midi2::types::m2cvm::note_off{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  midi2::types::m1cvm::note_off in;
-  auto& in0 = get<0>(in.w);
-  in0.group = 0;
-  in0.channel = 0;
-  in0.note = note;
-  in0.velocity = 0x60;
-
-  midi2::types::m2cvm::note_off expected;
-  auto& expected0 = get<0>(expected.w);
-  auto& expected1 = get<1>(expected.w);
-  expected0.group = 0;
-  expected0.channel = 0;
-  expected0.note = note;
-  expected0.attribute = 0;
-  expected1.velocity = 0xC104;
-  expected1.attribute = 0;
-
-  std::array const input{std::bit_cast<std::uint32_t>(in0)};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
+  std::array const input{get<0>(in.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
 }
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, NoteOn) {
-  constexpr auto note = 64;
+  constexpr auto note = 64U;
 
-  midi2::types::m1cvm::note_on in;
-  auto& in0 = get<0>(in.w);
-  in0.group = 0;
-  in0.channel = 0;
-  in0.note = note;
-  in0.velocity = 0x60;
+  constexpr auto in = midi2::types::m1cvm::note_on{}.group(0).channel(0).note(note).velocity(0x60);
 
-  midi2::types::m2cvm::note_on expected;
-  auto& expected0 = get<0>(expected.w);
-  auto& expected1 = get<1>(expected.w);
-  expected0.group = 0;
-  expected0.channel = 0;
-  expected0.note = note;
-  expected0.attribute = 0;
-  expected1.velocity = 0xC104;
-  expected1.attribute = 0;
+  constexpr auto expected =
+      midi2::types::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{std::bit_cast<std::uint32_t>(in0)};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
+  std::array const input{get<0>(in.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
 }
 
 // UMPToMidi2
@@ -95,40 +67,31 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
   // these should become a note-off.
   std::vector<std::uint32_t> input;
   {
-    midi2::types::m1cvm::note_on in_non_1;
-    get<0>(in_non_1.w).group = group;
-    get<0>(in_non_1.w).channel = channel;
-    get<0>(in_non_1.w).note = note_number;
-    get<0>(in_non_1.w).velocity = velocity;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_1.w)));
+    constexpr auto in_non_1 =
+        midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
+    input.push_back(get<0>(in_non_1.w).word());
   }
   {
-    midi2::types::m1cvm::note_on in_non_2;
-    get<0>(in_non_2.w).group = group;
-    get<0>(in_non_2.w).channel = channel;
-    get<0>(in_non_2.w).note = note_number;
-    get<0>(in_non_2.w).velocity = 0;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(in_non_2.w)));
+    constexpr auto in_non_2 =
+        midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
+    input.push_back(get<0>(in_non_2.w).word());
   }
 
   std::vector<std::uint32_t> expected;
   {
-    midi2::types::m2cvm::note_on expected_non;
-    get<0>(expected_non.w).group = group;
-    get<0>(expected_non.w).channel = channel;
-    get<0>(expected_non.w).note = note_number;
-    get<1>(expected_non.w).velocity = static_cast<std::uint16_t>(midi2::mcm_scale<7, 16>(velocity));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_non.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_non.w)));
+    constexpr auto expected_non = midi2::types::m2cvm::note_on{}
+                                      .group(group)
+                                      .channel(channel)
+                                      .note(note_number)
+                                      .velocity(midi2::mcm_scale<7, 16>(velocity));
+    expected.push_back(get<0>(expected_non.w).word());
+    expected.push_back(get<1>(expected_non.w).word());
   }
   {
-    midi2::types::m2cvm::note_on expected_noff;
-    get<0>(expected_noff.w).group = group;
-    get<0>(expected_noff.w).channel = channel;
-    get<0>(expected_noff.w).note = note_number;
-    get<1>(expected_noff.w).velocity = 0;
-    expected.push_back(std::bit_cast<std::uint32_t>(get<0>(expected_noff.w)));
-    expected.push_back(std::bit_cast<std::uint32_t>(get<1>(expected_noff.w)));
+    constexpr auto expected_noff =
+        midi2::types::m2cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
+    expected.push_back(get<0>(expected_noff.w).word());
+    expected.push_back(get<1>(expected_noff.w).word());
   }
 
   auto const actual = convert(input);
@@ -140,23 +103,19 @@ TEST(UMPToMidi2, PolyPressure) {
   constexpr auto note = 64;
 
   midi2::types::m1cvm::poly_pressure in;
-  auto& in0 = get<0>(in.w);
-  in0.group = 0;
-  in0.channel = 0;
-  in0.note = note;
-  in0.pressure = 0x60;
+  in.group(0);
+  in.channel(0);
+  in.note(note);
+  in.pressure(0x60);
 
   midi2::types::m2cvm::poly_pressure expected;
-  auto& expected0 = get<0>(expected.w);
-  auto& expected1 = get<1>(expected.w);
-  expected0.group = 0;
-  expected0.channel = 0;
-  expected0.note = note;
-  expected1 = mcm_scale<7, 32>(in0.pressure);
+  expected.group(0);
+  expected.channel(0);
+  expected.note(note);
+  expected.pressure(midi2::mcm_scale<7, 32>(in.pressure()));
 
-  std::array const input{std::bit_cast<std::uint32_t>(in0)};
-  EXPECT_THAT(convert(input),
-              ElementsAre(std::bit_cast<std::uint32_t>(expected0), std::bit_cast<std::uint32_t>(expected1)));
+  std::array const input{get<0>(in.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
 }
 
 // NOLINTNEXTLINE
@@ -164,21 +123,18 @@ TEST(UMPToMidi2, PitchBend) {
   constexpr auto pb14 = 0b0010101010101010U;  // A 14-bit value for the pitch bend
 
   midi2::types::m1cvm::pitch_bend m1;
-  auto& m10 = get<0>(m1.w);
-  m10.group = 0;
-  m10.channel = 0;
-  m10.lsb_data = pb14 & ((1 << 7) - 1);
-  m10.msb_data = pb14 >> 7;
+  m1.group(0);
+  m1.channel(0);
+  m1.lsb_data(pb14 & ((1 << 7) - 1));
+  m1.msb_data(pb14 >> 7);
 
   midi2::types::m2cvm::pitch_bend m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = 0;
-  m20.channel = 0;
-  m21 = midi2::mcm_scale<14, 32>(pb14);
+  m2.group(0);
+  m2.channel(0);
+  m2.value(midi2::mcm_scale<14, 32>(pb14));
 
-  std::array const input{std::bit_cast<std::uint32_t>(m10)};
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  std::array const input{get<0>(m1.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 // NOLINTNEXTLINE
@@ -188,20 +144,17 @@ TEST(UMPToMidi2, ChannelPressure) {
   constexpr auto channel = std::uint8_t{7};
 
   midi2::types::m1cvm::channel_pressure m1;
-  auto& m10 = get<0>(m1.w);
-  m10.group = group;
-  m10.channel = channel;
-  m10.data = pressure;
+  m1.group(group);
+  m1.channel(channel);
+  m1.data(pressure);
 
   midi2::types::m2cvm::channel_pressure m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m21 = midi2::mcm_scale<7, 32>(pressure);
+  m2.group(group);
+  m2.channel(channel);
+  m2.value(midi2::mcm_scale<7, 32>(pressure));
 
-  std::array const input{std::bit_cast<std::uint32_t>(m10)};
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  std::array const input{get<0>(m1.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, SimpleContinuousController) {
@@ -211,22 +164,19 @@ TEST(UMPToMidi2, SimpleContinuousController) {
   constexpr auto channel = std::uint8_t{7};
 
   midi2::types::m1cvm::control_change m1;
-  auto& m10 = get<0>(m1.w);
-  m10.group = group;
-  m10.channel = channel;
-  m10.controller = controller;
-  m10.value = value;
+  m1.group(group);
+  m1.channel(channel);
+  m1.controller(controller);
+  m1.value(value);
 
   midi2::types::m2cvm::control_change m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.controller = controller;
-  m21 = midi2::mcm_scale<7, 32>(value);
+  m2.group(group);
+  m2.channel(channel);
+  m2.controller(controller);
+  m2.value(midi2::mcm_scale<7, 32>(value));
 
-  std::array const input{std::bit_cast<std::uint32_t>(m10)};
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  std::array const input{get<0>(m1.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 // NOLINTNEXTLINE
@@ -236,24 +186,21 @@ TEST(UMPToMidi2, SimpleProgramChange) {
   constexpr auto channel = std::uint8_t{0xF};
 
   midi2::types::m1cvm::program_change m1;
-  auto& m10 = get<0>(m1.w);
-  m10.group = group;
-  m10.channel = channel;
-  m10.program = program;
+  m1.group(group);
+  m1.channel(channel);
+  m1.program(program);
 
   midi2::types::m2cvm::program_change m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.option_flags = 0;
-  m20.bank_valid = 0;
-  m21.program = program;
-  m21.bank_msb = 0;
-  m21.bank_lsb = 0;
+  m2.group(group);
+  m2.channel(channel);
+  m2.option_flags(0);
+  m2.bank_valid(false);
+  m2.program(program);
+  m2.bank_msb(0);
+  m2.bank_lsb(0);
 
-  std::array const input{std::bit_cast<std::uint32_t>(m10)};
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  std::array const input{get<0>(m1.w).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 // NOLINTNEXTLINE
@@ -267,40 +214,35 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
   std::vector<std::uint32_t> input;
 
   {
-    midi2::types::m1cvm::control_change m1cc_bank_msb;
-    get<0>(m1cc_bank_msb.w).group = group;
-    get<0>(m1cc_bank_msb.w).channel = channel;
-    get<0>(m1cc_bank_msb.w).controller = midi2::control::bank_select;
-    get<0>(m1cc_bank_msb.w).value = bank_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1cc_bank_msb.w)));
+    constexpr auto m1cc_bank_msb = midi2::types::m1cvm::control_change{}
+                                       .group(group)
+                                       .channel(channel)
+                                       .controller(midi2::control::bank_select)
+                                       .value(bank_msb);
+    input.push_back(get<0>(m1cc_bank_msb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change m1cc_bank_lsb;
-    get<0>(m1cc_bank_lsb.w).group = group;
-    get<0>(m1cc_bank_lsb.w).channel = channel;
-    get<0>(m1cc_bank_lsb.w).controller = midi2::control::bank_select_lsb;
-    get<0>(m1cc_bank_lsb.w).value = bank_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1cc_bank_lsb.w)));
+    constexpr auto mc11_bank_lsb = midi2::types::m1cvm::control_change{}
+                                       .group(group)
+                                       .channel(channel)
+                                       .controller(midi2::control::bank_select_lsb)
+                                       .value(bank_lsb);
+    input.push_back(get<0>(mc11_bank_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::program_change m1;
-    get<0>(m1.w).group = group;
-    get<0>(m1.w).channel = channel;
-    get<0>(m1.w).program = program;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(m1.w)));
+    constexpr auto m1 = midi2::types::m1cvm::program_change{}.group(group).channel(channel).program(program);
+    input.push_back(get<0>(m1.w).word());
   }
 
   midi2::types::m2cvm::program_change m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.option_flags = 0;
-  m20.bank_valid = 1;
-  m21.program = program;
-  m21.bank_msb = bank_msb;
-  m21.bank_lsb = bank_lsb;
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  m2.group(group);
+  m2.channel(channel);
+  m2.option_flags(0);
+  m2.bank_valid(true);
+  m2.program(program);
+  m2.bank_msb(bank_msb);
+  m2.bank_lsb(bank_lsb);
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 TEST(UMPToMidi2, ControlChangeRPN) {
@@ -314,63 +256,61 @@ TEST(UMPToMidi2, ControlChangeRPN) {
   std::vector<std::uint32_t> input;
 
   {
-    midi2::types::m1cvm::control_change pn_msb;
-    get<0>(pn_msb.w).group = group;
-    get<0>(pn_msb.w).channel = channel;
-    get<0>(pn_msb.w).controller = midi2::control::rpn_msb;
-    get<0>(pn_msb.w).value = control_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_msb.w)));
+    constexpr auto pn_msb = midi2::types::m1cvm::control_change{}
+                                .group(group)
+                                .channel(channel)
+                                .controller(midi2::control::rpn_msb)
+                                .value(control_msb);
+    input.push_back(get<0>(pn_msb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change pn_lsb;
-    get<0>(pn_lsb.w).group = group;
-    get<0>(pn_lsb.w).channel = channel;
-    get<0>(pn_lsb.w).controller = midi2::control::rpn_lsb;
-    get<0>(pn_lsb.w).value = control_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_lsb.w)));
+    constexpr auto pn_lsb = midi2::types::m1cvm::control_change{}
+                                .group(group)
+                                .channel(channel)
+                                .controller(midi2::control::rpn_lsb)
+                                .value(control_lsb);
+    input.push_back(get<0>(pn_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_msb;
-    get<0>(param_value_msb.w).group = group;
-    get<0>(param_value_msb.w).channel = channel;
-    get<0>(param_value_msb.w).controller = midi2::control::data_entry_msb;
-    get<0>(param_value_msb.w).value = value_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_msb.w)));
+    constexpr auto param_value_msb = midi2::types::m1cvm::control_change{}
+                                         .group(group)
+                                         .channel(channel)
+                                         .controller(midi2::control::data_entry_msb)
+                                         .value(value_msb);
+    input.push_back(get<0>(param_value_msb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_lsb;
-    get<0>(param_value_lsb.w).group = group;
-    get<0>(param_value_lsb.w).channel = channel;
-    get<0>(param_value_lsb.w).controller = midi2::control::data_entry_lsb;
-    get<0>(param_value_lsb.w).value = value_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_lsb.w)));
+    constexpr auto param_value_lsb = midi2::types::m1cvm::control_change{}
+                                         .group(group)
+                                         .channel(channel)
+                                         .controller(midi2::control::data_entry_lsb)
+                                         .value(value_lsb);
+    input.push_back(get<0>(param_value_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change null_msb;
-    get<0>(null_msb.w).group = group;
-    get<0>(null_msb.w).channel = channel;
-    get<0>(null_msb.w).controller = midi2::control::rpn_msb;
-    get<0>(null_msb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_msb.w)));
+    constexpr auto null_msb = midi2::types::m1cvm::control_change{}
+                                  .group(group)
+                                  .channel(channel)
+                                  .controller(midi2::control::rpn_msb)
+                                  .value(0x7F);
+    input.push_back(get<0>(null_msb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change null_lsb;
-    get<0>(null_lsb.w).group = group;
-    get<0>(null_lsb.w).channel = channel;
-    get<0>(null_lsb.w).controller = midi2::control::rpn_lsb;
-    get<0>(null_lsb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_lsb.w)));
+    constexpr auto null_lsb = midi2::types::m1cvm::control_change{}
+                                  .group(group)
+                                  .channel(channel)
+                                  .controller(midi2::control::rpn_lsb)
+                                  .value(0x7F);
+    input.push_back(get<0>(null_lsb.w).word());
   }
 
-  midi2::types::m2cvm::rpn_controller m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.bank = control_msb;
-  m20.index = control_lsb;
-  m21 = midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb});
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  constexpr auto m2 = midi2::types::m2cvm::rpn_controller{}
+                          .group(group)
+                          .channel(channel)
+                          .bank(control_msb)
+                          .index(control_lsb)
+                          .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 TEST(UMPToMidi2, ControlChangeNRPN) {
@@ -384,84 +324,70 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
   std::vector<std::uint32_t> input;
 
   {
-    midi2::types::m1cvm::control_change pn_msb;
-    get<0>(pn_msb.w).group = group;
-    get<0>(pn_msb.w).channel = channel;
-    get<0>(pn_msb.w).controller = midi2::control::nrpn_msb;
-    get<0>(pn_msb.w).value = control_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_msb.w)));
+    auto const pn_msb = midi2::types::m1cvm::control_change{}
+                            .group(group)
+                            .channel(channel)
+                            .controller(midi2::control::nrpn_msb)
+                            .value(control_msb);
+    input.push_back(get<0>(pn_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change pn_lsb;
-    get<0>(pn_lsb.w).group = group;
-    get<0>(pn_lsb.w).channel = channel;
-    get<0>(pn_lsb.w).controller = midi2::control::nrpn_lsb;
-    get<0>(pn_lsb.w).value = control_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_lsb.w)));
+    auto const pn_lsb = midi2::types::m1cvm::control_change{}
+                            .group(group)
+                            .channel(channel)
+                            .controller(midi2::control::nrpn_lsb)
+                            .value(control_lsb);
+    input.push_back(get<0>(pn_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_msb;
-    get<0>(param_value_msb.w).group = group;
-    get<0>(param_value_msb.w).channel = channel;
-    get<0>(param_value_msb.w).controller = midi2::control::data_entry_msb;
-    get<0>(param_value_msb.w).value = value_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_msb.w)));
+    auto const param_value_msb = midi2::types::m1cvm::control_change{}
+                                     .group(group)
+                                     .channel(channel)
+                                     .controller(midi2::control::data_entry_msb)
+                                     .value(value_msb);
+    input.push_back(get<0>(param_value_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_lsb;
-    get<0>(param_value_lsb.w).group = group;
-    get<0>(param_value_lsb.w).channel = channel;
-    get<0>(param_value_lsb.w).controller = midi2::control::data_entry_lsb;
-    get<0>(param_value_lsb.w).value = value_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_lsb.w)));
+    auto const param_value_lsb = midi2::types::m1cvm::control_change{}
+                                     .group(group)
+                                     .channel(channel)
+                                     .controller(midi2::control::data_entry_lsb)
+                                     .value(value_lsb);
+    input.push_back(get<0>(param_value_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change null_msb;
-    get<0>(null_msb.w).group = group;
-    get<0>(null_msb.w).channel = channel;
-    get<0>(null_msb.w).controller = midi2::control::nrpn_msb;
-    get<0>(null_msb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_msb.w)));
+    auto const null_msb = midi2::types::m1cvm::control_change{}
+                              .group(group)
+                              .channel(channel)
+                              .controller(midi2::control::nrpn_msb)
+                              .value(0x7F);
+    input.push_back(get<0>(null_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change null_lsb;
-    get<0>(null_lsb.w).group = group;
-    get<0>(null_lsb.w).channel = channel;
-    get<0>(null_lsb.w).controller = midi2::control::nrpn_lsb;
-    get<0>(null_lsb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_lsb.w)));
+    auto const null_lsb = midi2::types::m1cvm::control_change{}
+                              .group(group)
+                              .channel(channel)
+                              .controller(midi2::control::nrpn_lsb)
+                              .value(0x7F);
+    input.push_back(get<0>(null_lsb).word());
   }
 
-  midi2::types::m2cvm::nrpn_controller m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.bank = control_msb;
-  m20.index = control_lsb;
-  m21 = midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb});
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  auto const m2 = midi2::types::m2cvm::nrpn_controller{}
+                      .group(group)
+                      .channel(channel)
+                      .bank(control_msb)
+                      .index(control_lsb)
+                      .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
 template <typename T> class UMPToMidi2PassThrough : public testing::Test {
 public:
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 1)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {std::bit_cast<std::uint32_t>(get<0>(ump.w))};
-  }
-
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 2)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w))};
-  }
-
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 4)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {std::bit_cast<std::uint32_t>(get<0>(ump.w)), std::bit_cast<std::uint32_t>(get<1>(ump.w)),
-            std::bit_cast<std::uint32_t>(get<2>(ump.w)), std::bit_cast<std::uint32_t>(get<3>(ump.w))};
+  template <typename T2> static std::vector<std::uint32_t> add(T2 const& ump) {
+    std::vector<std::uint32_t> result;
+    result.reserve(std::tuple_size_v<T2>);
+    midi2::types::apply(ump, [&result](auto const v) { result.push_back(v.word()); });
+    return result;
   }
 };
 
@@ -529,7 +455,7 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::flex_data::set_metronome,
   midi2::types::flex_data::set_key_signature,
   midi2::types::flex_data::set_chord_name
->;
+  >;
 // clang-format on
 TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);
 
@@ -557,24 +483,19 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
   using u32 = std::uint32_t;
-  midi2::types::flex_data::text_common message;
-  auto& w0 = get<0>(message.w);
-  auto& w1 = get<1>(message.w);
-  auto& w2 = get<2>(message.w);
-  auto& w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 1;
-  w0.status = 4;
-  w1 = (u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0);
-  w2 = (u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0);
-  w3 = (u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0);
+  auto const message = midi2::types::flex_data::text_common{}
+                           .group(0)
+                           .form(0)
+                           .addrs(1)
+                           .channel(3)
+                           .status_bank(1)
+                           .status(4)
+                           .value1((u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0))
+                           .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
+                           .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
 
   auto input =
-      std::array{std::bit_cast<u32>(w0), std::bit_cast<u32>(w1), std::bit_cast<u32>(w2), std::bit_cast<u32>(w3)};
+      std::array{get<0>(message).word(), get<1>(message).word(), get<2>(message).word(), get<3>(message).word()};
   auto const output = convert(input);
   EXPECT_THAT(output, ElementsAreArray(input));
 }
