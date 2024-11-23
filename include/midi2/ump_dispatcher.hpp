@@ -15,7 +15,6 @@
 #include <concepts>
 #include <cstdint>
 #include <span>
-#include <type_traits>
 
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
@@ -24,23 +23,6 @@ namespace midi2 {
 
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
-template <midi2::ump_message_type> struct message_size {};
-template <> struct message_size<midi2::ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::data128> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::ump_message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::ump_message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
-template <> struct message_size<midi2::ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
 
 constexpr unsigned ump_message_size(ump_message_type const mt) {
   using enum ump_message_type;

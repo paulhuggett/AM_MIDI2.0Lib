@@ -9,13 +9,15 @@
 #ifndef MIDI2_UMPTOBYTESTREAM_HPP
 #define MIDI2_UMPTOBYTESTREAM_HPP
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
+#include <tuple>
+#include <type_traits>
 
-#include "midi2/adt/cache.hpp"
 #include "midi2/adt/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"
+#include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {

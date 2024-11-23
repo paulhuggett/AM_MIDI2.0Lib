@@ -9,11 +9,11 @@
 #ifndef MIDI2_UMP_TO_MIDI2_HPP
 #define MIDI2_UMP_TO_MIDI2_HPP
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "midi2/adt/fifo.hpp"
 #include "midi2/ump_dispatcher.hpp"

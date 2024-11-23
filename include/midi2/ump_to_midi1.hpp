@@ -9,8 +9,10 @@
 #ifndef MIDI2_UMPTOMIDI1_HPP
 #define MIDI2_UMPTOMIDI1_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
+#include <utility>
 
 #include "midi2/adt/cache.hpp"
 #include "midi2/adt/fifo.hpp"
@@ -159,7 +161,7 @@ private:
 
     private:
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
-                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t const value);
+                             std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
     };
     context_type *context = nullptr;
     [[no_unique_address]] utility_null<decltype(context)> utility{};

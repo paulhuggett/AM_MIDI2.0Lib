@@ -9,16 +9,22 @@
 #ifndef MIDI2_UMP_TYPES_HPP
 #define MIDI2_UMP_TYPES_HPP
 
-#include <bit>
+#include <cassert>
+#include <concepts>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <span>
 #include <tuple>
+#include <type_traits>
 
 #include "midi2/utils.hpp"
 
-namespace midi2::types {
+namespace midi2 {
+
+template <ump_message_type> struct message_size {};
+
+namespace types {
 
 template <typename T>
 concept bitfield_type = requires(T) {
@@ -80,7 +86,7 @@ public:
     return *this;
   }
 
-  template <bitfield_type BitRange> constexpr small_type<BitRange::bits::value> get() const {
+  template <bitfield_type BitRange> [[nodiscard]] constexpr small_type<BitRange::bits::value> get() const {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
     constexpr auto mask = max_value<value_type, bits>();
@@ -116,6 +122,8 @@ private:
 
 }  // end namespace details
 
+}  // end namespace types
+
 #define UMP_GETTER(word, field)                                    \
   constexpr auto field() const noexcept {                          \
     return std::get<word>(w).template get<typename word::field>(); \
@@ -134,7 +142,9 @@ private:
 //* | || |  _| | | |  _| || | *
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
-namespace utility {
+template <> struct message_size<ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
+
+namespace types::utility {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -277,7 +287,7 @@ struct delta_clockstamp {
   static constexpr auto size = std::tuple_size_v<decltype(w)>;
 };
 
-}  // end namespace utility
+}  // end namespace types::utility
 
 //*             _              *
 //*  ____  _ __| |_ ___ _ __   *
@@ -285,7 +295,10 @@ struct delta_clockstamp {
 //* /__/\_, /__/\__\___|_|_|_| *
 //*     |__/                   *
 // 7.6 System Common and System Real Time Messages
-namespace system {
+
+template <> struct message_size<ump_message_type::system> : std::integral_constant<unsigned, 1> {};
+
+namespace types::system {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -557,7 +570,7 @@ struct reset {
   std::tuple<word0> w;
 };
 
-}  // end namespace system
+}  // end namespace types::system
 
 //*        _                 *
 //*  _ __ / |  ____ ___ __   *
@@ -567,7 +580,9 @@ struct reset {
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
-namespace m1cvm {
+template <> struct message_size<ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
+
+namespace types::m1cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -804,14 +819,17 @@ struct pitch_bend {
   std::tuple<word0> w;
 };
 
-}  // end namespace m1cvm
+}  // end namespace types::m1cvm
 
 //*     _      _         __ _ _   *
 //*  __| |__ _| |_ __ _ / /| | |  *
 //* / _` / _` |  _/ _` / _ \_  _| *
 //* \__,_\__,_|\__\__,_\___/ |_|  *
 //*                               *
-namespace data64 {
+
+template <> struct message_size<ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
+
+namespace types::data64 {
 
 // 7.7 System Exclusive (7-Bit) Messages
 namespace details {
@@ -884,7 +902,7 @@ using sysex7_start = details::sysex7<midi2::data64::sysex7_start>;
 using sysex7_continue = details::sysex7<midi2::data64::sysex7_continue>;
 using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 
-}  // end namespace data64
+}  // end namespace types::data64
 
 //*        ___               *
 //*  _ __ |_  )____ ___ __   *
@@ -893,7 +911,10 @@ using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 //*                          *
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
-namespace m2cvm {
+
+template <> struct message_size<ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+
+namespace types::m2cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -1517,14 +1538,15 @@ struct per_note_pitch_bend {
 // template <std::size_t I> auto const & get(per_note_pitch_bend const & t) noexcept { return get<I>(t.w); }
 // template <std::size_t I> auto & get(per_note_pitch_bend & t) noexcept { return get<I>(t.w); }
 
-}  // end namespace m2cvm
+}  // end namespace types::m2cvm
 
 //*                       _                       *
 //*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
 //* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
 //*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
 //*            |_|                                *
-namespace ump_stream {
+template <> struct message_size<ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
+namespace types::ump_stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -2185,14 +2207,16 @@ struct end_of_clip {
   std::tuple<word0, word1, word2, word3> w;
 };
 
-};  // end namespace ump_stream
+};  // end namespace types::ump_stream
 
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *
 //* |  _| / -_) \ / / _` / _` |  _/ _` | *
 //* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
 //*                                      *
-namespace flex_data {
+template <> struct message_size<ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
+
+namespace types::flex_data {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -2605,14 +2629,17 @@ struct text_common {
   std::tuple<word0, word1, word2, word3> w;
 };
 
-}  // end namespace flex_data
+}  // end namespace types::flex_data
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
 //* / _` / _` |  _/ _` | | |/ // _ \ *
 //* \__,_\__,_|\__\__,_| |_/___\___/ *
 //*                                  *
-namespace data128 {
+
+template <> struct message_size<ump_message_type::data128> : std::integral_constant<unsigned, 4> {};
+
+namespace types::data128 {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.w);
@@ -2811,9 +2838,18 @@ struct mds_payload {
   std::tuple<word0, word1, word2, word3> w;
 };
 
-}  // end namespace data128
+}  // end namespace types::data128
 
-}  // end namespace midi2::types
+template <> struct message_size<ump_message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<ump_message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
+template <> struct message_size<ump_message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<ump_message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<ump_message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
+template <> struct message_size<ump_message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<ump_message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
+template <> struct message_size<ump_message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
+
+}  // end namespace midi2
 
 namespace std {
 
@@ -2834,59 +2870,59 @@ template <>
 struct tuple_size<midi2::types::system::midi_time_code>
     : std::integral_constant<std::size_t, midi2::types::system::midi_time_code::size> {};
 template <>
-struct tuple_size<midi2::types::system::song_position_pointer>
+struct tuple_size<midi2::types::system::song_position_pointer>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::system::song_position_pointer::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::system::song_select>
+struct tuple_size<midi2::types::system::song_select>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::song_select::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::system::tune_request>
+struct tuple_size<midi2::types::system::tune_request>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::tune_request::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::system::timing_clock>
+struct tuple_size<midi2::types::system::timing_clock>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::timing_clock::w)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::system::sequence_start>
+struct tuple_size<midi2::types::system::sequence_start>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_start::w)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::system::sequence_continue>
+struct tuple_size<midi2::types::system::sequence_continue>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::system::sequence_continue::w)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::system::sequence_stop>
+struct tuple_size<midi2::types::system::sequence_stop>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_stop::w)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::system::active_sensing>
+struct tuple_size<midi2::types::system::active_sensing>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::active_sensing::w)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::system::reset>
+struct tuple_size<midi2::types::system::reset>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::reset::w)>::value> {};
 
 template <midi2::data64 Status>
-struct tuple_size<midi2::types::data64::details::sysex7<Status>>
+struct tuple_size<midi2::types::data64::details::sysex7<Status>>  // NOLINT(cert-dcl58-cpp]
     : public std::integral_constant<std::size_t,
                                     tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::w)>> {};
 
 template <>
-struct tuple_size<midi2::types::m1cvm::note_off>
+struct tuple_size<midi2::types::m1cvm::note_off>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_off::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::m1cvm::note_on>
+struct tuple_size<midi2::types::m1cvm::note_on>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_on::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::m1cvm::poly_pressure>
+struct tuple_size<midi2::types::m1cvm::poly_pressure>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::poly_pressure::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::m1cvm::program_change>
+struct tuple_size<midi2::types::m1cvm::program_change>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::program_change::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::m1cvm::channel_pressure>
+struct tuple_size<midi2::types::m1cvm::channel_pressure>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::channel_pressure::w)>::value> {
 };
 template <>
@@ -2983,52 +3019,53 @@ struct tuple_size<midi2::types::ump_stream::function_block_discovery>
     : std::integral_constant<std::size_t,
                              std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_discovery::w)>> {};
 template <>
-struct tuple_size<midi2::types::ump_stream::function_block_info_notification>
+struct tuple_size<midi2::types::ump_stream::function_block_info_notification>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<
           std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_info_notification::w)>> {};
 template <>
-struct tuple_size<midi2::types::ump_stream::function_block_name_notification>
+struct tuple_size<midi2::types::ump_stream::function_block_name_notification>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<
           std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::w)>> {};
 template <>
-struct tuple_size<midi2::types::ump_stream::start_of_clip>
+struct tuple_size<midi2::types::ump_stream::start_of_clip>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::start_of_clip::w)>> {};
 template <>
-struct tuple_size<midi2::types::ump_stream::end_of_clip>
+struct tuple_size<midi2::types::ump_stream::end_of_clip>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::end_of_clip::w)>> {};
 
+// NOLINTNEXTLINE(cert-dcl58-cpp]
 template <midi2::data128 Status>
-struct tuple_size<midi2::types::data128::details::sysex8<Status>>
+struct tuple_size<midi2::types::data128::details::sysex8<Status>>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size_v<decltype(midi2::types::data128::details::sysex8<Status>::w)>> {};
 template <>
-struct tuple_size<midi2::types::data128::mds_header>
+struct tuple_size<midi2::types::data128::mds_header>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_header::w)>> {};
 template <>
-struct tuple_size<midi2::types::data128::mds_payload>
+struct tuple_size<midi2::types::data128::mds_payload>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_payload::w)>> {};
 
 template <>
-struct tuple_size<midi2::types::flex_data::set_chord_name>
+struct tuple_size<midi2::types::flex_data::set_chord_name>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::flex_data::set_chord_name::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::flex_data::set_key_signature>
+struct tuple_size<midi2::types::flex_data::set_key_signature>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::flex_data::set_key_signature::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::flex_data::set_metronome>
+struct tuple_size<midi2::types::flex_data::set_metronome>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_metronome::w)>::value> {
 };
 template <>
-struct tuple_size<midi2::types::flex_data::set_time_signature>
+struct tuple_size<midi2::types::flex_data::set_time_signature>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
                              std::tuple_size<decltype(midi2::types::flex_data::set_time_signature::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::flex_data::set_tempo>
+struct tuple_size<midi2::types::flex_data::set_tempo>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_tempo::w)>::value> {};
 template <>
-struct tuple_size<midi2::types::flex_data::text_common>
+struct tuple_size<midi2::types::flex_data::text_common>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::text_common::w)>::value> {};
 
 }  // end namespace std
