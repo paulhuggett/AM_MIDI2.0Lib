@@ -132,7 +132,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
     ctxt->push(cc.w);
   }
 
-  auto const scaled_value = static_cast<std::uint16_t>(mcm_scale<32, 14>(value));
+  auto const scaled_value = mcm_scale<32, 14>(value);
 
   // Data Entry MSB
   cc.controller(control::data_entry_msb);  // 0x6

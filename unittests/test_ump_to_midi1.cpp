@@ -190,7 +190,7 @@ TEST(UMPToMIDI1, M2RPNController) {
   out1.controller(midi2::control::rpn_lsb);
   out1.value(index);
 
-  constexpr auto val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
+  constexpr auto val14 = midi2::mcm_scale<32, 14>(value);
 
   auto& out2 = cc.at(2);
   out2.group(group);
@@ -236,8 +236,8 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
   }
 
   std::vector<std::uint32_t> expected;
-  constexpr auto value0_14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value0));
-  constexpr auto value1_14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value1));
+  constexpr auto value0_14 = midi2::mcm_scale<32, 14>(value0);
+  constexpr auto value1_14 = midi2::mcm_scale<32, 14>(value1);
   {
     constexpr auto cc0 = midi2::types::m1cvm::control_change{}
                              .group(group)
@@ -315,7 +315,7 @@ TEST(UMPToMIDI1, M2NRPNController) {
   out1.controller(midi2::control::nrpn_lsb);
   out1.value(index);
 
-  constexpr auto val14 = static_cast<std::uint16_t>(midi2::mcm_scale<32, 14>(value));
+  constexpr auto val14 = midi2::mcm_scale<32, 14>(value);
 
   auto& out2 = cc.at(2);
   out2.group(group);
