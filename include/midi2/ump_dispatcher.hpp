@@ -653,9 +653,9 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_m
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  auto const m0 = types::flex_data::flex_data_w0{message_[0]};
-  auto const status = static_cast<flex_data>(m0.status.value());
-  if (m0.status_bank == 0) {
+  auto const status_bank = (message_[0] >> 8) & 0xFF;
+  if (status_bank == 0) {
+    auto const status = static_cast<flex_data>(message_[0] & 0xFF);
     switch (status) {
     // 7.5.3 Set Tempo Message
     case flex_data::set_tempo: config_.flex.set_tempo(config_.context, types::flex_data::set_tempo{span}); break;

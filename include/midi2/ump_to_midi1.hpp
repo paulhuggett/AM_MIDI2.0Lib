@@ -32,16 +32,10 @@ public:
 
 private:
   struct context_type {
-    template <typename T, unsigned Index = 0>
+    template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      if constexpr (Index >= std::tuple_size_v<T>) {
-        return;
-      } else {
-        auto const value32 = get<Index>(value).word();
-        output.push_back(value32);
-        push<T, Index + 1>(value);
-      }
+      types::apply(value, [this](auto const v) { output.push_back(v.word()); });
     }
 
     struct pn_cache_key {

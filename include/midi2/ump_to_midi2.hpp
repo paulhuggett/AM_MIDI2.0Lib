@@ -22,20 +22,6 @@
 
 namespace midi2 {
 
-template <typename T> struct bits {};
-
-template <> struct bits<std::uint32_t> : std::integral_constant<unsigned, 32> {};
-template <> struct bits<std::uint16_t> : std::integral_constant<unsigned, 16> {};
-template <> struct bits<std::uint8_t> : std::integral_constant<unsigned, 6> {};
-
-template <typename T> struct bits<T &> : bits<std::remove_cvref_t<T>> {};
-
-template <std::unsigned_integral Container, unsigned Index, unsigned Bits>
-struct bits<bitfield<Container, Index, Bits>>
-    : std::integral_constant<unsigned, bitfield<Container, Index, Bits>::bits()> {};
-
-template <typename T> static constexpr auto bits_v = bits<T>{}();
-
 class ump_to_midi2 {
 public:
   using input_type = std::uint32_t;

@@ -313,7 +313,6 @@ TEST(UMPToMidi2, ControlChangeRPN) {
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
 
-#if 0  // FIXME
 TEST(UMPToMidi2, ControlChangeNRPN) {
   constexpr auto group = std::uint8_t{0x1};
   constexpr auto channel = std::uint8_t{0xF};
@@ -325,90 +324,78 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
   std::vector<std::uint32_t> input;
 
   {
-    midi2::types::m1cvm::control_change pn_msb;
-    get<0>(pn_msb.w).group = group;
-    get<0>(pn_msb.w).channel = channel;
-    get<0>(pn_msb.w).controller = midi2::control::nrpn_msb;
-    get<0>(pn_msb.w).value = control_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_msb.w)));
+    auto const pn_msb = midi2::types::m1cvm::control_change{}
+                            .group(group)
+                            .channel(channel)
+                            .controller(midi2::control::nrpn_msb)
+                            .value(control_msb);
+    input.push_back(get<0>(pn_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change pn_lsb;
-    get<0>(pn_lsb.w).group = group;
-    get<0>(pn_lsb.w).channel = channel;
-    get<0>(pn_lsb.w).controller = midi2::control::nrpn_lsb;
-    get<0>(pn_lsb.w).value = control_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(pn_lsb.w)));
+    auto const pn_lsb = midi2::types::m1cvm::control_change{}
+                            .group(group)
+                            .channel(channel)
+                            .controller(midi2::control::nrpn_lsb)
+                            .value(control_lsb);
+    input.push_back(get<0>(pn_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_msb;
-    get<0>(param_value_msb.w).group = group;
-    get<0>(param_value_msb.w).channel = channel;
-    get<0>(param_value_msb.w).controller = midi2::control::data_entry_msb;
-    get<0>(param_value_msb.w).value = value_msb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_msb.w)));
+    auto const param_value_msb = midi2::types::m1cvm::control_change{}
+                                     .group(group)
+                                     .channel(channel)
+                                     .controller(midi2::control::data_entry_msb)
+                                     .value(value_msb);
+    input.push_back(get<0>(param_value_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change param_value_lsb;
-    get<0>(param_value_lsb.w).group = group;
-    get<0>(param_value_lsb.w).channel = channel;
-    get<0>(param_value_lsb.w).controller = midi2::control::data_entry_lsb;
-    get<0>(param_value_lsb.w).value = value_lsb;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(param_value_lsb.w)));
+    auto const param_value_lsb = midi2::types::m1cvm::control_change{}
+                                     .group(group)
+                                     .channel(channel)
+                                     .controller(midi2::control::data_entry_lsb)
+                                     .value(value_lsb);
+    input.push_back(get<0>(param_value_lsb.w).word());
   }
   {
-    midi2::types::m1cvm::control_change null_msb;
-    get<0>(null_msb.w).group = group;
-    get<0>(null_msb.w).channel = channel;
-    get<0>(null_msb.w).controller = midi2::control::nrpn_msb;
-    get<0>(null_msb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_msb.w)));
+    auto const null_msb = midi2::types::m1cvm::control_change{}
+                              .group(group)
+                              .channel(channel)
+                              .controller(midi2::control::nrpn_msb)
+                              .value(0x7F);
+    input.push_back(get<0>(null_msb).word());
   }
   {
-    midi2::types::m1cvm::control_change null_lsb;
-    get<0>(null_lsb.w).group = group;
-    get<0>(null_lsb.w).channel = channel;
-    get<0>(null_lsb.w).controller = midi2::control::nrpn_lsb;
-    get<0>(null_lsb.w).value = 0x7F;
-    input.push_back(std::bit_cast<std::uint32_t>(get<0>(null_lsb.w)));
+    auto const null_lsb = midi2::types::m1cvm::control_change{}
+                              .group(group)
+                              .channel(channel)
+                              .controller(midi2::control::nrpn_lsb)
+                              .value(0x7F);
+    input.push_back(get<0>(null_lsb).word());
   }
 
-  midi2::types::m2cvm::nrpn_controller m2;
-  auto& m20 = get<0>(m2.w);
-  auto& m21 = get<1>(m2.w);
-  m20.group = group;
-  m20.channel = channel;
-  m20.bank = control_msb;
-  m20.index = control_lsb;
-  m21 = midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb});
-  EXPECT_THAT(convert(input), ElementsAre(std::bit_cast<std::uint32_t>(m20), std::bit_cast<std::uint32_t>(m21)));
+  auto const m2 = midi2::types::m2cvm::nrpn_controller{}
+                      .group(group)
+                      .channel(channel)
+                      .bank(control_msb)
+                      .index(control_lsb)
+                      .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
 }
-#endif
 
 template <typename T> class UMPToMidi2PassThrough : public testing::Test {
 public:
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 1)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {get<0>(ump).word()};
-  }
-
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 2)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {get<0>(ump).word(), get<1>(ump).word()};
-  }
-
-  template <typename T2>
-    requires(std::tuple_size_v<decltype(T2::w)> == 4)
-  static std::vector<std::uint32_t> add(T2 const& ump) {
-    return {get<0>(ump).word(), get<1>(ump).word(), get<2>(ump).word(), get<3>(ump).word()};
+  template <typename T2> static std::vector<std::uint32_t> add(T2 const& ump) {
+    std::vector<std::uint32_t> result;
+    result.reserve(std::tuple_size_v<T2>);
+    midi2::types::apply(ump, [&result](auto const v) { result.push_back(v.word()); });
+    return result;
   }
 };
 
 // clang-format off
 using PassThroughTypes = ::testing::Types<
-  midi2::types::utility::jr_clock,
+  midi2::types::utility::jr_clock
+#if 0
+  ,
   midi2::types::utility::jr_timestamp,
   midi2::types::utility::delta_clockstamp_tpqn,
   midi2::types::utility::delta_clockstamp,
@@ -450,8 +437,9 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::data128::sysex8_continue,
   midi2::types::data128::sysex8_end,
   midi2::types::data128::mds_header,
-  midi2::types::data128::mds_payload,
-
+  midi2::types::data128::mds_payload
+  #endif
+#if 0 // FIXME
   midi2::types::ump_stream::endpoint_discovery,
   midi2::types::ump_stream::endpoint_info_notification,
   midi2::types::ump_stream::device_identity_notification,
@@ -470,18 +458,17 @@ using PassThroughTypes = ::testing::Types<
   midi2::types::flex_data::set_metronome,
   midi2::types::flex_data::set_key_signature,
   midi2::types::flex_data::set_chord_name
->;
+#endif
+  >;
 // clang-format on
 TYPED_TEST_SUITE(UMPToMidi2PassThrough, PassThroughTypes);
 
 // NOLINTNEXTLINE
-#if 0  // FIXME
 TYPED_TEST(UMPToMidi2PassThrough, PassThrough) {
   auto const input = this->add(TypeParam{});
   auto const output = convert(input);
   EXPECT_THAT(output, ContainerEq(input));
 }
-#endif
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Noop) {
@@ -497,32 +484,25 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
   EXPECT_THAT(output, IsEmpty()) << "Unknown messages should be removed";
 }
 
-#if 0  // FIXME
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
   using u32 = std::uint32_t;
-  midi2::types::flex_data::text_common message;
-  auto& w0 = get<0>(message.w);
-  auto& w1 = get<1>(message.w);
-  auto& w2 = get<2>(message.w);
-  auto& w3 = get<3>(message.w);
-  w0.mt = to_underlying(midi2::ump_message_type::flex_data);
-  w0.group = 0;
-  w0.form = 0;
-  w0.addrs = 1;
-  w0.channel = 3;
-  w0.status_bank = 1;
-  w0.status = 4;
-  w1 = (u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0);
-  w2 = (u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0);
-  w3 = (u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0);
+  auto const message = midi2::types::flex_data::text_common{}
+                           .group(0)
+                           .form(0)
+                           .addrs(1)
+                           .channel(3)
+                           .status_bank(1)
+                           .status(4)
+                           .value1((u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0))
+                           .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
+                           .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
 
   auto input =
-      std::array{std::bit_cast<u32>(w0), std::bit_cast<u32>(w1), std::bit_cast<u32>(w2), std::bit_cast<u32>(w3)};
+      std::array{get<0>(message).word(), get<1>(message).word(), get<2>(message).word(), get<3>(message).word()};
   auto const output = convert(input);
   EXPECT_THAT(output, ElementsAreArray(input));
 }
-#endif
 
 void NeverCrashes(std::uint8_t group, std::vector<std::uint32_t> const& packets) {
   if (group > 0xF) {
