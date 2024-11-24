@@ -58,34 +58,34 @@ private:
     // system messages go straight through.
     struct system {
       static constexpr void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void song_position_pointer(context_type *const ctxt,
                                                   types::system::song_position_pointer const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void song_select(context_type *const ctxt, types::system::song_select const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
       static constexpr void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
-        ctxt->push(in.w);
+        ctxt->push(in);
       }
-      static constexpr void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in.w); }
+      static constexpr void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in); }
     };
     // m1cvm messages go straight through.
     struct m1cvm {

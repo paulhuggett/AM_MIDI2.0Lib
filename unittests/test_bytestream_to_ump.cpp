@@ -294,7 +294,7 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   }
   {
     auto const noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
-    expected.push_back(get<0>(noff.w).word());
+    expected.push_back(get<0>(noff).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);
@@ -326,7 +326,7 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   }
   {
     constexpr auto noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
-    expected.push_back(get<0>(noff.w).word());
+    expected.push_back(get<0>(noff).word());
   }
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);

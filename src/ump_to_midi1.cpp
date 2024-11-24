@@ -26,7 +26,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt, ty
                        .channel(in.channel())
                        .note(in.note())
                        .velocity(mcm_scale<m2v, m1v>(in.velocity()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // note on
@@ -39,7 +39,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, typ
                        .channel(in.channel())
                        .note(in.note())
                        .velocity(mcm_scale<m2v, m1v>(in.velocity()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // poly pressure
@@ -54,7 +54,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctx
                        .channel(in.channel())
                        .note(in.note())
                        .pressure(mcm_scale<m2v, m1v>(in.pressure()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // program change
@@ -66,22 +66,19 @@ void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ct
   if (in.bank_valid()) {
     // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
     // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
-    auto const cc = types::m1cvm::control_change{}
-                        .group(group)
-                        .channel(channel)
-                        .controller(control::bank_select)
-                        .value(in.bank_msb());
-    ctxt->push(cc.w);
+    ctxt->push(types::m1cvm::control_change{}
+                   .group(group)
+                   .channel(channel)
+                   .controller(control::bank_select)
+                   .value(in.bank_msb()));
 
-    auto const cc2 = types::m1cvm::control_change{}
-                         .group(group)
-                         .channel(channel)
-                         .controller(control::bank_select_lsb)
-                         .value(in.bank_lsb());
-    ctxt->push(cc2.w);
+    ctxt->push(types::m1cvm::control_change{}
+                   .group(group)
+                   .channel(channel)
+                   .controller(control::bank_select_lsb)
+                   .value(in.bank_lsb()));
   }
-  auto const out = types::m1cvm::program_change{}.group(group).channel(channel).program(in.program());
-  ctxt->push(out.w);
+  ctxt->push(types::m1cvm::program_change{}.group(group).channel(channel).program(in.program()));
 }
 
 // channel pressure
@@ -93,7 +90,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const 
 
   const auto out =
       types::m1cvm::channel_pressure{}.group(in.group()).channel(in.channel()).data(mcm_scale<m2p, m1p>(in.value()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // rpn controller
@@ -125,11 +122,11 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
     // Controller number MSB
     cc.controller(key.is_rpn ? control::rpn_msb : control::nrpn_msb);  // 0x65/0x63
     cc.value(controller_number.first);
-    ctxt->push(cc.w);
+    ctxt->push(cc);
     // Controller number LSB
     cc.controller(key.is_rpn ? control::rpn_lsb : control::nrpn_lsb);  // 0x64/0x62
     cc.value(controller_number.second);
-    ctxt->push(cc.w);
+    ctxt->push(cc);
   }
 
   auto const scaled_value = mcm_scale<32, 14>(value);
@@ -137,12 +134,12 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
   // Data Entry MSB
   cc.controller(control::data_entry_msb);  // 0x6
   cc.value(static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F));
-  ctxt->push(cc.w);
+  ctxt->push(cc);
 
   // Data Entry LSB
   cc.controller(control::data_entry_lsb);  // 0x26
   cc.value(static_cast<std::uint8_t>(scaled_value & 0x7F));
-  ctxt->push(cc.w);
+  ctxt->push(cc);
 }
 
 // control change
@@ -156,7 +153,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ct
                       .channel(in.channel())
                       .controller(in.controller())
                       .value(mcm_scale<m2v, m1v>(in.value()));
-  ctxt->push(cc.w);
+  ctxt->push(cc);
 }
 
 // pitch bend
@@ -168,7 +165,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, 
                        .channel(in.channel())
                        .lsb_data(scaled_value & 0x7F)
                        .msb_data((scaled_value >> 7) & 0x7F);
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 }  // end namespace midi2

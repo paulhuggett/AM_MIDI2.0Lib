@@ -21,9 +21,6 @@
 #include "midi2/utils.hpp"
 
 namespace midi2 {
-
-template <ump_message_type> struct message_size {};
-
 namespace types {
 
 template <typename T>
@@ -70,13 +67,13 @@ class word_base {
 public:
   using value_type = std::uint32_t;
 
-  constexpr word_base() = default;
-  constexpr explicit word_base(std::uint32_t const v) : value_{v} {}
+  constexpr word_base() noexcept = default;
+  constexpr explicit word_base(std::uint32_t const v) noexcept : value_{v} {}
 
-  [[nodiscard]] constexpr auto word() const { return value_; }
-  friend constexpr bool operator==(word_base const &a, word_base const &b) = default;
+  [[nodiscard]] constexpr auto word() const noexcept { return value_; }
+  friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
 
-  template <bitfield_type BitRange> constexpr auto &set(unsigned v) {
+  template <bitfield_type BitRange> constexpr auto &set(unsigned v) noexcept {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
     constexpr auto mask = max_value<value_type, bits>();
@@ -86,7 +83,7 @@ public:
     return *this;
   }
 
-  template <bitfield_type BitRange> [[nodiscard]] constexpr small_type<BitRange::bits::value> get() const {
+  template <bitfield_type BitRange> [[nodiscard]] constexpr small_type<BitRange::bits::value> get() const noexcept {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
     constexpr auto mask = max_value<value_type, bits>();
@@ -94,7 +91,7 @@ public:
   }
 
 protected:
-  template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) {
+  template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) noexcept {
     this->set<MtField>(to_underlying(status_to_message_type(status)));
     this->set<StatusField>(status_to_ump_status(status));
   }
@@ -123,71 +120,100 @@ private:
 }  // end namespace details
 
 }  // end namespace types
+}  // end namespace midi2
 
-#define UMP_GETTER(word, field)                                    \
-  constexpr auto field() const noexcept {                          \
-    return std::get<word>(w).template get<typename word::field>(); \
+#define UMP_GETTER(word, field)                                         \
+  constexpr auto field() const noexcept {                               \
+    return std::get<word>(words_).template get<typename word::field>(); \
   }
 #define UMP_SETTER(word, field)                                                  \
   constexpr auto &field(small_type<word::field::bits::value> const v) noexcept { \
-    std::get<word>(w).template set<typename word::field>(v);                     \
+    std::get<word>(words_).template set<typename word::field>(v);                \
     return *this;                                                                \
   }
 #define UMP_GETTER_SETTER(word, field) \
   UMP_GETTER(word, field)              \
   UMP_SETTER(word, field)
 
+namespace midi2 {
+template <ump_message_type> struct message_size;  // not defined
+}  // end namespace midi2
 //*       _   _ _ _ _         *
 //*  _  _| |_(_) (_) |_ _  _  *
 //* | || |  _| | | |  _| || | *
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
+namespace midi2 {
 template <> struct message_size<ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
+}  // end namespace midi2
 
-namespace types::utility {
+namespace midi2::types::utility {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return std::get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return std::get<I>(t.words_);
 }
+
+class noop;
+class jr_clock;
+class jr_timestamp;
+class delta_clockstamp_tpqn;
+class delta_clockstamp;
+
+}  // end namespace midi2::types::utility
 
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
 // 7.2.1 NOOP
-struct noop {
-  /// The message consists of one 32-bit word.
-  static constexpr auto size = std::size_t{1};
-
+class midi2::types::utility::noop {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(ump_utility::noop); }
+    constexpr word0() noexcept { this->init<mt, status>(ump_utility::noop); }
 
     using mt = details::bitfield<28, 4>;
     using status = details::bitfield<20, 4>;
   };
 
-  constexpr noop() = default;
-  constexpr explicit noop(std::uint32_t const w0) : w{w0} {}
-  friend constexpr bool operator==(noop const &, noop const &) = default;
+  constexpr noop() noexcept = default;
+  constexpr explicit noop(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
+  friend constexpr bool operator==(noop const &, noop const &) noexcept = default;
 
-  std::tuple<word0> w;
+private:
+  friend struct ::std::tuple_size<noop>;
+  friend struct ::std::tuple_element<0, noop>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
 
-// 7.2.2.1 JR Clock Message
-struct jr_clock {
-  /// The message consists of one 32-bit word.
-  static constexpr auto size = std::size_t{1};
+/// Provides access to the number of words in a noop message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::utility::noop>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::utility::noop::words_)>::value> {};
 
+/// Provides compile-time indexed access to the types of the elements of the noop message.
+template <> struct std::tuple_element<0, midi2::types::utility::noop> {  // NOLINT(cert-dcl58-cpp]
+  using type = std::tuple_element<0, decltype(midi2::types::utility::noop::words_)>::type;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::noop> ==
+              midi2::message_size<midi2::ump_message_type::utility>::value);
+
+// 7.2.2.1 JR Clock Message
+class midi2::types::utility::jr_clock {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(ump_utility::jr_clock); }
+    constexpr word0() noexcept { this->init<mt, status>(ump_utility::jr_clock); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -196,24 +222,44 @@ struct jr_clock {
     using sender_clock_time = details::bitfield<0, 16>;
   };
 
-  constexpr jr_clock() = default;
-  constexpr explicit jr_clock(std::uint32_t const w0) : w{w0} {}
-  friend constexpr bool operator==(jr_clock const &, jr_clock const &) = default;
+  constexpr jr_clock() noexcept = default;
+  constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
+  friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, sender_clock_time)
 
-  std::tuple<word0> w;
+private:
+  friend struct ::std::tuple_size<jr_clock>;
+  friend struct ::std::tuple_element<0, jr_clock>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
 
+/// Provides access to the number of words in a jr_clock message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::utility::jr_clock>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::utility::jr_clock::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of the jr_clock message.
+template <> struct std::tuple_element<0, midi2::types::utility::jr_clock> {  // NOLINT(cert-dcl58-cpp]
+  using type = std::tuple_element<0, decltype(midi2::types::utility::jr_clock::words_)>::type;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::jr_clock> ==
+              midi2::message_size<midi2::ump_message_type::utility>::value);
+
 // 7.2.2.2 JR Timestamp Message
-struct jr_timestamp {
+class midi2::types::utility::jr_timestamp {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(ump_utility::jr_ts); }
+    constexpr word0() noexcept { this->init<mt, status>(ump_utility::jr_ts); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -222,25 +268,44 @@ struct jr_timestamp {
     using timestamp = details::bitfield<0, 16>;
   };
 
-  constexpr jr_timestamp() = default;
-  constexpr explicit jr_timestamp(std::uint32_t const w0) : w{w0} {}
-  friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) = default;
+  constexpr jr_timestamp() noexcept = default;
+  constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
+  friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, timestamp)
 
-  std::tuple<word0> w;
-  static constexpr auto size = std::tuple_size_v<decltype(w)>;
+private:
+  friend struct ::std::tuple_size<jr_timestamp>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
 
+/// Provides access to the number of words in a jr_timestamp message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::utility::jr_timestamp>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::utility::jr_timestamp::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of the jr_timestamp message.
+template <> struct std::tuple_element<0, midi2::types::utility::jr_timestamp> {  // NOLINT(cert-dcl58-cpp]
+  using type = midi2::types::utility::jr_timestamp::word0;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::jr_timestamp> ==
+              midi2::message_size<midi2::ump_message_type::utility>::value);
+
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-struct delta_clockstamp_tpqn {
+class midi2::types::utility::delta_clockstamp_tpqn {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(ump_utility::delta_clock_tick); }
+    constexpr word0() noexcept { this->init<mt, status>(ump_utility::delta_clock_tick); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -249,20 +314,39 @@ struct delta_clockstamp_tpqn {
     using ticks_pqn = details::bitfield<0, 16>;
   };
 
-  constexpr delta_clockstamp_tpqn() = default;
-  constexpr explicit delta_clockstamp_tpqn(std::uint32_t const w0) : w{w0} {}
-  friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) = default;
+  constexpr delta_clockstamp_tpqn() noexcept = default;
+  constexpr explicit delta_clockstamp_tpqn(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, ticks_pqn)
 
-  std::tuple<word0> w;
-  static constexpr auto size = std::tuple_size_v<decltype(w)>;
+private:
+  friend struct ::std::tuple_size<delta_clockstamp_tpqn>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
 
+/// Provides access to the number of words in a delta_clockstamp_tpqn message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::utility::delta_clockstamp_tpqn>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::utility::delta_clockstamp_tpqn::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of the delta_clockstamp_tpqn message.
+template <> struct std::tuple_element<0, midi2::types::utility::delta_clockstamp_tpqn> {  // NOLINT(cert-dcl58-cpp]
+  using type = midi2::types::utility::delta_clockstamp_tpqn::word0;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::delta_clockstamp_tpqn> ==
+              midi2::message_size<midi2::ump_message_type::utility>::value);
+
 // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-struct delta_clockstamp {
+class midi2::types::utility::delta_clockstamp {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -276,18 +360,34 @@ struct delta_clockstamp {
   };
 
   constexpr delta_clockstamp() = default;
-  constexpr explicit delta_clockstamp(std::uint32_t const w0_) : w{w0_} {}
+  constexpr explicit delta_clockstamp(std::uint32_t const w0_) : words_{w0_} {}
   friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, ticks_per_quarter_note)
 
-  std::tuple<word0> w;
-  static constexpr auto size = std::tuple_size_v<decltype(w)>;
+private:
+  friend struct ::std::tuple_size<delta_clockstamp>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
 
-}  // end namespace types::utility
+/// Provides access to the number of words in a delta_clockstamp message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::utility::delta_clockstamp>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::utility::delta_clockstamp::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of the delta_clockstamp message.
+template <> struct std::tuple_element<0, midi2::types::utility::delta_clockstamp> {  // NOLINT(cert-dcl58-cpp]
+  using type = midi2::types::utility::delta_clockstamp::word0;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::delta_clockstamp> ==
+              midi2::message_size<midi2::ump_message_type::utility>::value);
 
 //*             _              *
 //*  ____  _ __| |_ ___ _ __   *
@@ -296,22 +396,24 @@ struct delta_clockstamp {
 //*     |__/                   *
 // 7.6 System Common and System Real Time Messages
 
-template <> struct message_size<ump_message_type::system> : std::integral_constant<unsigned, 1> {};
+template <> struct midi2::message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
 
-namespace types::system {
+namespace midi2::types::system {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
-struct midi_time_code {
-  /// The message consists of one 32-bit word.
-  static constexpr auto size = std::size_t{1};
+class midi_time_code;
 
-  class word0 : public details::word_base {
+}  // namespace midi2::types::system
+
+class midi2::types::system::midi_time_code {
+public:
+  class word0 : public midi2::types::details::word_base {
   public:
     using word_base::word_base;
 
@@ -326,17 +428,39 @@ struct midi_time_code {
     using reserved2 = details::bitfield<0, 7>;
   };
 
-  constexpr midi_time_code() = default;
-  constexpr explicit midi_time_code(std::uint32_t const w0_) : w{w0_} {}
-  friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) = default;
+  constexpr midi_time_code() noexcept = default;
+  constexpr explicit midi_time_code(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, time_code)
 
-  std::tuple<word0> w;
+private:
+  friend struct ::std::tuple_size<midi_time_code>;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0> words_;
 };
+
+/// Provides access to the number of words in a midi_time_code message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::system::midi_time_code>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::midi_time_code::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of the midi_time_code message.
+template <> struct std::tuple_element<0, midi2::types::system::midi_time_code> {  // NOLINT(cert-dcl58-cpp]
+  using type = midi2::types::system::midi_time_code::word0;
+};
+
+static_assert(std::tuple_size_v<midi2::types::utility::delta_clockstamp> ==
+              midi2::message_size<midi2::ump_message_type::system>::value);
+
+namespace midi2 {
+namespace types::system {
 
 struct song_position_pointer {
   class word0 : public details::word_base {
@@ -355,7 +479,7 @@ struct song_position_pointer {
   };
 
   constexpr song_position_pointer() = default;
-  constexpr explicit song_position_pointer(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit song_position_pointer(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -364,7 +488,7 @@ struct song_position_pointer {
   UMP_GETTER_SETTER(word0, position_lsb)
   UMP_GETTER_SETTER(word0, position_msb)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct song_select {
@@ -384,7 +508,7 @@ struct song_select {
   };
 
   constexpr song_select() = default;
-  constexpr explicit song_select(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit song_select(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(song_select const &, song_select const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -392,7 +516,7 @@ struct song_select {
   UMP_GETTER(word0, status)
   UMP_GETTER_SETTER(word0, song)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct tune_request {
@@ -410,14 +534,14 @@ struct tune_request {
   };
 
   constexpr tune_request() = default;
-  constexpr explicit tune_request(std::uint32_t const w0_) : w{w0_} {}
+  constexpr explicit tune_request(std::uint32_t const w0_) : words_{w0_} {}
   friend constexpr bool operator==(tune_request const &, tune_request const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct timing_clock {
@@ -435,14 +559,14 @@ struct timing_clock {
   };
 
   constexpr timing_clock() = default;
-  constexpr explicit timing_clock(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit timing_clock(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(timing_clock const &, timing_clock const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct sequence_start {
@@ -460,14 +584,14 @@ struct sequence_start {
   };
 
   constexpr sequence_start() = default;
-  constexpr explicit sequence_start(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit sequence_start(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(sequence_start const &, sequence_start const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct sequence_continue {
@@ -485,14 +609,14 @@ struct sequence_continue {
   };
 
   constexpr sequence_continue() = default;
-  constexpr explicit sequence_continue(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit sequence_continue(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct sequence_stop {
@@ -510,14 +634,14 @@ struct sequence_stop {
   };
 
   constexpr sequence_stop() = default;
-  constexpr explicit sequence_stop(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit sequence_stop(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct active_sensing {
@@ -535,14 +659,14 @@ struct active_sensing {
   };
 
   constexpr active_sensing() = default;
-  constexpr explicit active_sensing(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit active_sensing(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(active_sensing const &, active_sensing const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 struct reset {
@@ -560,14 +684,14 @@ struct reset {
   };
 
   constexpr reset() = default;
-  constexpr explicit reset(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit reset(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(reset const &, reset const &) = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
   UMP_GETTER(word0, status)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 }  // end namespace types::system
@@ -585,14 +709,26 @@ template <> struct message_size<ump_message_type::m1cvm> : std::integral_constan
 namespace types::m1cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
+class note_on;
+struct note_off;
+struct poly_pressure;
+struct control_change;
+struct program_change;
+struct channel_pressure;
+struct pitch_bend;
+
+}  // end namespace types::m1cvm
+}  // end namespace midi2
+
 // 7.3.2 MIDI 1.0 Note On Message
-struct note_on {
+class midi2::types::m1cvm::note_on {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -610,7 +746,7 @@ struct note_on {
   };
 
   constexpr note_on() = default;
-  constexpr explicit note_on(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit note_on(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(note_on const &, note_on const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -620,8 +756,22 @@ struct note_on {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word0, velocity)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
+
+template <>
+struct std::tuple_size<midi2::types::m1cvm::note_on>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_on::words_)>::value> {};
+
+template <std::size_t I> struct std::tuple_element<I, midi2::types::m1cvm::note_on> {  // NOLINT(cert-dcl58-cpp]
+  using type = std::tuple_element<I, decltype(midi2::types::m1cvm::note_on::words_)>::type;
+};
+
+static_assert(std::tuple_size_v<midi2::types::m1cvm::note_on> ==
+              midi2::message_size<midi2::ump_message_type::system>::value);
+
+namespace midi2 {
+namespace types::m1cvm {
 
 // 7.3.1 MIDI 1.0 Note Off Message
 struct note_off {
@@ -642,7 +792,7 @@ struct note_off {
   };
 
   constexpr note_off() = default;
-  constexpr explicit note_off(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit note_off(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(note_off const &, note_off const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -652,7 +802,7 @@ struct note_off {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word0, velocity)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
@@ -674,7 +824,7 @@ struct poly_pressure {
   };
 
   constexpr poly_pressure() = default;
-  constexpr explicit poly_pressure(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit poly_pressure(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -684,7 +834,7 @@ struct poly_pressure {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word0, pressure)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 // 7.3.4 MIDI 1.0 Control Change Message
@@ -706,7 +856,7 @@ struct control_change {
   };
 
   constexpr control_change() = default;
-  constexpr explicit control_change(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit control_change(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(control_change const &, control_change const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -716,7 +866,7 @@ struct control_change {
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 // 7.3.5 MIDI 1.0 Program Change Message
@@ -737,7 +887,7 @@ struct program_change {
   };
 
   constexpr program_change() = default;
-  constexpr explicit program_change(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit program_change(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(program_change const &, program_change const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -746,7 +896,7 @@ struct program_change {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word0, program)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 // 7.3.6 MIDI 1.0 Channel Pressure Message
@@ -767,7 +917,7 @@ struct channel_pressure {
   };
 
   constexpr channel_pressure() = default;
-  constexpr explicit channel_pressure(std::uint32_t const w0_) : w{w0_} {}
+  constexpr explicit channel_pressure(std::uint32_t const w0_) : words_{w0_} {}
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -776,7 +926,7 @@ struct channel_pressure {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word0, data)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 // 7.3.7 MIDI 1.0 Pitch Bend Message
@@ -797,7 +947,7 @@ struct pitch_bend {
     using msb_data = details::bitfield<0, 7>;
   };
   constexpr pitch_bend() = default;
-  constexpr explicit pitch_bend(std::uint32_t const w0) : w{w0} {}
+  constexpr explicit pitch_bend(std::uint32_t const w0) : words_{w0} {}
   friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -807,7 +957,7 @@ struct pitch_bend {
   UMP_GETTER_SETTER(word0, lsb_data)
   UMP_GETTER_SETTER(word0, msb_data)
 
-  std::tuple<word0> w;
+  std::tuple<word0> words_;
 };
 
 }  // end namespace types::m1cvm
@@ -858,7 +1008,7 @@ public:
   };
 
   constexpr sysex7() = default;
-  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -872,11 +1022,11 @@ public:
   UMP_GETTER_SETTER(word1, data4)
   UMP_GETTER_SETTER(word1, data5)
 
-  template <std::size_t I> constexpr auto const &get() const noexcept { return std::get<I>(w); }
-  template <std::size_t I> constexpr auto &get() noexcept { return std::get<I>(w); }
+  template <std::size_t I> constexpr auto const &get() const noexcept { return std::get<I>(words_); }
+  template <std::size_t I> constexpr auto &get() noexcept { return std::get<I>(words_); }
 
 private:
-  std::tuple<word0, word1> w{};
+  std::tuple<word0, word1> words_{};
 };
 
 template <std::size_t I, midi2::data64 Status> auto const &get(sysex7<Status> const &t) noexcept {
@@ -903,19 +1053,40 @@ using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
 
-template <> struct message_size<ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+}  // end namespace midi2
 
-namespace types::m2cvm {
+template <> struct midi2::message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+
+namespace midi2::types::m2cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
+class note_off;
+class note_on;
+struct poly_pressure;
+struct rpn_per_note_controller;
+struct nrpn_per_note_controller;
+struct rpn_controller;
+struct nrpn_controller;
+struct rpn_relative_controller;
+struct nrpn_relative_controller;
+struct per_note_management;
+struct control_change;
+struct program_change;
+struct channel_pressure;
+struct pitch_bend;
+struct per_note_pitch_bend;
+
+}  // end namespace midi2::types::m2cvm
+
 // 7.4.1 MIDI 2.0 Note Off Message
-struct note_off {
+class midi2::types::m2cvm::note_off {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -938,9 +1109,9 @@ struct note_off {
     using attribute = details::bitfield<0, 16>;
   };
 
-  constexpr note_off() = default;
-  constexpr explicit note_off(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend constexpr bool operator==(note_off const &a, note_off const &b) = default;
+  constexpr note_off() noexcept = default;
+  constexpr explicit note_off(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  friend constexpr bool operator==(note_off const &a, note_off const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -951,11 +1122,31 @@ struct note_off {
   UMP_GETTER_SETTER(word1, velocity)
   UMP_GETTER_SETTER(word1, attribute)
 
-  std::tuple<word0, word1> w;
+private:
+  friend struct ::std::tuple_size<note_off>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0, word1> words_;
 };
 
+/// Provides access to the number of words in a MIDI 2 note-off message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::m2cvm::note_off>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_off::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of MIDI 2 note-off message.
+template <std::size_t I> struct std::tuple_element<I, midi2::types::m2cvm::note_off> {  // NOLINT(cert-dcl58-cpp]
+  using type = std::tuple_element<I, decltype(midi2::types::m2cvm::note_off::words_)>::type;
+};
+
+static_assert(std::tuple_size_v<midi2::types::m2cvm::note_off> ==
+              midi2::message_size<midi2::ump_message_type::m2cvm>::value);
+
 // 7.4.2 MIDI 2.0 Note On Message
-struct note_on {
+class midi2::types::m2cvm::note_on {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -978,9 +1169,9 @@ struct note_on {
     using attribute = details::bitfield<0, 16>;
   };
 
-  constexpr note_on() = default;
-  constexpr explicit note_on(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
-  friend constexpr bool operator==(note_on const &a, note_on const &b) = default;
+  constexpr note_on() noexcept = default;
+  constexpr explicit note_on(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  friend constexpr bool operator==(note_on const &a, note_on const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -991,8 +1182,30 @@ struct note_on {
   UMP_GETTER_SETTER(word1, velocity)
   UMP_GETTER_SETTER(word1, attribute)
 
-  std::tuple<word0, word1> w;
+private:
+  friend struct ::std::tuple_size<note_on>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0, word1> words_;
 };
+
+/// Provides access to the number of words in a MIDI 2 note-off message as a compile-time constant expression.
+template <>
+struct std::tuple_size<midi2::types::m2cvm::note_on>  // NOLINT(cert-dcl58-cpp]
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_on::words_)>::value> {};
+
+/// Provides compile-time indexed access to the types of the elements of MIDI 2 note-off message.
+template <std::size_t I> struct std::tuple_element<I, midi2::types::m2cvm::note_on> {  // NOLINT(cert-dcl58-cpp]
+  using type = std::tuple_element<I, decltype(midi2::types::m2cvm::note_on::words_)>::type;
+};
+
+static_assert(std::tuple_size_v<midi2::types::m2cvm::note_on> ==
+              midi2::message_size<midi2::ump_message_type::m2cvm>::value);
+
+namespace midi2 {
+namespace types::m2cvm {
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 struct poly_pressure {
@@ -1017,7 +1230,7 @@ struct poly_pressure {
   };
 
   constexpr poly_pressure() = default;
-  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1027,7 +1240,7 @@ struct poly_pressure {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word1, pressure)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
@@ -1051,7 +1264,7 @@ struct rpn_per_note_controller {
   };
 
   constexpr rpn_per_note_controller() = default;
-  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(rpn_per_note_controller const &a, rpn_per_note_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1063,7 +1276,7 @@ struct rpn_per_note_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
@@ -1089,7 +1302,7 @@ struct nrpn_per_note_controller {
   };
 
   constexpr nrpn_per_note_controller() = default;
-  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(nrpn_per_note_controller const &a, nrpn_per_note_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1101,7 +1314,7 @@ struct nrpn_per_note_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
@@ -1132,7 +1345,7 @@ struct rpn_controller {
   };
 
   constexpr rpn_controller() = default;
-  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(rpn_controller const &a, rpn_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1143,7 +1356,7 @@ struct rpn_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
@@ -1170,7 +1383,7 @@ struct nrpn_controller {
   };
 
   constexpr nrpn_controller() = default;
-  constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(nrpn_controller const &a, nrpn_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1181,7 +1394,7 @@ struct nrpn_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
@@ -1208,7 +1421,7 @@ struct rpn_relative_controller {
   };
 
   constexpr rpn_relative_controller() = default;
-  constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(rpn_relative_controller const &a, rpn_relative_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1219,7 +1432,7 @@ struct rpn_relative_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
@@ -1245,7 +1458,7 @@ struct nrpn_relative_controller {
   };
 
   constexpr nrpn_relative_controller() = default;
-  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(nrpn_relative_controller const &a, nrpn_relative_controller const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1258,7 +1471,7 @@ struct nrpn_relative_controller {
   UMP_GETTER_SETTER(word0, index)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
@@ -1285,7 +1498,7 @@ struct per_note_management {
   };
 
   constexpr per_note_management() = default;
-  constexpr explicit per_note_management(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit per_note_management(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(per_note_management const &a, per_note_management const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1299,7 +1512,7 @@ struct per_note_management {
   UMP_GETTER_SETTER(word0, set_to_default)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.6 MIDI 2.0 Control Change Message
@@ -1325,7 +1538,7 @@ struct control_change {
   };
 
   constexpr control_change() = default;
-  constexpr explicit control_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit control_change(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(control_change const &a, control_change const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1335,7 +1548,7 @@ struct control_change {
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.9 MIDI 2.0 Program Change Message
@@ -1367,7 +1580,7 @@ struct program_change {
   };
 
   constexpr program_change() = default;
-  constexpr explicit program_change(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit program_change(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(program_change const &a, program_change const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1380,7 +1593,7 @@ struct program_change {
   UMP_GETTER_SETTER(word1, bank_msb)
   UMP_GETTER_SETTER(word1, bank_lsb)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
@@ -1405,7 +1618,7 @@ struct channel_pressure {
   };
 
   constexpr channel_pressure() = default;
-  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(channel_pressure const &a, channel_pressure const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1414,7 +1627,7 @@ struct channel_pressure {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
@@ -1439,7 +1652,7 @@ struct pitch_bend {
   };
 
   constexpr pitch_bend() = default;
-  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1448,7 +1661,7 @@ struct pitch_bend {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
@@ -1474,7 +1687,7 @@ struct per_note_pitch_bend {
   };
 
   constexpr per_note_pitch_bend() = default;
-  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : w{m[0], m[1]} {}
+  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
   friend constexpr bool operator==(per_note_pitch_bend const &a, per_note_pitch_bend const &b) = default;
 
   UMP_GETTER(word0, mt)
@@ -1484,7 +1697,7 @@ struct per_note_pitch_bend {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word1, value)
 
-  std::tuple<word0, word1> w;
+  std::tuple<word0, word1> words_;
 };
 
 }  // end namespace types::m2cvm
@@ -1498,10 +1711,10 @@ template <> struct message_size<ump_message_type::ump_stream> : std::integral_co
 namespace types::ump_stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
 // 7.1.1 Endpoint Discovery Message
@@ -1535,7 +1748,7 @@ struct endpoint_discovery {
   };
 
   constexpr endpoint_discovery() = default;
-  constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(endpoint_discovery const &lhs, endpoint_discovery const &rhs) = default;
 
   UMP_GETTER(word0, mt)
@@ -1547,7 +1760,7 @@ struct endpoint_discovery {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.2 Endpoint Info Notification Message
@@ -1587,7 +1800,7 @@ struct endpoint_info_notification {
   };
 
   constexpr endpoint_info_notification() = default;
-  constexpr explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(endpoint_info_notification const &, endpoint_info_notification const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -1604,7 +1817,7 @@ struct endpoint_info_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.3 Device Identity Notification Message
@@ -1656,7 +1869,7 @@ struct device_identity_notification {
   };
 
   constexpr device_identity_notification() = default;
-  constexpr explicit device_identity_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit device_identity_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(device_identity_notification const &,
                                    device_identity_notification const &) = default;
 
@@ -1675,7 +1888,7 @@ struct device_identity_notification {
   UMP_GETTER_SETTER(word3, sw_revision_3)
   UMP_GETTER_SETTER(word3, sw_revision_4)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.4 Endpoint Name Notification
@@ -1717,7 +1930,7 @@ struct endpoint_name_notification {
   };
 
   constexpr endpoint_name_notification() = default;
-  constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(endpoint_name_notification const &, endpoint_name_notification const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -1738,7 +1951,7 @@ struct endpoint_name_notification {
   UMP_GETTER_SETTER(word3, name13)
   UMP_GETTER_SETTER(word3, name14)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.5 Product Instance Id Notification Message
@@ -1780,7 +1993,7 @@ struct product_instance_id_notification {
   };
 
   constexpr product_instance_id_notification() = default;
-  constexpr explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(product_instance_id_notification const &,
                                    product_instance_id_notification const &) = default;
 
@@ -1802,7 +2015,7 @@ struct product_instance_id_notification {
   UMP_GETTER_SETTER(word3, pid13)
   UMP_GETTER_SETTER(word3, pid14)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
@@ -1839,7 +2052,7 @@ struct jr_configuration_request {
   };
 
   constexpr jr_configuration_request() = default;
-  constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(jr_configuration_request const &, jr_configuration_request const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -1852,7 +2065,7 @@ struct jr_configuration_request {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.6.3 JR Stream Configuration Notification Message
@@ -1887,7 +2100,7 @@ struct jr_configuration_notification {
   };
 
   constexpr jr_configuration_notification() = default;
-  constexpr explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(jr_configuration_notification const &,
                                    jr_configuration_notification const &) = default;
 
@@ -1901,7 +2114,7 @@ struct jr_configuration_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.7 Function Block Discovery Message
@@ -1934,7 +2147,7 @@ struct function_block_discovery {
   };
 
   constexpr function_block_discovery() = default;
-  constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_discovery const &, function_block_discovery const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -1946,7 +2159,7 @@ struct function_block_discovery {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.8 Function Block Info Notification
@@ -1986,7 +2199,7 @@ struct function_block_info_notification {
   };
 
   constexpr function_block_info_notification() = default;
-  constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_info_notification const &,
                                    function_block_info_notification const &) = default;
 
@@ -2005,7 +2218,7 @@ struct function_block_info_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.9 Function Block Name Notification
@@ -2047,7 +2260,7 @@ struct function_block_name_notification {
   };
 
   constexpr function_block_name_notification() = default;
-  constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(function_block_name_notification const &,
                                    function_block_name_notification const &) = default;
 
@@ -2069,7 +2282,7 @@ struct function_block_name_notification {
   UMP_GETTER_SETTER(word3, name11)
   UMP_GETTER_SETTER(word3, name12)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.10 Start of Clip Message
@@ -2101,7 +2314,7 @@ struct start_of_clip {
   };
 
   constexpr start_of_clip() = default;
-  constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(start_of_clip const &, start_of_clip const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2111,7 +2324,7 @@ struct start_of_clip {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.1.11 End of Clip Message
@@ -2143,7 +2356,7 @@ struct end_of_clip {
   };
 
   constexpr end_of_clip() = default;
-  constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(end_of_clip const &, end_of_clip const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2153,7 +2366,7 @@ struct end_of_clip {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 };  // end namespace types::ump_stream
@@ -2168,10 +2381,10 @@ template <> struct message_size<ump_message_type::flex_data> : std::integral_con
 namespace types::flex_data {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
 // 7.5.3 Set Tempo Message
@@ -2206,7 +2419,7 @@ struct set_tempo {
   };
 
   constexpr set_tempo() = default;
-  constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_tempo const &, set_tempo const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2220,7 +2433,7 @@ struct set_tempo {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.5.4 Set Time Signature Message
@@ -2259,7 +2472,7 @@ struct set_time_signature {
   };
 
   constexpr set_time_signature() = default;
-  constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_time_signature const &, set_time_signature const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2275,7 +2488,7 @@ struct set_time_signature {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.5.5 Set Metronome Message
@@ -2319,7 +2532,7 @@ struct set_metronome {
   };
 
   constexpr set_metronome() = default;
-  constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_metronome const &, set_metronome const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2337,7 +2550,7 @@ struct set_metronome {
   UMP_GETTER_SETTER(word2, num_subdivision_clicks_2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.5.7 Set Key Signature Message
@@ -2374,7 +2587,7 @@ struct set_key_signature {
   };
 
   constexpr set_key_signature() = default;
-  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2389,7 +2602,7 @@ struct set_key_signature {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.5.8 Set Chord Name Message
@@ -2497,7 +2710,7 @@ struct set_chord_name {
   };
 
   constexpr set_chord_name() = default;
-  constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2526,7 +2739,7 @@ struct set_chord_name {
   UMP_GETTER_SETTER(word3, bass_alter_2_type)
   UMP_GETTER_SETTER(word3, bass_alter_2_degree)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 // 7.5.9 Text Messages Common Format
@@ -2561,7 +2774,7 @@ struct text_common {
   };
 
   constexpr text_common() = default;
-  constexpr explicit text_common(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit text_common(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(text_common const &, text_common const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2575,7 +2788,7 @@ struct text_common {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 }  // end namespace types::flex_data
@@ -2591,10 +2804,10 @@ template <> struct message_size<ump_message_type::data128> : std::integral_const
 namespace types::data128 {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
 // 7.8 System Exclusive 8 (8-Bit) Messages
@@ -2606,10 +2819,10 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
 namespace details {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 template <std::size_t I, typename T> auto &get(T &t) noexcept {
-  return get<I>(t.w);
+  return get<I>(t.words_);
 }
 
 template <midi2::data128 Status> struct sysex8 {
@@ -2654,7 +2867,7 @@ template <midi2::data128 Status> struct sysex8 {
   };
 
   constexpr sysex8() = default;
-  constexpr explicit sysex8(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit sysex8(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(sysex8 const &, sysex8 const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2676,7 +2889,7 @@ template <midi2::data128 Status> struct sysex8 {
   UMP_GETTER_SETTER(word3, data11)
   UMP_GETTER_SETTER(word3, data12)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 }  // end namespace details
@@ -2725,7 +2938,7 @@ struct mds_header {
   };
 
   constexpr mds_header() = default;
-  constexpr explicit mds_header(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit mds_header(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(mds_header const &, mds_header const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2740,7 +2953,7 @@ struct mds_header {
   UMP_GETTER_SETTER(word3, sub_id_1)
   UMP_GETTER_SETTER(word3, sub_id_2)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 struct mds_payload {
@@ -2772,7 +2985,7 @@ struct mds_payload {
   };
 
   constexpr mds_payload() = default;
-  constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) : w{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) : words_{m[0], m[1], m[2], m[3]} {}
   friend constexpr bool operator==(mds_payload const &, mds_payload const &) = default;
 
   UMP_GETTER(word0, mt)
@@ -2784,7 +2997,7 @@ struct mds_payload {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
-  std::tuple<word0, word1, word2, word3> w;
+  std::tuple<word0, word1, word2, word3> words_;
 };
 
 }  // end namespace types::data128
@@ -2803,219 +3016,218 @@ template <> struct message_size<ump_message_type::reserved128_0E> : std::integra
 namespace std {
 
 template <>
-struct tuple_size<midi2::types::utility::jr_clock>
-    : std::integral_constant<std::size_t, midi2::types::utility::jr_clock::size> {};
-template <>
-struct tuple_size<midi2::types::utility::jr_timestamp>
-    : std::integral_constant<std::size_t, midi2::types::utility::jr_timestamp::size> {};
-template <>
-struct tuple_size<midi2::types::utility::delta_clockstamp_tpqn>
-    : std::integral_constant<std::size_t, midi2::types::utility::delta_clockstamp_tpqn::size> {};
-template <>
-struct tuple_size<midi2::types::utility::delta_clockstamp>
-    : std::integral_constant<std::size_t, midi2::types::utility::delta_clockstamp::size> {};
-
-template <>
-struct tuple_size<midi2::types::system::midi_time_code>
-    : std::integral_constant<std::size_t, midi2::types::system::midi_time_code::size> {};
-template <>
 struct tuple_size<midi2::types::system::song_position_pointer>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::system::song_position_pointer::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::system::song_position_pointer::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::system::song_select>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::song_select::w)>::value> {};
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::song_select::words_)>::value> {
+};
 template <>
 struct tuple_size<midi2::types::system::tune_request>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::tune_request::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::tune_request::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::system::timing_clock>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::timing_clock::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::timing_clock::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::system::sequence_start>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_start::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::sequence_start::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::system::sequence_continue>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::system::sequence_continue::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::system::sequence_continue::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::system::sequence_stop>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::sequence_stop::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::sequence_stop::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::system::active_sensing>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::active_sensing::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::system::active_sensing::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::system::reset>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::reset::w)>::value> {};
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::system::reset::words_)>::value> {};
 
 template <midi2::data64 Status>
 struct tuple_size<midi2::types::data64::details::sysex7<Status>>  // NOLINT(cert-dcl58-cpp]
     : public std::integral_constant<std::size_t,
-                                    tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::w)>> {};
+                                    tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::words_)>> {};
 
 template <>
 struct tuple_size<midi2::types::m1cvm::note_off>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_off::w)>::value> {};
-template <>
-struct tuple_size<midi2::types::m1cvm::note_on>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_on::w)>::value> {};
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::note_off::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m1cvm::poly_pressure>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::poly_pressure::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m1cvm::poly_pressure::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m1cvm::program_change>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::program_change::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m1cvm::program_change::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m1cvm::channel_pressure>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::channel_pressure::w)>::value> {
-};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m1cvm::channel_pressure::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m1cvm::control_change>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::control_change::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m1cvm::control_change::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m1cvm::pitch_bend>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::pitch_bend::w)>::value> {};
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::pitch_bend::words_)>::value> {};
 
 template <>
-struct tuple_size<midi2::types::m2cvm::note_off>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_off::w)>::value> {};
-template <>
-struct tuple_size<midi2::types::m2cvm::note_on>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::note_on::w)>::value> {};
-template <>
 struct tuple_size<midi2::types::m2cvm::poly_pressure>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::poly_pressure::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::poly_pressure::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::program_change>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::program_change::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::program_change::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::channel_pressure>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::channel_pressure::w)>::value> {
-};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::channel_pressure::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::rpn_controller>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::rpn_controller::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_controller::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::nrpn_controller>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::nrpn_controller::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_controller::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::rpn_per_note_controller>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_per_note_controller::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_per_note_controller::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::nrpn_per_note_controller>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_per_note_controller::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_per_note_controller::words_)>::value> {
+};
 template <>
 struct tuple_size<midi2::types::m2cvm::rpn_relative_controller>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_relative_controller::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::rpn_relative_controller::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::nrpn_relative_controller>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_relative_controller::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::nrpn_relative_controller::words_)>::value> {
+};
 template <>
 struct tuple_size<midi2::types::m2cvm::per_note_management>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_management::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_management::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::control_change>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::control_change::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::m2cvm::control_change::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::pitch_bend>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::pitch_bend::w)>::value> {};
+    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m2cvm::pitch_bend::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::m2cvm::per_note_pitch_bend>
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_pitch_bend::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::m2cvm::per_note_pitch_bend::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::ump_stream::endpoint_discovery>
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_discovery::w)>> {};
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_discovery::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::endpoint_info_notification>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_info_notification::w)>> {};
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_info_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::device_identity_notification>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::device_identity_notification::w)>> {};
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::device_identity_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::endpoint_name_notification>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_name_notification::w)>> {};
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_name_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::product_instance_id_notification>
     : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::product_instance_id_notification::w)>> {};
+          std::size_t,
+          std::tuple_size_v<decltype(midi2::types::ump_stream::product_instance_id_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::jr_configuration_request>
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_request::w)>> {};
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_request::words_)>> {
+};
 template <>
 struct tuple_size<midi2::types::ump_stream::jr_configuration_notification>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_notification::w)>> {
-};
+    : std::integral_constant<
+          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::function_block_discovery>
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_discovery::w)>> {};
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_discovery::words_)>> {
+};
 template <>
 struct tuple_size<midi2::types::ump_stream::function_block_info_notification>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_info_notification::w)>> {};
+          std::size_t,
+          std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_info_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::function_block_name_notification>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::w)>> {};
+          std::size_t,
+          std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::start_of_clip>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::start_of_clip::w)>> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::ump_stream::start_of_clip::words_)>> {};
 template <>
 struct tuple_size<midi2::types::ump_stream::end_of_clip>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::end_of_clip::w)>> {};
+    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::end_of_clip::words_)>> {
+};
 
 // NOLINTNEXTLINE(cert-dcl58-cpp]
 template <midi2::data128 Status>
 struct tuple_size<midi2::types::data128::details::sysex8<Status>>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::data128::details::sysex8<Status>::w)>> {};
+                             std::tuple_size_v<decltype(midi2::types::data128::details::sysex8<Status>::words_)>> {};
 template <>
 struct tuple_size<midi2::types::data128::mds_header>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_header::w)>> {};
+    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_header::words_)>> {};
 template <>
 struct tuple_size<midi2::types::data128::mds_payload>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_payload::w)>> {};
+    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_payload::words_)>> {};
 
 template <>
 struct tuple_size<midi2::types::flex_data::set_chord_name>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_chord_name::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::flex_data::set_chord_name::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::flex_data::set_key_signature>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_key_signature::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::flex_data::set_key_signature::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::flex_data::set_metronome>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_metronome::w)>::value> {
-};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::flex_data::set_metronome::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::flex_data::set_time_signature>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_time_signature::w)>::value> {};
+                             std::tuple_size<decltype(midi2::types::flex_data::set_time_signature::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::flex_data::set_tempo>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::set_tempo::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::flex_data::set_tempo::words_)>::value> {};
 template <>
 struct tuple_size<midi2::types::flex_data::text_common>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::flex_data::text_common::w)>::value> {};
+    : std::integral_constant<std::size_t,
+                             std::tuple_size<decltype(midi2::types::flex_data::text_common::words_)>::value> {};
 
 }  // end namespace std
 

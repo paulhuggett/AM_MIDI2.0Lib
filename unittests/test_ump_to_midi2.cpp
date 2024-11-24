@@ -39,8 +39,8 @@ TEST(UMPToMidi2, NoteOff) {
   constexpr auto expected =
       midi2::types::m2cvm::note_off{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{get<0>(in.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
+  std::array const input{get<0>(in).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
 }
 
 // NOLINTNEXTLINE
@@ -52,8 +52,8 @@ TEST(UMPToMidi2, NoteOn) {
   constexpr auto expected =
       midi2::types::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{get<0>(in.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
+  std::array const input{get<0>(in).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
 }
 
 // UMPToMidi2
@@ -69,12 +69,12 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
   {
     constexpr auto in_non_1 =
         midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
-    input.push_back(get<0>(in_non_1.w).word());
+    input.push_back(get<0>(in_non_1).word());
   }
   {
     constexpr auto in_non_2 =
         midi2::types::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
-    input.push_back(get<0>(in_non_2.w).word());
+    input.push_back(get<0>(in_non_2).word());
   }
 
   std::vector<std::uint32_t> expected;
@@ -84,14 +84,14 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
                                       .channel(channel)
                                       .note(note_number)
                                       .velocity(midi2::mcm_scale<7, 16>(velocity));
-    expected.push_back(get<0>(expected_non.w).word());
-    expected.push_back(get<1>(expected_non.w).word());
+    expected.push_back(get<0>(expected_non).word());
+    expected.push_back(get<1>(expected_non).word());
   }
   {
     constexpr auto expected_noff =
         midi2::types::m2cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
-    expected.push_back(get<0>(expected_noff.w).word());
-    expected.push_back(get<1>(expected_noff.w).word());
+    expected.push_back(get<0>(expected_noff).word());
+    expected.push_back(get<1>(expected_noff).word());
   }
 
   auto const actual = convert(input);
@@ -114,8 +114,8 @@ TEST(UMPToMidi2, PolyPressure) {
   expected.note(note);
   expected.pressure(midi2::mcm_scale<7, 32>(in.pressure()));
 
-  std::array const input{get<0>(in.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected.w).word(), get<1>(expected.w).word()));
+  std::array const input{get<0>(in).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
 }
 
 // NOLINTNEXTLINE
@@ -133,8 +133,8 @@ TEST(UMPToMidi2, PitchBend) {
   m2.channel(0);
   m2.value(midi2::mcm_scale<14, 32>(pb14));
 
-  std::array const input{get<0>(m1.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  std::array const input{get<0>(m1).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 // NOLINTNEXTLINE
@@ -153,8 +153,8 @@ TEST(UMPToMidi2, ChannelPressure) {
   m2.channel(channel);
   m2.value(midi2::mcm_scale<7, 32>(pressure));
 
-  std::array const input{get<0>(m1.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  std::array const input{get<0>(m1).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, SimpleContinuousController) {
@@ -175,8 +175,8 @@ TEST(UMPToMidi2, SimpleContinuousController) {
   m2.controller(controller);
   m2.value(midi2::mcm_scale<7, 32>(value));
 
-  std::array const input{get<0>(m1.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  std::array const input{get<0>(m1).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 // NOLINTNEXTLINE
@@ -199,8 +199,8 @@ TEST(UMPToMidi2, SimpleProgramChange) {
   m2.bank_msb(0);
   m2.bank_lsb(0);
 
-  std::array const input{get<0>(m1.w).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  std::array const input{get<0>(m1).word()};
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 // NOLINTNEXTLINE
@@ -219,7 +219,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
                                        .channel(channel)
                                        .controller(midi2::control::bank_select)
                                        .value(bank_msb);
-    input.push_back(get<0>(m1cc_bank_msb.w).word());
+    input.push_back(get<0>(m1cc_bank_msb).word());
   }
   {
     constexpr auto mc11_bank_lsb = midi2::types::m1cvm::control_change{}
@@ -227,11 +227,11 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
                                        .channel(channel)
                                        .controller(midi2::control::bank_select_lsb)
                                        .value(bank_lsb);
-    input.push_back(get<0>(mc11_bank_lsb.w).word());
+    input.push_back(get<0>(mc11_bank_lsb).word());
   }
   {
     constexpr auto m1 = midi2::types::m1cvm::program_change{}.group(group).channel(channel).program(program);
-    input.push_back(get<0>(m1.w).word());
+    input.push_back(get<0>(m1).word());
   }
 
   midi2::types::m2cvm::program_change m2;
@@ -242,7 +242,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
   m2.program(program);
   m2.bank_msb(bank_msb);
   m2.bank_lsb(bank_lsb);
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 TEST(UMPToMidi2, ControlChangeRPN) {
@@ -261,7 +261,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                 .channel(channel)
                                 .controller(midi2::control::rpn_msb)
                                 .value(control_msb);
-    input.push_back(get<0>(pn_msb.w).word());
+    input.push_back(get<0>(pn_msb).word());
   }
   {
     constexpr auto pn_lsb = midi2::types::m1cvm::control_change{}
@@ -269,7 +269,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                 .channel(channel)
                                 .controller(midi2::control::rpn_lsb)
                                 .value(control_lsb);
-    input.push_back(get<0>(pn_lsb.w).word());
+    input.push_back(get<0>(pn_lsb).word());
   }
   {
     constexpr auto param_value_msb = midi2::types::m1cvm::control_change{}
@@ -277,7 +277,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                          .channel(channel)
                                          .controller(midi2::control::data_entry_msb)
                                          .value(value_msb);
-    input.push_back(get<0>(param_value_msb.w).word());
+    input.push_back(get<0>(param_value_msb).word());
   }
   {
     constexpr auto param_value_lsb = midi2::types::m1cvm::control_change{}
@@ -285,7 +285,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                          .channel(channel)
                                          .controller(midi2::control::data_entry_lsb)
                                          .value(value_lsb);
-    input.push_back(get<0>(param_value_lsb.w).word());
+    input.push_back(get<0>(param_value_lsb).word());
   }
   {
     constexpr auto null_msb = midi2::types::m1cvm::control_change{}
@@ -293,7 +293,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                   .channel(channel)
                                   .controller(midi2::control::rpn_msb)
                                   .value(0x7F);
-    input.push_back(get<0>(null_msb.w).word());
+    input.push_back(get<0>(null_msb).word());
   }
   {
     constexpr auto null_lsb = midi2::types::m1cvm::control_change{}
@@ -301,7 +301,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                                   .channel(channel)
                                   .controller(midi2::control::rpn_lsb)
                                   .value(0x7F);
-    input.push_back(get<0>(null_lsb.w).word());
+    input.push_back(get<0>(null_lsb).word());
   }
 
   constexpr auto m2 = midi2::types::m2cvm::rpn_controller{}
@@ -310,7 +310,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
                           .bank(control_msb)
                           .index(control_lsb)
                           .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 TEST(UMPToMidi2, ControlChangeNRPN) {
@@ -337,7 +337,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
                             .channel(channel)
                             .controller(midi2::control::nrpn_lsb)
                             .value(control_lsb);
-    input.push_back(get<0>(pn_lsb.w).word());
+    input.push_back(get<0>(pn_lsb).word());
   }
   {
     auto const param_value_msb = midi2::types::m1cvm::control_change{}
@@ -353,7 +353,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
                                      .channel(channel)
                                      .controller(midi2::control::data_entry_lsb)
                                      .value(value_lsb);
-    input.push_back(get<0>(param_value_lsb.w).word());
+    input.push_back(get<0>(param_value_lsb).word());
   }
   {
     auto const null_msb = midi2::types::m1cvm::control_change{}
@@ -378,7 +378,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
                       .bank(control_msb)
                       .index(control_lsb)
                       .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2.w).word(), get<1>(m2.w).word()));
+  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
 template <typename T> class UMPToMidi2PassThrough : public testing::Test {

@@ -372,16 +372,17 @@ template <typename T> ump_dispatcher(T) -> ump_dispatcher<T>;
 // ~~~~~~~~~~~~~~~
 // 32 bit utility messages
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_message() {
-  static_assert(message_size<midi2::ump_message_type::utility>() == 1);
+  constexpr auto size = ump_message_size(midi2::ump_message_type::utility);
+  assert(pos_ == size);
+
+  auto const span = std::span<std::uint32_t, size>{message_.data(), size};
   switch (static_cast<ump_utility>((message_[0] >> 20) & 0x0F)) {
   // 7.2.1 NOOP
   case ump_utility::noop: config_.utility.noop(config_.context); break;
   // 7.2.2.1 JR Clock
-  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, types::utility::jr_clock{message_[0]}); break;
+  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, types::utility::jr_clock{span}); break;
   // 7.2.2.2 JR Timestamp
-  case ump_utility::jr_ts:
-    config_.utility.jr_timestamp(config_.context, types::utility::jr_timestamp{message_[0]});
-    break;
+  case ump_utility::jr_ts: config_.utility.jr_timestamp(config_.context, types::utility::jr_timestamp{span}); break;
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
   case ump_utility::delta_clock_tick:
     config_.utility.delta_clockstamp_tpqn(config_.context, types::utility::delta_clockstamp_tpqn{message_[0]});
@@ -470,10 +471,10 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_messa
 // data64 message
 // ~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_message() {
-  static_assert(ump_message_size(midi2::ump_message_type::data64) == 2);
-  assert(pos_ >= ump_message_size(midi2::ump_message_type::data64));
+  constexpr auto size = ump_message_size(midi2::ump_message_type::data64);
+  assert(pos_ == size);
 
-  auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
+  auto const span = std::span<std::uint32_t, size>{message_.data(), size};
   using enum data64;
   switch (static_cast<data64>((message_[0] >> 20) & 0x0F)) {
   case sysex7_in_1: config_.data64.sysex7_in_1(config_.context, types::data64::sysex7_in_1{span}); break;
