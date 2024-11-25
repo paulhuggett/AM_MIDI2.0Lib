@@ -96,68 +96,44 @@ private:
   struct to_bytestream_config {
     struct system {
       static void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::midi_time_code::w)> == 1);
         static_assert(bytestream_message_size<status::timing_code>() == 2);
-        using word0 = types::system::midi_time_code::word0;
-        auto const &w0 = get<word0>(in.w);
-        system::push(ctxt, w0.get<word0::group>(), status::timing_code, std::byte{w0.get<word0::time_code>()});
+        system::push(ctxt, in.group(), status::timing_code, std::byte{in.time_code()});
       }
       static void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::song_position_pointer::w)> == 1);
         static_assert(bytestream_message_size<status::spp>() == 3);
-        using word0 = types::system::song_position_pointer::word0;
-        auto const &w0 = get<word0>(in.w);
-        system::push(ctxt, w0.get<word0::group>(), status::spp, std::byte{w0.get<word0::position_lsb>()},
-                     std::byte{w0.get<word0::position_msb>()});
+        system::push(ctxt, in.group(), status::spp, std::byte{in.position_lsb()}, std::byte{in.position_msb()});
       }
       static void song_select(context_type *const ctxt, types::system::song_select const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::song_select::w)> == 1);
         static_assert(bytestream_message_size<status::song_select>() == 2);
-        using word0 = types::system::song_select::word0;
-        auto const &w0 = get<word0>(in.w);
-        system::push(ctxt, w0.get<word0::group>(), status::song_select, std::byte{w0.get<word0::song>()});
+        system::push(ctxt, in.group(), status::song_select, std::byte{in.song()});
       }
       static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::tune_request::w)> == 1);
         static_assert(bytestream_message_size<status::tune_request>() == 1);
-        using word0 = types::system::tune_request::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::tune_request);
+        system::push(ctxt, in.group(), status::tune_request);
       }
       static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::timing_clock::w)> == 1);
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
-        using word0 = types::system::timing_clock::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::timing_clock);
+        system::push(ctxt, in.group(), status::timing_clock);
       }
       static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::sequence_start::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_start>() == 1);
-        using word0 = types::system::sequence_start::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::sequence_start);
+        system::push(ctxt, in.group(), status::sequence_start);
       }
       static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::sequence_continue::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_continue>() == 1);
-        using word0 = types::system::sequence_continue::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::sequence_continue);
+        system::push(ctxt, in.group(), status::sequence_continue);
       }
       static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::sequence_stop::w)> == 1);
         static_assert(bytestream_message_size<status::sequence_stop>() == 1);
-        using word0 = types::system::sequence_stop::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::sequence_stop);
+        system::push(ctxt, in.group(), status::sequence_stop);
       }
       static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::active_sensing::w)> == 1);
         static_assert(bytestream_message_size<status::active_sensing>() == 1);
-        using word0 = types::system::active_sensing::word0;
-        system::push(ctxt, std::get<0>(in.w).get<word0::group>(), status::active_sensing);
+        system::push(ctxt, in.group(), status::active_sensing);
       }
       static void reset(context_type *const ctxt, types::system::reset const &in) {
-        static_assert(std::tuple_size_v<decltype(types::system::reset::w)> == 1);
         static_assert(bytestream_message_size<status::systemreset>() == 1);
-        using word0 = types::system::reset::word0;
-        system::push(ctxt, std::get<word0>(in.w).get<word0::group>(), status::systemreset);
+        system::push(ctxt, in.group(), status::systemreset);
       }
 
     private:
@@ -186,7 +162,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::note_off::w)> == 1);
         static_assert(bytestream_message_size<status::note_off>() == 3);
         ctxt->push_back(std::byte{to_underlying(status::note_off)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
@@ -196,7 +171,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::note_on::w)> == 1);
         static_assert(bytestream_message_size<status::note_on>() == 3);
         ctxt->push_back(std::byte{to_underlying(status::note_on)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
@@ -206,7 +180,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::poly_pressure::w)> == 1);
         static_assert(bytestream_message_size<status::poly_pressure>() == 3);
         ctxt->push_back(std::byte{to_underlying(status::poly_pressure)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
@@ -216,7 +189,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::control_change::w)> == 1);
         static_assert(bytestream_message_size<status::cc>() == 3);
         ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.controller()});
@@ -226,7 +198,6 @@ private:
         if (ctxt->filter_message(in)) {
           return;
         }
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::program_change::w)> == 1);
         static_assert(bytestream_message_size<status::program_change>() == 2);
         ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.program()});
@@ -236,7 +207,6 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::channel_pressure>() == 2);
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::channel_pressure::w)> == 1);
         ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.data()});
       }
@@ -245,7 +215,6 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::pitch_bend>() == 3);
-        static_assert(std::tuple_size_v<decltype(types::m1cvm::pitch_bend::w)> == 1);
         ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.lsb_data()});
         ctxt->push_back(std::byte{in.msb_data()});

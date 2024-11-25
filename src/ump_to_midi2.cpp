@@ -30,7 +30,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const
                         .channel(in.channel())
                         .note(in.note())
                         .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
-  ctxt->push(noff.w);
+  ctxt->push(noff);
 }
 
 // note on
@@ -43,7 +43,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::note_on(ump_to_midi2::context *const 
                        .channel(in.channel())
                        .note(in.note())
                        .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
-  ctxt->push(non.w);
+  ctxt->push(non);
 }
 
 // poly pressure
@@ -58,7 +58,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::poly_pressure(ump_to_midi2::context *
                        .channel(in.channel())
                        .note(in.note())
                        .pressure(mcm_scale<m1bits, m2bits>(in.pressure()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // control change
@@ -122,7 +122,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
                          .channel(channel)
                          .controller(controller)
                          .value(mcm_scale<m1v, m2v>(value));
-    ctxt->push(out.w);
+    ctxt->push(out);
     break;
   }
   }
@@ -139,7 +139,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::program_change(ump_to_midi2::context 
   if (auto const &b = ctxt->bank[group][channel]; b.is_valid()) {
     out.bank_valid(true).bank_msb(b.msb).bank_lsb(b.lsb);
   }
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // channel pressure
@@ -151,7 +151,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::channel_pressure(ump_to_midi2::contex
 
   auto const out =
       types::m2cvm::channel_pressure{}.group(in.group()).channel(in.channel()).value(mcm_scale<m1v, m2v>(in.data()));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 // pitch bend
@@ -170,7 +170,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::pitch_bend(ump_to_midi2::context *con
                        .group(in.group())
                        .channel(in.channel())
                        .value(mcm_scale<lsb_bits + msb_bits, m2v>(m1value));
-  ctxt->push(out.w);
+  ctxt->push(out);
 }
 
 }  // end namespace midi2
