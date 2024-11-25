@@ -731,8 +731,6 @@ private:
 
 UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for reset
 
-namespace midi2 {
-
 //*        _                 *
 //*  _ __ / |  ____ ___ __   *
 //* | '  \| | / _\ V / '  \  *
@@ -741,9 +739,9 @@ namespace midi2 {
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
-template <> struct message_size<ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
+template <> struct midi2::message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
 
-namespace types::m1cvm {
+namespace midi2::types::m1cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -760,8 +758,7 @@ class program_change;
 class channel_pressure;
 class pitch_bend;
 
-}  // end namespace types::m1cvm
-}  // end namespace midi2
+}  // end namespace midi2::types::m1cvm
 
 // 7.3.2 MIDI 1.0 Note On Message
 class midi2::types::m1cvm::note_on {
@@ -1051,11 +1048,9 @@ UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/p
 //* \__,_\__,_|\__\__,_\___/ |_|  *
 //*                               *
 
-namespace midi2 {
+template <> struct midi2::message_size<midi2::ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
 
-template <> struct message_size<ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
-
-namespace types::data64::details {
+namespace midi2::types::data64::details {
 
 // 7.7 System Exclusive (7-Bit) Messages
 template <midi2::data64 Status> class sysex7;
@@ -1067,8 +1062,7 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
   return get<I>(t.words_);
 }
 
-}  // end namespace types::data64::details
-}  // end namespace midi2
+}  // end namespace midi2::types::data64::details
 
 template <midi2::data64 Status> class midi2::types::data64::details::sysex7 {
 public:
@@ -2713,17 +2707,15 @@ private:
 
 UMP_TUPLE(ump_stream, end_of_clip)  // Define tuple_size and tuple_element for ump_stream/end_of_clip
 
-namespace midi2 {
-namespace types::ump_stream {};  // end namespace types::ump_stream
-
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *
 //* |  _| / -_) \ / / _` / _` |  _/ _` | *
 //* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
 //*                                      *
-template <> struct message_size<ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
 
-namespace types::flex_data {
+template <> struct midi2::message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
+
+namespace midi2::types::flex_data {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -2732,8 +2724,18 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
   return get<I>(t.words_);
 }
 
+class set_tempo;
+class set_time_signature;
+class set_metronome;
+class set_key_signature;
+class set_chord_name;
+class text_common;
+
+}  // namespace midi2::types::flex_data
+
 // 7.5.3 Set Tempo Message
-struct set_tempo {
+class midi2::types::flex_data::set_tempo {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2778,11 +2780,20 @@ struct set_tempo {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<set_tempo>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(flex_data, set_tempo)  // Define tuple_size and tuple_element for ump_stream/set_tempo
+
 // 7.5.4 Set Time Signature Message
-struct set_time_signature {
+class midi2::types::flex_data::set_time_signature {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2833,12 +2844,20 @@ struct set_time_signature {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<set_time_signature>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// 7.5.5 Set Metronome Message
+UMP_TUPLE(flex_data, set_time_signature)  // Define tuple_size and tuple_element for ump_stream/set_time_signature
 
-struct set_metronome {
+// 7.5.5 Set Metronome Message
+class midi2::types::flex_data::set_metronome {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2895,11 +2914,20 @@ struct set_metronome {
   UMP_GETTER_SETTER(word2, num_subdivision_clicks_2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<set_metronome>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for ump_stream/set_metronome
+
 // 7.5.7 Set Key Signature Message
-struct set_key_signature {
+class midi2::types::flex_data::set_key_signature {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2947,10 +2975,20 @@ struct set_key_signature {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<set_key_signature>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for ump_stream/set_key_signature
+
 // 7.5.8 Set Chord Name Message
+namespace midi2::types::flex_data {
+
 enum class sharps_flats : std::int8_t {
   double_sharp = 2,
   sharp = 1,
@@ -3005,7 +3043,10 @@ enum class chord_type : std::uint8_t {
   seven_suspended_4th = 0x1B,
 };
 
-struct set_chord_name {
+}  // end namespace midi2::types::flex_data
+
+class midi2::types::flex_data::set_chord_name {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -3084,11 +3125,20 @@ struct set_chord_name {
   UMP_GETTER_SETTER(word3, bass_alter_2_type)
   UMP_GETTER_SETTER(word3, bass_alter_2_degree)
 
+private:
+  friend struct ::std::tuple_size<set_chord_name>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(flex_data, set_chord_name)  // Define tuple_size and tuple_element for ump_stream/set_chord_name
+
 // 7.5.9 Text Messages Common Format
-struct text_common {
+class midi2::types::flex_data::text_common {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -3133,10 +3183,19 @@ struct text_common {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<text_common>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-}  // end namespace types::flex_data
+UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for ump_stream/text_common
+
+namespace midi2 {
+namespace types::flex_data {}  // end namespace types::flex_data
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
@@ -3371,31 +3430,6 @@ struct tuple_size<midi2::types::data128::mds_header>  // NOLINT(cert-dcl58-cpp]
 template <>
 struct tuple_size<midi2::types::data128::mds_payload>  // NOLINT(cert-dcl58-cpp]
     : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::data128::mds_payload::words_)>> {};
-
-template <>
-struct tuple_size<midi2::types::flex_data::set_chord_name>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_chord_name::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::flex_data::set_key_signature>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_key_signature::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::flex_data::set_metronome>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_metronome::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::flex_data::set_time_signature>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_time_signature::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::flex_data::set_tempo>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::set_tempo::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::flex_data::text_common>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::flex_data::text_common::words_)>::value> {};
 
 }  // end namespace std
 
