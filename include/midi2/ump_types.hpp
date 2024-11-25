@@ -135,6 +135,11 @@ private:
   UMP_GETTER(word, field)              \
   UMP_SETTER(word, field)
 
+/// This macro is used to generate boilerplate definitions of three items for the class specficied by the \p group
+/// and \p message parameters:
+/// 1. An specialization of std::tuple_size<>
+/// 2. An specialization of std::tuple_element<>
+/// 3. A static assertion that the tuple size for the class matches that of the group as a whole
 #define UMP_TUPLE(group, message)                                                                                    \
   template <>                                                                                                        \
   struct std::tuple_size<midi2::types::group::message> /* NOLINT(cert-dcl58-cpp]*/                                   \
@@ -749,11 +754,11 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
 
 class note_on;
 class note_off;
-struct poly_pressure;
-struct control_change;
-struct program_change;
-struct channel_pressure;
-struct pitch_bend;
+class poly_pressure;
+class control_change;
+class program_change;
+class channel_pressure;
+class pitch_bend;
 
 }  // end namespace types::m1cvm
 }  // end namespace midi2
@@ -840,16 +845,14 @@ private:
 
 UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
 
-namespace midi2 {
-namespace types::m1cvm {
-
 // 7.3.3 MIDI 1.0 Poly Pressure Message
-struct poly_pressure {
+class midi2::types::m1cvm::poly_pressure {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(midi2::status::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::status::poly_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -861,9 +864,9 @@ struct poly_pressure {
     using pressure = details::bitfield<0, 7>;
   };
 
-  constexpr poly_pressure() = default;
-  constexpr explicit poly_pressure(std::uint32_t const w0) : words_{w0} {}
-  friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) = default;
+  constexpr poly_pressure() noexcept = default;
+  constexpr explicit poly_pressure(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER(word0, status)
@@ -872,16 +875,25 @@ struct poly_pressure {
   UMP_GETTER_SETTER(word0, note)
   UMP_GETTER_SETTER(word0, pressure)
 
+private:
+  friend struct ::std::tuple_size<poly_pressure>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0> words_;
 };
 
+UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
+
 // 7.3.4 MIDI 1.0 Control Change Message
-struct control_change {
+class midi2::types::m1cvm::control_change {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(midi2::status::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::status::cc); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -893,9 +905,9 @@ struct control_change {
     using value = details::bitfield<0, 7>;
   };
 
-  constexpr control_change() = default;
-  constexpr explicit control_change(std::uint32_t const w0) : words_{w0} {}
-  friend constexpr bool operator==(control_change const &, control_change const &) = default;
+  constexpr control_change() noexcept = default;
+  constexpr explicit control_change(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -904,16 +916,25 @@ struct control_change {
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
+private:
+  friend struct ::std::tuple_size<control_change>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0> words_;
 };
 
+UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
+
 // 7.3.5 MIDI 1.0 Program Change Message
-struct program_change {
+class midi2::types::m1cvm::program_change {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(midi2::status::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::status::program_change); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -924,9 +945,9 @@ struct program_change {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  constexpr program_change() = default;
-  constexpr explicit program_change(std::uint32_t const w0) : words_{w0} {}
-  friend constexpr bool operator==(program_change const &, program_change const &) = default;
+  constexpr program_change() noexcept = default;
+  constexpr explicit program_change(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -934,16 +955,25 @@ struct program_change {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word0, program)
 
+private:
+  friend struct ::std::tuple_size<program_change>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0> words_;
 };
 
+UMP_TUPLE(m1cvm, program_change)  // Define tuple_size and tuple_element for m1cvm/program_change
+
 // 7.3.6 MIDI 1.0 Channel Pressure Message
-struct channel_pressure {
+class midi2::types::m1cvm::channel_pressure {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(midi2::status::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::status::channel_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -954,9 +984,9 @@ struct channel_pressure {
     using reserved1 = details::bitfield<0, 8>;
   };
 
-  constexpr channel_pressure() = default;
-  constexpr explicit channel_pressure(std::uint32_t const w0_) : words_{w0_} {}
-  friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) = default;
+  constexpr channel_pressure() noexcept = default;
+  constexpr explicit channel_pressure(std::uint32_t const w0_) noexcept : words_{w0_} {}
+  friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -964,16 +994,25 @@ struct channel_pressure {
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word0, data)
 
+private:
+  friend struct ::std::tuple_size<channel_pressure>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0> words_;
 };
 
+UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
+
 // 7.3.7 MIDI 1.0 Pitch Bend Message
-struct pitch_bend {
+class midi2::types::m1cvm::pitch_bend {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(midi2::status::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::status::pitch_bend); }
 
     using mt = details::bitfield<28, 4>;  // 0x2
     using group = details::bitfield<24, 4>;
@@ -984,9 +1023,9 @@ struct pitch_bend {
     using reserved1 = details::bitfield<7, 1>;
     using msb_data = details::bitfield<0, 7>;
   };
-  constexpr pitch_bend() = default;
-  constexpr explicit pitch_bend(std::uint32_t const w0) : words_{w0} {}
-  friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) = default;
+  constexpr pitch_bend() noexcept = default;
+  constexpr explicit pitch_bend(std::uint32_t const w0) noexcept : words_{w0} {}
+  friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -995,16 +1034,24 @@ struct pitch_bend {
   UMP_GETTER_SETTER(word0, lsb_data)
   UMP_GETTER_SETTER(word0, msb_data)
 
+private:
+  friend struct ::std::tuple_size<pitch_bend>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0> words_;
 };
 
-}  // end namespace types::m1cvm
+UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/pitch_bend
 
 //*     _      _         __ _ _   *
 //*  __| |__ _| |_ __ _ / /| | |  *
 //* / _` / _` |  _/ _` / _ \_  _| *
 //* \__,_\__,_|\__\__,_\___/ |_|  *
 //*                               *
+
+namespace midi2 {
 
 template <> struct message_size<ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
 
@@ -3100,26 +3147,6 @@ template <midi2::data64 Status>
 struct tuple_size<midi2::types::data64::details::sysex7<Status>>  // NOLINT(cert-dcl58-cpp]
     : public std::integral_constant<std::size_t,
                                     tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::words_)>> {};
-
-template <>
-struct tuple_size<midi2::types::m1cvm::poly_pressure>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m1cvm::poly_pressure::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::m1cvm::program_change>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m1cvm::program_change::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::m1cvm::channel_pressure>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m1cvm::channel_pressure::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::m1cvm::control_change>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size<decltype(midi2::types::m1cvm::control_change::words_)>::value> {};
-template <>
-struct tuple_size<midi2::types::m1cvm::pitch_bend>
-    : std::integral_constant<std::size_t, std::tuple_size<decltype(midi2::types::m1cvm::pitch_bend::words_)>::value> {};
 
 template <>
 struct tuple_size<midi2::types::m2cvm::program_change>
