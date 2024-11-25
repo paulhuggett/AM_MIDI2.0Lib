@@ -59,12 +59,11 @@ TEST(UMPToMIDI1, SystemMessageOneByte) {
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2NoteOn) {
   constexpr auto note = 64;
-  constexpr auto ump = midi2::types::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
-  constexpr auto expected = midi2::types::m1cvm::note_on{}.group(0).channel(0).note(note).velocity(0x60);
-
-  auto const& [w0, w1] = ump;
+  auto const [w0, w1] =
+      midi2::types::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
+  auto const [expected0] = midi2::types::m1cvm::note_on{}.group(0).channel(0).note(note).velocity(0x60);
   std::array const input{w0.word(), w1.word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word()));
+  EXPECT_THAT(convert(input), ElementsAre(expected0.word()));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2NoteOff) {
