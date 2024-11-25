@@ -1055,20 +1055,29 @@ namespace midi2 {
 
 template <> struct message_size<ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
 
-namespace types::data64 {
+namespace types::data64::details {
 
 // 7.7 System Exclusive (7-Bit) Messages
-namespace details {
+template <midi2::data64 Status> class sysex7;
 
-template <midi2::data64 Status> class sysex7 {
+template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+  return get<I>(t.words_);
+}
+template <std::size_t I, typename T> auto &get(T &t) noexcept {
+  return get<I>(t.words_);
+}
+
+}  // end namespace types::data64::details
+}  // end namespace midi2
+
+template <midi2::data64 Status> class midi2::types::data64::details::sysex7 {
 public:
-  friend std::tuple_size<sysex7>;
-
-  class word0 : public ::midi2::types::details::word_base {
+  class word0 : public midi2::types::details::word_base {
   public:
     using word_base::word_base;
 
-    constexpr word0() { this->init<mt, status>(Status); }
+    constexpr word0() noexcept { this->init<mt, status>(Status); }
+
     using mt = midi2::types::details::bitfield<28, 4>;
     using group = midi2::types::details::bitfield<24, 4>;
     using status = midi2::types::details::bitfield<20, 4>;
@@ -1092,9 +1101,9 @@ public:
     using data5 = midi2::types::details::bitfield<0, 7>;
   };
 
-  constexpr sysex7() = default;
-  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) : words_{m[0], m[1]} {}
-  friend constexpr bool operator==(sysex7 const &, sysex7 const &) = default;
+  constexpr sysex7() noexcept = default;
+  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
@@ -1107,28 +1116,42 @@ public:
   UMP_GETTER_SETTER(word1, data4)
   UMP_GETTER_SETTER(word1, data5)
 
-  template <std::size_t I> constexpr auto const &get() const noexcept { return std::get<I>(words_); }
-  template <std::size_t I> constexpr auto &get() noexcept { return std::get<I>(words_); }
-
 private:
+  friend struct ::std::tuple_size<sysex7>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1> words_{};
 };
 
-template <std::size_t I, midi2::data64 Status> auto const &get(sysex7<Status> const &t) noexcept {
-  return t.template get<I>();
-}
-template <std::size_t I, midi2::data64 Status> auto &get(sysex7<Status> &t) noexcept {
-  return t.template get<I>();
-}
+template <midi2::data64 Status>
+struct std::tuple_size<midi2::types::data64::details::sysex7<Status>> /* NOLINT(cert-dcl58-cpp]*/
+    : std::integral_constant<std::size_t,
+                             std::tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::words_)>> {};
 
-}  // end namespace details
+template <std::size_t I, midi2::data64 Status>
+struct std::tuple_element<I, midi2::types::data64::details::sysex7<Status>> { /* NOLINT(cert-dcl58-cpp] */
+  using type = std::tuple_element_t<I, decltype(midi2::types::data64::details::sysex7<Status>::words_)>;
+};
 
-using sysex7_in_1 = details::sysex7<midi2::data64::sysex7_in_1>;
-using sysex7_start = details::sysex7<midi2::data64::sysex7_start>;
-using sysex7_continue = details::sysex7<midi2::data64::sysex7_continue>;
-using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
+namespace midi2::types::data64 {
 
-}  // end namespace types::data64
+using sysex7_in_1 = midi2::types::data64::details::sysex7<midi2::data64::sysex7_in_1>;
+using sysex7_start = midi2::types::data64::details::sysex7<midi2::data64::sysex7_start>;
+using sysex7_continue = midi2::types::data64::details::sysex7<midi2::data64::sysex7_continue>;
+using sysex7_end = midi2::types::data64::details::sysex7<midi2::data64::sysex7_end>;
+
+}  // namespace midi2::types::data64
+
+static_assert(std::tuple_size_v<midi2::types::data64::sysex7_in_1> ==
+              midi2::message_size<midi2::ump_message_type::data64>::value);
+static_assert(std::tuple_size_v<midi2::types::data64::sysex7_start> ==
+              midi2::message_size<midi2::ump_message_type::data64>::value);
+static_assert(std::tuple_size_v<midi2::types::data64::sysex7_continue> ==
+              midi2::message_size<midi2::ump_message_type::data64>::value);
+static_assert(std::tuple_size_v<midi2::types::data64::sysex7_end> ==
+              midi2::message_size<midi2::ump_message_type::data64>::value);
 
 //*        ___               *
 //*  _ __ |_  )____ ___ __   *
@@ -1137,8 +1160,6 @@ using sysex7_end = details::sysex7<midi2::data64::sysex7_end>;
 //*                          *
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
-
-}  // end namespace midi2
 
 template <> struct midi2::message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
 
@@ -3142,11 +3163,6 @@ template <> struct message_size<ump_message_type::reserved128_0E> : std::integra
 }  // end namespace midi2
 
 namespace std {
-
-template <midi2::data64 Status>
-struct tuple_size<midi2::types::data64::details::sysex7<Status>>  // NOLINT(cert-dcl58-cpp]
-    : public std::integral_constant<std::size_t,
-                                    tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::words_)>> {};
 
 template <>
 struct tuple_size<midi2::types::m2cvm::program_change>
