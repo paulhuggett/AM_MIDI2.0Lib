@@ -20,8 +20,7 @@
 
 #include "midi2/utils.hpp"
 
-namespace midi2 {
-namespace types {
+namespace midi2::types {
 
 template <typename T>
 concept bitfield_type = requires(T) {
@@ -119,8 +118,7 @@ private:
 
 }  // end namespace details
 
-}  // end namespace types
-}  // end namespace midi2
+}  // end namespace midi2::types
 
 #define UMP_GETTER(word, field)                                         \
   constexpr auto field() const noexcept {                               \
