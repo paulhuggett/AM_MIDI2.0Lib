@@ -1900,15 +1900,14 @@ private:
 
 UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element for m2cvm/per_note_pitch_bend
 
-namespace midi2 {
-
 //*                       _                       *
 //*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
 //* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
 //*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
 //*            |_|                                *
-template <> struct message_size<ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
-namespace types::ump_stream {
+template <> struct midi2::message_size<midi2::ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
+
+namespace midi2::types::ump_stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -1917,8 +1916,24 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
   return get<I>(t.words_);
 }
 
+class endpoint_discovery;
+class endpoint_info_notification;
+class device_identity_notification;
+class endpoint_name_notification;
+class product_instance_id_notification;
+class jr_configuration_request;
+class jr_configuration_notification;
+class function_block_discovery;
+class function_block_info_notification;
+class function_block_name_notification;
+class start_of_clip;
+class end_of_clip;
+
+}  // namespace midi2::types::ump_stream
+
 // 7.1.1 Endpoint Discovery Message
-struct endpoint_discovery {
+class midi2::types::ump_stream::endpoint_discovery {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -1960,11 +1975,20 @@ struct endpoint_discovery {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<endpoint_discovery>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(ump_stream, endpoint_discovery)  // Define tuple_size and tuple_element for ump_stream/endpoint_discovery
+
 // 7.1.2 Endpoint Info Notification Message
-struct endpoint_info_notification {
+class midi2::types::ump_stream::endpoint_info_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2019,11 +2043,21 @@ struct endpoint_info_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<endpoint_info_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/endpoint_info_notification
+UMP_TUPLE(ump_stream, endpoint_info_notification)
+
 // 7.1.3 Device Identity Notification Message
-struct device_identity_notification {
+class midi2::types::ump_stream::device_identity_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2091,11 +2125,21 @@ struct device_identity_notification {
   UMP_GETTER_SETTER(word3, sw_revision_3)
   UMP_GETTER_SETTER(word3, sw_revision_4)
 
+private:
+  friend struct ::std::tuple_size<device_identity_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/device_identity_notification
+UMP_TUPLE(ump_stream, device_identity_notification)
+
 // 7.1.4 Endpoint Name Notification
-struct endpoint_name_notification {
+class midi2::types::ump_stream::endpoint_name_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2156,11 +2200,21 @@ struct endpoint_name_notification {
   UMP_GETTER_SETTER(word3, name13)
   UMP_GETTER_SETTER(word3, name14)
 
+private:
+  friend struct ::std::tuple_size<endpoint_name_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/endpoint_name_notification
+UMP_TUPLE(ump_stream, endpoint_name_notification)
+
 // 7.1.5 Product Instance Id Notification Message
-struct product_instance_id_notification {
+class midi2::types::ump_stream::product_instance_id_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2221,13 +2275,23 @@ struct product_instance_id_notification {
   UMP_GETTER_SETTER(word3, pid13)
   UMP_GETTER_SETTER(word3, pid14)
 
+private:
+  friend struct ::std::tuple_size<product_instance_id_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
+
+// Define tuple_size and tuple_element for ump_stream/product_instance_id_notification
+UMP_TUPLE(ump_stream, product_instance_id_notification)
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
-struct jr_configuration_request {
+class midi2::types::ump_stream::jr_configuration_request {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2273,11 +2337,21 @@ struct jr_configuration_request {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<jr_configuration_request>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/jr_configuration_request
+UMP_TUPLE(ump_stream, jr_configuration_request)
+
 // 7.1.6.3 JR Stream Configuration Notification Message
-struct jr_configuration_notification {
+class midi2::types::ump_stream::jr_configuration_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2323,11 +2397,21 @@ struct jr_configuration_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<jr_configuration_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/jr_configuration_notification
+UMP_TUPLE(ump_stream, jr_configuration_notification)
+
 // 7.1.7 Function Block Discovery Message
-struct function_block_discovery {
+class midi2::types::ump_stream::function_block_discovery {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2370,11 +2454,21 @@ struct function_block_discovery {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<function_block_discovery>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/function_block_discovery
+UMP_TUPLE(ump_stream, function_block_discovery)
+
 // 7.1.8 Function Block Info Notification
-struct function_block_info_notification {
+class midi2::types::ump_stream::function_block_info_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2430,11 +2524,21 @@ struct function_block_info_notification {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<function_block_info_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/function_block_info_notification
+UMP_TUPLE(ump_stream, function_block_info_notification)
+
 // 7.1.9 Function Block Name Notification
-struct function_block_name_notification {
+class midi2::types::ump_stream::function_block_name_notification {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2495,11 +2599,21 @@ struct function_block_name_notification {
   UMP_GETTER_SETTER(word3, name11)
   UMP_GETTER_SETTER(word3, name12)
 
+private:
+  friend struct ::std::tuple_size<function_block_name_notification>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+// Define tuple_size and tuple_element for ump_stream/function_block_name_notification
+UMP_TUPLE(ump_stream, function_block_name_notification)
+
 // 7.1.10 Start of Clip Message
-struct start_of_clip {
+class midi2::types::ump_stream::start_of_clip {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2537,11 +2651,20 @@ struct start_of_clip {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<start_of_clip>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
+UMP_TUPLE(ump_stream, start_of_clip)  // Define tuple_size and tuple_element for ump_stream/start_of_clip
+
 // 7.1.11 End of Clip Message
-struct end_of_clip {
+class midi2::types::ump_stream::end_of_clip {
+public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -2579,10 +2702,19 @@ struct end_of_clip {
   UMP_GETTER_SETTER(word2, value2)
   UMP_GETTER_SETTER(word3, value3)
 
+private:
+  friend struct ::std::tuple_size<end_of_clip>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-};  // end namespace types::ump_stream
+UMP_TUPLE(ump_stream, end_of_clip)  // Define tuple_size and tuple_element for ump_stream/end_of_clip
+
+namespace midi2 {
+namespace types::ump_stream {};  // end namespace types::ump_stream
 
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *
@@ -3227,60 +3359,6 @@ template <> struct message_size<ump_message_type::reserved128_0E> : std::integra
 }  // end namespace midi2
 
 namespace std {
-
-template <>
-struct tuple_size<midi2::types::ump_stream::endpoint_discovery>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_discovery::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::endpoint_info_notification>
-    : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_info_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::device_identity_notification>
-    : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::device_identity_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::endpoint_name_notification>
-    : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::endpoint_name_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::product_instance_id_notification>
-    : std::integral_constant<
-          std::size_t,
-          std::tuple_size_v<decltype(midi2::types::ump_stream::product_instance_id_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::jr_configuration_request>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_request::words_)>> {
-};
-template <>
-struct tuple_size<midi2::types::ump_stream::jr_configuration_notification>
-    : std::integral_constant<
-          std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::jr_configuration_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::function_block_discovery>
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_discovery::words_)>> {
-};
-template <>
-struct tuple_size<midi2::types::ump_stream::function_block_info_notification>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<
-          std::size_t,
-          std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_info_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::function_block_name_notification>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<
-          std::size_t,
-          std::tuple_size_v<decltype(midi2::types::ump_stream::function_block_name_notification::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::start_of_clip>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::ump_stream::start_of_clip::words_)>> {};
-template <>
-struct tuple_size<midi2::types::ump_stream::end_of_clip>  // NOLINT(cert-dcl58-cpp]
-    : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::ump_stream::end_of_clip::words_)>> {
-};
 
 // NOLINTNEXTLINE(cert-dcl58-cpp]
 template <midi2::data128 Status>
