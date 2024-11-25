@@ -270,9 +270,8 @@ TEST(UMPToBytestream, SystemTuneRequest) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimingClock) {
-  midi2::types::system::timing_clock message;
-  static_assert(std::tuple_size_v<decltype(message)> == 1);
-  std::array const input{get<0>(message).word()};
+  auto const [w0] = midi2::types::system::timing_clock{};
+  std::array const input{w0.word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
 }
