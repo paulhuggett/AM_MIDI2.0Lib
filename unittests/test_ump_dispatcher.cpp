@@ -34,7 +34,7 @@ using testing::InSequence;
 using testing::StrictMock;
 
 TEST(UMPApply, AlwaysTrue) {
-  std::vector<std::uint32_t> values;
+  std::vector<int> values;
   midi2::types::apply(std::tuple{1, 2}, [&values](int const v) {
     values.push_back(v);
     return false;
@@ -43,7 +43,7 @@ TEST(UMPApply, AlwaysTrue) {
 }
 
 TEST(UMPApply, ErrorCodeAlwaysSuccess) {
-  std::vector<std::uint32_t> values;
+  std::vector<int> values;
   midi2::types::apply(std::tuple{1, 2}, [&values](int const v) -> std::error_code {
     values.push_back(v);
     return std::error_code{};
