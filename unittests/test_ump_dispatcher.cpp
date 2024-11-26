@@ -52,7 +52,7 @@ TEST(UMPApply, ErrorCodeAlwaysSuccess) {
 }
 
 TEST(UMPApply, ErrorCodeFails) {
-  std::vector<std::uint32_t> values;
+  std::vector<int> values;
   auto const result = midi2::types::apply(std::tuple{1, 2}, [&values](auto const v) {
     values.push_back(v);
     return std::make_error_code(std::errc::io_error);
