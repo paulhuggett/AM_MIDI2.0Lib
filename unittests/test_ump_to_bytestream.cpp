@@ -51,7 +51,7 @@ TEST(UMPToBytestream, NoteOff) {
   std::vector<std::uint32_t> input;
   auto const push_back = [&input](auto const v) {
     input.push_back(std::uint32_t{v});
-    return true;
+    return false;
   };
   midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
                       push_back);
@@ -77,7 +77,7 @@ TEST(UMPToBytestream, NoteOffFiltered) {
   std::vector<std::uint32_t> input;
   auto const push_back = [&input](auto const v) {
     input.push_back(v.word());
-    return true;
+    return false;
   };
 
   // message should be filtered
@@ -106,7 +106,7 @@ TEST(UMPToBytestream, NoteOn) {
   std::vector<std::uint32_t> input;
   auto const push_back = [&input](auto const v) {
     input.push_back(v.word());
-    return true;
+    return false;
   };
 
   midi2::types::apply(midi2::types::m1cvm::note_on{}.channel(channel).note(note0).velocity(velocity0), push_back);

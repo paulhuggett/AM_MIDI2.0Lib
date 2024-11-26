@@ -28,12 +28,23 @@ concept bitfield_type = requires(T) {
   requires std::unsigned_integral<typename T::bits::value_type>;
 };
 
+/// Calls the suppplied function for each of the values held by the tuple-like type
+/// \p T.
+///
+/// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::types namespace.
+/// \tparam Function  A function which is capable of accepting each of the types held by the tuple-like type
+///   \p T. Since the types are not normally compatible, this is usually a template function. Returns a value which
+///   can be cast to bool.
+/// \tparam Index  The index at which processing should start.
+/// \param message   An instance of one of the UMP message types.
+/// \param function  The function to be called for each member of the UMP message type.
+/// \returns  The result of the calling \p function which was converted to boolean true, or the last result received.
 template <typename T, typename Function, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> &&
-           std::convertible_to<std::invoke_result_t<Function, std::tuple_element_t<Index, T>>, bool>)
+           std::is_constructible_v<bool, std::invoke_result_t<Function, std::tuple_element_t<Index, T>>>)
 constexpr auto apply(T const &message, Function function) {
   auto const result = function(get<Index>(message));
-  if (!result) {
+  if (bool{result}) {
     return result;
   }
   if constexpr (Index + 1 >= std::tuple_size_v<T>) {

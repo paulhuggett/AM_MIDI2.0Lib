@@ -18,6 +18,7 @@
 #include <bit>
 #include <functional>
 #include <numeric>
+#include <system_error>
 
 // google mock/test/fuzz
 #include <gmock/gmock.h>
@@ -27,6 +28,39 @@
 #endif
 
 namespace {
+
+using testing::ElementsAre;
+using testing::InSequence;
+using testing::StrictMock;
+
+TEST(UMPApply, AlwaysTrue) {
+  std::vector<std::uint32_t> values;
+  midi2::types::apply(std::tuple{1, 2}, [&values](int const v) {
+    values.push_back(v);
+    return false;
+  });
+  EXPECT_THAT(values, ElementsAre(1, 2));
+}
+
+TEST(UMPApply, ErrorCodeAlwaysSuccess) {
+  std::vector<std::uint32_t> values;
+  midi2::types::apply(std::tuple{1, 2}, [&values](int const v) -> std::error_code {
+    values.push_back(v);
+    return std::error_code{};
+  });
+  EXPECT_THAT(values, ElementsAre(1, 2));
+}
+
+TEST(UMPApply, ErrorCodeFails) {
+  std::vector<std::uint32_t> values;
+  auto const result = midi2::types::apply(std::tuple{1, 2}, [&values](auto const v) {
+    values.push_back(v);
+    return std::make_error_code(std::errc::io_error);
+  });
+  EXPECT_EQ(result, std::make_error_code(std::errc::io_error));
+  EXPECT_THAT(values, ElementsAre(1))
+      << "Expected a single element because the lambda returned an error to stop processing";
+}
 
 using midi2::pack;
 using context_type = int;
@@ -303,10 +337,6 @@ public:
 
 namespace {
 
-using testing::ElementsAre;
-using testing::InSequence;
-using testing::StrictMock;
-
 class UMPDispatcher : public testing::Test {
 public:
   UMPDispatcher() : dispatcher_{std::ref(config_)} {}
@@ -314,7 +344,7 @@ public:
   void apply(auto const &message) {
     midi2::types::apply(message, [this](auto const v) {
       dispatcher_.processUMP(std::uint32_t{v});
-      return true;
+      return false;
     });
   }
 

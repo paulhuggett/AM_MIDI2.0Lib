@@ -387,8 +387,8 @@ public:
     std::vector<std::uint32_t> result;
     result.reserve(std::tuple_size_v<T2>);
     midi2::types::apply(ump, [&result](auto const v) {
-      result.push_back(v.word());
-      return true;
+      result.push_back(std::uint32_t{v});
+      return false;
     });
     return result;
   }

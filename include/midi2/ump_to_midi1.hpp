@@ -39,7 +39,7 @@ private:
     constexpr void push(T const &value) {
       types::apply(value, [this](auto const v) {
         output.push_back(std::uint32_t{v});
-        return true;
+        return false;
       });
     }
 
