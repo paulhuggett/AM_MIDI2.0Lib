@@ -49,7 +49,10 @@ TEST(UMPToBytestream, NoteOff) {
   constexpr auto velocity1 = 0x7F;
 
   std::vector<std::uint32_t> input;
-  auto const push_back = [&input](auto const v) { input.push_back(v.word()); };
+  auto const push_back = [&input](auto const v) {
+    input.push_back(std::uint32_t{v});
+    return true;
+  };
   midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
                       push_back);
   midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note1).velocity(velocity1),
@@ -62,6 +65,7 @@ TEST(UMPToBytestream, NoteOff) {
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, NoteOffFiltered) {
   constexpr auto group = 1U;
   constexpr auto channel = 2U;
@@ -71,7 +75,10 @@ TEST(UMPToBytestream, NoteOffFiltered) {
   constexpr auto velocity1 = 0x7F;
 
   std::vector<std::uint32_t> input;
-  auto const push_back = [&input](auto const v) { input.push_back(v.word()); };
+  auto const push_back = [&input](auto const v) {
+    input.push_back(v.word());
+    return true;
+  };
 
   // message should be filtered
   midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
@@ -97,7 +104,10 @@ TEST(UMPToBytestream, NoteOn) {
   constexpr auto velocity1 = 0;
 
   std::vector<std::uint32_t> input;
-  auto const push_back = [&input](auto const v) { input.push_back(v.word()); };
+  auto const push_back = [&input](auto const v) {
+    input.push_back(v.word());
+    return true;
+  };
 
   midi2::types::apply(midi2::types::m1cvm::note_on{}.channel(channel).note(note0).velocity(velocity0), push_back);
   midi2::types::apply(midi2::types::m1cvm::note_on{}.channel(channel).note(note1).velocity(velocity1), push_back);
@@ -109,7 +119,6 @@ TEST(UMPToBytestream, NoteOn) {
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
-
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, ControlChange) {
   constexpr auto channel = 1U;
@@ -132,6 +141,7 @@ TEST(UMPToBytestream, ControlChange) {
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
+// NOLINTNEXTLINE
 TEST(UMPToBytestream, ControlChangeFilteredGroup) {
   constexpr auto group = 1U;
   constexpr auto message = midi2::types::m1cvm::control_change{}.group(group).channel(1).controller(17).value(0x71);
@@ -189,7 +199,6 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
                                   std::byte{lsb}, std::byte{msb}));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
-
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimeCode) {
   auto const tc = 0b1010101;
@@ -311,7 +320,6 @@ TEST(UMPToBytestream, SysexInOne) {
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x07},
                                           std::byte{0x0D}, std::byte{0xF7}));
 }
-
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, Sysex) {
   std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},

@@ -45,7 +45,10 @@ private:
     template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      types::apply(value, [this](auto const v) { output.push_back(v.word()); });
+      types::apply(value, [this](auto const v) {
+        output.push_back(v.word());
+        return true;
+      });
     }
 
     struct bank {

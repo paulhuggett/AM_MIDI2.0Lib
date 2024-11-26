@@ -308,13 +308,7 @@ public:
     pos_ = 0;
     std::ranges::fill(message_, std::uint8_t{0});
   }
-  void processUMP() { /* nothing to do */ }
-  template <typename First, typename... Rest>
-    requires(sizeof(First) == sizeof(std::uint32_t) && word_memfun<First>)
-  void processUMP(First ump, Rest &&...rest) {
-    this->processUMP(ump.word(), std::forward<Rest>(rest)...);
-  }
-  template <typename... Rest> void processUMP(std::uint32_t ump, Rest &&...rest) {
+  void processUMP(std::uint32_t const ump) {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
@@ -347,7 +341,6 @@ public:
       }
       pos_ = 0;
     }
-    this->processUMP(std::forward<Rest>(rest)...);
   }
 
 private:

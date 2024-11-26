@@ -28,14 +28,18 @@ concept bitfield_type = requires(T) {
   requires std::unsigned_integral<typename T::bits::value_type>;
 };
 
-template <typename T, typename Function, unsigned Index = 0>
-  requires(std::tuple_size_v<T> >= 0 && Index <= std::tuple_size_v<T>)
-constexpr void apply(T const &value, Function function) {
-  if constexpr (Index >= std::tuple_size_v<T>) {
-    return;
+template <typename T, typename Function, std::size_t Index = 0>
+  requires(Index < std::tuple_size_v<T> &&
+           std::convertible_to<std::invoke_result_t<Function, std::tuple_element_t<Index, T>>, bool>)
+constexpr auto apply(T const &message, Function function) {
+  auto const result = function(get<Index>(message));
+  if (!result) {
+    return result;
+  }
+  if constexpr (Index + 1 >= std::tuple_size_v<T>) {
+    return result;
   } else {
-    function(get<Index>(value));
-    apply<T, Function, Index + 1>(value, std::move(function));
+    return apply<T, Function, Index + 1>(message, std::move(function));
   }
 }
 
@@ -67,9 +71,11 @@ public:
   using value_type = std::uint32_t;
 
   constexpr word_base() noexcept = default;
-  constexpr explicit word_base(std::uint32_t const v) noexcept : value_{v} {}
+  constexpr explicit word_base(value_type const v) noexcept : value_{v} {}
 
   [[nodiscard]] constexpr auto word() const noexcept { return value_; }
+  [[nodiscard]] constexpr explicit operator value_type() const noexcept { return value_; }
+
   friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
 
   template <bitfield_type BitRange> constexpr auto &set(unsigned v) noexcept {
