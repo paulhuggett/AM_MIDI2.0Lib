@@ -56,20 +56,29 @@ constexpr auto apply(T const &message, Function function) {
 
 namespace details {
 
-constexpr auto status_to_message_type(status) { return ump_message_type::m1cvm; }
-constexpr auto status_to_message_type(system_crt) { return ump_message_type::system; }
-constexpr auto status_to_message_type(ump_utility) { return ump_message_type::utility; }
-//  X(m1cvm, 0x02)
-constexpr auto status_to_message_type(data64) { return ump_message_type::data64; }
-constexpr auto status_to_message_type(m2cvm) { return ump_message_type::m2cvm; }
-constexpr auto status_to_message_type(data128) { return ump_message_type::data128; }
-constexpr auto status_to_message_type(flex_data) { return ump_message_type::flex_data; }
-constexpr auto status_to_message_type(ump_stream) { return ump_message_type::ump_stream; }
-
-template <typename T> constexpr auto status_to_ump_status(T status) { return to_underlying(status); }
-template <> constexpr auto status_to_ump_status(status status) {
-  auto const s = to_underlying(status);
-  return static_cast<std::uint8_t>(s < to_underlying(status::sysex_start) ? s >> 4 : s);
+constexpr auto status_to_message_type(system_crt) noexcept {
+  return ump_message_type::system;
+}
+constexpr auto status_to_message_type(ump_utility) noexcept {
+  return ump_message_type::utility;
+}
+constexpr auto status_to_message_type(m1cvm) noexcept {
+  return ump_message_type::m1cvm;
+}
+constexpr auto status_to_message_type(data64) noexcept {
+  return ump_message_type::data64;
+}
+constexpr auto status_to_message_type(m2cvm) noexcept {
+  return ump_message_type::m2cvm;
+}
+constexpr auto status_to_message_type(data128) noexcept {
+  return ump_message_type::data128;
+}
+constexpr auto status_to_message_type(flex_data) noexcept {
+  return ump_message_type::flex_data;
+}
+constexpr auto status_to_message_type(ump_stream) noexcept {
+  return ump_message_type::ump_stream;
 }
 
 template <unsigned Index, unsigned Bits> struct bitfield {
@@ -109,7 +118,7 @@ public:
 protected:
   template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) noexcept {
     this->set<MtField>(to_underlying(status_to_message_type(status)));
-    this->set<StatusField>(status_to_ump_status(status));
+    this->set<StatusField>(to_underlying(status));
   }
 
 private:
@@ -782,7 +791,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::note_on); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::note_on); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -823,7 +832,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::note_off); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::note_off); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -864,7 +873,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::poly_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -905,7 +914,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::cc); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -946,7 +955,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::program_change); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -985,7 +994,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::channel_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -1024,7 +1033,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::status::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::pitch_bend); }
 
     using mt = details::bitfield<28, 4>;  // 0x2
     using group = details::bitfield<24, 4>;

@@ -127,6 +127,16 @@ enum control : std::uint8_t {
   reset_all_controllers = 0x79,
 };
 
+enum class m1cvm : std::uint8_t {
+  note_off = 0x8,
+  note_on = 0x9,
+  poly_pressure = 0xA,  ///< Polyphonic Key Pressure (Aftertouch).
+  cc = 0xB,             ///< Continuous Controller
+  program_change = 0xC,
+  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
+  pitch_bend = 0xE,
+};
+
 enum class m2cvm : std::uint8_t {
   rpn_pernote = 0x0,
   nrpn_pernote = 0x1,
@@ -135,14 +145,12 @@ enum class m2cvm : std::uint8_t {
   rpn_relative = 0x4,
   nrpn_relative = 0x5,
   pitch_bend_pernote = 0x6,
-
-  // Channel voice messages
   note_off = 0x8,
   note_on = 0x9,
   poly_pressure = 0xA,
-  cc = 0xB,  // Continuous Controller
+  cc = 0xB,  ///< Continuous Controller
   program_change = 0xC,
-  channel_pressure = 0xD,  // Channel Pressure (Aftertouch).
+  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
   pitch_bend = 0xE,
   pernote_manage = 0xF,
 };
