@@ -95,43 +95,43 @@ private:
 
   struct to_bytestream_config {
     struct system {
-      static void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
+      static void midi_time_code(context_type *const ctxt, ump::system::midi_time_code const &in) {
         static_assert(bytestream_message_size<status::timing_code>() == 2);
         system::push(ctxt, in.group(), status::timing_code, std::byte{in.time_code()});
       }
-      static void song_position_pointer(context_type *const ctxt, types::system::song_position_pointer const &in) {
+      static void song_position_pointer(context_type *const ctxt, ump::system::song_position_pointer const &in) {
         static_assert(bytestream_message_size<status::spp>() == 3);
         system::push(ctxt, in.group(), status::spp, std::byte{in.position_lsb()}, std::byte{in.position_msb()});
       }
-      static void song_select(context_type *const ctxt, types::system::song_select const &in) {
+      static void song_select(context_type *const ctxt, ump::system::song_select const &in) {
         static_assert(bytestream_message_size<status::song_select>() == 2);
         system::push(ctxt, in.group(), status::song_select, std::byte{in.song()});
       }
-      static void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
+      static void tune_request(context_type *const ctxt, ump::system::tune_request const &in) {
         static_assert(bytestream_message_size<status::tune_request>() == 1);
         system::push(ctxt, in.group(), status::tune_request);
       }
-      static void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
+      static void timing_clock(context_type *const ctxt, ump::system::timing_clock const &in) {
         static_assert(bytestream_message_size<status::timing_clock>() == 1);
         system::push(ctxt, in.group(), status::timing_clock);
       }
-      static void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
+      static void seq_start(context_type *const ctxt, ump::system::sequence_start const &in) {
         static_assert(bytestream_message_size<status::sequence_start>() == 1);
         system::push(ctxt, in.group(), status::sequence_start);
       }
-      static void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
+      static void seq_continue(context_type *const ctxt, ump::system::sequence_continue const &in) {
         static_assert(bytestream_message_size<status::sequence_continue>() == 1);
         system::push(ctxt, in.group(), status::sequence_continue);
       }
-      static void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
+      static void seq_stop(context_type *const ctxt, ump::system::sequence_stop const &in) {
         static_assert(bytestream_message_size<status::sequence_stop>() == 1);
         system::push(ctxt, in.group(), status::sequence_stop);
       }
-      static void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
+      static void active_sensing(context_type *const ctxt, ump::system::active_sensing const &in) {
         static_assert(bytestream_message_size<status::active_sensing>() == 1);
         system::push(ctxt, in.group(), status::active_sensing);
       }
-      static void reset(context_type *const ctxt, types::system::reset const &in) {
+      static void reset(context_type *const ctxt, ump::system::reset const &in) {
         static_assert(bytestream_message_size<status::systemreset>() == 1);
         system::push(ctxt, in.group(), status::systemreset);
       }
@@ -158,7 +158,7 @@ private:
       }
     };
     struct m1cvm {
-      static void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) {
+      static void note_off(context_type *const ctxt, ump::m1cvm::note_off const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -167,7 +167,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
-      static void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) {
+      static void note_on(context_type *const ctxt, ump::m1cvm::note_on const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -176,7 +176,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
-      static void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
+      static void poly_pressure(context_type *const ctxt, ump::m1cvm::poly_pressure const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -185,7 +185,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.pressure()});
       }
-      static void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
+      static void control_change(context_type *const ctxt, ump::m1cvm::control_change const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -194,7 +194,7 @@ private:
         ctxt->push_back(std::byte{in.controller()});
         ctxt->push_back(std::byte{in.value()});
       }
-      static void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
+      static void program_change(context_type *const ctxt, ump::m1cvm::program_change const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -202,7 +202,7 @@ private:
         ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.program()});
       }
-      static void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
+      static void channel_pressure(context_type *const ctxt, ump::m1cvm::channel_pressure const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -210,7 +210,7 @@ private:
         ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.data()});
       }
-      static void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) {
+      static void pitch_bend(context_type *const ctxt, ump::m1cvm::pitch_bend const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -222,7 +222,7 @@ private:
     };
     struct data64 {
     public:
-      static void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) {
+      static void sysex7_in_1(context_type *const ctxt, ump::data64::sysex7_in_1 const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -232,14 +232,14 @@ private:
           ctxt->push_back(sysex_stop);
         }
       }
-      static void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) {
+      static void sysex7_start(context_type *const ctxt, ump::data64::sysex7_start const &in) {
         if (ctxt->filter_message(in)) {
           return;
         }
         ctxt->push_back(sysex_start);
         data64::write_sysex_bytes(ctxt, in);
       }
-      static void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) {
+      static void sysex7_continue(context_type *const ctxt, ump::data64::sysex7_continue const &in) {
         // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
@@ -247,7 +247,7 @@ private:
         }
         data64::write_sysex_bytes(ctxt, in);
       }
-      static void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) {
+      static void sysex7_end(context_type *const ctxt, ump::data64::sysex7_end const &in) {
         // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {

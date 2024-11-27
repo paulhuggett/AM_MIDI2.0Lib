@@ -20,7 +20,7 @@
 
 #include "midi2/utils.hpp"
 
-namespace midi2::types {
+namespace midi2::ump {
 
 template <typename T>
 concept bitfield_type = requires(T) {
@@ -31,7 +31,7 @@ concept bitfield_type = requires(T) {
 /// Calls the suppplied function for each of the values held by the tuple-like type
 /// \p T.
 ///
-/// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::types namespace.
+/// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::ump namespace.
 /// \tparam Function  A function which is capable of accepting each of the types held by the tuple-like type
 ///   \p T. Since the types are not normally compatible, this is usually a template function. Returns a value which
 ///   can be cast to bool.
@@ -144,7 +144,7 @@ private:
 
 }  // end namespace details
 
-}  // end namespace midi2::types
+}  // end namespace midi2::ump
 
 #define UMP_GETTER(word, field)                                         \
   constexpr auto field() const noexcept {                               \
@@ -164,15 +164,15 @@ private:
 /// 1. An specialization of std::tuple_size<>
 /// 2. An specialization of std::tuple_element<>
 /// 3. A static assertion that the tuple size for the class matches that of the group as a whole
-#define UMP_TUPLE(group, message)                                                                                    \
-  template <>                                                                                                        \
-  struct std::tuple_size<midi2::types::group::message> /* NOLINT(cert-dcl58-cpp]*/                                   \
-      : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::types::group::message::words_)>> {};   \
-                                                                                                                     \
-  template <std::size_t I> struct std::tuple_element<I, midi2::types::group::message> { /* NOLINT(cert-dcl58-cpp] */ \
-    using type = std::tuple_element_t<I, decltype(midi2::types::group::message::words_)>;                            \
-  };                                                                                                                 \
-  static_assert(std::tuple_size_v<midi2::types::group::message> ==                                                   \
+#define UMP_TUPLE(group, message)                                                                                  \
+  template <>                                                                                                      \
+  struct std::tuple_size<midi2::ump::group::message> /* NOLINT(cert-dcl58-cpp]*/                                   \
+      : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::ump::group::message::words_)>> {};   \
+                                                                                                                   \
+  template <std::size_t I> struct std::tuple_element<I, midi2::ump::group::message> { /* NOLINT(cert-dcl58-cpp] */ \
+    using type = std::tuple_element_t<I, decltype(midi2::ump::group::message::words_)>;                            \
+  };                                                                                                               \
+  static_assert(std::tuple_size_v<midi2::ump::group::message> ==                                                   \
                 midi2::message_size<midi2::ump_message_type::group>::value);
 
 namespace midi2 {
@@ -187,7 +187,7 @@ namespace midi2 {
 template <> struct message_size<ump_message_type::utility> : std::integral_constant<unsigned, 1> {};
 }  // end namespace midi2
 
-namespace midi2::types::utility {
+namespace midi2::ump::utility {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return std::get<I>(t.words_);
@@ -202,13 +202,13 @@ class jr_timestamp;
 class delta_clockstamp_tpqn;
 class delta_clockstamp;
 
-}  // end namespace midi2::types::utility
+}  // end namespace midi2::ump::utility
 
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
 // 7.2.1 NOOP
-class midi2::types::utility::noop {
+class midi2::ump::utility::noop {
 public:
   class word0 : public details::word_base {
   public:
@@ -236,7 +236,7 @@ private:
 UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 
 // 7.2.2.1 JR Clock Message
-class midi2::types::utility::jr_clock {
+class midi2::ump::utility::jr_clock {
 public:
   class word0 : public details::word_base {
   public:
@@ -271,7 +271,7 @@ private:
 UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_clock
 
 // 7.2.2.2 JR Timestamp Message
-class midi2::types::utility::jr_timestamp {
+class midi2::ump::utility::jr_timestamp {
 public:
   class word0 : public details::word_base {
   public:
@@ -306,7 +306,7 @@ private:
 UMP_TUPLE(utility, jr_timestamp)  // Define tuple_size and tuple_element for jr_timestamp
 
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-class midi2::types::utility::delta_clockstamp_tpqn {
+class midi2::ump::utility::delta_clockstamp_tpqn {
 public:
   class word0 : public details::word_base {
   public:
@@ -341,7 +341,7 @@ private:
 UMP_TUPLE(utility, delta_clockstamp_tpqn)  // Define tuple_size and tuple_element for delta_clockstamp_tpqn
 
 // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-class midi2::types::utility::delta_clockstamp {
+class midi2::ump::utility::delta_clockstamp {
 public:
   class word0 : public details::word_base {
   public:
@@ -383,7 +383,7 @@ UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for
 
 template <> struct midi2::message_size<midi2::ump_message_type::system> : std::integral_constant<unsigned, 1> {};
 
-namespace midi2::types::system {
+namespace midi2::ump::system {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -403,11 +403,11 @@ class sequence_stop;
 class active_sensing;
 class reset;
 
-}  // namespace midi2::types::system
+}  // namespace midi2::ump::system
 
-class midi2::types::system::midi_time_code {
+class midi2::ump::system::midi_time_code {
 public:
-  class word0 : public midi2::types::details::word_base {
+  class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
@@ -442,7 +442,7 @@ private:
 
 UMP_TUPLE(system, midi_time_code)  // Define tuple_size and tuple_element for midi_time_code
 
-class midi2::types::system::song_position_pointer {
+class midi2::ump::system::song_position_pointer {
 public:
   class word0 : public details::word_base {
   public:
@@ -480,7 +480,7 @@ private:
 
 UMP_TUPLE(system, song_position_pointer)  // Define tuple_size and tuple_element for song_position_pointer
 
-class midi2::types::system::song_select {
+class midi2::ump::system::song_select {
 public:
   class word0 : public details::word_base {
   public:
@@ -517,7 +517,7 @@ private:
 
 UMP_TUPLE(system, song_select)  // Define tuple_size and tuple_element for song_select
 
-class midi2::types::system::tune_request {
+class midi2::ump::system::tune_request {
 public:
   class word0 : public details::word_base {
   public:
@@ -551,7 +551,7 @@ private:
 
 UMP_TUPLE(system, tune_request)  // Define tuple_size and tuple_element for tune_request
 
-class midi2::types::system::timing_clock {
+class midi2::ump::system::timing_clock {
 public:
   class word0 : public details::word_base {
   public:
@@ -585,7 +585,7 @@ private:
 
 UMP_TUPLE(system, timing_clock)  // Define tuple_size and tuple_element for timing_clock
 
-class midi2::types::system::sequence_start {
+class midi2::ump::system::sequence_start {
 public:
   class word0 : public details::word_base {
   public:
@@ -619,7 +619,7 @@ private:
 
 UMP_TUPLE(system, sequence_start)  // Define tuple_size and tuple_element for sequence_start
 
-class midi2::types::system::sequence_continue {
+class midi2::ump::system::sequence_continue {
 public:
   class word0 : public details::word_base {
   public:
@@ -653,7 +653,7 @@ private:
 
 UMP_TUPLE(system, sequence_continue)  // Define tuple_size and tuple_element for sequence_continue
 
-class midi2::types::system::sequence_stop {
+class midi2::ump::system::sequence_stop {
 public:
   class word0 : public details::word_base {
   public:
@@ -687,7 +687,7 @@ private:
 
 UMP_TUPLE(system, sequence_stop)  // Define tuple_size and tuple_element for sequence_stop
 
-class midi2::types::system::active_sensing {
+class midi2::ump::system::active_sensing {
 public:
   class word0 : public details::word_base {
   public:
@@ -721,7 +721,7 @@ private:
 
 UMP_TUPLE(system, active_sensing)  // Define tuple_size and tuple_element for active_sensing
 
-class midi2::types::system::reset {
+class midi2::ump::system::reset {
 public:
   class word0 : public details::word_base {
   public:
@@ -765,7 +765,7 @@ UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for reset
 // Messages
 template <> struct midi2::message_size<midi2::ump_message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
 
-namespace midi2::types::m1cvm {
+namespace midi2::ump::m1cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -782,10 +782,10 @@ class program_change;
 class channel_pressure;
 class pitch_bend;
 
-}  // end namespace midi2::types::m1cvm
+}  // end namespace midi2::ump::m1cvm
 
 // 7.3.2 MIDI 1.0 Note On Message
-class midi2::types::m1cvm::note_on {
+class midi2::ump::m1cvm::note_on {
 public:
   class word0 : public details::word_base {
   public:
@@ -826,7 +826,7 @@ private:
 UMP_TUPLE(m1cvm, note_on)  // Define tuple_size and tuple_element for m1cvm/note_on
 
 // 7.3.1 MIDI 1.0 Note Off Message
-class midi2::types::m1cvm::note_off {
+class midi2::ump::m1cvm::note_off {
 public:
   class word0 : public details::word_base {
   public:
@@ -867,7 +867,7 @@ private:
 UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
-class midi2::types::m1cvm::poly_pressure {
+class midi2::ump::m1cvm::poly_pressure {
 public:
   class word0 : public details::word_base {
   public:
@@ -908,7 +908,7 @@ private:
 UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
 
 // 7.3.4 MIDI 1.0 Control Change Message
-class midi2::types::m1cvm::control_change {
+class midi2::ump::m1cvm::control_change {
 public:
   class word0 : public details::word_base {
   public:
@@ -949,7 +949,7 @@ private:
 UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
 
 // 7.3.5 MIDI 1.0 Program Change Message
-class midi2::types::m1cvm::program_change {
+class midi2::ump::m1cvm::program_change {
 public:
   class word0 : public details::word_base {
   public:
@@ -988,7 +988,7 @@ private:
 UMP_TUPLE(m1cvm, program_change)  // Define tuple_size and tuple_element for m1cvm/program_change
 
 // 7.3.6 MIDI 1.0 Channel Pressure Message
-class midi2::types::m1cvm::channel_pressure {
+class midi2::ump::m1cvm::channel_pressure {
 public:
   class word0 : public details::word_base {
   public:
@@ -1027,7 +1027,7 @@ private:
 UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
 
 // 7.3.7 MIDI 1.0 Pitch Bend Message
-class midi2::types::m1cvm::pitch_bend {
+class midi2::ump::m1cvm::pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
@@ -1074,7 +1074,7 @@ UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/p
 
 template <> struct midi2::message_size<midi2::ump_message_type::data64> : std::integral_constant<unsigned, 2> {};
 
-namespace midi2::types::data64::details {
+namespace midi2::ump::data64::details {
 
 // 7.7 System Exclusive (7-Bit) Messages
 template <midi2::data64 Status> class sysex7;
@@ -1086,37 +1086,37 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
   return get<I>(t.words_);
 }
 
-}  // end namespace midi2::types::data64::details
+}  // end namespace midi2::ump::data64::details
 
-template <midi2::data64 Status> class midi2::types::data64::details::sysex7 {
+template <midi2::data64 Status> class midi2::ump::data64::details::sysex7 {
 public:
-  class word0 : public midi2::types::details::word_base {
+  class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
     constexpr word0() noexcept { this->init<mt, status>(Status); }
 
-    using mt = midi2::types::details::bitfield<28, 4>;
-    using group = midi2::types::details::bitfield<24, 4>;
-    using status = midi2::types::details::bitfield<20, 4>;
-    using number_of_bytes = midi2::types::details::bitfield<16, 4>;
-    using reserved0 = midi2::types::details::bitfield<15, 1>;
-    using data0 = midi2::types::details::bitfield<8, 7>;
-    using reserved1 = midi2::types::details::bitfield<7, 1>;
-    using data1 = midi2::types::details::bitfield<0, 7>;
+    using mt = midi2::ump::details::bitfield<28, 4>;
+    using group = midi2::ump::details::bitfield<24, 4>;
+    using status = midi2::ump::details::bitfield<20, 4>;
+    using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
+    using reserved0 = midi2::ump::details::bitfield<15, 1>;
+    using data0 = midi2::ump::details::bitfield<8, 7>;
+    using reserved1 = midi2::ump::details::bitfield<7, 1>;
+    using data1 = midi2::ump::details::bitfield<0, 7>;
   };
-  class word1 : public midi2::types::details::word_base {
+  class word1 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using reserved0 = midi2::types::details::bitfield<31, 1>;
-    using data2 = midi2::types::details::bitfield<24, 7>;
-    using reserved1 = midi2::types::details::bitfield<23, 1>;
-    using data3 = midi2::types::details::bitfield<16, 7>;
-    using reserved2 = midi2::types::details::bitfield<15, 1>;
-    using data4 = midi2::types::details::bitfield<8, 7>;
-    using reserved3 = midi2::types::details::bitfield<7, 1>;
-    using data5 = midi2::types::details::bitfield<0, 7>;
+    using reserved0 = midi2::ump::details::bitfield<31, 1>;
+    using data2 = midi2::ump::details::bitfield<24, 7>;
+    using reserved1 = midi2::ump::details::bitfield<23, 1>;
+    using data3 = midi2::ump::details::bitfield<16, 7>;
+    using reserved2 = midi2::ump::details::bitfield<15, 1>;
+    using data4 = midi2::ump::details::bitfield<8, 7>;
+    using reserved3 = midi2::ump::details::bitfield<7, 1>;
+    using data5 = midi2::ump::details::bitfield<0, 7>;
   };
 
   constexpr sysex7() noexcept = default;
@@ -1144,31 +1144,31 @@ private:
 };
 
 template <midi2::data64 Status>
-struct std::tuple_size<midi2::types::data64::details::sysex7<Status>> /* NOLINT(cert-dcl58-cpp]*/
+struct std::tuple_size<midi2::ump::data64::details::sysex7<Status>> /* NOLINT(cert-dcl58-cpp]*/
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::data64::details::sysex7<Status>::words_)>> {};
+                             std::tuple_size_v<decltype(midi2::ump::data64::details::sysex7<Status>::words_)>> {};
 
 template <std::size_t I, midi2::data64 Status>
-struct std::tuple_element<I, midi2::types::data64::details::sysex7<Status>> { /* NOLINT(cert-dcl58-cpp] */
-  using type = std::tuple_element_t<I, decltype(midi2::types::data64::details::sysex7<Status>::words_)>;
+struct std::tuple_element<I, midi2::ump::data64::details::sysex7<Status>> { /* NOLINT(cert-dcl58-cpp] */
+  using type = std::tuple_element_t<I, decltype(midi2::ump::data64::details::sysex7<Status>::words_)>;
 };
 
-namespace midi2::types::data64 {
+namespace midi2::ump::data64 {
 
-using sysex7_in_1 = midi2::types::data64::details::sysex7<midi2::data64::sysex7_in_1>;
-using sysex7_start = midi2::types::data64::details::sysex7<midi2::data64::sysex7_start>;
-using sysex7_continue = midi2::types::data64::details::sysex7<midi2::data64::sysex7_continue>;
-using sysex7_end = midi2::types::data64::details::sysex7<midi2::data64::sysex7_end>;
+using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_in_1>;
+using sysex7_start = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_start>;
+using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_continue>;
+using sysex7_end = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_end>;
 
-}  // namespace midi2::types::data64
+}  // namespace midi2::ump::data64
 
-static_assert(std::tuple_size_v<midi2::types::data64::sysex7_in_1> ==
+static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_in_1> ==
               midi2::message_size<midi2::ump_message_type::data64>::value);
-static_assert(std::tuple_size_v<midi2::types::data64::sysex7_start> ==
+static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_start> ==
               midi2::message_size<midi2::ump_message_type::data64>::value);
-static_assert(std::tuple_size_v<midi2::types::data64::sysex7_continue> ==
+static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_continue> ==
               midi2::message_size<midi2::ump_message_type::data64>::value);
-static_assert(std::tuple_size_v<midi2::types::data64::sysex7_end> ==
+static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
               midi2::message_size<midi2::ump_message_type::data64>::value);
 
 //*        ___               *
@@ -1181,7 +1181,7 @@ static_assert(std::tuple_size_v<midi2::types::data64::sysex7_end> ==
 
 template <> struct midi2::message_size<midi2::ump_message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
 
-namespace midi2::types::m2cvm {
+namespace midi2::ump::m2cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -1206,10 +1206,10 @@ class channel_pressure;
 class pitch_bend;
 class per_note_pitch_bend;
 
-}  // end namespace midi2::types::m2cvm
+}  // end namespace midi2::ump::m2cvm
 
 // 7.4.1 MIDI 2.0 Note Off Message
-class midi2::types::m2cvm::note_off {
+class midi2::ump::m2cvm::note_off {
 public:
   class word0 : public details::word_base {
   public:
@@ -1258,7 +1258,7 @@ private:
 UMP_TUPLE(m2cvm, note_off)  // Define tuple_size and tuple_element for m2cvm/note_off
 
 // 7.4.2 MIDI 2.0 Note On Message
-class midi2::types::m2cvm::note_on {
+class midi2::ump::m2cvm::note_on {
 public:
   class word0 : public details::word_base {
   public:
@@ -1307,7 +1307,7 @@ private:
 UMP_TUPLE(m2cvm, note_on)  // Define tuple_size and tuple_element for m2cvm/note_on
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
-class midi2::types::m2cvm::poly_pressure {
+class midi2::ump::m2cvm::poly_pressure {
 public:
   class word0 : public details::word_base {
   public:
@@ -1352,7 +1352,7 @@ private:
 UMP_TUPLE(m2cvm, poly_pressure)  // Define tuple_size and tuple_element for m2cvm/poly_pressure
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
-class midi2::types::m2cvm::rpn_per_note_controller {
+class midi2::ump::m2cvm::rpn_per_note_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1397,7 +1397,7 @@ private:
 UMP_TUPLE(m2cvm, rpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_per_note_controller
 
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
-class midi2::types::m2cvm::nrpn_per_note_controller {
+class midi2::ump::m2cvm::nrpn_per_note_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1449,7 +1449,7 @@ UMP_TUPLE(m2cvm, nrpn_per_note_controller)  // Define tuple_size and tuple_eleme
 /// map and translate directly to MIDI 1.0 Registered Parameter Numbers and use the same
 /// definitions as MMA/AMEI approved RPN messages. Registered Controllers are organized in 128 Banks
 /// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
-class midi2::types::m2cvm::rpn_controller {
+class midi2::ump::m2cvm::rpn_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1496,7 +1496,7 @@ private:
 UMP_TUPLE(m2cvm, rpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_per_note_controller
 
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
-class midi2::types::m2cvm::nrpn_controller {
+class midi2::ump::m2cvm::nrpn_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1543,7 +1543,7 @@ private:
 UMP_TUPLE(m2cvm, nrpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_controller
 
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
-class midi2::types::m2cvm::rpn_relative_controller {
+class midi2::ump::m2cvm::rpn_relative_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1590,7 +1590,7 @@ private:
 UMP_TUPLE(m2cvm, rpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
 
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
-class midi2::types::m2cvm::nrpn_relative_controller {
+class midi2::ump::m2cvm::nrpn_relative_controller {
 public:
   class word0 : public details::word_base {
   public:
@@ -1639,7 +1639,7 @@ private:
 UMP_TUPLE(m2cvm, nrpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
-class midi2::types::m2cvm::per_note_management {
+class midi2::ump::m2cvm::per_note_management {
 public:
   class word0 : public details::word_base {
   public:
@@ -1689,7 +1689,7 @@ private:
 UMP_TUPLE(m2cvm, per_note_management)  // Define tuple_size and tuple_element for m2cvm/per_note_management
 
 // 7.4.6 MIDI 2.0 Control Change Message
-class midi2::types::m2cvm::control_change {
+class midi2::ump::m2cvm::control_change {
 public:
   class word0 : public details::word_base {
   public:
@@ -1734,7 +1734,7 @@ private:
 UMP_TUPLE(m2cvm, control_change)  // Define tuple_size and tuple_element for m2cvm/control_change
 
 // 7.4.9 MIDI 2.0 Program Change Message
-class midi2::types::m2cvm::program_change {
+class midi2::ump::m2cvm::program_change {
 public:
   class word0 : public details::word_base {
   public:
@@ -1788,7 +1788,7 @@ private:
 UMP_TUPLE(m2cvm, program_change)  // Define tuple_size and tuple_element for m2cvm/program_change
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
-class midi2::types::m2cvm::channel_pressure {
+class midi2::ump::m2cvm::channel_pressure {
 public:
   class word0 : public details::word_base {
   public:
@@ -1831,7 +1831,7 @@ private:
 UMP_TUPLE(m2cvm, channel_pressure)  // Define tuple_size and tuple_element for m2cvm/channel_pressure
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
-class midi2::types::m2cvm::pitch_bend {
+class midi2::ump::m2cvm::pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
@@ -1874,7 +1874,7 @@ private:
 UMP_TUPLE(m2cvm, pitch_bend)  // Define tuple_size and tuple_element for m2cvm/pitch_bend
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-class midi2::types::m2cvm::per_note_pitch_bend {
+class midi2::ump::m2cvm::per_note_pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
@@ -1925,7 +1925,7 @@ UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element fo
 //*            |_|                                *
 template <> struct midi2::message_size<midi2::ump_message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
 
-namespace midi2::types::ump_stream {
+namespace midi2::ump::ump_stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -1947,10 +1947,10 @@ class function_block_name_notification;
 class start_of_clip;
 class end_of_clip;
 
-}  // namespace midi2::types::ump_stream
+}  // namespace midi2::ump::ump_stream
 
 // 7.1.1 Endpoint Discovery Message
-class midi2::types::ump_stream::endpoint_discovery {
+class midi2::ump::ump_stream::endpoint_discovery {
 public:
   class word0 : public details::word_base {
   public:
@@ -2005,7 +2005,7 @@ private:
 UMP_TUPLE(ump_stream, endpoint_discovery)  // Define tuple_size and tuple_element for ump_stream/endpoint_discovery
 
 // 7.1.2 Endpoint Info Notification Message
-class midi2::types::ump_stream::endpoint_info_notification {
+class midi2::ump::ump_stream::endpoint_info_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2074,7 +2074,7 @@ private:
 UMP_TUPLE(ump_stream, endpoint_info_notification)
 
 // 7.1.3 Device Identity Notification Message
-class midi2::types::ump_stream::device_identity_notification {
+class midi2::ump::ump_stream::device_identity_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2156,7 +2156,7 @@ private:
 UMP_TUPLE(ump_stream, device_identity_notification)
 
 // 7.1.4 Endpoint Name Notification
-class midi2::types::ump_stream::endpoint_name_notification {
+class midi2::ump::ump_stream::endpoint_name_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2231,7 +2231,7 @@ private:
 UMP_TUPLE(ump_stream, endpoint_name_notification)
 
 // 7.1.5 Product Instance Id Notification Message
-class midi2::types::ump_stream::product_instance_id_notification {
+class midi2::ump::ump_stream::product_instance_id_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2308,7 +2308,7 @@ UMP_TUPLE(ump_stream, product_instance_id_notification)
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
-class midi2::types::ump_stream::jr_configuration_request {
+class midi2::ump::ump_stream::jr_configuration_request {
 public:
   class word0 : public details::word_base {
   public:
@@ -2368,7 +2368,7 @@ private:
 UMP_TUPLE(ump_stream, jr_configuration_request)
 
 // 7.1.6.3 JR Stream Configuration Notification Message
-class midi2::types::ump_stream::jr_configuration_notification {
+class midi2::ump::ump_stream::jr_configuration_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2428,7 +2428,7 @@ private:
 UMP_TUPLE(ump_stream, jr_configuration_notification)
 
 // 7.1.7 Function Block Discovery Message
-class midi2::types::ump_stream::function_block_discovery {
+class midi2::ump::ump_stream::function_block_discovery {
 public:
   class word0 : public details::word_base {
   public:
@@ -2485,7 +2485,7 @@ private:
 UMP_TUPLE(ump_stream, function_block_discovery)
 
 // 7.1.8 Function Block Info Notification
-class midi2::types::ump_stream::function_block_info_notification {
+class midi2::ump::ump_stream::function_block_info_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2555,7 +2555,7 @@ private:
 UMP_TUPLE(ump_stream, function_block_info_notification)
 
 // 7.1.9 Function Block Name Notification
-class midi2::types::ump_stream::function_block_name_notification {
+class midi2::ump::ump_stream::function_block_name_notification {
 public:
   class word0 : public details::word_base {
   public:
@@ -2630,7 +2630,7 @@ private:
 UMP_TUPLE(ump_stream, function_block_name_notification)
 
 // 7.1.10 Start of Clip Message
-class midi2::types::ump_stream::start_of_clip {
+class midi2::ump::ump_stream::start_of_clip {
 public:
   class word0 : public details::word_base {
   public:
@@ -2681,7 +2681,7 @@ private:
 UMP_TUPLE(ump_stream, start_of_clip)  // Define tuple_size and tuple_element for ump_stream/start_of_clip
 
 // 7.1.11 End of Clip Message
-class midi2::types::ump_stream::end_of_clip {
+class midi2::ump::ump_stream::end_of_clip {
 public:
   class word0 : public details::word_base {
   public:
@@ -2739,7 +2739,7 @@ UMP_TUPLE(ump_stream, end_of_clip)  // Define tuple_size and tuple_element for u
 
 template <> struct midi2::message_size<midi2::ump_message_type::flex_data> : std::integral_constant<unsigned, 4> {};
 
-namespace midi2::types::flex_data {
+namespace midi2::ump::flex_data {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -2755,10 +2755,10 @@ class set_key_signature;
 class set_chord_name;
 class text_common;
 
-}  // namespace midi2::types::flex_data
+}  // namespace midi2::ump::flex_data
 
 // 7.5.3 Set Tempo Message
-class midi2::types::flex_data::set_tempo {
+class midi2::ump::flex_data::set_tempo {
 public:
   class word0 : public details::word_base {
   public:
@@ -2816,7 +2816,7 @@ private:
 UMP_TUPLE(flex_data, set_tempo)  // Define tuple_size and tuple_element for flex_data/set_tempo
 
 // 7.5.4 Set Time Signature Message
-class midi2::types::flex_data::set_time_signature {
+class midi2::ump::flex_data::set_time_signature {
 public:
   class word0 : public details::word_base {
   public:
@@ -2880,7 +2880,7 @@ private:
 UMP_TUPLE(flex_data, set_time_signature)  // Define tuple_size and tuple_element for flex_data/set_time_signature
 
 // 7.5.5 Set Metronome Message
-class midi2::types::flex_data::set_metronome {
+class midi2::ump::flex_data::set_metronome {
 public:
   class word0 : public details::word_base {
   public:
@@ -2950,7 +2950,7 @@ private:
 UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for flex_data/set_metronome
 
 // 7.5.7 Set Key Signature Message
-class midi2::types::flex_data::set_key_signature {
+class midi2::ump::flex_data::set_key_signature {
 public:
   class word0 : public details::word_base {
   public:
@@ -3011,7 +3011,7 @@ private:
 UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
 
 // 7.5.8 Set Chord Name Message
-namespace midi2::types::flex_data {
+namespace midi2::ump::flex_data {
 
 enum class sharps_flats : std::int8_t {
   double_sharp = 2,
@@ -3067,9 +3067,9 @@ enum class chord_type : std::uint8_t {
   seven_suspended_4th = 0x1B,
 };
 
-}  // end namespace midi2::types::flex_data
+}  // end namespace midi2::ump::flex_data
 
-class midi2::types::flex_data::set_chord_name {
+class midi2::ump::flex_data::set_chord_name {
 public:
   class word0 : public details::word_base {
   public:
@@ -3161,7 +3161,7 @@ private:
 UMP_TUPLE(flex_data, set_chord_name)  // Define tuple_size and tuple_element for flex_data/set_chord_name
 
 // 7.5.9 Text Messages Common Format
-class midi2::types::flex_data::text_common {
+class midi2::ump::flex_data::text_common {
 public:
   class word0 : public details::word_base {
   public:
@@ -3226,7 +3226,7 @@ UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for fl
 
 template <> struct midi2::message_size<midi2::ump_message_type::data128> : std::integral_constant<unsigned, 4> {};
 
-namespace midi2::types::data128 {
+namespace midi2::ump::data128 {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -3256,48 +3256,48 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
 class mds_header;
 class mds_payload;
 
-}  // namespace midi2::types::data128
+}  // namespace midi2::ump::data128
 
-template <midi2::data128 Status> class midi2::types::data128::details::sysex8 {
+template <midi2::data128 Status> class midi2::ump::data128::details::sysex8 {
 public:
-  class word0 : public midi2::types::details::word_base {
+  class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(Status); }
 
-    using mt = midi2::types::details::bitfield<28, 4>;  ///< Always 0x05
-    using group = midi2::types::details::bitfield<24, 4>;
-    using status = midi2::types::details::bitfield<20, 4>;
-    using number_of_bytes = midi2::types::details::bitfield<16, 4>;
-    using stream_id = midi2::types::details::bitfield<8, 8>;
-    using data0 = midi2::types::details::bitfield<0, 8>;
+    using mt = midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using group = midi2::ump::details::bitfield<24, 4>;
+    using status = midi2::ump::details::bitfield<20, 4>;
+    using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
+    using stream_id = midi2::ump::details::bitfield<8, 8>;
+    using data0 = midi2::ump::details::bitfield<0, 8>;
   };
-  class word1 : public midi2::types::details::word_base {
+  class word1 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data1 = midi2::types::details::bitfield<24, 8>;
-    using data2 = midi2::types::details::bitfield<16, 8>;
-    using data3 = midi2::types::details::bitfield<8, 8>;
-    using data4 = midi2::types::details::bitfield<0, 8>;
+    using data1 = midi2::ump::details::bitfield<24, 8>;
+    using data2 = midi2::ump::details::bitfield<16, 8>;
+    using data3 = midi2::ump::details::bitfield<8, 8>;
+    using data4 = midi2::ump::details::bitfield<0, 8>;
   };
-  class word2 : public midi2::types::details::word_base {
+  class word2 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data5 = midi2::types::details::bitfield<24, 8>;
-    using data6 = midi2::types::details::bitfield<16, 8>;
-    using data7 = midi2::types::details::bitfield<8, 8>;
-    using data8 = midi2::types::details::bitfield<0, 8>;
+    using data5 = midi2::ump::details::bitfield<24, 8>;
+    using data6 = midi2::ump::details::bitfield<16, 8>;
+    using data7 = midi2::ump::details::bitfield<8, 8>;
+    using data8 = midi2::ump::details::bitfield<0, 8>;
   };
-  class word3 : public midi2::types::details::word_base {
+  class word3 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data9 = midi2::types::details::bitfield<24, 8>;
-    using data10 = midi2::types::details::bitfield<16, 8>;
-    using data11 = midi2::types::details::bitfield<8, 8>;
-    using data12 = midi2::types::details::bitfield<0, 8>;
+    using data9 = midi2::ump::details::bitfield<24, 8>;
+    using data10 = midi2::ump::details::bitfield<16, 8>;
+    using data11 = midi2::ump::details::bitfield<8, 8>;
+    using data12 = midi2::ump::details::bitfield<0, 8>;
   };
 
   constexpr sysex8() noexcept = default;
@@ -3333,61 +3333,61 @@ private:
 };
 
 template <::midi2::data128 Status>
-struct std::tuple_size<midi2::types::data128::details::sysex8<Status>> /* NOLINT(cert-dcl58-cpp]*/
+struct std::tuple_size<midi2::ump::data128::details::sysex8<Status>> /* NOLINT(cert-dcl58-cpp]*/
     : std::integral_constant<std::size_t,
-                             std::tuple_size_v<decltype(midi2::types::data128::details::sysex8<Status>::words_)>> {};
+                             std::tuple_size_v<decltype(midi2::ump::data128::details::sysex8<Status>::words_)>> {};
 
 template <std::size_t I, midi2::data128 Status>
-struct std::tuple_element<I, midi2::types::data128::details::sysex8<Status>> { /* NOLINT(cert-dcl58-cpp] */
-  using type = std::tuple_element_t<I, decltype(midi2::types::data128::details::sysex8<Status>::words_)>;
+struct std::tuple_element<I, midi2::ump::data128::details::sysex8<Status>> { /* NOLINT(cert-dcl58-cpp] */
+  using type = std::tuple_element_t<I, decltype(midi2::ump::data128::details::sysex8<Status>::words_)>;
 };
 
-namespace midi2::types::data128 {
+namespace midi2::ump::data128 {
 
 using sysex8_in_1 = details::sysex8<midi2::data128::sysex8_in_1>;
 using sysex8_start = details::sysex8<midi2::data128::sysex8_start>;
 using sysex8_continue = details::sysex8<midi2::data128::sysex8_continue>;
 using sysex8_end = details::sysex8<midi2::data128::sysex8_end>;
 
-}  // end namespace midi2::types::data128
+}  // end namespace midi2::ump::data128
 
 // 7.9 Mixed Data Set Message
 // Mixed Data Set Header (word 1)
 // Mixed Data Set Payload (word 1)
-class midi2::types::data128::mds_header {
+class midi2::ump::data128::mds_header {
 public:
-  class word0 : public types::details::word_base {
+  class word0 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::data128::mixed_data_set_header); }
 
-    using mt = types::details::bitfield<28, 4>;  ///< Always 0x05
-    using group = types::details::bitfield<24, 4>;
-    using status = types::details::bitfield<20, 4>;  ///< Always 0x08
-    using mds_id = types::details::bitfield<16, 4>;
-    using bytes_in_chunk = types::details::bitfield<0, 16>;
+    using mt = ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using group = ump::details::bitfield<24, 4>;
+    using status = ump::details::bitfield<20, 4>;  ///< Always 0x08
+    using mds_id = ump::details::bitfield<16, 4>;
+    using bytes_in_chunk = ump::details::bitfield<0, 16>;
   };
-  class word1 : public types::details::word_base {
+  class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using chunks_in_mds = types::details::bitfield<16, 16>;
-    using chunk_num = types::details::bitfield<0, 16>;
+    using chunks_in_mds = ump::details::bitfield<16, 16>;
+    using chunk_num = ump::details::bitfield<0, 16>;
   };
-  class word2 : public types::details::word_base {
+  class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using manufacturer_id = types::details::bitfield<16, 16>;
-    using device_id = types::details::bitfield<0, 16>;
+    using manufacturer_id = ump::details::bitfield<16, 16>;
+    using device_id = ump::details::bitfield<0, 16>;
   };
-  class word3 : public types::details::word_base {
+  class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using sub_id_1 = types::details::bitfield<16, 16>;
-    using sub_id_2 = types::details::bitfield<0, 16>;
+    using sub_id_1 = ump::details::bitfield<16, 16>;
+    using sub_id_2 = ump::details::bitfield<0, 16>;
   };
 
   constexpr mds_header() noexcept = default;
@@ -3417,33 +3417,33 @@ private:
 
 UMP_TUPLE(data128, mds_header)  // Define tuple_size and tuple_element for data128/mds_header
 
-class midi2::types::data128::mds_payload {
+class midi2::ump::data128::mds_payload {
 public:
-  class word0 : public ::midi2::types::details::word_base {
+  class word0 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(::midi2::data128::mixed_data_set_payload); }
 
-    using mt = ::midi2::types::details::bitfield<28, 4>;  ///< Always 0x05
-    using group = ::midi2::types::details::bitfield<24, 4>;
-    using status = ::midi2::types::details::bitfield<20, 4>;  ///< Always 0x09
-    using mds_id = ::midi2::types::details::bitfield<16, 4>;
-    using value0 = ::midi2::types::details::bitfield<0, 16>;
+    using mt = ::midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using group = ::midi2::ump::details::bitfield<24, 4>;
+    using status = ::midi2::ump::details::bitfield<20, 4>;  ///< Always 0x09
+    using mds_id = ::midi2::ump::details::bitfield<16, 4>;
+    using value0 = ::midi2::ump::details::bitfield<0, 16>;
   };
-  class word1 : public ::midi2::types::details::word_base {
+  class word1 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    using value1 = ::midi2::types::details::bitfield<0, 32>;
+    using value1 = ::midi2::ump::details::bitfield<0, 32>;
   };
-  class word2 : public ::midi2::types::details::word_base {
+  class word2 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    using value2 = ::midi2::types::details::bitfield<0, 32>;
+    using value2 = ::midi2::ump::details::bitfield<0, 32>;
   };
-  class word3 : public ::midi2::types::details::word_base {
+  class word3 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    using value3 = ::midi2::types::details::bitfield<0, 32>;
+    using value3 = ::midi2::ump::details::bitfield<0, 32>;
   };
 
   constexpr mds_payload() noexcept = default;

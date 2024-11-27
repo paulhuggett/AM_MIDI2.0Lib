@@ -275,7 +275,7 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
 
   std::vector<std::uint32_t> expected;
   {
-    constexpr auto sx_start = midi2::types::data64::sysex7_start{}
+    constexpr auto sx_start = midi2::ump::data64::sysex7_start{}
                                   .group(group)
                                   .number_of_bytes(6)
                                   .data0(1U)
@@ -288,12 +288,12 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
     expected.push_back(get<1>(sx_start).word());
   }
   {
-    constexpr auto sx_end = midi2::types::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
+    constexpr auto sx_end = midi2::ump::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
     expected.push_back(get<0>(sx_end).word());
     expected.push_back(get<1>(sx_end).word());
   }
   {
-    auto const noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
+    auto const noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
     expected.push_back(get<0>(noff).word());
   }
 
@@ -304,7 +304,7 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   using b8 = std::byte;
-  using sysex7_in_1 = midi2::types::data64::sysex7_in_1;
+  using sysex7_in_1 = midi2::ump::data64::sysex7_in_1;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
   constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
@@ -325,7 +325,7 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
     expected.push_back(get<1>(block2).word());
   }
   {
-    constexpr auto noff = midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
+    constexpr auto noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
     expected.push_back(get<0>(noff).word());
   }
 
@@ -366,7 +366,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
 
   constexpr auto group = std::uint8_t{0xF};
   auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
-    midi2::types::data64::sysex7_in_1::word0 w0{};
+    midi2::ump::data64::sysex7_in_1::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
     w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
     w0.template set<decltype(w0)::data0>(data0);
@@ -374,7 +374,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     return w0.word();
   };
   auto const start_message = [](u8 data0, u8 data1) {
-    midi2::types::data64::sysex7_start::word0 w0{};
+    midi2::ump::data64::sysex7_start::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
     w0.template set<decltype(w0)::number_of_bytes>(6U);
     w0.template set<decltype(w0)::data0>(data0);
@@ -383,7 +383,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   };
   auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
-    midi2::types::data64::sysex7_end::word0 w0{};
+    midi2::ump::data64::sysex7_end::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
     w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
     w0.template set<decltype(w0)::data0>(data0);

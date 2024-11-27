@@ -37,7 +37,7 @@ private:
     template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      types::apply(value, [this](auto const v) {
+      ump::apply(value, [this](auto const v) {
         output.push_back(std::uint32_t{v});
         return false;
       });
@@ -60,105 +60,100 @@ private:
   struct to_midi1_config {
     // system messages go straight through.
     struct system {
-      static constexpr void midi_time_code(context_type *const ctxt, types::system::midi_time_code const &in) {
+      static constexpr void midi_time_code(context_type *const ctxt, ump::system::midi_time_code const &in) {
         ctxt->push(in);
       }
       static constexpr void song_position_pointer(context_type *const ctxt,
-                                                  types::system::song_position_pointer const &in) {
+                                                  ump::system::song_position_pointer const &in) {
         ctxt->push(in);
       }
-      static constexpr void song_select(context_type *const ctxt, types::system::song_select const &in) {
+      static constexpr void song_select(context_type *const ctxt, ump::system::song_select const &in) {
         ctxt->push(in);
       }
-      static constexpr void tune_request(context_type *const ctxt, types::system::tune_request const &in) {
+      static constexpr void tune_request(context_type *const ctxt, ump::system::tune_request const &in) {
         ctxt->push(in);
       }
-      static constexpr void timing_clock(context_type *const ctxt, types::system::timing_clock const &in) {
+      static constexpr void timing_clock(context_type *const ctxt, ump::system::timing_clock const &in) {
         ctxt->push(in);
       }
-      static constexpr void seq_start(context_type *const ctxt, types::system::sequence_start const &in) {
+      static constexpr void seq_start(context_type *const ctxt, ump::system::sequence_start const &in) {
         ctxt->push(in);
       }
-      static constexpr void seq_continue(context_type *const ctxt, types::system::sequence_continue const &in) {
+      static constexpr void seq_continue(context_type *const ctxt, ump::system::sequence_continue const &in) {
         ctxt->push(in);
       }
-      static constexpr void seq_stop(context_type *const ctxt, types::system::sequence_stop const &in) {
+      static constexpr void seq_stop(context_type *const ctxt, ump::system::sequence_stop const &in) { ctxt->push(in); }
+      static constexpr void active_sensing(context_type *const ctxt, ump::system::active_sensing const &in) {
         ctxt->push(in);
       }
-      static constexpr void active_sensing(context_type *const ctxt, types::system::active_sensing const &in) {
-        ctxt->push(in);
-      }
-      static constexpr void reset(context_type *const ctxt, types::system::reset const &in) { ctxt->push(in); }
+      static constexpr void reset(context_type *const ctxt, ump::system::reset const &in) { ctxt->push(in); }
     };
     // m1cvm messages go straight through.
     struct m1cvm {
-      static constexpr void note_off(context_type *const ctxt, types::m1cvm::note_off const &in) { ctxt->push(in); }
-      static constexpr void note_on(context_type *const ctxt, types::m1cvm::note_on const &in) { ctxt->push(in); }
-      static constexpr void poly_pressure(context_type *const ctxt, types::m1cvm::poly_pressure const &in) {
+      static constexpr void note_off(context_type *const ctxt, ump::m1cvm::note_off const &in) { ctxt->push(in); }
+      static constexpr void note_on(context_type *const ctxt, ump::m1cvm::note_on const &in) { ctxt->push(in); }
+      static constexpr void poly_pressure(context_type *const ctxt, ump::m1cvm::poly_pressure const &in) {
         ctxt->push(in);
       }
-      static constexpr void control_change(context_type *const ctxt, types::m1cvm::control_change const &in) {
+      static constexpr void control_change(context_type *const ctxt, ump::m1cvm::control_change const &in) {
         ctxt->push(in);
       }
-      static constexpr void program_change(context_type *const ctxt, types::m1cvm::program_change const &in) {
+      static constexpr void program_change(context_type *const ctxt, ump::m1cvm::program_change const &in) {
         ctxt->push(in);
       }
-      static constexpr void channel_pressure(context_type *const ctxt, types::m1cvm::channel_pressure const &in) {
+      static constexpr void channel_pressure(context_type *const ctxt, ump::m1cvm::channel_pressure const &in) {
         ctxt->push(in);
       }
-      static constexpr void pitch_bend(context_type *const ctxt, types::m1cvm::pitch_bend const &in) { ctxt->push(in); }
+      static constexpr void pitch_bend(context_type *const ctxt, ump::m1cvm::pitch_bend const &in) { ctxt->push(in); }
     };
     // data64 messages go straight through.
     struct data64 {
-      static constexpr void sysex7_in_1(context_type *const ctxt, types::data64::sysex7_in_1 const &in) {
+      static constexpr void sysex7_in_1(context_type *const ctxt, ump::data64::sysex7_in_1 const &in) {
         ctxt->push(in);
       }
-      static constexpr void sysex7_start(context_type *const ctxt, types::data64::sysex7_start const &in) {
+      static constexpr void sysex7_start(context_type *const ctxt, ump::data64::sysex7_start const &in) {
         ctxt->push(in);
       }
-      static constexpr void sysex7_continue(context_type *const ctxt, types::data64::sysex7_continue const &in) {
+      static constexpr void sysex7_continue(context_type *const ctxt, ump::data64::sysex7_continue const &in) {
         ctxt->push(in);
       }
-      static constexpr void sysex7_end(context_type *const ctxt, types::data64::sysex7_end const &in) {
-        ctxt->push(in);
-      }
+      static constexpr void sysex7_end(context_type *const ctxt, ump::data64::sysex7_end const &in) { ctxt->push(in); }
     };
     // m2cvm messages are translated to m1cvm messages.
     class m2cvm {
     public:
-      static void note_off(context_type *ctxt, types::m2cvm::note_off const &in);
-      static void note_on(context_type *ctxt, types::m2cvm::note_on const &in);
-      static void poly_pressure(context_type *ctxt, types::m2cvm::poly_pressure const &in);
-      static void program_change(context_type *ctxt, types::m2cvm::program_change const &in);
-      static void channel_pressure(context_type *ctxt, types::m2cvm::channel_pressure const &);
+      static void note_off(context_type *ctxt, ump::m2cvm::note_off const &in);
+      static void note_on(context_type *ctxt, ump::m2cvm::note_on const &in);
+      static void poly_pressure(context_type *ctxt, ump::m2cvm::poly_pressure const &in);
+      static void program_change(context_type *ctxt, ump::m2cvm::program_change const &in);
+      static void channel_pressure(context_type *ctxt, ump::m2cvm::channel_pressure const &);
 
-      static void rpn_controller(context_type *ctxt, types::m2cvm::rpn_controller const &in);
-      static void nrpn_controller(context_type *ctxt, types::m2cvm::nrpn_controller const &in);
+      static void rpn_controller(context_type *ctxt, ump::m2cvm::rpn_controller const &in);
+      static void nrpn_controller(context_type *ctxt, ump::m2cvm::nrpn_controller const &in);
 
       static constexpr void rpn_per_note_controller(context_type const *,
-                                                    midi2::types::m2cvm::rpn_per_note_controller const &) {
+                                                    midi2::ump::m2cvm::rpn_per_note_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
       static constexpr void nrpn_per_note_controller(context_type const *,
-                                                     midi2::types::m2cvm::nrpn_per_note_controller const &) {
+                                                     midi2::ump::m2cvm::nrpn_per_note_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static constexpr void rpn_relative_controller(context_type const *,
-                                                    types::m2cvm::rpn_relative_controller const &) {
+      static constexpr void rpn_relative_controller(context_type const *, ump::m2cvm::rpn_relative_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
       static constexpr void nrpn_relative_controller(context_type const *,
-                                                     types::m2cvm::nrpn_relative_controller const &) {
+                                                     ump::m2cvm::nrpn_relative_controller const &) {
         // do nothing: cannot be translated to MIDI 1
       }
 
-      static constexpr void per_note_management(context_type const *, types::m2cvm::per_note_management const &) {
+      static constexpr void per_note_management(context_type const *, ump::m2cvm::per_note_management const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static void control_change(context_type *ctxt, types::m2cvm::control_change const &);
-      static void pitch_bend(context_type *ctxt, types::m2cvm::pitch_bend const &);
+      static void control_change(context_type *ctxt, ump::m2cvm::control_change const &);
+      static void pitch_bend(context_type *ctxt, ump::m2cvm::pitch_bend const &);
 
-      static constexpr void per_note_pitch_bend(context_type const *, types::m2cvm::per_note_pitch_bend const &) {
+      static constexpr void per_note_pitch_bend(context_type const *, ump::m2cvm::per_note_pitch_bend const &) {
         // do nothing: cannot be translated to MIDI 1
       }
 

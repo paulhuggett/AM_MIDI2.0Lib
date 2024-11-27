@@ -53,10 +53,10 @@ TEST(UMPToBytestream, NoteOff) {
     input.push_back(std::uint32_t{v});
     return false;
   };
-  midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
-                      push_back);
-  midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note1).velocity(velocity1),
-                      push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
+                    push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note1).velocity(velocity1),
+                    push_back);
 
   std::array const expected{
       std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
@@ -81,11 +81,10 @@ TEST(UMPToBytestream, NoteOffFiltered) {
   };
 
   // message should be filtered
-  midi2::types::apply(midi2::types::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
-                      push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note0).velocity(velocity0),
+                    push_back);
   // message should not be filtered out
-  midi2::types::apply(midi2::types::m1cvm::note_off{}.group(0).channel(channel).note(note1).velocity(velocity1),
-                      push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(0).channel(channel).note(note1).velocity(velocity1), push_back);
 
   std::array const expected{
       std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel},
@@ -109,8 +108,8 @@ TEST(UMPToBytestream, NoteOn) {
     return false;
   };
 
-  midi2::types::apply(midi2::types::m1cvm::note_on{}.channel(channel).note(note0).velocity(velocity0), push_back);
-  midi2::types::apply(midi2::types::m1cvm::note_on{}.channel(channel).note(note1).velocity(velocity1), push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_on{}.channel(channel).note(note0).velocity(velocity0), push_back);
+  midi2::ump::apply(midi2::ump::m1cvm::note_on{}.channel(channel).note(note1).velocity(velocity1), push_back);
 
   std::array const expected{
       std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
@@ -125,7 +124,7 @@ TEST(UMPToBytestream, ControlChange) {
   constexpr auto controller = 17U;
   constexpr auto value = 0x71U;
 
-  midi2::types::m1cvm::control_change message;
+  midi2::ump::m1cvm::control_change message;
   message.group(1);
   message.channel(channel);
   message.controller(controller);
@@ -144,7 +143,7 @@ TEST(UMPToBytestream, ControlChange) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, ControlChangeFilteredGroup) {
   constexpr auto group = 1U;
-  constexpr auto message = midi2::types::m1cvm::control_change{}.group(group).channel(1).controller(17).value(0x71);
+  constexpr auto message = midi2::ump::m1cvm::control_change{}.group(group).channel(1).controller(17).value(0x71);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -157,7 +156,7 @@ TEST(UMPToBytestream, M1CVMChannelPressure) {
   constexpr auto channel = 3U;
   constexpr auto data = 0b0101010U;
 
-  constexpr auto message = midi2::types::m1cvm::channel_pressure{}.group(group).channel(channel).data(data);
+  constexpr auto message = midi2::ump::m1cvm::channel_pressure{}.group(group).channel(channel).data(data);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -174,7 +173,7 @@ TEST(UMPToBytestream, M1CVMPolyPressure) {
   constexpr auto pressure = 0b0110011U;
 
   constexpr auto message =
-      midi2::types::m1cvm::poly_pressure{}.group(group).channel(channel).note(note).pressure(pressure);
+      midi2::ump::m1cvm::poly_pressure{}.group(group).channel(channel).note(note).pressure(pressure);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -190,7 +189,7 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
   constexpr auto lsb = 0b00110011;
   constexpr auto msb = 0b01100110;
 
-  constexpr auto message = midi2::types::m1cvm::pitch_bend{}.group(group).channel(channel).lsb_data(lsb).msb_data(msb);
+  constexpr auto message = midi2::ump::m1cvm::pitch_bend{}.group(group).channel(channel).lsb_data(lsb).msb_data(msb);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -202,7 +201,7 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimeCode) {
   auto const tc = 0b1010101;
-  midi2::types::system::midi_time_code message;
+  midi2::ump::system::midi_time_code message;
   message.time_code(tc);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
@@ -214,7 +213,7 @@ TEST(UMPToBytestream, SystemTimeCode) {
 TEST(UMPToByteStream, SystemSongPositionPointer) {
   auto const lsb = 0b01111000;
   auto const msb = 0b00001111;
-  constexpr auto message = midi2::types::system::song_position_pointer{}.position_lsb(lsb).position_msb(msb);
+  constexpr auto message = midi2::ump::system::song_position_pointer{}.position_lsb(lsb).position_msb(msb);
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
   std::array const expected{std::byte{to_underlying(midi2::status::spp)}, std::byte{lsb}, std::byte{msb}};
@@ -225,7 +224,7 @@ TEST(UMPToByteStream, SystemSongPositionPointer) {
 TEST(UMPToByteStream, SystemSongSelect) {
   auto const group = 1U;
   auto const song = 0x64U;
-  constexpr auto message = midi2::types::system::song_select{}.group(group).song(song);
+  constexpr auto message = midi2::ump::system::song_select{}.group(group).song(song);
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
   std::array const expected{std::byte{to_underlying(midi2::status::song_select)}, std::byte{song}};
@@ -235,7 +234,7 @@ TEST(UMPToByteStream, SystemSongSelect) {
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceStart) {
   auto const group = 1U;
-  midi2::types::system::sequence_start message;
+  midi2::ump::system::sequence_start message;
   message.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
@@ -248,7 +247,7 @@ TEST(UMPToByteStream, SystemSequenceStart) {
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceContinue) {
   auto const group = 1U;
-  auto const message = midi2::types::system::sequence_continue{}.group(group);
+  auto const message = midi2::ump::system::sequence_continue{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -260,7 +259,7 @@ TEST(UMPToByteStream, SystemSequenceContinue) {
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceStop) {
   auto const group = 1U;
-  auto const message = midi2::types::system::sequence_stop{}.group(group);
+  auto const message = midi2::ump::system::sequence_stop{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -271,7 +270,7 @@ TEST(UMPToByteStream, SystemSequenceStop) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTuneRequest) {
-  midi2::types::system::tune_request message;
+  midi2::ump::system::tune_request message;
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
   auto const actual = convert(input);
@@ -279,7 +278,7 @@ TEST(UMPToBytestream, SystemTuneRequest) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimingClock) {
-  auto const [w0] = midi2::types::system::timing_clock{};
+  auto const [w0] = midi2::ump::system::timing_clock{};
   std::array const input{w0.word()};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(std::byte{to_underlying(midi2::status::timing_clock)}));
@@ -287,7 +286,7 @@ TEST(UMPToBytestream, SystemTimingClock) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemActiveSensing) {
   auto const group = 1U;
-  auto const message = midi2::types::system::active_sensing{}.group(group);
+  auto const message = midi2::ump::system::active_sensing{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -298,7 +297,7 @@ TEST(UMPToBytestream, SystemActiveSensing) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemReset) {
   auto const group = 1U;
-  auto const message = midi2::types::system::reset{}.group(group);
+  auto const message = midi2::ump::system::reset{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -315,7 +314,7 @@ TEST(UMPToBytestream, ProgramChangeTwoBytes) {
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SysexInOne) {
   constexpr auto message =
-      midi2::types::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   std::array const input{get<0>(message).word(), get<1>(message).word()};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x07},
                                           std::byte{0x0D}, std::byte{0xF7}));

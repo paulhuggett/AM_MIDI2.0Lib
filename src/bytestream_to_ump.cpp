@@ -66,8 +66,8 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
 void bytestream_to_ump::sysex_data_byte (std::byte const midi1Byte) {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
     switch (sysex7_.state) {
-    case sysex7::status::start: push_sysex7<types::data64::sysex7_start>(); break;
-    case sysex7::status::cont: push_sysex7<types::data64::sysex7_continue>(); break;
+    case sysex7::status::start: push_sysex7<ump::data64::sysex7_start>(); break;
+    case sysex7::status::cont: push_sysex7<ump::data64::sysex7_continue>(); break;
     default: assert(false); break;
     }
     sysex7_.reset();
@@ -93,8 +93,8 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     // Except for real-time messages, receiving a status byte will implicitly end any in-progress
     // sysex sequence.
     switch (sysex7_.state) {
-    case sysex7::status::start: this->push_sysex7<types::data64::sysex7_in_1>(); break;
-    case sysex7::status::cont: this->push_sysex7<types::data64::sysex7_end>(); break;
+    case sysex7::status::start: this->push_sysex7<ump::data64::sysex7_in_1>(); break;
+    case sysex7::status::cont: this->push_sysex7<ump::data64::sysex7_end>(); break;
     default: break;
     }
 
