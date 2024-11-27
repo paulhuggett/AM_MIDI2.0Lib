@@ -202,28 +202,6 @@ enum : std::uint32_t {
   UMP_VER_MINOR = 1,
 };
 
-#define UMP_MESSAGE_TYPES \
-  X(utility, 0x00)        \
-  X(system, 0x01)         \
-  X(m1cvm, 0x02)          \
-  X(data64, 0x03)         \
-  X(m2cvm, 0x04)          \
-  X(data128, 0x05)        \
-  X(reserved32_06, 0x06)  \
-  X(reserved32_07, 0x07)  \
-  X(reserved64_08, 0x08)  \
-  X(reserved64_09, 0x09)  \
-  X(reserved64_0A, 0x0A)  \
-  X(reserved96_0B, 0x0B)  \
-  X(reserved96_0C, 0x0C)  \
-  X(flex_data, 0x0D)      \
-  X(reserved128_0E, 0x0E) \
-  X(ump_stream, 0x0F)
-
-#define X(a, b) a = (b),
-enum class ump_message_type : std::uint8_t { UMP_MESSAGE_TYPES };
-#undef X
-
 constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
                              std::uint8_t const b3) {
   return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};

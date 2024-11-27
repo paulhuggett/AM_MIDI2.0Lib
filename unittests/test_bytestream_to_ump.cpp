@@ -119,7 +119,7 @@ TEST(BytestreamToUMP, Midi1ChannelPressure) {
   std::array const input{std::byte{static_cast<std::byte>(to_underlying(midi2::status::channel_pressure)) | channel},
                          pressure};
 
-  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump::message_type::m1cvm);
   constexpr auto group = std::uint32_t{0};
   std::array const expected{std::uint32_t{(message_type << 28) | (group << 24) | (ump_channel_pressure << 20) |
                                           (std::to_integer<std::uint32_t>(channel) << 16) |
@@ -138,7 +138,7 @@ TEST(BytestreamToUMP, PitchBend) {
   constexpr auto channel = std::byte{3};
   std::array const input{static_cast<std::byte>(midi2::status::pitch_bend) | channel, bend_lsb, bend_msb};
 
-  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump::message_type::m1cvm);
   constexpr auto group = std::uint32_t{0};
 
   std::array const expected{std::uint32_t{
@@ -197,7 +197,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
                          // Program Change
                          static_cast<std::byte>(midi2::status::program_change) | channel, program};
 
-  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump_message_type::m1cvm);  // 4 bits
+  constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump::message_type::m1cvm);  // 4 bits
   constexpr auto group = std::uint32_t{0x00};                                                // 4 bits
 
   std::array const expected{

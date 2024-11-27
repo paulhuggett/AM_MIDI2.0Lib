@@ -16,7 +16,7 @@
 #include <cstdint>
 
 #include "midi2/adt/fifo.hpp"
-#include "midi2/utils.hpp"
+#include "midi2/ump_types.hpp"
 
 namespace midi2 {
 
@@ -66,7 +66,7 @@ private:
            (std::to_integer<std::uint32_t>(b2) << 8) | std::to_integer<std::uint32_t>(b3);
   }
 
-  [[nodiscard]] constexpr std::uint32_t pack(ump_message_type const message_type, std::byte const b1,
+  [[nodiscard]] constexpr std::uint32_t pack(ump::message_type const message_type, std::byte const b1,
                                              std::byte const b2, std::byte const b3) const {
     return pack((static_cast<std::byte>(message_type) << 4) | group_, b1, b2, b3);
   }

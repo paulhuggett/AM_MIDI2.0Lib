@@ -40,10 +40,10 @@ void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
 
   assert(to_underlying(b0) != to_underlying(status::sysex_start));
   if (to_underlying(b0) >= to_underlying(status::sysex_start)) {
-    output_.push_back(pack((static_cast<std::byte>(ump_message_type::system) << 4) | group_, b0, b1, b2));
+    output_.push_back(pack((static_cast<std::byte>(ump::message_type::system) << 4) | group_, b0, b1, b2));
     return;
   }
-  output_.push_back(pack((static_cast<std::byte>(ump_message_type::m1cvm) << 4) | group_, b0, b1, b2));
+  output_.push_back(pack((static_cast<std::byte>(ump::message_type::m1cvm) << 4) | group_, b0, b1, b2));
 }
 
 template <typename T> void bytestream_to_ump::push_sysex7() {

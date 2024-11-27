@@ -24,8 +24,8 @@ namespace midi2 {
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 
-constexpr unsigned ump_message_size(ump_message_type const mt) {
-  using enum ump_message_type;
+constexpr unsigned ump_message_size(ump::message_type const mt) {
+  using enum ump::message_type;
 #define X(a, b) \
   case a: return message_size<a>();
   switch (mt) {
@@ -296,25 +296,25 @@ public:
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
     message_[pos_++] = ump;
-    if (auto const mt = static_cast<ump_message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
+    if (auto const mt = static_cast<ump::message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
       switch (mt) {
-      case ump_message_type::utility: this->utility_message(); break;
-      case ump_message_type::system: this->system_message(); break;
-      case ump_message_type::m1cvm: this->m1cvm_message(); break;
-      case ump_message_type::m2cvm: this->m2cvm_message(); break;
-      case ump_message_type::flex_data: this->flex_data_message(); break;
-      case ump_message_type::ump_stream: this->ump_stream_message(); break;
-      case ump_message_type::data64: this->data64_message(); break;
-      case ump_message_type::data128: this->data128_message(); break;
+      case ump::message_type::utility: this->utility_message(); break;
+      case ump::message_type::system: this->system_message(); break;
+      case ump::message_type::m1cvm: this->m1cvm_message(); break;
+      case ump::message_type::m2cvm: this->m2cvm_message(); break;
+      case ump::message_type::flex_data: this->flex_data_message(); break;
+      case ump::message_type::ump_stream: this->ump_stream_message(); break;
+      case ump::message_type::data64: this->data64_message(); break;
+      case ump::message_type::data128: this->data128_message(); break;
 
-      case ump_message_type::reserved32_06:
-      case ump_message_type::reserved32_07:
-      case ump_message_type::reserved64_08:
-      case ump_message_type::reserved64_09:
-      case ump_message_type::reserved64_0A:
-      case ump_message_type::reserved96_0B:
-      case ump_message_type::reserved96_0C:
-      case ump_message_type::reserved128_0E:
+      case ump::message_type::reserved32_06:
+      case ump::message_type::reserved32_07:
+      case ump::message_type::reserved64_08:
+      case ump::message_type::reserved64_09:
+      case ump::message_type::reserved64_0A:
+      case ump::message_type::reserved96_0B:
+      case ump::message_type::reserved96_0C:
+      case ump::message_type::reserved128_0E:
         config_.utility.unknown(config_.context, std::span{message_.data(), pos_});
         break;
       default:
@@ -348,7 +348,7 @@ template <typename T> ump_dispatcher(T) -> ump_dispatcher<T>;
 // ~~~~~~~~~~~~~~~
 // 32 bit utility messages
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_message() {
-  constexpr auto size = ump_message_size(midi2::ump_message_type::utility);
+  constexpr auto size = ump_message_size(midi2::ump::message_type::utility);
   assert(pos_ == size);
 
   auto const span = std::span<std::uint32_t, size>{message_.data(), size};
@@ -376,7 +376,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_mes
 // ~~~~~~~~~~~~~~
 // 32 bit System Common and Real Time
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_message() {
-  static_assert(message_size<midi2::ump_message_type::system>() == 1);
+  static_assert(message_size<midi2::ump::message_type::system>() == 1);
   using enum ump::mt::system_crt;
   switch (static_cast<ump::mt::system_crt>((message_[0] >> 16) & 0xFF)) {
   case timing_code: config_.system.midi_time_code(config_.context, ump::system::midi_time_code{message_[0]}); break;
@@ -395,7 +395,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_mess
   case system_reset: config_.system.reset(config_.context, ump::system::reset{message_[0]}); break;
   default:
     config_.utility.unknown(config_.context,
-                            std::span{message_.data(), message_size<midi2::ump_message_type::system>()});
+                            std::span{message_.data(), message_size<midi2::ump::message_type::system>()});
     break;
   }
 }
@@ -404,8 +404,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_mess
 // ~~~~~~~~~~~~~
 // 32 Bit MIDI 1.0 Channel Voice Messages
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_message() {
-  static_assert(ump_message_size(midi2::ump_message_type::m1cvm) == 1);
-  assert(pos_ >= ump_message_size(midi2::ump_message_type::m1cvm));
+  static_assert(ump_message_size(midi2::ump::message_type::m1cvm) == 1);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::m1cvm));
 
   using enum ump::mt::m1cvm;
   switch (static_cast<ump::mt::m1cvm>((message_[0] >> 20) & 0xF)) {
@@ -432,7 +432,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_messa
 // data64 message
 // ~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_message() {
-  constexpr auto size = ump_message_size(midi2::ump_message_type::data64);
+  constexpr auto size = ump_message_size(midi2::ump::message_type::data64);
   assert(pos_ == size);
 
   using enum ump::mt::data64;
@@ -450,7 +450,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
 // ~~~~~~~~~~~~~
 // 64 bit MIDI 2.0 Channel Voice Messages
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_message() {
-  static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
+  static_assert(message_size<midi2::ump::message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
   using enum ump::mt::m2cvm;
   switch (static_cast<ump::mt::m2cvm>((message_[0] >> 20) & 0xF)) {
@@ -512,8 +512,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_
   using ump::ump_stream::product_instance_id_notification;
   using ump::ump_stream::start_of_clip;
 
-  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   switch (static_cast<ump::mt::ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
@@ -569,8 +569,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_
 // data128 message
 // ~~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_message() {
-  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   using enum ump::mt::data128;
@@ -588,8 +588,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_mes
 // flex data message
 // ~~~~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_message() {
-  static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   auto const status_bank = (message_[0] >> 8) & 0xFF;

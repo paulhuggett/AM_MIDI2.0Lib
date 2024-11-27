@@ -403,7 +403,7 @@ TEST_F(UMPDispatcherUtility, DeltaClockstamp) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherUtility, BadMessage) {
   constexpr std::uint32_t message =
-      (to_underlying(midi2::ump_message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
+      (midi2::to_underlying(midi2::ump::message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
   dispatcher_.processUMP(message);
 }
@@ -483,7 +483,8 @@ TEST_F(UMPDispatcherSystem, Reset) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, BadStatus) {
-  constexpr std::uint32_t message = (to_underlying(midi2::ump_message_type::system) << 28) | (std::uint32_t{0xF} << 20);
+  constexpr std::uint32_t message =
+      (midi2::to_underlying(midi2::ump::message_type::system) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
   dispatcher_.processUMP(message);
 }
@@ -493,13 +494,6 @@ TEST_F(UMPDispatcherSystem, BadStatus) {
 //* | '  \| / _` | | | || () | *
 //* |_|_|_|_\__,_|_| |_(_)__/  *
 //*                            *
-constexpr std::uint8_t ump_cvm(midi2::status s) {
-  static_assert(std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
-                "status type must be a std::uint8_t");
-  assert((to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum must be 0");
-  return to_underlying(s) >> 4;
-}
-
 class UMPDispatcherMIDI1 : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI1, NoteOn) {
@@ -588,7 +582,7 @@ class UMPDispatcherMIDI2CVM : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherMIDI2CVM, NoteOn) {
   midi2::ump::m2cvm::note_on message;
-  message.group(0).channel(3).note(60).attribute(0).velocity(0x432).attribute(0);
+  message.group(0).channel(3).note(60).velocity(0x432);
   EXPECT_CALL(config_.m2cvm, note_on(config_.context, message)).Times(1);
   this->apply(message);
 }
@@ -773,7 +767,6 @@ TEST_F(UMPDispatcherData128, MixedDatSet) {
 }
 
 // NOLINTNEXTLINE
-constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
 TEST_F(UMPDispatcher, PartialMessageThenClear) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto note_number = std::uint8_t{60};
@@ -786,13 +779,13 @@ TEST_F(UMPDispatcher, PartialMessageThenClear) {
   EXPECT_CALL(config_.m1cvm, note_on(config_.context, message)).Times(1);
 
   // The first half of a 64-bit MIDI 2 note-on message.
-  dispatcher_.processUMP(
-      pack((to_underlying(midi2::ump_message_type::m2cvm) << 4) | group, (ump_note_on << 4) | channel, note_number, 0));
+  constexpr auto m2on = midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note_number);
+  dispatcher_.processUMP(std::uint32_t{get<0>(m2on)});
   dispatcher_.clearUMP();
 
   // An entire 32-bit MIDI 1 note-on message.
-  dispatcher_.processUMP(pack((to_underlying(midi2::ump_message_type::m1cvm) << 4) | group,
-                              (ump_note_on << 4) | channel, note_number, velocity));
+  constexpr auto m1on = midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
+  dispatcher_.processUMP(std::uint32_t{get<0>(m1on)});
 }
 
 //*  _   _ __  __ ___   ___ _                       *
@@ -1075,7 +1068,7 @@ TEST(UMPDispatcherFuzz, Empty) {
   UMPDispatcherNeverCrashes({});
 }
 
-template <midi2::ump_message_type MessageType> void process_message(std::span<std::uint32_t> message) {
+template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::message_size<MessageType>::value) {
     message[0] = (message[0] & 0x00FFFFFF) | (static_cast<std::uint32_t>(MessageType) << 24);
     midi2::ump_dispatcher p;
@@ -1086,28 +1079,28 @@ template <midi2::ump_message_type MessageType> void process_message(std::span<st
 }
 
 void utility(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::utility>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::utility>({std::begin(message), std::end(message)});
 }
 void system(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::system>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::system>({std::begin(message), std::end(message)});
 }
 void m1cvm(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::m1cvm>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::m1cvm>({std::begin(message), std::end(message)});
 }
 void data64(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::data64>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::data64>({std::begin(message), std::end(message)});
 }
 void m2cvm(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::m2cvm>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::m2cvm>({std::begin(message), std::end(message)});
 }
 void data128(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::data128>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::data128>({std::begin(message), std::end(message)});
 }
 void flex_data(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::flex_data>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::flex_data>({std::begin(message), std::end(message)});
 }
 void stream(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump_message_type::ump_stream>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::ump_stream>({std::begin(message), std::end(message)});
 }
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE
