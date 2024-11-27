@@ -149,7 +149,7 @@
 #define ICUBABY_CPP_LIB_CONCEPTS_DEFINED (0)
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 #define ICUBABY_MAYBE_UNUSED
 #else
 #define ICUBABY_MAYBE_UNUSED [[maybe_unused]]
