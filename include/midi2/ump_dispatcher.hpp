@@ -352,19 +352,20 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_mes
   assert(pos_ == size);
 
   auto const span = std::span<std::uint32_t, size>{message_.data(), size};
-  switch (static_cast<ump_utility>((message_[0] >> 20) & 0x0F)) {
+  using enum ump::mt::ump_utility;
+  switch (static_cast<ump::mt::ump_utility>((message_[0] >> 20) & 0x0F)) {
   // 7.2.1 NOOP
-  case ump_utility::noop: config_.utility.noop(config_.context); break;
+  case noop: config_.utility.noop(config_.context); break;
   // 7.2.2.1 JR Clock
-  case ump_utility::jr_clock: config_.utility.jr_clock(config_.context, ump::utility::jr_clock{span}); break;
+  case jr_clock: config_.utility.jr_clock(config_.context, ump::utility::jr_clock{span}); break;
   // 7.2.2.2 JR Timestamp
-  case ump_utility::jr_ts: config_.utility.jr_timestamp(config_.context, ump::utility::jr_timestamp{span}); break;
+  case jr_ts: config_.utility.jr_timestamp(config_.context, ump::utility::jr_timestamp{span}); break;
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  case ump_utility::delta_clock_tick:
+  case delta_clock_tick:
     config_.utility.delta_clockstamp_tpqn(config_.context, ump::utility::delta_clockstamp_tpqn{message_[0]});
     break;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  case ump_utility::delta_clock_since:
+  case delta_clock_since:
     config_.utility.delta_clockstamp(config_.context, ump::utility::delta_clockstamp{message_[0]});
     break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;
@@ -376,35 +377,22 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_mes
 // 32 bit System Common and Real Time
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_message() {
   static_assert(message_size<midi2::ump_message_type::system>() == 1);
-  switch (static_cast<system_crt>((message_[0] >> 16) & 0xFF)) {
-  case system_crt::timing_code:
-    config_.system.midi_time_code(config_.context, ump::system::midi_time_code{message_[0]});
-    break;
-  case system_crt::spp:
+  using enum ump::mt::system_crt;
+  switch (static_cast<ump::mt::system_crt>((message_[0] >> 16) & 0xFF)) {
+  case timing_code: config_.system.midi_time_code(config_.context, ump::system::midi_time_code{message_[0]}); break;
+  case spp:
     config_.system.song_position_pointer(config_.context, ump::system::song_position_pointer{message_[0]});
     break;
-  case system_crt::song_select:
-    config_.system.song_select(config_.context, ump::system::song_select{message_[0]});
-    break;
-  case system_crt::tune_request:
-    config_.system.tune_request(config_.context, ump::system::tune_request{message_[0]});
-    break;
-  case system_crt::timing_clock:
-    config_.system.timing_clock(config_.context, ump::system::timing_clock{message_[0]});
-    break;
-  case system_crt::sequence_start:
-    config_.system.seq_start(config_.context, ump::system::sequence_start{message_[0]});
-    break;
-  case system_crt::sequence_continue:
+  case song_select: config_.system.song_select(config_.context, ump::system::song_select{message_[0]}); break;
+  case tune_request: config_.system.tune_request(config_.context, ump::system::tune_request{message_[0]}); break;
+  case timing_clock: config_.system.timing_clock(config_.context, ump::system::timing_clock{message_[0]}); break;
+  case sequence_start: config_.system.seq_start(config_.context, ump::system::sequence_start{message_[0]}); break;
+  case sequence_continue:
     config_.system.seq_continue(config_.context, ump::system::sequence_continue{message_[0]});
     break;
-  case system_crt::sequence_stop:
-    config_.system.seq_stop(config_.context, ump::system::sequence_stop{message_[0]});
-    break;
-  case system_crt::active_sensing:
-    config_.system.active_sensing(config_.context, ump::system::active_sensing{message_[0]});
-    break;
-  case system_crt::system_reset: config_.system.reset(config_.context, ump::system::reset{message_[0]}); break;
+  case sequence_stop: config_.system.seq_stop(config_.context, ump::system::sequence_stop{message_[0]}); break;
+  case active_sensing: config_.system.active_sensing(config_.context, ump::system::active_sensing{message_[0]}); break;
+  case system_reset: config_.system.reset(config_.context, ump::system::reset{message_[0]}); break;
   default:
     config_.utility.unknown(config_.context,
                             std::span{message_.data(), message_size<midi2::ump_message_type::system>()});
@@ -419,27 +407,24 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m1cvm_messa
   static_assert(ump_message_size(midi2::ump_message_type::m1cvm) == 1);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::m1cvm));
 
-  switch (static_cast<status>((message_[0] >> 16) & 0xF0)) {
+  using enum ump::mt::m1cvm;
+  switch (static_cast<ump::mt::m1cvm>((message_[0] >> 20) & 0xF)) {
   // 7.3.1 MIDI 1.0 Note Off Message
-  case status::note_off: config_.m1cvm.note_off(config_.context, ump::m1cvm::note_off{message_[0]}); break;
+  case note_off: config_.m1cvm.note_off(config_.context, ump::m1cvm::note_off{message_[0]}); break;
   // 7.3.2 MIDI 1.0 Note On Message
-  case status::note_on: config_.m1cvm.note_on(config_.context, ump::m1cvm::note_on{message_[0]}); break;
+  case note_on: config_.m1cvm.note_on(config_.context, ump::m1cvm::note_on{message_[0]}); break;
   // 7.3.3 MIDI 1.0 Poly Pressure Message
-  case status::poly_pressure:
-    config_.m1cvm.poly_pressure(config_.context, ump::m1cvm::poly_pressure{message_[0]});
-    break;
+  case poly_pressure: config_.m1cvm.poly_pressure(config_.context, ump::m1cvm::poly_pressure{message_[0]}); break;
   // 7.3.4 MIDI 1.0 Control Change Message
-  case status::cc: config_.m1cvm.control_change(config_.context, ump::m1cvm::control_change{message_[0]}); break;
+  case cc: config_.m1cvm.control_change(config_.context, ump::m1cvm::control_change{message_[0]}); break;
   // 7.3.5 MIDI 1.0 Program Change Message
-  case status::program_change:
-    config_.m1cvm.program_change(config_.context, ump::m1cvm::program_change{message_[0]});
-    break;
+  case program_change: config_.m1cvm.program_change(config_.context, ump::m1cvm::program_change{message_[0]}); break;
   // 7.3.6 MIDI 1.0 Channel Pressure Message
-  case status::channel_pressure:
+  case channel_pressure:
     config_.m1cvm.channel_pressure(config_.context, ump::m1cvm::channel_pressure{message_[0]});
     break;
   // 7.3.7 MIDI 1.0 Pitch Bend Message
-  case status::pitch_bend: config_.m1cvm.pitch_bend(config_.context, ump::m1cvm::pitch_bend{message_[0]}); break;
+  case pitch_bend: config_.m1cvm.pitch_bend(config_.context, ump::m1cvm::pitch_bend{message_[0]}); break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 1}); break;
   }
 }
@@ -450,9 +435,9 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
   constexpr auto size = ump_message_size(midi2::ump_message_type::data64);
   assert(pos_ == size);
 
+  using enum ump::mt::data64;
   auto const span = std::span<std::uint32_t, size>{message_.data(), size};
-  using enum data64;
-  switch (static_cast<data64>((message_[0] >> 20) & 0x0F)) {
+  switch (static_cast<ump::mt::data64>((message_[0] >> 20) & 0x0F)) {
   case sysex7_in_1: config_.data64.sysex7_in_1(config_.context, ump::data64::sysex7_in_1{span}); break;
   case sysex7_start: config_.data64.sysex7_start(config_.context, ump::data64::sysex7_start{span}); break;
   case sysex7_continue: config_.data64.sysex7_continue(config_.context, ump::data64::sysex7_continue{span}); break;
@@ -467,8 +452,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data64_mess
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_message() {
   static_assert(message_size<midi2::ump_message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
-  using enum m2cvm;
-  switch (static_cast<m2cvm>((message_[0] >> 20) & 0xF)) {
+  using enum ump::mt::m2cvm;
+  switch (static_cast<ump::mt::m2cvm>((message_[0] >> 20) & 0xF)) {
   // 7.4.1 MIDI 2.0 Note Off Message
   case note_off: config_.m2cvm.note_off(config_.context, ump::m2cvm::note_off{span}); break;
   // 7.4.2 MIDI 2.0 Note On Message
@@ -530,51 +515,53 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_
   static_assert(ump_message_size(midi2::ump_message_type::ump_stream) == 4);
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  switch (static_cast<ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
+  switch (static_cast<ump::mt::ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
   // 7.1.1 Endpoint Discovery Message
-  case ump_stream::endpoint_discovery:
+  case ump::mt::ump_stream::endpoint_discovery:
     config_.ump_stream.endpoint_discovery(config_.context, endpoint_discovery{span});
     break;
   // 7.1.2 Endpoint Info Notification Message
-  case ump_stream::endpoint_info_notification:
+  case ump::mt::ump_stream::endpoint_info_notification:
     config_.ump_stream.endpoint_info_notification(config_.context, endpoint_info_notification{span});
     break;
   // 7.1.3 Device Identity Notification Message
-  case ump_stream::device_identity_notification:
+  case ump::mt::ump_stream::device_identity_notification:
     config_.ump_stream.device_identity_notification(config_.context, device_identity_notification{span});
     break;
   // 7.1.4 Endpoint Name Notification
-  case ump_stream::endpoint_name_notification:
+  case ump::mt::ump_stream::endpoint_name_notification:
     config_.ump_stream.endpoint_name_notification(config_.context, endpoint_name_notification{span});
     break;
   // 7.1.5 Product Instance Id Notification Message
-  case ump_stream::product_instance_id_notification:
+  case ump::mt::ump_stream::product_instance_id_notification:
     config_.ump_stream.product_instance_id_notification(config_.context, product_instance_id_notification{span});
     break;
   // 7.1.6.2 Stream Configuration Request
-  case ump_stream::jr_configuration_request:
+  case ump::mt::ump_stream::jr_configuration_request:
     config_.ump_stream.jr_configuration_request(config_.context, jr_configuration_request{span});
     break;
   // 7.1.6.3 Stream Configuration Notification Message
-  case ump_stream::jr_configuration_notification:
+  case ump::mt::ump_stream::jr_configuration_notification:
     config_.ump_stream.jr_configuration_notification(config_.context, jr_configuration_notification{span});
     break;
   // 7.1.7 Function Block Discovery Message
-  case ump_stream::function_block_discovery:
+  case ump::mt::ump_stream::function_block_discovery:
     config_.ump_stream.function_block_discovery(config_.context, function_block_discovery{span});
     break;
   // 7.1.8 Function Block Info Notification
-  case ump_stream::function_block_info_notification:
+  case ump::mt::ump_stream::function_block_info_notification:
     config_.ump_stream.function_block_info_notification(config_.context, function_block_info_notification{span});
     break;
   // 7.1.9 Function Block Name Notification
-  case ump_stream::function_block_name_notification:
+  case ump::mt::ump_stream::function_block_name_notification:
     config_.ump_stream.function_block_name_notification(config_.context, function_block_name_notification{span});
     break;
   // 7.1.10 Start of Clip Message
-  case ump_stream::start_of_clip: config_.ump_stream.start_of_clip(config_.context, start_of_clip{span}); break;
+  case ump::mt::ump_stream::start_of_clip:
+    config_.ump_stream.start_of_clip(config_.context, start_of_clip{span});
+    break;
   // 7.1.11 End of Clip Message
-  case ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
+  case ump::mt::ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 4}); break;
   }
 }
@@ -586,19 +573,14 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_mes
   assert(pos_ >= ump_message_size(midi2::ump_message_type::ump_stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  switch (static_cast<data128>((message_[0] >> 20) & 0x0F)) {
-  case data128::sysex8_in_1: config_.data128.sysex8_in_1(config_.context, ump::data128::sysex8_in_1{span}); break;
-  case data128::sysex8_start: config_.data128.sysex8_start(config_.context, ump::data128::sysex8_start{span}); break;
-  case data128::sysex8_continue:
-    config_.data128.sysex8_continue(config_.context, ump::data128::sysex8_continue{span});
-    break;
-  case data128::sysex8_end: config_.data128.sysex8_end(config_.context, ump::data128::sysex8_end{span}); break;
-  case data128::mixed_data_set_header:
-    config_.data128.mds_header(config_.context, ump::data128::mds_header{span});
-    break;
-  case data128::mixed_data_set_payload:
-    config_.data128.mds_payload(config_.context, ump::data128::mds_payload{span});
-    break;
+  using enum ump::mt::data128;
+  switch (static_cast<ump::mt::data128>((message_[0] >> 20) & 0x0F)) {
+  case sysex8_in_1: config_.data128.sysex8_in_1(config_.context, ump::data128::sysex8_in_1{span}); break;
+  case sysex8_start: config_.data128.sysex8_start(config_.context, ump::data128::sysex8_start{span}); break;
+  case sysex8_continue: config_.data128.sysex8_continue(config_.context, ump::data128::sysex8_continue{span}); break;
+  case sysex8_end: config_.data128.sysex8_end(config_.context, ump::data128::sysex8_end{span}); break;
+  case mixed_data_set_header: config_.data128.mds_header(config_.context, ump::data128::mds_header{span}); break;
+  case mixed_data_set_payload: config_.data128.mds_payload(config_.context, ump::data128::mds_payload{span}); break;
   default: config_.utility.unknown(config_.context, span); break;
   }
 }
@@ -612,26 +594,23 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_m
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   auto const status_bank = (message_[0] >> 8) & 0xFF;
   if (status_bank == 0) {
-    auto const status = static_cast<flex_data>(message_[0] & 0xFF);
+    using enum ump::mt::flex_data;
+    auto const status = static_cast<ump::mt::flex_data>(message_[0] & 0xFF);
     switch (status) {
     // 7.5.3 Set Tempo Message
-    case flex_data::set_tempo: config_.flex.set_tempo(config_.context, ump::flex_data::set_tempo{span}); break;
+    case set_tempo: config_.flex.set_tempo(config_.context, ump::flex_data::set_tempo{span}); break;
     // 7.5.4 Set Time Signature Message
-    case flex_data::set_time_signature:
+    case set_time_signature:
       config_.flex.set_time_signature(config_.context, ump::flex_data::set_time_signature{span});
       break;
     // 7.5.5 Set Metronome Message
-    case flex_data::set_metronome:
-      config_.flex.set_metronome(config_.context, ump::flex_data::set_metronome{span});
-      break;
+    case set_metronome: config_.flex.set_metronome(config_.context, ump::flex_data::set_metronome{span}); break;
     // 7.5.7 Set Key Signature Message
-    case flex_data::set_key_signature:
+    case set_key_signature:
       config_.flex.set_key_signature(config_.context, ump::flex_data::set_key_signature{span});
       break;
     // 7.5.8 Set Chord Name Message
-    case flex_data::set_chord_name:
-      config_.flex.set_chord_name(config_.context, ump::flex_data::set_chord_name{span});
-      break;
+    case set_chord_name: config_.flex.set_chord_name(config_.context, ump::flex_data::set_chord_name{span}); break;
     default: config_.utility.unknown(config_.context, span); break;
     }
   } else {

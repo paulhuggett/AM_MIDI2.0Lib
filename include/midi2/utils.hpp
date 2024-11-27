@@ -93,20 +93,6 @@ constexpr bool is_status_byte(std::byte const midi1Byte) {
 constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
 constexpr auto S7MIDICI = std::byte{0x0D};
 
-// Here, CRT is short for "common and real-time".
-enum class system_crt : std::uint8_t {
-  timing_code = 0xF1,
-  spp = 0xF2,  ///< Song Position Pointer
-  song_select = 0xF3,
-  tune_request = 0xF6,
-  timing_clock = 0xF8,
-  sequence_start = 0xFA,     ///< Start the current sequence playing
-  sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
-  sequence_stop = 0xFC,      ///< Stop the current sequence
-  active_sensing = 0xFE,
-  system_reset = 0xFF,
-};
-
 // The MIDI 1.0 Specification defines Control Change indexes 98, 99, 100, and
 // 101 (0x62, 0x63, 0x64, and 0x65) to be used as compound sequences for
 // Non-Registered Parameter Number and Registered Parameter Number control
@@ -125,82 +111,6 @@ enum control : std::uint8_t {
   /// When a device receives the Reset All Controllers message, it should reset the
   /// condition of all its controllers what it considers an ideal initial state.
   reset_all_controllers = 0x79,
-};
-
-enum class m1cvm : std::uint8_t {
-  note_off = 0x8,
-  note_on = 0x9,
-  poly_pressure = 0xA,  ///< Polyphonic Key Pressure (Aftertouch).
-  cc = 0xB,             ///< Continuous Controller
-  program_change = 0xC,
-  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
-  pitch_bend = 0xE,
-};
-
-enum class m2cvm : std::uint8_t {
-  rpn_pernote = 0x0,
-  nrpn_pernote = 0x1,
-  rpn = 0x2,   ///< Registered Parameter Number
-  nrpn = 0x3,  ///< Assignable Controller Number
-  rpn_relative = 0x4,
-  nrpn_relative = 0x5,
-  pitch_bend_pernote = 0x6,
-  note_off = 0x8,
-  note_on = 0x9,
-  poly_pressure = 0xA,
-  cc = 0xB,  ///< Continuous Controller
-  program_change = 0xC,
-  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
-  pitch_bend = 0xE,
-  pernote_manage = 0xF,
-};
-
-enum class data64 : std::uint8_t {
-  sysex7_in_1 = 0x00,
-  sysex7_start = 0x01,
-  sysex7_continue = 0x02,
-  sysex7_end = 0x03,
-};
-
-enum class ump_utility : std::uint8_t {
-  noop = 0b0000,
-  jr_clock = 0b0001,
-  jr_ts = 0b0010,
-  delta_clock_tick = 0b0011,
-  delta_clock_since = 0b0100,
-};
-
-enum class flex_data : std::uint8_t {
-  // status bank == 0
-  set_tempo = 0x00,
-  set_time_signature = 0x01,
-  set_metronome = 0x02,
-  set_key_signature = 0x05,
-  set_chord_name = 0x06,
-};
-
-enum class ump_stream : std::uint16_t {
-  endpoint_discovery = 0x00,
-  endpoint_info_notification = 0x01,
-  device_identity_notification = 0x02,
-  endpoint_name_notification = 0x03,
-  product_instance_id_notification = 0x04,
-  jr_configuration_request = 0x05,
-  jr_configuration_notification = 0x06,
-  function_block_discovery = 0x10,
-  function_block_info_notification = 0x11,
-  function_block_name_notification = 0x12,
-  start_of_clip = 0x20,
-  end_of_clip = 0x21,
-};
-
-enum class data128 : std::uint8_t {
-  sysex8_in_1 = 0x00,
-  sysex8_start = 0x01,
-  sysex8_continue = 0x02,
-  sysex8_end = 0x03,
-  mixed_data_set_header = 0x08,
-  mixed_data_set_payload = 0x09,
 };
 
 enum class ci_message : std::uint8_t {

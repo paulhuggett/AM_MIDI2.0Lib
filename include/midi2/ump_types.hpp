@@ -22,6 +22,100 @@
 
 namespace midi2::ump {
 
+namespace mt {
+
+// Here, CRT is short for "common and real-time".
+enum class system_crt : std::uint8_t {
+  timing_code = 0xF1,
+  spp = 0xF2,  ///< Song Position Pointer
+  song_select = 0xF3,
+  tune_request = 0xF6,
+  timing_clock = 0xF8,
+  sequence_start = 0xFA,     ///< Start the current sequence playing
+  sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
+  sequence_stop = 0xFC,      ///< Stop the current sequence
+  active_sensing = 0xFE,
+  system_reset = 0xFF,
+};
+
+enum class m1cvm : std::uint8_t {
+  note_off = 0x8,
+  note_on = 0x9,
+  poly_pressure = 0xA,  ///< Polyphonic Key Pressure (Aftertouch).
+  cc = 0xB,             ///< Continuous Controller
+  program_change = 0xC,
+  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
+  pitch_bend = 0xE,
+};
+
+enum class m2cvm : std::uint8_t {
+  rpn_pernote = 0x0,
+  nrpn_pernote = 0x1,
+  rpn = 0x2,   ///< Registered Parameter Number
+  nrpn = 0x3,  ///< Assignable Controller Number
+  rpn_relative = 0x4,
+  nrpn_relative = 0x5,
+  pitch_bend_pernote = 0x6,
+  note_off = 0x8,
+  note_on = 0x9,
+  poly_pressure = 0xA,
+  cc = 0xB,  ///< Continuous Controller
+  program_change = 0xC,
+  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
+  pitch_bend = 0xE,
+  pernote_manage = 0xF,
+};
+
+enum class data64 : std::uint8_t {
+  sysex7_in_1 = 0x00,
+  sysex7_start = 0x01,
+  sysex7_continue = 0x02,
+  sysex7_end = 0x03,
+};
+
+enum class ump_utility : std::uint8_t {
+  noop = 0b0000,
+  jr_clock = 0b0001,
+  jr_ts = 0b0010,
+  delta_clock_tick = 0b0011,
+  delta_clock_since = 0b0100,
+};
+
+enum class flex_data : std::uint8_t {
+  // status bank == 0
+  set_tempo = 0x00,
+  set_time_signature = 0x01,
+  set_metronome = 0x02,
+  set_key_signature = 0x05,
+  set_chord_name = 0x06,
+};
+
+enum class ump_stream : std::uint16_t {
+  endpoint_discovery = 0x00,
+  endpoint_info_notification = 0x01,
+  device_identity_notification = 0x02,
+  endpoint_name_notification = 0x03,
+  product_instance_id_notification = 0x04,
+  jr_configuration_request = 0x05,
+  jr_configuration_notification = 0x06,
+  function_block_discovery = 0x10,
+  function_block_info_notification = 0x11,
+  function_block_name_notification = 0x12,
+  start_of_clip = 0x20,
+  end_of_clip = 0x21,
+};
+
+enum class data128 : std::uint8_t {
+  sysex8_in_1 = 0x00,
+  sysex8_start = 0x01,
+  sysex8_continue = 0x02,
+  sysex8_end = 0x03,
+  mixed_data_set_header = 0x08,
+  mixed_data_set_payload = 0x09,
+};
+
+}  // end namespace mt
+
 template <typename T>
 concept bitfield_type = requires(T) {
   requires std::unsigned_integral<typename T::index::value_type>;
@@ -56,28 +150,28 @@ constexpr auto apply(T const &message, Function function) {
 
 namespace details {
 
-constexpr auto status_to_message_type(system_crt) noexcept {
+constexpr auto status_to_message_type(mt::system_crt) noexcept {
   return ump_message_type::system;
 }
-constexpr auto status_to_message_type(ump_utility) noexcept {
+constexpr auto status_to_message_type(mt::ump_utility) noexcept {
   return ump_message_type::utility;
 }
-constexpr auto status_to_message_type(m1cvm) noexcept {
+constexpr auto status_to_message_type(mt::m1cvm) noexcept {
   return ump_message_type::m1cvm;
 }
-constexpr auto status_to_message_type(data64) noexcept {
+constexpr auto status_to_message_type(mt::data64) noexcept {
   return ump_message_type::data64;
 }
-constexpr auto status_to_message_type(m2cvm) noexcept {
+constexpr auto status_to_message_type(mt::m2cvm) noexcept {
   return ump_message_type::m2cvm;
 }
-constexpr auto status_to_message_type(data128) noexcept {
+constexpr auto status_to_message_type(mt::data128) noexcept {
   return ump_message_type::data128;
 }
-constexpr auto status_to_message_type(flex_data) noexcept {
+constexpr auto status_to_message_type(mt::flex_data) noexcept {
   return ump_message_type::flex_data;
 }
-constexpr auto status_to_message_type(ump_stream) noexcept {
+constexpr auto status_to_message_type(mt::ump_stream) noexcept {
   return ump_message_type::ump_stream;
 }
 
@@ -214,7 +308,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump_utility::noop); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::noop); }
 
     using mt = details::bitfield<28, 4>;
     using status = details::bitfield<20, 4>;
@@ -242,7 +336,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump_utility::jr_clock); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_clock); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -277,7 +371,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump_utility::jr_ts); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_ts); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -312,7 +406,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump_utility::delta_clock_tick); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_tick); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -347,7 +441,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump_utility::delta_clock_since); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_since); }
 
     using mt = details::bitfield<28, 4>;  // 0x0
     using reserved0 = details::bitfield<24, 4>;
@@ -411,7 +505,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::timing_code); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_code); }
 
     using mt = details::bitfield<28U, 4U>;  ///< Always 0x1
     using group = details::bitfield<24U, 4U>;
@@ -448,7 +542,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::spp); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::spp); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -486,7 +580,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::song_select); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::song_select); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -523,7 +617,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::tune_request); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::tune_request); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -557,7 +651,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::timing_clock); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_clock); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -591,7 +685,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::sequence_start); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_start); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -625,7 +719,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::sequence_continue); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_continue); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -659,7 +753,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::sequence_stop); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_stop); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -693,7 +787,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::active_sensing); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::active_sensing); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -727,7 +821,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(system_crt::system_reset); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::system_reset); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x1
     using group = details::bitfield<24, 4>;
@@ -791,7 +885,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::note_on); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_on); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -832,7 +926,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::note_off); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_off); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -873,7 +967,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::poly_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -914,7 +1008,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::cc); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -955,7 +1049,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::program_change); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -994,7 +1088,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::channel_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
     using group = details::bitfield<24, 4>;
@@ -1033,7 +1127,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m1cvm::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::pitch_bend); }
 
     using mt = details::bitfield<28, 4>;  // 0x2
     using group = details::bitfield<24, 4>;
@@ -1077,7 +1171,7 @@ template <> struct midi2::message_size<midi2::ump_message_type::data64> : std::i
 namespace midi2::ump::data64::details {
 
 // 7.7 System Exclusive (7-Bit) Messages
-template <midi2::data64 Status> class sysex7;
+template <midi2::ump::mt::data64 Status> class sysex7;
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -1088,7 +1182,7 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
 
 }  // end namespace midi2::ump::data64::details
 
-template <midi2::data64 Status> class midi2::ump::data64::details::sysex7 {
+template <midi2::ump::mt::data64 Status> class midi2::ump::data64::details::sysex7 {
 public:
   class word0 : public midi2::ump::details::word_base {
   public:
@@ -1143,22 +1237,22 @@ private:
   std::tuple<word0, word1> words_{};
 };
 
-template <midi2::data64 Status>
+template <midi2::ump::mt::data64 Status>
 struct std::tuple_size<midi2::ump::data64::details::sysex7<Status>> /* NOLINT(cert-dcl58-cpp]*/
     : std::integral_constant<std::size_t,
                              std::tuple_size_v<decltype(midi2::ump::data64::details::sysex7<Status>::words_)>> {};
 
-template <std::size_t I, midi2::data64 Status>
+template <std::size_t I, midi2::ump::mt::data64 Status>
 struct std::tuple_element<I, midi2::ump::data64::details::sysex7<Status>> { /* NOLINT(cert-dcl58-cpp] */
   using type = std::tuple_element_t<I, decltype(midi2::ump::data64::details::sysex7<Status>::words_)>;
 };
 
 namespace midi2::ump::data64 {
 
-using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_in_1>;
-using sysex7_start = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_start>;
-using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_continue>;
-using sysex7_end = midi2::ump::data64::details::sysex7<midi2::data64::sysex7_end>;
+using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_in_1>;
+using sysex7_start = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_start>;
+using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_continue>;
+using sysex7_end = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_end>;
 
 }  // namespace midi2::ump::data64
 
@@ -1215,7 +1309,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::note_off); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_off); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1264,7 +1358,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::note_on); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_on); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1313,7 +1407,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::poly_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1357,7 +1451,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::rpn_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_pernote); }
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Registered Per-Note Controller=0x0
@@ -1403,7 +1497,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::nrpn_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_pernote); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1455,7 +1549,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::rpn); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1502,7 +1596,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::nrpn); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1549,7 +1643,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::rpn_relative); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_relative); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1595,7 +1689,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::nrpn_relative); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_relative); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1644,7 +1738,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::pernote_manage); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pernote_manage); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1695,7 +1789,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::cc); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1740,7 +1834,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::program_change); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1794,7 +1888,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::channel_pressure); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1837,7 +1931,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1880,7 +1974,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::m2cvm::pitch_bend_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend_pernote); }
 
     using mt = details::bitfield<28, 4>;  ///< Always 0x4
     using group = details::bitfield<24, 4>;
@@ -1955,7 +2049,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::endpoint_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_discovery); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2010,7 +2104,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::endpoint_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_info_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2079,7 +2173,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::device_identity_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::device_identity_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2161,7 +2255,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::endpoint_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_name_notification); }
 
     using mt = details::bitfield<28, 4>;  // 0x0F
     using format = details::bitfield<26, 2>;
@@ -2236,7 +2330,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::product_instance_id_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::product_instance_id_notification); }
 
     using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;
@@ -2313,7 +2407,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::jr_configuration_request); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::jr_configuration_request); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2373,7 +2467,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::jr_configuration_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::jr_configuration_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2433,7 +2527,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::function_block_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_discovery); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2490,7 +2584,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::function_block_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_info_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2560,7 +2654,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::function_block_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_name_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2635,7 +2729,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::start_of_clip); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::start_of_clip); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2686,7 +2780,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump_stream::end_of_clip); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::end_of_clip); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2763,7 +2857,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::flex_data::set_tempo); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_tempo); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;
@@ -2821,7 +2915,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::flex_data::set_time_signature); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_time_signature); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;
@@ -2885,7 +2979,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::flex_data::set_metronome); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_metronome); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;
@@ -2955,7 +3049,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::flex_data::set_key_signature); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_key_signature); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;
@@ -3074,7 +3168,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::flex_data::set_chord_name); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_chord_name); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;
@@ -3242,7 +3336,7 @@ namespace details {
 // SysEx8 Start (word 1)
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
-template <::midi2::data128 Status> class sysex8;
+template <::midi2::ump::mt::data128 Status> class sysex8;
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -3258,7 +3352,7 @@ class mds_payload;
 
 }  // namespace midi2::ump::data128
 
-template <midi2::data128 Status> class midi2::ump::data128::details::sysex8 {
+template <midi2::ump::mt::data128 Status> class midi2::ump::data128::details::sysex8 {
 public:
   class word0 : public midi2::ump::details::word_base {
   public:
@@ -3332,22 +3426,22 @@ private:
   std::tuple<word0, word1, word2, word3> words_{};
 };
 
-template <::midi2::data128 Status>
+template <::midi2::ump::mt::data128 Status>
 struct std::tuple_size<midi2::ump::data128::details::sysex8<Status>> /* NOLINT(cert-dcl58-cpp]*/
     : std::integral_constant<std::size_t,
                              std::tuple_size_v<decltype(midi2::ump::data128::details::sysex8<Status>::words_)>> {};
 
-template <std::size_t I, midi2::data128 Status>
+template <std::size_t I, midi2::ump::mt::data128 Status>
 struct std::tuple_element<I, midi2::ump::data128::details::sysex8<Status>> { /* NOLINT(cert-dcl58-cpp] */
   using type = std::tuple_element_t<I, decltype(midi2::ump::data128::details::sysex8<Status>::words_)>;
 };
 
 namespace midi2::ump::data128 {
 
-using sysex8_in_1 = details::sysex8<midi2::data128::sysex8_in_1>;
-using sysex8_start = details::sysex8<midi2::data128::sysex8_start>;
-using sysex8_continue = details::sysex8<midi2::data128::sysex8_continue>;
-using sysex8_end = details::sysex8<midi2::data128::sysex8_end>;
+using sysex8_in_1 = details::sysex8<midi2::ump::mt::data128::sysex8_in_1>;
+using sysex8_start = details::sysex8<midi2::ump::mt::data128::sysex8_start>;
+using sysex8_continue = details::sysex8<midi2::ump::mt::data128::sysex8_continue>;
+using sysex8_end = details::sysex8<midi2::ump::mt::data128::sysex8_end>;
 
 }  // end namespace midi2::ump::data128
 
@@ -3360,7 +3454,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::data128::mixed_data_set_header); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::data128::mixed_data_set_header); }
 
     using mt = ump::details::bitfield<28, 4>;  ///< Always 0x05
     using group = ump::details::bitfield<24, 4>;
@@ -3422,7 +3516,7 @@ public:
   class word0 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(::midi2::data128::mixed_data_set_payload); }
+    constexpr word0() noexcept { this->init<mt, status>(::midi2::ump::mt::data128::mixed_data_set_payload); }
 
     using mt = ::midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
     using group = ::midi2::ump::details::bitfield<24, 4>;
