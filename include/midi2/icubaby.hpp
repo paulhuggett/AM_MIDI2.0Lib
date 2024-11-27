@@ -148,6 +148,12 @@
 #define ICUBABY_CPP_LIB_CONCEPTS_DEFINED (0)
 #endif
 
+#ifdef __gcc__
+#define ICUBABY_MAYBE_UNUSED
+#else
+#define ICUBABY_MAYBE_UNUSED [[maybe_unused]]
+#endif
+
 /// \brief A macro that evaluates true if the compiler and library have support for C++ 20 concepts.
 /// \hideinitializer
 #define ICUBABY_HAVE_CONCEPTS                                                                       \
@@ -908,7 +914,7 @@ public:
     static_assert (sizeof (input_type) <= sizeof (std::uint_least8_t));
     auto ucu = static_cast<std::uint_least8_t> (code_unit);
     // Clamp ucu in the event that it has more than 8 bits.
-    if constexpr (std::numeric_limits<std::uint_least8_t>::max () > 0xFFU) {
+    if constexpr (static_cast<unsigned>(std::numeric_limits<std::uint_least8_t>::max ()) > 0xFFU) {
       ucu = std::max (ucu, std::uint_least8_t{0xFF});
     }
     static_assert (utf8d_.size () > 255);
@@ -1000,7 +1006,7 @@ private:
   /// True if the input consumed is well formed, false otherwise.
   std::uint_least32_t well_formed_ : 1;
   /// Pad bits intended to put the next value to a byte boundary.
-  [[maybe_unused]] std::uint_least32_t pad_ : 2;
+  ICUBABY_MAYBE_UNUSED std::uint_least32_t pad_ : 2;
   enum : std::uint_least8_t { accept = 0, reject = 12 };
   /// The state of the converter.
   std::uint_least32_t state_ : 8;
