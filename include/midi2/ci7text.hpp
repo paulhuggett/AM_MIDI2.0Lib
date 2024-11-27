@@ -13,9 +13,9 @@
 #include <iterator>
 #include <type_traits>
 
-#include "icubaby/icubaby.hpp"
+#include "midi2/icubaby.hpp"
 
-template <icubaby::unicode_char_type InputEncoding> class icubaby::transcoder<InputEncoding, char> {
+template <midi2::icubaby::unicode_char_type InputEncoding> class midi2::icubaby::transcoder<InputEncoding, char> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = InputEncoding;
@@ -70,7 +70,7 @@ public:
   [[nodiscard]] constexpr bool partial() const noexcept { return src_to_32_.partial(); }
 
 private:
-  icubaby::transcoder<input_type, char32_t> src_to_32_;
+  midi2::icubaby::transcoder<input_type, char32_t> src_to_32_;
 
   template <std::output_iterator<char> OutputIterator>
   OutputIterator convert_from_32(char32_t code_unit, OutputIterator dest) {
@@ -100,7 +100,7 @@ private:
   }
 };
 
-template <icubaby::unicode_char_type OutputEncoding> class icubaby::transcoder<char, OutputEncoding> {
+template <midi2::icubaby::unicode_char_type OutputEncoding> class midi2::icubaby::transcoder<char, OutputEncoding> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = char;
