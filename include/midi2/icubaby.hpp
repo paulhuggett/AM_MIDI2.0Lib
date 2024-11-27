@@ -148,7 +148,7 @@
 #define ICUBABY_CPP_LIB_CONCEPTS_DEFINED (0)
 #endif
 
-#ifdef __gcc__
+#ifdef __GNUC__
 #define ICUBABY_MAYBE_UNUSED
 #else
 #define ICUBABY_MAYBE_UNUSED [[maybe_unused]]

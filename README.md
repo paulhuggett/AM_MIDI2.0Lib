@@ -7,7 +7,7 @@ This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM
 
 - Using C++20 features
 - Limiting use of magic numbers and bitwise operators to define data layout and instead using the C++ type system wherever possible
-- UMP convertion classes are now built on the library's `ump_dispatcher` class rather than duplicating code to extract UMP messages
+- UMP conversion classes are now built on the library's `ump_dispatcher` class rather than duplicating code to extract UMP messages
 - Using templates to pass callables to enable cross-callback optimization
 - Significantly increasing the depth of testing
 
@@ -37,9 +37,35 @@ Note it is up to the application to:
 This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a memory footprint of around 1k.
 
 
+### Example: Creating and Sending UMP Messages
+
+```C++
+#include <midi2/ump_types.hpp>
+
+void send_note_on(std::uint8_t channel, std::uint8_t note, std::uint32_t velocity) {
+  // Create an instance of the type that represents the UMP message to be sent. Set
+  // the fields of the message as desired.
+  auto const message = midi2::ump::m2cvm::note_on{}
+    .group(0)
+    .channel(channel)
+    .note(note)
+    .velocity(velocity);
+
+  // Invoke a function for each of the words that make up the complete message. There's
+  // no need for this code to understand the layout or size of the message.
+  midi2::ump::apply(message, [](auto const v) {
+      auto const word = std::uint32_t{v};
+      // ... transmit the 32 bit word ...
+      return std::error_code{};
+    });
+}
+```
+
 ### Example: Translate MIDI 1.0 Byte stream to UMP
 
 Here is a quick example
+
+> THIS EXAMPLE IS OBSOLETE
 
 ```C++
 #include "bytestreamUMP.h"
@@ -78,6 +104,9 @@ void loop()
 ```
 
 ### Example: Process UMP Streams
+
+> THIS EXAMPLE IS OBSOLETE
+
 UMP Streams accepts a series of 32 bit values. UMP messages that have 64bit will provide 2 UMP words.
 
 ```C++
@@ -119,6 +148,9 @@ void loop()
 ```
 
 ### Example: Process MIDI-CI Messages
+
+> THIS EXAMPLE IS OBSOLETE
+
 MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing most MIDI-CI Messages.
 ```C++
 
