@@ -149,12 +149,6 @@
 #define ICUBABY_CPP_LIB_CONCEPTS_DEFINED (0)
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
-#define ICUBABY_MAYBE_UNUSED
-#else
-#define ICUBABY_MAYBE_UNUSED [[maybe_unused]]
-#endif
-
 /// \brief A macro that evaluates true if the compiler and library have support for C++ 20 concepts.
 /// \hideinitializer
 #define ICUBABY_HAVE_CONCEPTS                                                                       \
@@ -898,8 +892,8 @@ public:
   /// converting a stream of data which may be using different encodings.
   ///
   /// \param well_formed The initial value for the transcoder's "well formed" state.
-  explicit constexpr transcoder (bool well_formed) noexcept
-      : code_point_{0}, well_formed_{static_cast<std::uint_least32_t> (well_formed)}, pad_{0}, state_{accept} {}
+  explicit constexpr transcoder(bool well_formed) noexcept
+      : code_point_{0}, well_formed_{static_cast<std::uint_least32_t>(well_formed)}, state_{accept} {}
 
   /// Accepts a code unit in the UTF-8 source encoding. As UTF-32 output code units are generated, they are written to
   /// the output iterator \p dest.
@@ -1007,7 +1001,7 @@ private:
   /// True if the input consumed is well formed, false otherwise.
   std::uint_least32_t well_formed_ : 1;
   /// Pad bits intended to put the next value to a byte boundary.
-  ICUBABY_MAYBE_UNUSED std::uint_least32_t pad_ : 2;
+  std::uint_least32_t : 2;
   enum : std::uint_least8_t { accept = 0, reject = 12 };
   /// The state of the converter.
   std::uint_least32_t state_ : 8;
