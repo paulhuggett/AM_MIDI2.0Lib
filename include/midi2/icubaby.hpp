@@ -89,6 +89,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -914,7 +915,7 @@ public:
     static_assert (sizeof (input_type) <= sizeof (std::uint_least8_t));
     auto ucu = static_cast<std::uint_least8_t> (code_unit);
     // Clamp ucu in the event that it has more than 8 bits.
-    if constexpr (static_cast<unsigned>(std::numeric_limits<std::uint_least8_t>::max ()) > 0xFFU) {
+    if constexpr (CHAR_BIT > 8 || sizeof (std::uint_least8_t) > 1) {
       ucu = std::max (ucu, std::uint_least8_t{0xFF});
     }
     static_assert (utf8d_.size () > 255);
