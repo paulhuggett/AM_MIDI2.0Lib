@@ -89,6 +89,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -891,8 +892,8 @@ public:
   /// converting a stream of data which may be using different encodings.
   ///
   /// \param well_formed The initial value for the transcoder's "well formed" state.
-  explicit constexpr transcoder (bool well_formed) noexcept
-      : code_point_{0}, well_formed_{static_cast<std::uint_least32_t> (well_formed)}, pad_{0}, state_{accept} {}
+  explicit constexpr transcoder(bool well_formed) noexcept
+      : code_point_{0}, well_formed_{static_cast<std::uint_least32_t>(well_formed)}, state_{accept} {}
 
   /// Accepts a code unit in the UTF-8 source encoding. As UTF-32 output code units are generated, they are written to
   /// the output iterator \p dest.
@@ -908,7 +909,7 @@ public:
     static_assert (sizeof (input_type) <= sizeof (std::uint_least8_t));
     auto ucu = static_cast<std::uint_least8_t> (code_unit);
     // Clamp ucu in the event that it has more than 8 bits.
-    if constexpr (std::numeric_limits<std::uint_least8_t>::max () > 0xFFU) {
+    if constexpr (CHAR_BIT > 8 || sizeof (std::uint_least8_t) > 1) {
       ucu = std::max (ucu, std::uint_least8_t{0xFF});
     }
     static_assert (utf8d_.size () > 255);
@@ -1000,7 +1001,7 @@ private:
   /// True if the input consumed is well formed, false otherwise.
   std::uint_least32_t well_formed_ : 1;
   /// Pad bits intended to put the next value to a byte boundary.
-  [[maybe_unused]] std::uint_least32_t pad_ : 2;
+  std::uint_least32_t : 2;
   enum : std::uint_least8_t { accept = 0, reject = 12 };
   /// The state of the converter.
   std::uint_least32_t state_ : 8;
