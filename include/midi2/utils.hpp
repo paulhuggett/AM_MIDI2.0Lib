@@ -158,41 +158,41 @@ enum class ci_message : std::uint8_t {
   nak = 0x7F,
 };
 
-enum {
-  MIDICI_PE_STATUS_OK = 200,
-  MIDICI_PE_STATUS_ACCEPTED = 202,
-  MIDICI_PE_STATUS_RESOURCE_UNAVAILABLE = 341,
-  MIDICI_PE_STATUS_BAD_DATA = 342,
-  MIDICI_PE_STATUS_TOO_MANY_REQS = 343,
-  MIDICI_PE_STATUS_BAD_REQ = 400,
-  MIDICI_PE_STATUS_REQ_UNAUTHORIZED = 403,
-  MIDICI_PE_STATUS_RESOURCE_UNSUPPORTED = 404,
-  MIDICI_PE_STATUS_RESOURCE_NOT_ALLOWED = 405,
-  MIDICI_PE_STATUS_PAYLOAD_TOO_LARGE = 413,
-  MIDICI_PE_STATUS_UNSUPPORTED_MEDIA_TYPE = 415,
-  MIDICI_PE_STATUS_INVALID_DATA_VERSION = 445,
-  MIDICI_PE_STATUS_INTERNAL_DEVICE_ERROR = 500,
+enum class pe_status {
+  ok = 200,
+  accepted = 202,
+  resource_unavailable = 341,
+  bad_data = 342,
+  too_many_reqs = 343,
+  bad_req = 400,
+  req_unauthorized = 403,
+  resource_unsupported = 404,
+  resource_not_allowed = 405,
+  payload_too_large = 413,
+  unsupported_media_type = 415,
+  invalid_data_version = 445,
+  internal_device_error = 500,
 };
 
-enum : std::uint8_t {
-  MIDICI_PE_COMMAND_START = 1,
-  MIDICI_PE_COMMAND_END = 2,
-  MIDICI_PE_COMMAND_PARTIAL = 3,
-  MIDICI_PE_COMMAND_FULL = 4,
-  MIDICI_PE_COMMAND_NOTIFY = 5,
+enum class pe_command : std::uint8_t {
+  start = 1,
+  end = 2,
+  partial = 3,
+  full = 4,
+  notify = 5,
 };
 
-enum : std::uint8_t {
-  MIDICI_PE_ACTION_COPY = 1,
-  MIDICI_PE_ACTION_MOVE = 2,
-  MIDICI_PE_ACTION_DELETE = 3,
-  MIDICI_PE_ACTION_CREATE_DIR = 4,
+enum class pe_action : std::uint8_t {
+  copy = 1,
+  move = 2,
+  del = 3,
+  create_dir = 4,
 };
 
-enum : std::uint8_t {
-  MIDICI_PE_ASCII = 1,
-  MIDICI_PE_MCODED7 = 2,
-  MIDICI_PE_MCODED7ZLIB = 3,
+enum class pe_encoding : std::uint8_t {
+  ascii = 1,
+  mcoded7 = 2,
+  mcoded7zlib = 3,
 };
 
 constexpr auto M2_CI_BROADCAST = std::uint32_t{0x0FFFFFFF};
