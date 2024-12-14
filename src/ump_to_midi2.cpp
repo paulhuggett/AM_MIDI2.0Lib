@@ -70,7 +70,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
   auto const value = in.value();
 
   auto &c = ctxt->parameter_number[group][channel];
-  switch (controller) {
+  switch (static_cast<control>(controller)) {
   case control::bank_select: ctxt->bank[group][channel].set_msb(value); break;
   case control::bank_select_lsb: ctxt->bank[group][channel].set_lsb(value); break;
 

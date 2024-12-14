@@ -98,7 +98,7 @@ constexpr auto S7MIDICI = std::byte{0x0D};
 // Non-Registered Parameter Number and Registered Parameter Number control
 // messages. These set destinations for Control Change index 6/38 (0x06/0x26),
 // Data Entry.
-enum control : std::uint8_t {
+enum class control : std::uint8_t {
   bank_select = 0x00,
   bank_select_lsb = 0x20,
   data_entry_msb = 0x06,
