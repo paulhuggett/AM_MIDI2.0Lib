@@ -94,7 +94,8 @@ private:
   };
 
   struct to_bytestream_config {
-    struct system {
+    class system {
+    public:
       static void midi_time_code(context_type *const ctxt, ump::system::midi_time_code const &in) {
         static_assert(bytestream_message_size<status::timing_code>() == 2);
         system::push(ctxt, in.group(), status::timing_code, std::byte{in.time_code()});
@@ -157,7 +158,8 @@ private:
         }
       }
     };
-    struct m1cvm {
+    class m1cvm {
+    public:
       static void note_off(context_type *const ctxt, ump::m1cvm::note_off const &in) {
         if (ctxt->filter_message(in)) {
           return;
@@ -220,7 +222,7 @@ private:
         ctxt->push_back(std::byte{in.msb_data()});
       }
     };
-    struct data64 {
+    class data64 {
     public:
       static void sysex7_in_1(context_type *const ctxt, ump::data64::sysex7_in_1 const &in) {
         if (ctxt->filter_message(in)) {
