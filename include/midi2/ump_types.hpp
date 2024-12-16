@@ -1053,6 +1053,8 @@ public:
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
+  constexpr auto &controller(control const c) noexcept { return this->controller(to_underlying(c)); }
+
 private:
   friend struct ::std::tuple_size<control_change>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
@@ -1837,6 +1839,8 @@ public:
   UMP_GETTER_SETTER(word0, channel)
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word1, value)
+
+  constexpr auto &controller(control const c) noexcept { return this->controller(to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
