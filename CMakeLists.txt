@@ -45,7 +45,6 @@ set(MIDI2_HEADERS
 
 add_library(midi2 ${MIDI2_HEADERS}
   src/bytestream_to_ump.cpp
-  src/ump_to_bytestream.cpp
   src/ump_to_midi1.cpp
   src/ump_to_midi2.cpp
 )
