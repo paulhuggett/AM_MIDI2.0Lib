@@ -333,6 +333,12 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
+
+constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
+                             std::uint8_t const b3) {
+  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
+}
+
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
@@ -392,14 +398,14 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   };
 
   std::array const expected{
-      start_message(0x0A, 0x0B),     midi2::pack(0x0C, 0x0D, 0x0E, 0x0F),
-      end_message(6, 0x1A, 0x1B),    midi2::pack(0x1C, 0x1D, 0x1E, 0x1F),
-      start_message(0x2A, 0x2B),     midi2::pack(0x2C, 0x2D, 0x2E, 0x2F),
-      end_message(5, 0x3A, 0x3B),    midi2::pack(0x3C, 0x3D, 0x3E, 0),
-      in_one_message(5, 0x4A, 0x4B), midi2::pack(0x4C, 0x4D, 0x4E, 0),
-      in_one_message(4, 0x5A, 0x5B), midi2::pack(0x5C, 0x5D, 0, 0),
-      in_one_message(3, 0x6A, 0x6B), midi2::pack(0x6C, 0, 0, 0),
-      in_one_message(2, 0x7A, 0x7B), midi2::pack(0, 0, 0, 0),
+      start_message(0x0A, 0x0B),     pack(0x0C, 0x0D, 0x0E, 0x0F),
+      end_message(6, 0x1A, 0x1B),    pack(0x1C, 0x1D, 0x1E, 0x1F),
+      start_message(0x2A, 0x2B),     pack(0x2C, 0x2D, 0x2E, 0x2F),
+      end_message(5, 0x3A, 0x3B),    pack(0x3C, 0x3D, 0x3E, 0),
+      in_one_message(5, 0x4A, 0x4B), pack(0x4C, 0x4D, 0x4E, 0),
+      in_one_message(4, 0x5A, 0x5B), pack(0x5C, 0x5D, 0, 0),
+      in_one_message(3, 0x6A, 0x6B), pack(0x6C, 0, 0, 0),
+      in_one_message(2, 0x7A, 0x7B), pack(0, 0, 0, 0),
   };
 
   auto const actual = convert(midi2::bytestream_to_ump{group}, input);

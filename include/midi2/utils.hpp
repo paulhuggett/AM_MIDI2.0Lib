@@ -27,9 +27,13 @@ namespace midi2 {
 #endif
 }
 
+/// Converts an enumeration value to its underlying type
+///
+/// \param e  The enumeration value to convert
+/// \returns The integer value of the underlying type of Enum, converted from \p e.
 template <typename Enum>
   requires std::is_enum_v<Enum>
-constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
+constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
 #if defined(__cpp_lib_to_underlying) && __cpp_lib_to_underlying > 202102L
   return std::to_underlying(e);
 #else
@@ -37,6 +41,8 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
 #endif
 }
 
+/// Returns true if the argument is a power of two and false otherwise.
+///
 /// \tparam T An unsigned integer type.
 /// \param n An integer value to check whether it is a power of two.
 /// \returns True if the input value is a power of 2.
@@ -74,8 +80,8 @@ enum class status : std::uint8_t {
   systemreset = 0xFF,
 };
 
-constexpr bool is_system_real_time_message(std::byte const midi1Byte) {
-  switch (static_cast<status>(midi1Byte)) {
+constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept {
+  switch (static_cast<status>(midi1_byte)) {
   case status::timing_clock:
   case status::sequence_start:
   case status::sequence_continue:
@@ -86,8 +92,8 @@ constexpr bool is_system_real_time_message(std::byte const midi1Byte) {
   }
 }
 
-constexpr bool is_status_byte(std::byte const midi1Byte) {
-  return (midi1Byte & std::byte{0x80}) != std::byte{0x00};
+constexpr bool is_status_byte(std::byte const midi1_byte) noexcept {
+  return (midi1_byte & std::byte{0x80}) != std::byte{0x00};
 }
 
 constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
@@ -202,11 +208,6 @@ enum : std::uint32_t {
   UMP_VER_MINOR = 1,
 };
 
-constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
-                             std::uint8_t const b3) {
-  return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
-}
-
 template <unsigned Bits>
 using small_type = std::conditional_t<
     Bits <= 8, std::uint8_t,
@@ -216,7 +217,7 @@ using small_type = std::conditional_t<
 /// Resolution v1.0.1 23-May-2023"
 template <unsigned SourceBits, unsigned DestBits>
   requires(SourceBits > 1 && DestBits <= 32)
-constexpr small_type<DestBits> mcm_scale(small_type<SourceBits> const value) {
+constexpr small_type<DestBits> mcm_scale(small_type<SourceBits> const value) noexcept {
   if constexpr (SourceBits >= DestBits) {
     return static_cast<small_type<DestBits>>(value >> (SourceBits - DestBits));
   } else {

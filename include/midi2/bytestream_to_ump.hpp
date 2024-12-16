@@ -60,17 +60,6 @@ private:
   sysex7 sysex7_;
   fifo<std::uint32_t, 4> output_{};
 
-  [[nodiscard]] static constexpr std::uint32_t pack(std::byte const b0, std::byte const b1, std::byte const b2,
-                                                    std::byte const b3) {
-    return (std::to_integer<std::uint32_t>(b0) << 24) | (std::to_integer<std::uint32_t>(b1) << 16) |
-           (std::to_integer<std::uint32_t>(b2) << 8) | std::to_integer<std::uint32_t>(b3);
-  }
-
-  [[nodiscard]] constexpr std::uint32_t pack(ump::message_type const message_type, std::byte const b1,
-                                             std::byte const b2, std::byte const b3) const {
-    return pack((static_cast<std::byte>(message_type) << 4) | group_, b1, b2, b3);
-  }
-
   void to_ump(std::byte b0, std::byte b1, std::byte b2);
 
   template <typename T> void push_sysex7();

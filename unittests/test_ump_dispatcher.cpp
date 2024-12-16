@@ -62,7 +62,6 @@ TEST(UMPApply, ErrorCodeFails) {
       << "Expected a single element because the lambda returned an error to stop processing";
 }
 
-using midi2::pack;
 using context_type = int;
 
 struct utility_base {
