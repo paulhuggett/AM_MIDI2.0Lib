@@ -24,12 +24,11 @@ namespace midi2 {
 void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const ctxt, ump::m1cvm::note_off const &in) {
   constexpr auto m1bits = ump::m1cvm::note_off::word0::velocity::bits();
   constexpr auto m2bits = ump::m2cvm::note_off::word1::velocity::bits();
-  auto const noff = ump::m2cvm::note_off{}
-                        .group(in.group())
-                        .channel(in.channel())
-                        .note(in.note())
-                        .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
-  ctxt->push(noff);
+  ctxt->push(ump::m2cvm::note_off{}
+                 .group(in.group())
+                 .channel(in.channel())
+                 .note(in.note())
+                 .velocity(mcm_scale<m1bits, m2bits>(in.velocity())));
 }
 
 // note on
@@ -37,12 +36,11 @@ void ump_to_midi2::to_midi2_config::m1cvm::note_off(ump_to_midi2::context *const
 void ump_to_midi2::to_midi2_config::m1cvm::note_on(ump_to_midi2::context *const ctxt, ump::m1cvm::note_on const &in) {
   constexpr auto m1bits = ump::m1cvm::note_on::word0::velocity::bits();
   constexpr auto m2bits = ump::m2cvm::note_on::word1::velocity::bits();
-  auto const non = ump::m2cvm::note_on{}
-                       .group(in.group())
-                       .channel(in.channel())
-                       .note(in.note())
-                       .velocity(mcm_scale<m1bits, m2bits>(in.velocity()));
-  ctxt->push(non);
+  ctxt->push(ump::m2cvm::note_on{}
+                 .group(in.group())
+                 .channel(in.channel())
+                 .note(in.note())
+                 .velocity(mcm_scale<m1bits, m2bits>(in.velocity())));
 }
 
 // poly pressure
@@ -51,13 +49,11 @@ void ump_to_midi2::to_midi2_config::m1cvm::poly_pressure(ump_to_midi2::context *
                                                          ump::m1cvm::poly_pressure const &in) {
   constexpr auto m1bits = ump::m1cvm::poly_pressure::word0::pressure::bits();
   constexpr auto m2bits = ump::m2cvm::poly_pressure::word1::pressure::bits();
-
-  auto const out = ump::m2cvm::poly_pressure{}
-                       .group(in.group())
-                       .channel(in.channel())
-                       .note(in.note())
-                       .pressure(mcm_scale<m1bits, m2bits>(in.pressure()));
-  ctxt->push(out);
+  ctxt->push(ump::m2cvm::poly_pressure{}
+                 .group(in.group())
+                 .channel(in.channel())
+                 .note(in.note())
+                 .pressure(mcm_scale<m1bits, m2bits>(in.pressure())));
 }
 
 // control change
@@ -116,12 +112,11 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
   default: {
     constexpr auto m2v = ump::m2cvm::control_change::word1::value::bits();
     constexpr auto m1v = ump::m1cvm::control_change::word0::value::bits();
-    auto const out = ump::m2cvm::control_change{}
-                         .group(group)
-                         .channel(channel)
-                         .controller(controller)
-                         .value(mcm_scale<m1v, m2v>(value));
-    ctxt->push(out);
+    ctxt->push(ump::m2cvm::control_change{}
+                   .group(group)
+                   .channel(channel)
+                   .controller(controller)
+                   .value(mcm_scale<m1v, m2v>(value)));
     break;
   }
   }
@@ -147,10 +142,8 @@ void ump_to_midi2::to_midi2_config::m1cvm::channel_pressure(ump_to_midi2::contex
                                                             ump::m1cvm::channel_pressure const &in) {
   constexpr auto m2v = ump::m2cvm::channel_pressure::word1::value::bits();
   constexpr auto m1v = ump::m1cvm::channel_pressure::word0::data::bits();
-
-  auto const out =
-      ump::m2cvm::channel_pressure{}.group(in.group()).channel(in.channel()).value(mcm_scale<m1v, m2v>(in.data()));
-  ctxt->push(out);
+  ctxt->push(
+      ump::m2cvm::channel_pressure{}.group(in.group()).channel(in.channel()).value(mcm_scale<m1v, m2v>(in.data())));
 }
 
 // pitch bend
@@ -164,12 +157,10 @@ void ump_to_midi2::to_midi2_config::m1cvm::pitch_bend(ump_to_midi2::context *con
   static_assert(lsb_bits + msb_bits <= 16);
   auto const m1value =
       static_cast<std::uint16_t>(static_cast<std::uint16_t>(in.msb_data() << lsb_bits) | in.lsb_data());
-
-  auto const out = ump::m2cvm::pitch_bend{}
-                       .group(in.group())
-                       .channel(in.channel())
-                       .value(mcm_scale<lsb_bits + msb_bits, m2v>(m1value));
-  ctxt->push(out);
+  ctxt->push(ump::m2cvm::pitch_bend{}
+                 .group(in.group())
+                 .channel(in.channel())
+                 .value(mcm_scale<lsb_bits + msb_bits, m2v>(m1value)));
 }
 
 }  // end namespace midi2
