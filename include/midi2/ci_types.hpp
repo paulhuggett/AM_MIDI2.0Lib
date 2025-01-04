@@ -29,51 +29,49 @@ using byte_array_3 = std::array<std::byte, 3>;
 using byte_array_4 = std::array<std::byte, 4>;
 using byte_array_5 = std::array<std::byte, 5>;
 
-constexpr auto FUNCTION_BLOCK = std::uint8_t{0x7F};
-
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
-constexpr std::uint32_t from_le7(byte_array_4 const &v) {
+[[nodiscard]] constexpr std::uint32_t from_le7(byte_array_4 const &v) noexcept {
   assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
   return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
          (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
          (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
          (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
 }
-constexpr std::uint16_t from_le7(byte_array_2 const &v) {
+[[nodiscard]] constexpr std::uint16_t from_le7(byte_array_2 const &v) noexcept {
   assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
   return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
                                     (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
 }
-constexpr std::uint8_t from_le7(std::byte v) {
-  return static_cast<std::uint8_t>(v);
+[[nodiscard]] constexpr std::uint8_t from_le7(std::byte const v) noexcept {
+  return to_underlying(v);
 }
 
-constexpr byte_array_4 to_le7(std::uint32_t const v) {
+[[nodiscard]] constexpr byte_array_4 to_le7(std::uint32_t const v) noexcept {
   assert(v < (std::uint32_t{1} << 28));
   return {static_cast<std::byte>(v >> (7 * 0)) & mask7b, static_cast<std::byte>(v >> (7 * 1)) & mask7b,
           static_cast<std::byte>(v >> (7 * 2)) & mask7b, static_cast<std::byte>(v >> (7 * 3)) & mask7b};
 }
-constexpr byte_array_2 to_le7(std::uint16_t const v) {
+[[nodiscard]] constexpr byte_array_2 to_le7(std::uint16_t const v) noexcept {
   assert(v < (std::uint16_t{1} << 14));
   return {static_cast<std::byte>(v >> (7 * 0)) & mask7b, static_cast<std::byte>(v >> (7 * 1)) & mask7b};
 }
-constexpr std::byte to_le7(std::uint8_t v) {
+[[nodiscard]] constexpr std::byte to_le7(std::uint8_t const v) noexcept {
   assert(v < (std::uint8_t{1} << 7));
   return static_cast<std::byte>(v);
 }
 
 template <std::size_t Size>
-constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) {
+[[nodiscard]] constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) noexcept {
   std::array<std::uint8_t, Size> result{};
-  std::ranges::transform(other, std::begin(result), [](std::byte v) { return static_cast<std::uint8_t>(v); });
+  std::ranges::transform(other, std::begin(result), [](std::byte const v) { return to_underlying(v); });
   return result;
 }
 
 template <std::size_t Size>
-constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) {
+[[nodiscard]] constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) noexcept {
   std::array<std::byte, Size> result{};
-  std::ranges::transform(other, std::begin(result), [](std::uint8_t v) { return static_cast<std::byte>(v); });
+  std::ranges::transform(other, std::begin(result), [](std::uint8_t const v) { return std::byte{v}; });
   return result;
 }
 
@@ -107,27 +105,27 @@ struct params {
 
   explicit constexpr operator packed::header() const;
 
-  std::uint8_t deviceId = 0xFF;
-  std::uint8_t ciVer = 1;
-  std::uint32_t remoteMUID = 0;
-  std::uint32_t localMUID = 0;
+  std::uint8_t device_id = 0xFF;
+  std::uint8_t version = 1;
+  std::uint32_t remote_muid = 0;
+  std::uint32_t local_muid = 0;
 };
 
 constexpr params::operator packed::header() const {
   return packed::header{.sysex = S7UNIVERSAL_NRT,
-                        .source = static_cast<std::byte>(deviceId),
+                        .source = static_cast<std::byte>(device_id),
                         .sub_id_1 = S7MIDICI,
                         .sub_id_2 = std::byte{0},  // message type
-                        .version = static_cast<std::byte>(ciVer),
-                        .source_muid = ci::to_le7(remoteMUID),
-                        .destination_muid = ci::to_le7(localMUID)};
+                        .version = static_cast<std::byte>(version),
+                        .source_muid = ci::to_le7(remote_muid),
+                        .destination_muid = ci::to_le7(local_muid)};
 }
 
-struct MIDICI {
-  bool operator==(MIDICI const &) const = default;
+struct midi_ci {
+  bool operator==(midi_ci const &) const = default;
 
-  std::uint8_t umpGroup = 0xFF;
-  ci_message ciType = static_cast<ci_message>(0x00);
+  std::uint8_t group = 0xFF;
+  ci_message type = static_cast<ci_message>(0x00);
   struct params params;
 };
 

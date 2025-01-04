@@ -229,7 +229,7 @@ constexpr O create_message(O first, S const last, struct params const &params, T
   using v1_type = details::type_to_packed<T>::v1;
   using v2_type = details::type_to_packed<T>::v2;
 
-  if (params.ciVer == 1) {
+  if (params.version == 1) {
     if constexpr (!std::is_same_v<v1_type, details::not_available>) {
       first = details::write_header(first, last, params, details::type_to_packed<T>::id);
       if constexpr (!std::is_same_v<v1_type, details::empty>) {
@@ -266,7 +266,7 @@ constexpr O create_message(O first, S const last, struct params const &params, s
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S last, struct params const &params, struct nak const &nak) {
   first = details::write_header(first, last, params, details::type_to_packed<struct nak>::id);
-  if (params.ciVer == 1) {
+  if (params.version == 1) {
     return first;
   }
   auto const v2 = static_cast<packed::nak_v2>(nak);

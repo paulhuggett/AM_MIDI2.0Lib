@@ -84,17 +84,17 @@ TEST_F(CICreateMessage, DiscoveryV1) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = 0;
-  params.localMUID = midi2::M2_CI_BROADCAST;
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = 0;
+  params.local_muid = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
   discovery.family = from_le7(family);
   discovery.model = from_le7(model);
   discovery.version = midi2::ci::from_array(version);
-  discovery.capability = static_cast<std::uint8_t>(capability);
+  discovery.capability = midi2::to_underlying(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
 
   EXPECT_THAT(make_message(params, discovery), testing::ElementsAreArray(expected));
@@ -130,19 +130,19 @@ TEST_F(CICreateMessage, DiscoveryV2) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 2;
-  params.remoteMUID = 0;
-  params.localMUID = midi2::M2_CI_BROADCAST;
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 2;
+  params.remote_muid = 0;
+  params.local_muid = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
   discovery.family = from_le7(family);
   discovery.model = from_le7(model);
   discovery.version = midi2::ci::from_array(version);
-  discovery.capability = static_cast<std::uint8_t>(capability);
+  discovery.capability = midi2::to_underlying(capability);
   discovery.max_sysex_size = from_le7(max_sysex_size);
-  discovery.output_path_id = static_cast<std::uint8_t>(output_path_id);
+  discovery.output_path_id = midi2::to_underlying(output_path_id);
 
   EXPECT_THAT(make_message(params, discovery), testing::ElementsAreArray(expected));
 }
@@ -179,20 +179,20 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 2;
-  params.remoteMUID = 0;
-  params.localMUID = midi2::M2_CI_BROADCAST;
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 2;
+  params.remote_muid = 0;
+  params.local_muid = midi2::M2_CI_BROADCAST;
 
   midi2::ci::discovery_reply reply;
   reply.manufacturer = midi2::ci::from_array(manufacturer);
   reply.family = from_le7(family);
   reply.model = from_le7(model);
   reply.version = midi2::ci::from_array(version);
-  reply.capability = static_cast<std::uint8_t>(capability);
+  reply.capability = midi2::to_underlying(capability);
   reply.max_sysex_size = from_le7(max_sysex_size);
-  reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
-  reply.function_block = static_cast<std::uint8_t>(function_block);
+  reply.output_path_id = midi2::to_underlying(output_path_id);
+  reply.function_block = midi2::to_underlying(function_block);
 
   EXPECT_THAT(make_message(params, reply), testing::ElementsAreArray(expected));
 }
@@ -216,10 +216,10 @@ TEST_F(CICreateMessage, EndpointInfo) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   midi2::ci::endpoint_info endpoint_info;
   endpoint_info.status = status;
@@ -255,10 +255,10 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   // Test create_message()
   midi2::ci::endpoint_info_reply reply;
@@ -287,10 +287,10 @@ TEST_F(CICreateMessage, InvalidateMuid) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   midi2::ci::invalidate_muid invalidate_muid;
   invalidate_muid.target_muid = from_le7(target_muid);
@@ -330,15 +330,15 @@ TEST_F(CICreateMessage, Ack) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   midi2::ci::ack ack;
-  ack.original_id = static_cast<std::uint8_t>(original_id);
-  ack.status_code = static_cast<std::uint8_t>(ack_status_code);
-  ack.status_data = static_cast<std::uint8_t>(ack_status_data);
+  ack.original_id = midi2::to_underlying(original_id);
+  ack.status_code = midi2::to_underlying(ack_status_code);
+  ack.status_data = midi2::to_underlying(ack_status_data);
   ack.details = ack_details;
   ack.message = std::span{text};
 
@@ -362,10 +362,10 @@ TEST_F(CICreateMessage, NakV1) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 1;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 1;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
   EXPECT_THAT(make_message(params, midi2::ci::nak{}), testing::ElementsAreArray(expected));
 }
 
@@ -400,16 +400,16 @@ TEST_F(CICreateMessage, NakV2) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(device_id);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(device_id);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   // Test create_message()
   midi2::ci::nak nak;
-  nak.original_id = static_cast<std::uint8_t>(original_id);
-  nak.status_code = static_cast<std::uint8_t>(nak_status_code);
-  nak.status_data = static_cast<std::uint8_t>(nak_status_data);
+  nak.original_id = midi2::to_underlying(original_id);
+  nak.status_code = midi2::to_underlying(nak_status_code);
+  nak.status_data = midi2::to_underlying(nak_status_data);
   nak.details = nak_details;
   nak.message = std::span{text};
 
@@ -433,10 +433,10 @@ TEST_F(CICreateMessage, ProfileInquiry) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry{}), testing::ElementsAreArray(expected));
 }
@@ -470,10 +470,10 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(receiver_muid);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(receiver_muid);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
               testing::ElementsAreArray(expected));
@@ -498,10 +498,10 @@ TEST_F(CICreateMessage, ProfileAdded) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(broadcast_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::added added;
   added.pid = pid;
@@ -528,10 +528,10 @@ TEST_F(CICreateMessage, ProfileRemoved) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(broadcast_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::removed removed;
   removed.pid = pid;
@@ -559,10 +559,10 @@ TEST_F(CICreateMessage, ProfileDetails) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::profile_configuration::details details;
   details.pid = pid;
@@ -596,14 +596,14 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_THAT(make_message(params, details_reply{pid, static_cast<std::uint8_t>(target), data}),
+  EXPECT_THAT(make_message(params, details_reply{pid, midi2::to_underlying(target), data}),
               testing::ElementsAreArray(expected));
 }
 
@@ -628,10 +628,10 @@ TEST_F(CICreateMessage, ProfileOn) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
               testing::ElementsAreArray(expected));
@@ -657,10 +657,10 @@ TEST_F(CICreateMessage, ProfileOff) {
   };
   // clang-format on
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
   EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
 }
 
@@ -684,10 +684,10 @@ TEST_F(CICreateMessage, ProfileEnabled) {
   };
   // clang-format on
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(broadcast_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(broadcast_muid_);
 
   midi2::ci::profile_configuration::enabled enabled;
   enabled.pid = pid;
@@ -740,15 +740,15 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
   out = std::ranges::copy(data_size, out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::get get;
   get.chunk.number_of_chunks = from_le7(total_chunks);
   get.chunk.chunk_number = from_le7(chunk_number);
-  get.request = static_cast<std::uint8_t>(request);
+  get.request = midi2::to_underlying(request);
   get.header = header;
 
   EXPECT_THAT(make_message(params, get), testing::ElementsAreArray(expected));
@@ -797,15 +797,15 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   std::ranges::copy(std::views::transform(data, as_byte), out);
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::get_reply get_reply;
   get_reply.chunk.number_of_chunks = from_le7(total_chunks);
   get_reply.chunk.chunk_number = from_le7(chunk_number);
-  get_reply.request = static_cast<std::uint8_t>(request);
+  get_reply.request = midi2::to_underlying(request);
   get_reply.header = header;
   get_reply.data = data;
 
@@ -856,15 +856,15 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::set set;
   set.chunk.number_of_chunks = from_le7(total_chunks);
   set.chunk.chunk_number = from_le7(chunk_number);
-  set.request = static_cast<std::uint8_t>(request);
+  set.request = midi2::to_underlying(request);
   set.header = header;
   set.data = data;
   EXPECT_THAT(make_message(params, set), testing::ElementsAreArray(expected));
@@ -913,15 +913,15 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   out = std::ranges::copy(property_data_size, out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::set_reply set_reply;
   set_reply.chunk.number_of_chunks = from_le7(total_chunks);
   set_reply.chunk.chunk_number = from_le7(chunk_number);
-  set_reply.request = static_cast<std::uint8_t>(request);
+  set_reply.request = midi2::to_underlying(request);
   set_reply.header = header;
   EXPECT_THAT(make_message(params, set_reply), testing::ElementsAreArray(expected));
 }
@@ -967,15 +967,15 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::subscription subscription;
   subscription.chunk.number_of_chunks = from_le7(total_chunks);
   subscription.chunk.chunk_number = from_le7(chunk_number);
-  subscription.request = static_cast<std::uint8_t>(request);
+  subscription.request = midi2::to_underlying(request);
   subscription.header = header;
   subscription.data = data;
 
@@ -1023,15 +1023,15 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::subscription_reply subscription_reply;
   subscription_reply.chunk.number_of_chunks = from_le7(total_chunks);
   subscription_reply.chunk.chunk_number = from_le7(chunk_number);
-  subscription_reply.request = static_cast<std::uint8_t>(request);
+  subscription_reply.request = midi2::to_underlying(request);
   subscription_reply.header = header;
   subscription_reply.data = data;
 
@@ -1077,15 +1077,15 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::property_exchange::notify notify;
   notify.chunk.number_of_chunks = from_le7(total_chunks);
   notify.chunk.chunk_number = from_le7(chunk_number);
-  notify.request = static_cast<std::uint8_t>(request);
+  notify.request = midi2::to_underlying(request);
   notify.header = header;
   notify.data = data;
 
@@ -1108,10 +1108,10 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities{}), testing::ElementsAreArray(expected));
 }
@@ -1135,10 +1135,10 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities_reply{features}),
               testing::ElementsAreArray(expected));
@@ -1166,10 +1166,10 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::process_inquiry::midi_message_report report;
   report.message_data_control = decltype(report)::control::full;
@@ -1215,10 +1215,10 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   midi2::ci::process_inquiry::midi_message_report_reply reply;
   // system messages
@@ -1258,10 +1258,10 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
   // clang-format on
 
   midi2::ci::params params;
-  params.deviceId = static_cast<std::uint8_t>(destination);
-  params.ciVer = 2;
-  params.remoteMUID = from_le7(sender_muid_);
-  params.localMUID = from_le7(destination_muid_);
+  params.device_id = midi2::to_underlying(destination);
+  params.version = 2;
+  params.remote_muid = from_le7(sender_muid_);
+  params.local_muid = from_le7(destination_muid_);
 
   EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::midi_message_report_end{}),
               testing::ElementsAreArray(expected));
