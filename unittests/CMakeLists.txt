@@ -14,6 +14,7 @@ add_executable (m2unittests
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp
   test_ci_types.cpp
+  test_dispatcher_backend.cpp
   test_fifo.cpp
   test_iumap.cpp
   test_lru.cpp
@@ -48,5 +49,4 @@ else ()
 endif (MIDI2_FUZZTEST)
 
 include(GoogleTest)
-gtest_discover_tests(m2unittests)
-       
+gtest_discover_tests(m2unittests DISCOVERY_MODE PRE_TEST)

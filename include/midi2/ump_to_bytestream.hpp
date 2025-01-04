@@ -286,14 +286,14 @@ private:
       }
     };
     context_type *context = nullptr;
-    [[no_unique_address]] utility_null<decltype(context)> utility{};
+    [[no_unique_address]] dispatcher_backend::utility_null<decltype(context)> utility{};
     [[no_unique_address]] class system system{};
     [[no_unique_address]] class m1cvm m1cvm{};
     [[no_unique_address]] class data64 data64{};
-    [[no_unique_address]] m2cvm_null<decltype(context)> m2cvm{};
-    [[no_unique_address]] data128_null<decltype(context)> data128{};
-    [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream{};
-    [[no_unique_address]] flex_data_null<decltype(context)> flex{};
+    [[no_unique_address]] dispatcher_backend::m2cvm_null<decltype(context)> m2cvm{};
+    [[no_unique_address]] dispatcher_backend::data128_null<decltype(context)> data128{};
+    [[no_unique_address]] dispatcher_backend::ump_stream_null<decltype(context)> ump_stream{};
+    [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex{};
   };
   context_type context_;
   ump_dispatcher<to_bytestream_config> p_{to_bytestream_config{.context = &context_}};

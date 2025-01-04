@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <span>
 
+#include "midi2/dispatcher_backend.hpp"
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 
@@ -35,246 +36,31 @@ constexpr unsigned ump_message_size(ump::message_type const mt) {
 #undef X
 }
 
-// clang-format off
-template <typename T, typename Context>
-concept utility_backend = requires(T v, Context context) {
-  // 7.2.1 NOOP
-  { v.noop(context) } -> std::same_as<void>;
-  // 7.2.2.1 JR Clock Message
-  { v.jr_clock(context, ump::utility::jr_clock{}) } -> std::same_as<void>;
-  // 7.2.2.2 JR Timestamp Message
-  { v.jr_timestamp(context, ump::utility::jr_timestamp{}) } -> std::same_as<void>;
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  { v.delta_clockstamp_tpqn(context, ump::utility::delta_clockstamp_tpqn{}) } -> std::same_as<void>;
-  // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  { v.delta_clockstamp(context, ump::utility::delta_clockstamp{}) } -> std::same_as<void>;
-
-  { v.unknown(context, std::span<std::uint32_t>{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept system_backend = requires(T v, Context context) {
-  // 7.6 System Common and System Real Time Messages
-  { v.midi_time_code(context, ump::system::midi_time_code{}) } -> std::same_as<void>;
-  { v.song_position_pointer(context, ump::system::song_position_pointer{}) } -> std::same_as<void>;
-  { v.song_select(context,  ump::system::song_select{}) } -> std::same_as<void>;
-  { v.tune_request(context,  ump::system::tune_request{}) } -> std::same_as<void>;
-  { v.timing_clock(context,  ump::system::timing_clock{}) } -> std::same_as<void>;
-  { v.seq_start(context,  ump::system::sequence_start{}) } -> std::same_as<void>;
-  { v.seq_continue(context,  ump::system::sequence_continue{}) } -> std::same_as<void>;
-  { v.seq_stop(context,  ump::system::sequence_stop{}) } -> std::same_as<void>;
-  { v.active_sensing(context,  ump::system::active_sensing{}) } -> std::same_as<void>;
-  { v.reset(context,  ump::system::reset{}) } -> std::same_as<void>;
-};
-template<typename T, typename Context>
-concept m1cvm_backend = requires(T v, Context context) {
-  { v.note_off(context, ump::m1cvm::note_off{}) } -> std::same_as<void>;
-  { v.note_on(context, ump::m1cvm::note_on{}) } -> std::same_as<void>;
-  { v.poly_pressure(context, ump::m1cvm::poly_pressure{}) } -> std::same_as<void>;
-  { v.control_change(context, ump::m1cvm::control_change{}) } -> std::same_as<void>;
-  { v.program_change(context, ump::m1cvm::program_change{}) } -> std::same_as<void>;
-  { v.channel_pressure(context, ump::m1cvm::channel_pressure{}) } -> std::same_as<void>;
-  { v.pitch_bend(context, ump::m1cvm::pitch_bend{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept data64_backend = requires(T v, Context context) {
-  { v.sysex7_in_1(context, ump::data64::sysex7_in_1{}) } -> std::same_as<void>;
-  { v.sysex7_start(context, ump::data64::sysex7_start{}) } -> std::same_as<void>;
-  { v.sysex7_continue(context, ump::data64::sysex7_continue{}) } -> std::same_as<void>;
-  { v.sysex7_end(context, ump::data64::sysex7_end{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept m2cvm_backend = requires(T v, Context context) {
-  // 7.4.1 MIDI 2.0 Note Off Message (status=0x8)
-  { v.note_off(context, ump::m2cvm::note_off{}) } -> std::same_as<void>;
-  // 7.4.2 MIDI 2.0 Note On Message (status=0x9)
-  { v.note_on(context, ump::m2cvm::note_on{}) } -> std::same_as<void>;
-  // 7.4.3 MIDI 2.0 Poly Pressure Message (status=0xA)
-  { v.poly_pressure(context, ump::m2cvm::poly_pressure{}) } -> std::same_as<void>;
-
-  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
-  { v.rpn_per_note_controller(context, midi2::ump::m2cvm::rpn_per_note_controller{}) } -> std::same_as<void>;
-  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
-  { v.nrpn_per_note_controller(context, midi2::ump::m2cvm::nrpn_per_note_controller{}) } -> std::same_as<void>;
-  // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
-  { v.rpn_controller(context, midi2::ump::m2cvm::rpn_controller{}) } -> std::same_as<void>;
-  // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
-  { v.nrpn_controller(context, midi2::ump::m2cvm::nrpn_controller{}) } -> std::same_as<void>;
-  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
-  { v.rpn_relative_controller(context, midi2::ump::m2cvm::rpn_relative_controller{}) } -> std::same_as<void>;
-  // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
-  { v.nrpn_relative_controller(context, midi2::ump::m2cvm::nrpn_relative_controller{}) } -> std::same_as<void>;
-
-  // 7.4.9 MIDI 2.0 Program Change Message (status=0xC)
-  { v.program_change(context, ump::m2cvm::program_change{}) } -> std::same_as<void>;
-  // 7.4.10 MIDI 2.0 Channel Pressure Message (status=0xD)
-  { v.channel_pressure(context, ump::m2cvm::channel_pressure{}) } -> std::same_as<void>;
-
-  { v.per_note_management(context, ump::m2cvm::per_note_management{}) } -> std::same_as<void>;
-  { v.control_change(context, ump::m2cvm::control_change{}) } -> std::same_as<void>;
-
-  { v.pitch_bend(context, ump::m2cvm::pitch_bend{}) } -> std::same_as<void>;
-  { v.per_note_pitch_bend(context, ump::m2cvm::per_note_pitch_bend{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept data128_backend = requires(T v, Context context) {
-  // 7.8 System Exclusive 8 (8-Bit) Messages
-  { v.sysex8_in_1(context, ump::data128::sysex8_in_1{}) } -> std::same_as<void>;
-  { v.sysex8_start(context, ump::data128::sysex8_start{}) } -> std::same_as<void>;
-  { v.sysex8_continue(context, ump::data128::sysex8_continue{}) } -> std::same_as<void>;
-  { v.sysex8_end(context, ump::data128::sysex8_end{}) } -> std::same_as<void>;
-  // 7.9 Mixed Data Set Message
-  { v.mds_header(context, ump::data128::mds_header{}) } -> std::same_as<void>;
-  { v.mds_payload(context, ump::data128::mds_payload{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept ump_stream_backend = requires(T v, Context context) {
-  { v.endpoint_discovery(context, ump::ump_stream::endpoint_discovery{}) } -> std::same_as<void>;
-  { v.endpoint_info_notification(context, ump::ump_stream::endpoint_info_notification{}) } -> std::same_as<void>;
-  { v.device_identity_notification(context, ump::ump_stream::device_identity_notification{}) } -> std::same_as<void>;
-  { v.endpoint_name_notification(context, ump::ump_stream::endpoint_name_notification{}) } -> std::same_as<void>;
-  { v.product_instance_id_notification(context, ump::ump_stream::product_instance_id_notification{}) } -> std::same_as<void>;
-  { v.jr_configuration_request(context, ump::ump_stream::jr_configuration_request{}) } -> std::same_as<void>;
-  { v.jr_configuration_notification(context, ump::ump_stream::jr_configuration_notification{}) } -> std::same_as<void>;
-  { v.function_block_discovery(context, ump::ump_stream::function_block_discovery{}) } -> std::same_as<void>;
-  { v.function_block_info_notification(context, ump::ump_stream::function_block_info_notification{}) } -> std::same_as<void>;
-  { v.function_block_name_notification(context, ump::ump_stream::function_block_name_notification{}) } -> std::same_as<void>;
-  { v.start_of_clip(context, ump::ump_stream::start_of_clip{}) } -> std::same_as<void>;
-  { v.end_of_clip(context, ump::ump_stream::end_of_clip{}) } -> std::same_as<void>;
-};
-template <typename T, typename Context>
-concept flex_data_backend = requires(T v, Context context) {
-  { v.set_tempo(context, ump::flex_data::set_tempo{}) } -> std::same_as<void>;
-  { v.set_time_signature(context, ump::flex_data::set_time_signature{}) } -> std::same_as<void>;
-  { v.set_metronome(context, ump::flex_data::set_metronome{}) } -> std::same_as<void>;
-  { v.set_key_signature(context, ump::flex_data::set_key_signature{}) } -> std::same_as<void>;
-  { v.set_chord_name(context, ump::flex_data::set_chord_name{}) } -> std::same_as<void>;
-  { v.text(context, ump::flex_data::text_common{}) } -> std::same_as<void>;
-};
-
 template <typename T>
 concept ump_dispatcher_config = requires (T v) {
   { v.context };
-  { v.utility } -> utility_backend<decltype(v.context)>;
-  { v.system } -> system_backend<decltype(v.context)>;
-  { v.m1cvm } -> m1cvm_backend<decltype(v.context)>;
-  { v.data64 } -> data64_backend<decltype(v.context)>;
-  { v.m2cvm } -> m2cvm_backend<decltype(v.context)>;
-  { v.data128 } -> data128_backend<decltype(v.context)>;
-  { v.ump_stream } -> ump_stream_backend<decltype(v.context)>;
-  { v.flex } -> flex_data_backend<decltype(v.context)>;
+  { v.utility } -> dispatcher_backend::utility<decltype(v.context)>;
+  { v.system } -> dispatcher_backend::system<decltype(v.context)>;
+  { v.m1cvm } -> dispatcher_backend::m1cvm<decltype(v.context)>;
+  { v.data64 } -> dispatcher_backend::data64<decltype(v.context)>;
+  { v.m2cvm } -> dispatcher_backend::m2cvm<decltype(v.context)>;
+  { v.data128 } -> dispatcher_backend::data128<decltype(v.context)>;
+  { v.ump_stream } -> dispatcher_backend::ump_stream<decltype(v.context)>;
+  { v.flex } -> dispatcher_backend::flex_data<decltype(v.context)>;
 };
 // clang-format on
 
-template <typename Context> struct utility_null {
-  // 7.2.1 NOOP
-  constexpr static void noop(Context) { /* do nothing */ }
-  // 7.2.2.1 JR Clock Message
-  constexpr static void jr_clock(Context, ump::utility::jr_clock const &) { /* do nothing */ }
-  // 7.2.2.2 JR Timestamp Message
-  constexpr static void jr_timestamp(Context, ump::utility::jr_timestamp const &) { /* do nothing */ }
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  constexpr static void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) { /* do nothing */ }
-  // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  constexpr static void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) { /* do nothing */ }
-
-  constexpr static void unknown(Context, std::span<std::uint32_t>) { /* do nothing */ }
-};
-template <typename Context> struct system_null {
-  // 7.6 System Common and System Real Time Messages
-  constexpr static void midi_time_code(Context, ump::system::midi_time_code const &) { /* do nothing */ }
-  constexpr static void song_position_pointer(Context, ump::system::song_position_pointer const &) { /* do nothing */ }
-  constexpr static void song_select(Context, ump::system::song_select const &) { /* do nothing */ }
-  constexpr static void tune_request(Context, ump::system::tune_request const &) { /* do nothing */ }
-  constexpr static void timing_clock(Context, ump::system::timing_clock const &) { /* do nothing */ }
-  constexpr static void seq_start(Context, ump::system::sequence_start const &) { /* do nothing */ }
-  constexpr static void seq_continue(Context, ump::system::sequence_continue const &) { /* do nothing */ }
-  constexpr static void seq_stop(Context, ump::system::sequence_stop const &) { /* do nothing */ }
-  constexpr static void active_sensing(Context, ump::system::active_sensing const &) { /* do nothing */ }
-  constexpr static void reset(Context, ump::system::reset const &) { /* do nothing */ }
-};
-template <typename Context> struct m1cvm_null {
-  constexpr static void note_off(Context, ump::m1cvm::note_off const &) { /* do nothing */ }
-  constexpr static void note_on(Context, ump::m1cvm::note_on const &) { /* do nothing */ }
-  constexpr static void poly_pressure(Context, ump::m1cvm::poly_pressure const &) { /* do nothing */ }
-  constexpr static void control_change(Context, ump::m1cvm::control_change const &) { /* do nothing */ }
-  constexpr static void program_change(Context, ump::m1cvm::program_change const &) { /* do nothing */ }
-  constexpr static void channel_pressure(Context, ump::m1cvm::channel_pressure const &) { /* do nothing */ }
-  constexpr static void pitch_bend(Context, ump::m1cvm::pitch_bend const &) { /* do nothing */ }
-};
-template <typename Context> struct data64_null {
-  constexpr static void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) { /* do nothing */ }
-  constexpr static void sysex7_start(Context, ump::data64::sysex7_start const &) { /* do nothing */ }
-  constexpr static void sysex7_continue(Context, ump::data64::sysex7_continue const &) { /* do nothing */ }
-  constexpr static void sysex7_end(Context, ump::data64::sysex7_end const &) { /* do nothing */ }
-};
-template <typename Context> struct m2cvm_null {
-  constexpr static void note_off(Context, ump::m2cvm::note_off const &) { /* do nothing */ }
-  constexpr static void note_on(Context, ump::m2cvm::note_on const &) { /* do nothing */ }
-  constexpr static void poly_pressure(Context, ump::m2cvm::poly_pressure const &) { /* do nothing */ }
-  constexpr static void program_change(Context, ump::m2cvm::program_change const &) { /* do nothing */ }
-  constexpr static void channel_pressure(Context, ump::m2cvm::channel_pressure const &) { /* do nothing */ }
-
-  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
-  constexpr static void rpn_per_note_controller(Context, ump::m2cvm::rpn_per_note_controller const &) { /* do nothing */ }
-  // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
-  constexpr static void nrpn_per_note_controller(Context, ump::m2cvm::nrpn_per_note_controller const &) { /* do nothing */ }
-  // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
-  constexpr static void rpn_controller(Context, ump::m2cvm::rpn_controller const &) { /* do nothing */ }
-  // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
-  constexpr static void nrpn_controller(Context, ump::m2cvm::nrpn_controller const &) { /* do nothing */ }
-  // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
-  constexpr static void rpn_relative_controller(Context, ump::m2cvm::rpn_relative_controller const &) { /* do nothing */ }
-  // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
-  constexpr static void nrpn_relative_controller(Context, ump::m2cvm::nrpn_relative_controller const &) { /* do nothing */ }
-
-  constexpr static void per_note_management(Context, ump::m2cvm::per_note_management const &) { /* do nothing */ }
-  constexpr static void control_change(Context, ump::m2cvm::control_change const &) { /* do nothing */ }
-  constexpr static void pitch_bend(Context, ump::m2cvm::pitch_bend const &) { /* do nothing */ }
-  constexpr static void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) { /* do nothing */ }
-};
-template <typename Context> struct data128_null {
-  constexpr static void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) { /* do nothing */ }
-  constexpr static void sysex8_start(Context, ump::data128::sysex8_start const &) { /* do nothing */ }
-  constexpr static void sysex8_continue(Context, ump::data128::sysex8_continue const &) { /* do nothing */ }
-  constexpr static void sysex8_end(Context, ump::data128::sysex8_end const &) { /* do nothing */ }
-  constexpr static void mds_header(Context, ump::data128::mds_header const &) { /* do nothing */ }
-  constexpr static void mds_payload(Context, ump::data128::mds_payload const &) { /* do nothing */ }
-};
-template <typename Context> struct ump_stream_null {
-  constexpr static void endpoint_discovery(Context, ump::ump_stream::endpoint_discovery const &) { /* do nothing */ }
-  constexpr static void endpoint_info_notification(Context, ump::ump_stream::endpoint_info_notification const &) { /* do nothing */ }
-  constexpr static void device_identity_notification(Context, ump::ump_stream::device_identity_notification const &) { /* do nothing */ }
-  constexpr static void endpoint_name_notification(Context, ump::ump_stream::endpoint_name_notification const &) { /* do nothing */ }
-  constexpr static void product_instance_id_notification(Context, ump::ump_stream::product_instance_id_notification const &) { /* do nothing */ }
-  constexpr static void jr_configuration_request(Context, ump::ump_stream::jr_configuration_request const &) { /* do nothing */ }
-  constexpr static void jr_configuration_notification(Context, ump::ump_stream::jr_configuration_notification const &) { /* do nothing */ }
-
-  constexpr static void function_block_discovery(Context, ump::ump_stream::function_block_discovery const &) { /* do nothing */ }
-  constexpr static void function_block_info_notification(Context, ump::ump_stream::function_block_info_notification const &) { /* do nothing */ }
-  constexpr static void function_block_name_notification(Context, ump::ump_stream::function_block_name_notification const &) { /* do nothing */ }
-
-  constexpr static void start_of_clip(Context, ump::ump_stream::start_of_clip const &) { /* do nothing */ }
-  constexpr static void end_of_clip(Context, ump::ump_stream::end_of_clip const &) { /* do nothing */ }
-};
-template <typename Context> struct flex_data_null {
-  constexpr static void set_tempo(Context, ump::flex_data::set_tempo const &) { /* do nothing */ }
-  constexpr static void set_time_signature(Context, ump::flex_data::set_time_signature const &) { /* do nothing */ }
-  constexpr static void set_metronome(Context, ump::flex_data::set_metronome const &) { /* do nothing */ }
-  constexpr static void set_key_signature(Context, ump::flex_data::set_key_signature const &) { /* do nothing */ }
-  constexpr static void set_chord_name(Context, ump::flex_data::set_chord_name const &) { /* do nothing */ }
-  constexpr static void text(Context, ump::flex_data::text_common const &) { /* do nothing */ }
-};
 struct default_config {
   struct empty {};
   [[no_unique_address]] empty context{};
-  [[no_unique_address]] utility_null<decltype(context)> utility;
-  [[no_unique_address]] system_null<decltype(context)> system;
-  [[no_unique_address]] m1cvm_null<decltype(context)> m1cvm;
-  [[no_unique_address]] data64_null<decltype(context)> data64;
-  [[no_unique_address]] m2cvm_null<decltype(context)> m2cvm;
-  [[no_unique_address]] data128_null<decltype(context)> data128;
-  [[no_unique_address]] ump_stream_null<decltype(context)> ump_stream;
-  [[no_unique_address]] flex_data_null<decltype(context)> flex;
+  [[no_unique_address]] dispatcher_backend::utility_null<decltype(context)> utility;
+  [[no_unique_address]] dispatcher_backend::system_null<decltype(context)> system;
+  [[no_unique_address]] dispatcher_backend::m1cvm_null<decltype(context)> m1cvm;
+  [[no_unique_address]] dispatcher_backend::data64_null<decltype(context)> data64;
+  [[no_unique_address]] dispatcher_backend::m2cvm_null<decltype(context)> m2cvm;
+  [[no_unique_address]] dispatcher_backend::data128_null<decltype(context)> data128;
+  [[no_unique_address]] dispatcher_backend::ump_stream_null<decltype(context)> ump_stream;
+  [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex;
 };
 
 template <typename T> concept word_memfun = requires(T a) {
@@ -325,6 +111,9 @@ public:
       pos_ = 0;
     }
   }
+
+  constexpr Config &config() noexcept { return config_; }
+  constexpr Config const &config() const noexcept { return config_; }
 
 private:
   void utility_message();
