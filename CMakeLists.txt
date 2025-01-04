@@ -32,6 +32,7 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ci_create_message.hpp"
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
+  "${INCLUDE_DIR}/midi2/dispatcher_backend.hpp"
   "${INCLUDE_DIR}/midi2/icubaby.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
