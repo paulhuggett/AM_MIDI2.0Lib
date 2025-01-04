@@ -92,7 +92,7 @@ constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept 
   }
 }
 
-constexpr bool is_status_byte(std::byte const midi1_byte) noexcept {
+[[nodiscard]] constexpr bool is_status_byte(std::byte const midi1_byte) noexcept {
   return (midi1_byte & std::byte{0x80}) != std::byte{0x00};
 }
 
