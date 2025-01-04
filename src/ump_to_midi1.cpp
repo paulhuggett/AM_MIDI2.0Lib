@@ -118,13 +118,14 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
+  using enum control;
   if (!ctxt->pn_cache.set(key, controller_number)) {
     // Controller number MSB
-    cc.controller(to_underlying(key.is_rpn ? control::rpn_msb : control::nrpn_msb));  // 0x65/0x63
+    cc.controller(to_underlying(key.is_rpn ? rpn_msb : nrpn_msb));  // 0x65/0x63
     cc.value(controller_number.first);
     ctxt->push(cc);
     // Controller number LSB
-    cc.controller(to_underlying(key.is_rpn ? control::rpn_lsb : control::nrpn_lsb));  // 0x64/0x62
+    cc.controller(to_underlying(key.is_rpn ? rpn_lsb : nrpn_lsb));  // 0x64/0x62
     cc.value(controller_number.second);
     ctxt->push(cc);
   }
@@ -132,12 +133,12 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
   auto const scaled_value = mcm_scale<32, 14>(value);
 
   // Data Entry MSB
-  cc.controller(to_underlying(control::data_entry_msb));  // 0x6
+  cc.controller(to_underlying(data_entry_msb));  // 0x6
   cc.value(static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F));
   ctxt->push(cc);
 
   // Data Entry LSB
-  cc.controller(to_underlying(control::data_entry_lsb));  // 0x26
+  cc.controller(to_underlying(data_entry_lsb));  // 0x26
   cc.value(static_cast<std::uint8_t>(scaled_value & 0x7F));
   ctxt->push(cc);
 }
