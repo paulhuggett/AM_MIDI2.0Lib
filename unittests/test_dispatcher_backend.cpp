@@ -21,7 +21,7 @@ using testing::InSequence;
 using testing::MockFunction;
 using testing::StrictMock;
 
-constexpr std::uint32_t operator""_u32(unsigned long long v) {
+[[nodiscard]] consteval std::uint32_t operator""_u32(unsigned long long v) {
   assert(v <= std::numeric_limits<std::uint32_t>::max());
   return static_cast<std::uint32_t>(v);
 }
@@ -81,8 +81,8 @@ TEST_F(DispatcherBackendUtility, DeltaClockstamp) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, Unknown) {
   StrictMock<MockFunction<decltype(be_)::unknown_fn>> fn;
-  std::array message{0xFFFFFFFF_u32, 0xFFFFFFFE_u32, 0xFFFFFFFD_u32, 0xFFFFFFFC_u32, 0xFFFFFFFB_u32};
-  be_.unknown(context_, std::span{message});
+  std::array<std::uint32_t, 5> message{0xFFFFFFFF_u32, 0xFFFFFFFE_u32, 0xFFFFFFFD_u32, 0xFFFFFFFC_u32, 0xFFFFFFFB_u32};
+  be_.unknown(context_, std::span<std::uint32_t>{message});
   be_.on_unknown(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, ElementsAreArray(message))).Times(1);
   be_.unknown(context_, std::span{message});
