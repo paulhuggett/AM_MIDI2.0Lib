@@ -334,8 +334,8 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
 
-constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
-                             std::uint8_t const b3) {
+[[nodiscard]] constexpr std::uint32_t pack(std::uint8_t const b0, std::uint8_t const b1, std::uint8_t const b2,
+                                           std::uint8_t const b3) {
   return (std::uint32_t{b0} << 24) | (std::uint32_t{b1} << 16) | (std::uint32_t{b2} << 8) | std::uint32_t{b3};
 }
 
