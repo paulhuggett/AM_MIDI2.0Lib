@@ -18,7 +18,7 @@ jobs:
     env:
       BUILD_DIR: build_fuzztest
       BUILD_TYPE: RelWithDebug
-      CLANG_VERSION: 16
+      CLANG_VERSION: 18
 
     steps:
       - name: Harden Runner
