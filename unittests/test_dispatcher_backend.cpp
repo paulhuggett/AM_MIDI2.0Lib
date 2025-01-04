@@ -7,6 +7,11 @@
 //===------------------------------------------------------------------------------------===//
 #include "midi2/dispatcher_backend.hpp"
 
+// Standard library
+#include <array>
+#include <span>
+
+// Google Test/Mock
 #include <gmock/gmock.h>
 
 namespace {
