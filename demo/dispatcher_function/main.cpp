@@ -35,7 +35,7 @@ int main() {
         std::cout << "note on: #" << unsigned{non.note()} << ", velocity " << non.velocity() << '\n';
       });
   // Send note-on/off messages to the dispatcher.
-  for (std::uint32_t const v : {0x40913C00, 0x7F100000, 0x40813C00, 0x7FFF0000}) {
+  for (std::uint32_t const v : {0x40913C00U, 0x7F100000U, 0x40813C00U, 0x7FFF0000U}) {
     dispatcher.processUMP(v);
   }
 }

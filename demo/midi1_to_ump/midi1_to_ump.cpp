@@ -14,7 +14,7 @@
 
 namespace {
 
-consteval std::byte operator"" _b(unsigned long long arg) noexcept {
+consteval std::byte operator""_b(unsigned long long arg) noexcept {
   assert(arg < 256);
   return static_cast<std::byte>(arg);
 }
