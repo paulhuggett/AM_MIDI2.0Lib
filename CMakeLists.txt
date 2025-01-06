@@ -112,3 +112,4 @@ foreach (target gtest gmock gmock_main gtest_main)
   endif()
 endforeach()
 
+add_subdirectory(demo)
