@@ -98,39 +98,33 @@ int main() {
 
 Here is a quick example
 
-> THIS EXAMPLE IS OBSOLETE
-
 ```C++
-#include "bytestreamUMP.h"
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <midi2/bytestream_to_ump.hpp>
 
-bytestreamToUMP BS2UMP;
-
-void setup()
-{
-  Serial.begin(31250);
-  
-  //Produce MIDI 2.0 Channel Voice Message (Message Type 0x4)
-  //Default (false) will return MIDI 1.0 Channel Voice Messages (Message Type 0x2)
-  BS2UMP.outputMIDI2 = true; 
-  
-  //Set the UMP group of the output UMP message. By default this is set to Group 1
-  //defaultGroup value is 0 based
-  BS2UMP.defaultGroup = 0; //Group 1
+namespace {
+consteval std::byte operator""_b(unsigned long long arg) noexcept {
+  assert(arg < 256);
+  return static_cast<std::byte>(arg);
 }
+}  // end anonymous namespace
 
-void loop()
-{
-  uint8_t inByte = 0;
-  // if there is a serial MIDI byte:
-  if (Serial.available() > 0) {
-    // get incoming byte:
-    inByte = Serial.read();
-    if(inByte == 0xFE) return; //Skip ActiveSense 
-    
-    BS2UMP.midi1BytestreamParse(inByte);
-    while(BS2UMP.available()){
-      uint32_t ump = BS2UMP.read();
-      //ump contains a ump 32 bit value. UMP messages that have 64bit will produce 2 UMP words
+int main() {
+  // Convert the bytestream to UMP group 0 and write it to stdout.
+  std::uint8_t group = 0;
+  midi2::bytestream_to_ump bs2ump{group};
+
+  // A bytestream containing MIDI1 note-on events with running status.
+  for (auto b : {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b}) {
+    // Push each byte into the bs2ump instance.
+    bs2ump.push(b);
+
+    // Pull as many 32-bit UMP values as are available and display them.
+    while (!bs2ump.empty()) {
+      std::cout << std::hex << bs2ump.pop() << '\n';
     }
   }
 }
