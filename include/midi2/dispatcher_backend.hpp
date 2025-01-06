@@ -532,7 +532,7 @@ void call(Function const &function, Context &&context, Argument &&argument) {
 
 }  // end namespace details
 
-template <typename Context> class utility_fn {
+template <typename Context> class utility_function {
 public:
   using noop_fn = std::function<void(Context)>;
   using jr_clock_fn = std::function<void(Context, ump::utility::jr_clock const &)>;
@@ -541,27 +541,27 @@ public:
   using delta_clockstamp_fn = std::function<void(Context, ump::utility::delta_clockstamp const &)>;
   using unknown_fn = std::function<void(Context, std::span<std::uint32_t>)>;
 
-  constexpr utility_fn &on_noop(noop_fn noop) noexcept {
+  constexpr utility_function &on_noop(noop_fn noop) noexcept {
     noop_ = std::move(noop);
     return *this;
   }
-  constexpr utility_fn &on_jr_clock(jr_clock_fn jr_clock) noexcept {
+  constexpr utility_function &on_jr_clock(jr_clock_fn jr_clock) noexcept {
     jr_clock_ = std::move(jr_clock);
     return *this;
   }
-  constexpr utility_fn &on_jr_timestamp(jr_timestamp_fn jr_timestamp) noexcept {
+  constexpr utility_function &on_jr_timestamp(jr_timestamp_fn jr_timestamp) noexcept {
     jr_timestamp_ = std::move(jr_timestamp);
     return *this;
   }
-  constexpr utility_fn &on_delta_clockstamp_tpqn(delta_clockstamp_tpqn_fn delta_clockstamp) noexcept {
+  constexpr utility_function &on_delta_clockstamp_tpqn(delta_clockstamp_tpqn_fn delta_clockstamp) noexcept {
     delta_clockstamp_tpqn_ = std::move(delta_clockstamp);
     return *this;
   }
-  constexpr utility_fn &on_delta_clockstamp(delta_clockstamp_fn delta_clockstamp) noexcept {
+  constexpr utility_function &on_delta_clockstamp(delta_clockstamp_fn delta_clockstamp) noexcept {
     delta_clockstamp_ = std::move(delta_clockstamp);
     return *this;
   }
-  constexpr utility_fn &on_unknown(unknown_fn unknown) noexcept {
+  constexpr utility_function &on_unknown(unknown_fn unknown) noexcept {
     unknown_ = std::move(unknown);
     return *this;
   }
@@ -588,9 +588,9 @@ private:
   unknown_fn unknown_;
 };
 
-static_assert(utility<utility_fn<int>, int>);
+static_assert(utility<utility_function<int>, int>);
 
-template <typename Context> class system_fn {
+template <typename Context> class system_function {
 public:
   using midi_time_code_fn = std::function<void(Context, ump::system::midi_time_code const &)>;
   using song_position_pointer_fn = std::function<void(Context, ump::system::song_position_pointer const &)>;
@@ -603,43 +603,43 @@ public:
   using active_sensing_fn = std::function<void(Context, ump::system::active_sensing const &)>;
   using reset_fn = std::function<void(Context, ump::system::reset const &)>;
 
-  constexpr system_fn &on_midi_time_code(midi_time_code_fn midi_time_code) {
+  constexpr system_function &on_midi_time_code(midi_time_code_fn midi_time_code) {
     midi_time_code_ = std::move(midi_time_code);
     return *this;
   }
-  constexpr system_fn &on_song_position_pointer(song_position_pointer_fn song_position_pointer) {
+  constexpr system_function &on_song_position_pointer(song_position_pointer_fn song_position_pointer) {
     song_position_pointer_ = std::move(song_position_pointer);
     return *this;
   }
-  constexpr system_fn &on_song_select(song_select_fn song_select) {
+  constexpr system_function &on_song_select(song_select_fn song_select) {
     song_select_ = std::move(song_select);
     return *this;
   }
-  constexpr system_fn &on_tune_request(tune_request_fn tune_request) {
+  constexpr system_function &on_tune_request(tune_request_fn tune_request) {
     tune_request_ = std::move(tune_request);
     return *this;
   }
-  constexpr system_fn &on_timing_clock(timing_clock_fn timing_clock) {
+  constexpr system_function &on_timing_clock(timing_clock_fn timing_clock) {
     timing_clock_ = std::move(timing_clock);
     return *this;
   }
-  constexpr system_fn &on_seq_start(seq_start_fn seq_start) {
+  constexpr system_function &on_seq_start(seq_start_fn seq_start) {
     seq_start_ = std::move(seq_start);
     return *this;
   }
-  constexpr system_fn &on_seq_continue(seq_continue_fn seq_continue) {
+  constexpr system_function &on_seq_continue(seq_continue_fn seq_continue) {
     seq_continue_ = std::move(seq_continue);
     return *this;
   }
-  constexpr system_fn &on_seq_stop(seq_stop_fn seq_stop) {
+  constexpr system_function &on_seq_stop(seq_stop_fn seq_stop) {
     seq_stop_ = std::move(seq_stop);
     return *this;
   }
-  constexpr system_fn &on_active_sensing(active_sensing_fn active_sensing) {
+  constexpr system_function &on_active_sensing(active_sensing_fn active_sensing) {
     active_sensing_ = std::move(active_sensing);
     return *this;
   }
-  constexpr system_fn &on_reset(reset_fn reset) {
+  constexpr system_function &on_reset(reset_fn reset) {
     reset_ = std::move(reset);
     return *this;
   }
@@ -683,9 +683,9 @@ private:
   reset_fn reset_;
 };
 
-static_assert(system<system_fn<int>, int>);
+static_assert(system<system_function<int>, int>);
 
-template <typename Context> class m1cvm_fn {
+template <typename Context> class m1cvm_function {
 public:
   using note_off_fn = std::function<void(Context, ump::m1cvm::note_off const &)>;
   using note_on_fn = std::function<void(Context, ump::m1cvm::note_on const &)>;
@@ -695,31 +695,31 @@ public:
   using channel_pressure_fn = std::function<void(Context, ump::m1cvm::channel_pressure const &)>;
   using pitch_bend_fn = std::function<void(Context, ump::m1cvm::pitch_bend const &)>;
 
-  constexpr m1cvm_fn &on_note_off(note_off_fn note_off) noexcept {
+  constexpr m1cvm_function &on_note_off(note_off_fn note_off) noexcept {
     note_off_ = std::move(note_off);
     return *this;
   }
-  constexpr m1cvm_fn &on_note_on(note_on_fn note_on) noexcept {
+  constexpr m1cvm_function &on_note_on(note_on_fn note_on) noexcept {
     note_on_ = std::move(note_on);
     return *this;
   }
-  constexpr m1cvm_fn &on_poly_pressure(poly_pressure_fn poly_pressure) noexcept {
+  constexpr m1cvm_function &on_poly_pressure(poly_pressure_fn poly_pressure) noexcept {
     poly_pressure_ = std::move(poly_pressure);
     return *this;
   }
-  constexpr m1cvm_fn &on_control_change(control_change_fn control_change) noexcept {
+  constexpr m1cvm_function &on_control_change(control_change_fn control_change) noexcept {
     control_change_ = std::move(control_change);
     return *this;
   }
-  constexpr m1cvm_fn &on_program_change(program_change_fn program_change) noexcept {
+  constexpr m1cvm_function &on_program_change(program_change_fn program_change) noexcept {
     program_change_ = std::move(program_change);
     return *this;
   }
-  constexpr m1cvm_fn &on_channel_pressure(channel_pressure_fn channel_pressure) noexcept {
+  constexpr m1cvm_function &on_channel_pressure(channel_pressure_fn channel_pressure) noexcept {
     channel_pressure_ = std::move(channel_pressure);
     return *this;
   }
-  constexpr m1cvm_fn &on_pitch_bend(pitch_bend_fn pitch_bend) noexcept {
+  constexpr m1cvm_function &on_pitch_bend(pitch_bend_fn pitch_bend) noexcept {
     pitch_bend_ = std::move(pitch_bend);
     return *this;
   }
@@ -750,28 +750,28 @@ private:
   pitch_bend_fn pitch_bend_;
 };
 
-static_assert(m1cvm<m1cvm_fn<int>, int>);
+static_assert(m1cvm<m1cvm_function<int>, int>);
 
-template <typename Context> class data64_fn {
+template <typename Context> class data64_function {
 public:
   using sysex7_in_1_fn = std::function<void(Context, ump::data64::sysex7_in_1 const &)>;
   using sysex7_start_fn = std::function<void(Context, ump::data64::sysex7_start const &)>;
   using sysex7_continue_fn = std::function<void(Context, ump::data64::sysex7_continue const &)>;
   using sysex7_end_fn = std::function<void(Context, ump::data64::sysex7_end const &)>;
 
-  constexpr data64_fn &on_sysex7_in_1(sysex7_in_1_fn sysex7_in_1) noexcept {
+  constexpr data64_function &on_sysex7_in_1(sysex7_in_1_fn sysex7_in_1) noexcept {
     sysex7_in_1_ = std::move(sysex7_in_1);
     return *this;
   }
-  constexpr data64_fn &on_sysex7_start(sysex7_start_fn sysex7_start) noexcept {
+  constexpr data64_function &on_sysex7_start(sysex7_start_fn sysex7_start) noexcept {
     sysex7_start_ = std::move(sysex7_start);
     return *this;
   }
-  constexpr data64_fn &on_sysex7_continue(sysex7_continue_fn sysex7_continue) noexcept {
+  constexpr data64_function &on_sysex7_continue(sysex7_continue_fn sysex7_continue) noexcept {
     sysex7_continue_ = std::move(sysex7_continue);
     return *this;
   }
-  constexpr data64_fn &on_sysex7_end(sysex7_end_fn sysex7_end) noexcept {
+  constexpr data64_function &on_sysex7_end(sysex7_end_fn sysex7_end) noexcept {
     sysex7_end_ = std::move(sysex7_end);
     return *this;
   }
@@ -790,9 +790,9 @@ private:
   sysex7_end_fn sysex7_end_;
 };
 
-static_assert(data64<data64_fn<int>, int>);
+static_assert(data64<data64_function<int>, int>);
 
-template <typename Context> class m2cvm_fn {
+template <typename Context> class m2cvm_function {
 public:
   using note_off_fn = std::function<void(Context, ump::m2cvm::note_off const &)>;
   using note_on_fn = std::function<void(Context, ump::m2cvm::note_on const &)>;
@@ -810,63 +810,63 @@ public:
   using pitch_bend_fn = std::function<void(Context, ump::m2cvm::pitch_bend const &)>;
   using per_note_pitch_bend_fn = std::function<void(Context, ump::m2cvm::per_note_pitch_bend const &)>;
 
-  constexpr m2cvm_fn &on_note_off(note_off_fn noff) noexcept {
+  constexpr m2cvm_function &on_note_off(note_off_fn noff) noexcept {
     note_off_ = std::move(noff);
     return *this;
   }
-  constexpr m2cvm_fn &on_note_on(note_on_fn non) noexcept {
+  constexpr m2cvm_function &on_note_on(note_on_fn non) noexcept {
     note_on_ = std::move(non);
     return *this;
   }
-  constexpr m2cvm_fn &on_poly_pressure(poly_pressure_fn pressure) noexcept {
+  constexpr m2cvm_function &on_poly_pressure(poly_pressure_fn pressure) noexcept {
     poly_pressure_ = std::move(pressure);
     return *this;
   }
-  constexpr m2cvm_fn &on_program_change(program_change_fn program_change) noexcept {
+  constexpr m2cvm_function &on_program_change(program_change_fn program_change) noexcept {
     program_change_ = std::move(program_change);
     return *this;
   }
-  constexpr m2cvm_fn &on_channel_pressure(channel_pressure_fn pressure) noexcept {
+  constexpr m2cvm_function &on_channel_pressure(channel_pressure_fn pressure) noexcept {
     channel_pressure_ = std::move(pressure);
     return *this;
   }
-  constexpr m2cvm_fn &on_rpn_per_note_controller(rpn_per_note_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_rpn_per_note_controller(rpn_per_note_controller_fn controller) noexcept {
     rpn_per_note_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_nrpn_per_note_controller(nrpn_per_note_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_nrpn_per_note_controller(nrpn_per_note_controller_fn controller) noexcept {
     nrpn_per_note_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_rpn_controller(rpn_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_rpn_controller(rpn_controller_fn controller) noexcept {
     rpn_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_nrpn_controller(nrpn_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_nrpn_controller(nrpn_controller_fn controller) noexcept {
     nrpn_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_rpn_relative_controller(rpn_relative_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_rpn_relative_controller(rpn_relative_controller_fn controller) noexcept {
     rpn_relative_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_nrpn_relative_controller(nrpn_relative_controller_fn controller) noexcept {
+  constexpr m2cvm_function &on_nrpn_relative_controller(nrpn_relative_controller_fn controller) noexcept {
     nrpn_relative_controller_ = std::move(controller);
     return *this;
   }
-  constexpr m2cvm_fn &on_per_note_management(per_note_management_fn per_note_management) noexcept {
+  constexpr m2cvm_function &on_per_note_management(per_note_management_fn per_note_management) noexcept {
     per_note_management_ = std::move(per_note_management);
     return *this;
   }
-  constexpr m2cvm_fn &on_control_change(control_change_fn cc) noexcept {
+  constexpr m2cvm_function &on_control_change(control_change_fn cc) noexcept {
     control_change_ = std::move(cc);
     return *this;
   }
-  constexpr m2cvm_fn &on_pitch_bend(pitch_bend_fn pitch_bend) noexcept {
+  constexpr m2cvm_function &on_pitch_bend(pitch_bend_fn pitch_bend) noexcept {
     pitch_bend_ = std::move(pitch_bend);
     return *this;
   }
-  constexpr m2cvm_fn &on_per_note_pitch_bend(per_note_pitch_bend_fn per_note_pitch_bend) noexcept {
+  constexpr m2cvm_function &on_per_note_pitch_bend(per_note_pitch_bend_fn per_note_pitch_bend) noexcept {
     per_note_pitch_bend_ = std::move(per_note_pitch_bend);
     return *this;
   }
@@ -929,9 +929,9 @@ private:
   per_note_pitch_bend_fn per_note_pitch_bend_;
 };
 
-static_assert(m2cvm<m2cvm_fn<int>, int>);
+static_assert(m2cvm<m2cvm_function<int>, int>);
 
-template <typename Context> class data128_fn {
+template <typename Context> class data128_function {
 public:
   using sysex8_in_1_fn = std::function<void(Context, ump::data128::sysex8_in_1 const &)>;
   using sysex8_start_fn = std::function<void(Context, ump::data128::sysex8_start const &)>;
@@ -940,27 +940,27 @@ public:
   using mds_header_fn = std::function<void(Context, ump::data128::mds_header const &)>;
   using mds_payload_fn = std::function<void(Context, ump::data128::mds_payload const &)>;
 
-  constexpr data128_fn &on_sysex8_in_1(sysex8_in_1_fn sysex8_in_1) noexcept {
+  constexpr data128_function &on_sysex8_in_1(sysex8_in_1_fn sysex8_in_1) noexcept {
     sysex8_in_1_ = std::move(sysex8_in_1);
     return *this;
   }
-  constexpr data128_fn &on_sysex8_start(sysex8_start_fn sysex8_start) noexcept {
+  constexpr data128_function &on_sysex8_start(sysex8_start_fn sysex8_start) noexcept {
     sysex8_start_ = std::move(sysex8_start);
     return *this;
   }
-  constexpr data128_fn &on_sysex8_continue(sysex8_continue_fn sysex8_continue) noexcept {
+  constexpr data128_function &on_sysex8_continue(sysex8_continue_fn sysex8_continue) noexcept {
     sysex8_continue_ = std::move(sysex8_continue);
     return *this;
   }
-  constexpr data128_fn &on_sysex8_end(sysex8_end_fn sysex8_end) noexcept {
+  constexpr data128_function &on_sysex8_end(sysex8_end_fn sysex8_end) noexcept {
     sysex8_end_ = std::move(sysex8_end);
     return *this;
   }
-  constexpr data128_fn &on_mds_header(mds_header_fn mds_header) noexcept {
+  constexpr data128_function &on_mds_header(mds_header_fn mds_header) noexcept {
     mds_header_ = std::move(mds_header);
     return *this;
   }
-  constexpr data128_fn &on_mds_payload(mds_payload_fn mds_payload) noexcept {
+  constexpr data128_function &on_mds_payload(mds_payload_fn mds_payload) noexcept {
     mds_payload_ = std::move(mds_payload);
     return *this;
   }
@@ -989,9 +989,9 @@ private:
   mds_payload_fn mds_payload_;
 };
 
-static_assert(data128<data128_fn<int>, int>);
+static_assert(data128<data128_function<int>, int>);
 
-template <typename Context> class ump_stream_fn {
+template <typename Context> class ump_stream_function {
 public:
   using endpoint_discovery_fn = std::function<void(Context, ump::ump_stream::endpoint_discovery const &)>;
   using endpoint_info_notification_fn =
@@ -1013,54 +1013,56 @@ public:
   using start_of_clip_fn = std::function<void(Context, ump::ump_stream::start_of_clip const &)>;
   using end_of_clip_fn = std::function<void(Context, ump::ump_stream::end_of_clip const &)>;
 
-  constexpr ump_stream_fn &on_endpoint_discovery(endpoint_discovery_fn discovery) noexcept {
+  constexpr ump_stream_function &on_endpoint_discovery(endpoint_discovery_fn discovery) noexcept {
     endpoint_discovery_ = std::move(discovery);
     return *this;
   }
-  constexpr ump_stream_fn &on_endpoint_info_notification(endpoint_info_notification_fn notification) noexcept {
+  constexpr ump_stream_function &on_endpoint_info_notification(endpoint_info_notification_fn notification) noexcept {
     endpoint_info_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_device_identity_notification(device_identity_notification_fn notification) noexcept {
+  constexpr ump_stream_function &on_device_identity_notification(
+      device_identity_notification_fn notification) noexcept {
     device_identity_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_endpoint_name_notification(endpoint_name_notification_fn notification) noexcept {
+  constexpr ump_stream_function &on_endpoint_name_notification(endpoint_name_notification_fn notification) noexcept {
     endpoint_name_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_product_instance_id_notification(
+  constexpr ump_stream_function &on_product_instance_id_notification(
       product_instance_id_notification_fn notification) noexcept {
     product_instance_id_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_jr_configuration_request(jr_configuration_request_fn request) noexcept {
+  constexpr ump_stream_function &on_jr_configuration_request(jr_configuration_request_fn request) noexcept {
     jr_configuration_request_ = std::move(request);
     return *this;
   }
-  constexpr ump_stream_fn &on_jr_configuration_notification(jr_configuration_notification_fn notification) noexcept {
+  constexpr ump_stream_function &on_jr_configuration_notification(
+      jr_configuration_notification_fn notification) noexcept {
     jr_configuration_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_function_block_discovery(function_block_discovery_fn discovery) noexcept {
+  constexpr ump_stream_function &on_function_block_discovery(function_block_discovery_fn discovery) noexcept {
     function_block_discovery_ = std::move(discovery);
     return *this;
   }
-  constexpr ump_stream_fn &on_function_block_info_notification(
+  constexpr ump_stream_function &on_function_block_info_notification(
       function_block_info_notification_fn notification) noexcept {
     function_block_info_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_function_block_name_notification(
+  constexpr ump_stream_function &on_function_block_name_notification(
       function_block_name_notification_fn notification) noexcept {
     function_block_name_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_fn &on_start_of_clip(start_of_clip_fn clip) noexcept {
+  constexpr ump_stream_function &on_start_of_clip(start_of_clip_fn clip) noexcept {
     start_of_clip_ = std::move(clip);
     return *this;
   }
-  constexpr ump_stream_fn &on_end_of_clip(end_of_clip_fn clip) noexcept {
+  constexpr ump_stream_function &on_end_of_clip(end_of_clip_fn clip) noexcept {
     end_of_clip_ = std::move(clip);
     return *this;
   }
@@ -1124,9 +1126,9 @@ private:
   end_of_clip_fn end_of_clip_;
 };
 
-static_assert(ump_stream<ump_stream_fn<int>, int>);
+static_assert(ump_stream<ump_stream_function<int>, int>);
 
-template <typename Context> class flex_data_fn {
+template <typename Context> class flex_data_function {
 public:
   using set_tempo_fn = std::function<void(Context, ump::flex_data::set_tempo const &)>;
   using set_time_signature_fn = std::function<void(Context, ump::flex_data::set_time_signature const &)>;
@@ -1135,27 +1137,27 @@ public:
   using set_chord_name_fn = std::function<void(Context, ump::flex_data::set_chord_name const &)>;
   using text_fn = std::function<void(Context, ump::flex_data::text_common const &)>;
 
-  constexpr flex_data_fn &on_set_tempo(set_tempo_fn set_tempo) noexcept {
+  constexpr flex_data_function &on_set_tempo(set_tempo_fn set_tempo) noexcept {
     set_tempo_ = std::move(set_tempo);
     return *this;
   }
-  constexpr flex_data_fn &on_set_time_signature(set_time_signature_fn set_time_signature) noexcept {
+  constexpr flex_data_function &on_set_time_signature(set_time_signature_fn set_time_signature) noexcept {
     set_time_signature_ = std::move(set_time_signature);
     return *this;
   }
-  constexpr flex_data_fn &on_set_metronome(set_metronome_fn set_metronome) noexcept {
+  constexpr flex_data_function &on_set_metronome(set_metronome_fn set_metronome) noexcept {
     set_metronome_ = std::move(set_metronome);
     return *this;
   }
-  constexpr flex_data_fn &on_set_key_signature(set_key_signature_fn set_key_signature) noexcept {
+  constexpr flex_data_function &on_set_key_signature(set_key_signature_fn set_key_signature) noexcept {
     set_key_signature_ = std::move(set_key_signature);
     return *this;
   }
-  constexpr flex_data_fn &on_set_chord_name(set_chord_name_fn set_chord_name) noexcept {
+  constexpr flex_data_function &on_set_chord_name(set_chord_name_fn set_chord_name) noexcept {
     set_chord_name_ = std::move(set_chord_name);
     return *this;
   }
-  constexpr flex_data_fn &on_text(text_fn text) noexcept {
+  constexpr flex_data_function &on_text(text_fn text) noexcept {
     text_ = std::move(text);
     return *this;
   }
@@ -1184,7 +1186,7 @@ private:
   text_fn text_;
 };
 
-static_assert(flex_data<flex_data_fn<int>, int>);
+static_assert(flex_data<flex_data_function<int>, int>);
 
 }  // end namespace midi2::dispatcher_backend
 

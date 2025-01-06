@@ -1,0 +1,2 @@
+add_executable(demo_dispatcher_function main.cpp)
+target_link_libraries(demo_dispatcher_function PRIVATE midi2)
