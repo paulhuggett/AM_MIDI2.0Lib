@@ -136,50 +136,6 @@ void loop()
 }
 ```
 
-### Example: Process UMP Streams
-
-> THIS EXAMPLE IS OBSOLETE
-
-UMP Streams accepts a series of 32 bit values. UMP messages that have 64bit will provide 2 UMP words.
-
-```C++
-
-#include "umpProcessor.h"
-umpProcessor UMPProcess; 
-
-void noteOff(uint8_t group,  uint8_t mt, uint8_t channel, uint8_t noteNumber, unsigned int velocity, int attributeType, unsigned int attributeData){
-//Process incoming MIDI note Off event.
-}
-
-void noteOn(uint8_t group,  uint8_t mt, uint8_t channel, uint8_t noteNumber, unsigned int velocity, int attributeType, unsigned int attributeData){ 
-}
-
-
-void cc(uint8_t group,  uint8_t mt, uint8_t channel, uint8_t index, uint32_t value){  
-}
-
-void rpn(uint8_t group, uint8_t channel, uint8_t bank,  uint8_t index, uint32_t value){  
-}
-
-void setup()
-{
-    UMPProcess.setNoteOff(noteOff);
-    UMPProcess.setNoteOn(noteOn);
-    UMPProcess.setControlChange(cc);
-    UMPProcess.setRPN(rpn);
-}
-
-void loop()
-{
-...
-  while(uint32_t ump = readSomeUMP()){
-      UMPProcess.processUMP(ump);
-  }
-...  
-}
-
-```
-
 ### Example: Process MIDI-CI Messages
 
 > THIS EXAMPLE IS OBSOLETE
