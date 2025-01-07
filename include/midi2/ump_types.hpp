@@ -38,7 +38,7 @@ namespace midi2::ump {
   X(reserved96_0C, 0x0C)  \
   X(flex_data, 0x0D)      \
   X(reserved128_0E, 0x0E) \
-  X(ump_stream, 0x0F)
+  X(stream, 0x0F)
 
 #define X(a, b) a = (b),
 enum class message_type : std::uint8_t { UMP_MESSAGE_TYPES };
@@ -112,7 +112,7 @@ enum class flex_data : std::uint8_t {
   set_chord_name = 0x06,
 };
 
-enum class ump_stream : std::uint16_t {
+enum class stream : std::uint16_t {
   endpoint_discovery = 0x00,
   endpoint_info_notification = 0x01,
   device_identity_notification = 0x02,
@@ -193,8 +193,8 @@ constexpr auto status_to_message_type(mt::data128) noexcept {
 constexpr auto status_to_message_type(mt::flex_data) noexcept {
   return message_type::flex_data;
 }
-constexpr auto status_to_message_type(mt::ump_stream) noexcept {
-  return message_type::ump_stream;
+constexpr auto status_to_message_type(mt::stream) noexcept {
+  return message_type::stream;
 }
 
 template <unsigned Index, unsigned Bits> struct bitfield {
@@ -2043,9 +2043,9 @@ UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element fo
 //* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
 //*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
 //*            |_|                                *
-template <> struct midi2::message_size<midi2::ump::message_type::ump_stream> : std::integral_constant<unsigned, 4> {};
+template <> struct midi2::message_size<midi2::ump::message_type::stream> : std::integral_constant<unsigned, 4> {};
 
-namespace midi2::ump::ump_stream {
+namespace midi2::ump::stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -2067,15 +2067,15 @@ class function_block_name_notification;
 class start_of_clip;
 class end_of_clip;
 
-}  // namespace midi2::ump::ump_stream
+}  // namespace midi2::ump::stream
 
 // 7.1.1 Endpoint Discovery Message
-class midi2::ump::ump_stream::endpoint_discovery {
+class midi2::ump::stream::endpoint_discovery {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_discovery); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2122,15 +2122,15 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-UMP_TUPLE(ump_stream, endpoint_discovery)  // Define tuple_size and tuple_element for ump_stream/endpoint_discovery
+UMP_TUPLE(stream, endpoint_discovery)  // Define tuple_size and tuple_element for stream/endpoint_discovery
 
 // 7.1.2 Endpoint Info Notification Message
-class midi2::ump::ump_stream::endpoint_info_notification {
+class midi2::ump::stream::endpoint_info_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_info_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2190,16 +2190,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/endpoint_info_notification
-UMP_TUPLE(ump_stream, endpoint_info_notification)
+// Define tuple_size and tuple_element for stream/endpoint_info_notification
+UMP_TUPLE(stream, endpoint_info_notification)
 
 // 7.1.3 Device Identity Notification Message
-class midi2::ump::ump_stream::device_identity_notification {
+class midi2::ump::stream::device_identity_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::device_identity_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::device_identity_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2272,16 +2272,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/device_identity_notification
-UMP_TUPLE(ump_stream, device_identity_notification)
+// Define tuple_size and tuple_element for stream/device_identity_notification
+UMP_TUPLE(stream, device_identity_notification)
 
 // 7.1.4 Endpoint Name Notification
-class midi2::ump::ump_stream::endpoint_name_notification {
+class midi2::ump::stream::endpoint_name_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::endpoint_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_name_notification); }
 
     using mt = details::bitfield<28, 4>;  // 0x0F
     using format = details::bitfield<26, 2>;
@@ -2347,16 +2347,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/endpoint_name_notification
-UMP_TUPLE(ump_stream, endpoint_name_notification)
+// Define tuple_size and tuple_element for stream/endpoint_name_notification
+UMP_TUPLE(stream, endpoint_name_notification)
 
 // 7.1.5 Product Instance Id Notification Message
-class midi2::ump::ump_stream::product_instance_id_notification {
+class midi2::ump::stream::product_instance_id_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::product_instance_id_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::product_instance_id_notification); }
 
     using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;
@@ -2422,18 +2422,18 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/product_instance_id_notification
-UMP_TUPLE(ump_stream, product_instance_id_notification)
+// Define tuple_size and tuple_element for stream/product_instance_id_notification
+UMP_TUPLE(stream, product_instance_id_notification)
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
 // 7.1.6.2 JR Stream Configuration Request
-class midi2::ump::ump_stream::jr_configuration_request {
+class midi2::ump::stream::jr_configuration_request {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::jr_configuration_request); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_request); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2484,16 +2484,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/jr_configuration_request
-UMP_TUPLE(ump_stream, jr_configuration_request)
+// Define tuple_size and tuple_element for stream/jr_configuration_request
+UMP_TUPLE(stream, jr_configuration_request)
 
 // 7.1.6.3 JR Stream Configuration Notification Message
-class midi2::ump::ump_stream::jr_configuration_notification {
+class midi2::ump::stream::jr_configuration_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::jr_configuration_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2544,16 +2544,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/jr_configuration_notification
-UMP_TUPLE(ump_stream, jr_configuration_notification)
+// Define tuple_size and tuple_element for stream/jr_configuration_notification
+UMP_TUPLE(stream, jr_configuration_notification)
 
 // 7.1.7 Function Block Discovery Message
-class midi2::ump::ump_stream::function_block_discovery {
+class midi2::ump::stream::function_block_discovery {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_discovery); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2601,16 +2601,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/function_block_discovery
-UMP_TUPLE(ump_stream, function_block_discovery)
+// Define tuple_size and tuple_element for stream/function_block_discovery
+UMP_TUPLE(stream, function_block_discovery)
 
 // 7.1.8 Function Block Info Notification
-class midi2::ump::ump_stream::function_block_info_notification {
+class midi2::ump::stream::function_block_info_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_info_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2671,16 +2671,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/function_block_info_notification
-UMP_TUPLE(ump_stream, function_block_info_notification)
+// Define tuple_size and tuple_element for stream/function_block_info_notification
+UMP_TUPLE(stream, function_block_info_notification)
 
 // 7.1.9 Function Block Name Notification
-class midi2::ump::ump_stream::function_block_name_notification {
+class midi2::ump::stream::function_block_name_notification {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::function_block_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_name_notification); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2746,16 +2746,16 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-// Define tuple_size and tuple_element for ump_stream/function_block_name_notification
-UMP_TUPLE(ump_stream, function_block_name_notification)
+// Define tuple_size and tuple_element for stream/function_block_name_notification
+UMP_TUPLE(stream, function_block_name_notification)
 
 // 7.1.10 Start of Clip Message
-class midi2::ump::ump_stream::start_of_clip {
+class midi2::ump::stream::start_of_clip {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::start_of_clip); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::start_of_clip); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2798,15 +2798,15 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-UMP_TUPLE(ump_stream, start_of_clip)  // Define tuple_size and tuple_element for ump_stream/start_of_clip
+UMP_TUPLE(stream, start_of_clip)  // Define tuple_size and tuple_element for stream/start_of_clip
 
 // 7.1.11 End of Clip Message
-class midi2::ump::ump_stream::end_of_clip {
+class midi2::ump::stream::end_of_clip {
 public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::ump_stream::end_of_clip); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::end_of_clip); }
 
     using mt = details::bitfield<28, 4>;       // 0x0F
     using format = details::bitfield<26, 2>;   // 0x00
@@ -2849,7 +2849,7 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 
-UMP_TUPLE(ump_stream, end_of_clip)  // Define tuple_size and tuple_element for ump_stream/end_of_clip
+UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for stream/end_of_clip
 
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *

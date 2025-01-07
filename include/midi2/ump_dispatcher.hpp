@@ -45,7 +45,7 @@ concept ump_dispatcher_config = requires (T v) {
   { v.data64 } -> dispatcher_backend::data64<decltype(v.context)>;
   { v.m2cvm } -> dispatcher_backend::m2cvm<decltype(v.context)>;
   { v.data128 } -> dispatcher_backend::data128<decltype(v.context)>;
-  { v.ump_stream } -> dispatcher_backend::ump_stream<decltype(v.context)>;
+  { v.stream } -> dispatcher_backend::stream<decltype(v.context)>;
   { v.flex } -> dispatcher_backend::flex_data<decltype(v.context)>;
 };
 // clang-format on
@@ -59,7 +59,7 @@ struct default_config {
   [[no_unique_address]] dispatcher_backend::data64_null<decltype(context)> data64;
   [[no_unique_address]] dispatcher_backend::m2cvm_null<decltype(context)> m2cvm;
   [[no_unique_address]] dispatcher_backend::data128_null<decltype(context)> data128;
-  [[no_unique_address]] dispatcher_backend::ump_stream_null<decltype(context)> ump_stream;
+  [[no_unique_address]] dispatcher_backend::stream_null<decltype(context)> stream;
   [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex;
 };
 
@@ -73,7 +73,7 @@ template <typename Context> struct function_config {
   dispatcher_backend::data64_function<Context> data64;
   dispatcher_backend::m2cvm_function<Context> m2cvm;
   dispatcher_backend::data128_function<Context> data128;
-  dispatcher_backend::ump_stream_function<Context> ump_stream;
+  dispatcher_backend::stream_function<Context> stream;
   dispatcher_backend::flex_data_function<Context> flex;
 };
 
@@ -103,7 +103,7 @@ public:
       case ump::message_type::m1cvm: this->m1cvm_message(); break;
       case ump::message_type::m2cvm: this->m2cvm_message(); break;
       case ump::message_type::flex_data: this->flex_data_message(); break;
-      case ump::message_type::ump_stream: this->ump_stream_message(); break;
+      case ump::message_type::stream: this->stream_message(); break;
       case ump::message_type::data64: this->data64_message(); break;
       case ump::message_type::data128: this->data128_message(); break;
 
@@ -135,7 +135,7 @@ private:
   void m1cvm_message();
   void data64_message();
   void m2cvm_message();
-  void ump_stream_message();
+  void stream_message();
   void data128_message();
   void flex_data_message();
 
@@ -335,70 +335,70 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
 
 // ump stream message
 // ~~~~~~~~~~~~~~~~~~
-template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_message() {
-  using ump::ump_stream::device_identity_notification;
-  using ump::ump_stream::end_of_clip;
-  using ump::ump_stream::endpoint_discovery;
-  using ump::ump_stream::endpoint_info_notification;
-  using ump::ump_stream::endpoint_name_notification;
-  using ump::ump_stream::function_block_discovery;
-  using ump::ump_stream::function_block_info_notification;
-  using ump::ump_stream::function_block_name_notification;
-  using ump::ump_stream::jr_configuration_notification;
-  using ump::ump_stream::jr_configuration_request;
-  using ump::ump_stream::product_instance_id_notification;
-  using ump::ump_stream::start_of_clip;
+template <ump_dispatcher_config Config> void ump_dispatcher<Config>::stream_message() {
+  using ump::stream::device_identity_notification;
+  using ump::stream::end_of_clip;
+  using ump::stream::endpoint_discovery;
+  using ump::stream::endpoint_info_notification;
+  using ump::stream::endpoint_name_notification;
+  using ump::stream::function_block_discovery;
+  using ump::stream::function_block_info_notification;
+  using ump::stream::function_block_name_notification;
+  using ump::stream::jr_configuration_notification;
+  using ump::stream::jr_configuration_request;
+  using ump::stream::product_instance_id_notification;
+  using ump::stream::start_of_clip;
 
-  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  switch (static_cast<ump::mt::ump_stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
+  switch (static_cast<ump::mt::stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
     // 7.1.1 Endpoint Discovery Message
-  case ump::mt::ump_stream::endpoint_discovery:
-    config_.ump_stream.endpoint_discovery(config_.context, endpoint_discovery{span});
+  case ump::mt::stream::endpoint_discovery:
+    config_.stream.endpoint_discovery(config_.context, endpoint_discovery{span});
     break;
     // 7.1.2 Endpoint Info Notification Message
-  case ump::mt::ump_stream::endpoint_info_notification:
-    config_.ump_stream.endpoint_info_notification(config_.context, endpoint_info_notification{span});
+  case ump::mt::stream::endpoint_info_notification:
+    config_.stream.endpoint_info_notification(config_.context, endpoint_info_notification{span});
     break;
     // 7.1.3 Device Identity Notification Message
-  case ump::mt::ump_stream::device_identity_notification:
-    config_.ump_stream.device_identity_notification(config_.context, device_identity_notification{span});
+  case ump::mt::stream::device_identity_notification:
+    config_.stream.device_identity_notification(config_.context, device_identity_notification{span});
     break;
     // 7.1.4 Endpoint Name Notification
-  case ump::mt::ump_stream::endpoint_name_notification:
-    config_.ump_stream.endpoint_name_notification(config_.context, endpoint_name_notification{span});
+  case ump::mt::stream::endpoint_name_notification:
+    config_.stream.endpoint_name_notification(config_.context, endpoint_name_notification{span});
     break;
     // 7.1.5 Product Instance Id Notification Message
-  case ump::mt::ump_stream::product_instance_id_notification:
-    config_.ump_stream.product_instance_id_notification(config_.context, product_instance_id_notification{span});
+  case ump::mt::stream::product_instance_id_notification:
+    config_.stream.product_instance_id_notification(config_.context, product_instance_id_notification{span});
     break;
     // 7.1.6.2 Stream Configuration Request
-  case ump::mt::ump_stream::jr_configuration_request:
-    config_.ump_stream.jr_configuration_request(config_.context, jr_configuration_request{span});
+  case ump::mt::stream::jr_configuration_request:
+    config_.stream.jr_configuration_request(config_.context, jr_configuration_request{span});
     break;
     // 7.1.6.3 Stream Configuration Notification Message
-  case ump::mt::ump_stream::jr_configuration_notification:
-    config_.ump_stream.jr_configuration_notification(config_.context, jr_configuration_notification{span});
+  case ump::mt::stream::jr_configuration_notification:
+    config_.stream.jr_configuration_notification(config_.context, jr_configuration_notification{span});
     break;
     // 7.1.7 Function Block Discovery Message
-  case ump::mt::ump_stream::function_block_discovery:
-    config_.ump_stream.function_block_discovery(config_.context, function_block_discovery{span});
+  case ump::mt::stream::function_block_discovery:
+    config_.stream.function_block_discovery(config_.context, function_block_discovery{span});
     break;
     // 7.1.8 Function Block Info Notification
-  case ump::mt::ump_stream::function_block_info_notification:
-    config_.ump_stream.function_block_info_notification(config_.context, function_block_info_notification{span});
+  case ump::mt::stream::function_block_info_notification:
+    config_.stream.function_block_info_notification(config_.context, function_block_info_notification{span});
     break;
     // 7.1.9 Function Block Name Notification
-  case ump::mt::ump_stream::function_block_name_notification:
-    config_.ump_stream.function_block_name_notification(config_.context, function_block_name_notification{span});
+  case ump::mt::stream::function_block_name_notification:
+    config_.stream.function_block_name_notification(config_.context, function_block_name_notification{span});
     break;
     // 7.1.10 Start of Clip Message
-  case ump::mt::ump_stream::start_of_clip:
-    config_.ump_stream.start_of_clip(config_.context, start_of_clip{span});
+  case ump::mt::stream::start_of_clip:
+    config_.stream.start_of_clip(config_.context, start_of_clip{span});
     break;
     // 7.1.11 End of Clip Message
-  case ump::mt::ump_stream::end_of_clip: config_.ump_stream.end_of_clip(config_.context, end_of_clip{span}); break;
+  case ump::mt::stream::end_of_clip: config_.stream.end_of_clip(config_.context, end_of_clip{span}); break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 4}); break;
   }
 }
@@ -406,8 +406,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::ump_stream_
 // data128 message
 // ~~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_message() {
-  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   using enum ump::mt::data128;
@@ -425,8 +425,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::data128_mes
 // flex data message
 // ~~~~~~~~~~~~~~~~~
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_message() {
-  static_assert(ump_message_size(midi2::ump::message_type::ump_stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::ump_stream));
+  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   auto const status_bank = (message_[0] >> 8) & 0xFF;

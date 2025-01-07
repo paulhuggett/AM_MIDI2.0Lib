@@ -139,32 +139,32 @@ public:
   MOCK_METHOD(void, mds_header, (context_type, midi2::ump::data128::mds_header const &), (override));
   MOCK_METHOD(void, mds_payload, (context_type, midi2::ump::data128::mds_payload const &), (override));
 };
-class UMPStreamMocks : public midi2::dispatcher_backend::ump_stream_base<context_type> {
+class UMPStreamMocks : public midi2::dispatcher_backend::stream_pure<context_type> {
 public:
-  MOCK_METHOD(void, endpoint_discovery, (context_type, midi2::ump::ump_stream::endpoint_discovery const &), (override));
-  MOCK_METHOD(void, endpoint_info_notification,
-              (context_type, midi2::ump::ump_stream::endpoint_info_notification const &), (override));
+  MOCK_METHOD(void, endpoint_discovery, (context_type, midi2::ump::stream::endpoint_discovery const &), (override));
+  MOCK_METHOD(void, endpoint_info_notification, (context_type, midi2::ump::stream::endpoint_info_notification const &),
+              (override));
   MOCK_METHOD(void, device_identity_notification,
-              (context_type, midi2::ump::ump_stream::device_identity_notification const &), (override));
-  MOCK_METHOD(void, endpoint_name_notification,
-              (context_type, midi2::ump::ump_stream::endpoint_name_notification const &), (override));
+              (context_type, midi2::ump::stream::device_identity_notification const &), (override));
+  MOCK_METHOD(void, endpoint_name_notification, (context_type, midi2::ump::stream::endpoint_name_notification const &),
+              (override));
   MOCK_METHOD(void, product_instance_id_notification,
-              (context_type, midi2::ump::ump_stream::product_instance_id_notification const &), (override));
+              (context_type, midi2::ump::stream::product_instance_id_notification const &), (override));
 
-  MOCK_METHOD(void, jr_configuration_request, (context_type, midi2::ump::ump_stream::jr_configuration_request const &),
+  MOCK_METHOD(void, jr_configuration_request, (context_type, midi2::ump::stream::jr_configuration_request const &),
               (override));
   MOCK_METHOD(void, jr_configuration_notification,
-              (context_type, midi2::ump::ump_stream::jr_configuration_notification const &), (override));
+              (context_type, midi2::ump::stream::jr_configuration_notification const &), (override));
 
-  MOCK_METHOD(void, function_block_discovery, (context_type, midi2::ump::ump_stream::function_block_discovery const &),
+  MOCK_METHOD(void, function_block_discovery, (context_type, midi2::ump::stream::function_block_discovery const &),
               (override));
   MOCK_METHOD(void, function_block_info_notification,
-              (context_type, midi2::ump::ump_stream::function_block_info_notification const &), (override));
+              (context_type, midi2::ump::stream::function_block_info_notification const &), (override));
   MOCK_METHOD(void, function_block_name_notification,
-              (context_type, midi2::ump::ump_stream::function_block_name_notification const &), (override));
+              (context_type, midi2::ump::stream::function_block_name_notification const &), (override));
 
-  MOCK_METHOD(void, start_of_clip, (context_type, midi2::ump::ump_stream::start_of_clip const &), (override));
-  MOCK_METHOD(void, end_of_clip, (context_type, midi2::ump::ump_stream::end_of_clip const &), (override));
+  MOCK_METHOD(void, start_of_clip, (context_type, midi2::ump::stream::start_of_clip const &), (override));
+  MOCK_METHOD(void, end_of_clip, (context_type, midi2::ump::stream::end_of_clip const &), (override));
 };
 class FlexDataMocks : public midi2::dispatcher_backend::flex_data_pure<context_type> {
 public:
@@ -199,7 +199,7 @@ public:
     StrictMock<Data64Mocks> data64;
     StrictMock<M2CVMMocks> m2cvm;
     StrictMock<Data128Mocks> data128;
-    StrictMock<UMPStreamMocks> ump_stream;
+    StrictMock<UMPStreamMocks> stream;
     StrictMock<FlexDataMocks> flex;
   };
   mocked_config config_;
@@ -643,14 +643,13 @@ class UMPDispatcherStream : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, EndpointDiscovery) {
   constexpr auto message =
-      midi2::ump::ump_stream::endpoint_discovery{}.format(0x03).version_major(0x01).version_minor(0x01).filter(
-          0b00011111);
-  EXPECT_CALL(config_.ump_stream, endpoint_discovery(config_.context, message)).Times(1);
+      midi2::ump::stream::endpoint_discovery{}.format(0x03).version_major(0x01).version_minor(0x01).filter(0b00011111);
+  EXPECT_CALL(config_.stream, endpoint_discovery(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, EndpointInfoNotification) {
-  constexpr auto message = midi2::ump::ump_stream::endpoint_info_notification{}
+  constexpr auto message = midi2::ump::stream::endpoint_info_notification{}
                                .format(0x00)
                                .version_major(0x01)
                                .version_minor(0x01)
@@ -660,12 +659,12 @@ TEST_F(UMPDispatcherStream, EndpointInfoNotification) {
                                .midi1_protocol_capability(0)
                                .receive_jr_timestamp_capability(1)
                                .transmit_jr_timestamp_capability(0);
-  EXPECT_CALL(config_.ump_stream, endpoint_info_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, endpoint_info_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, DeviceIdentityNotification) {
-  constexpr auto message = midi2::ump::ump_stream::device_identity_notification{}
+  constexpr auto message = midi2::ump::stream::device_identity_notification{}
                                .format(0x00)
                                .dev_manuf_sysex_id_1(1)
                                .dev_manuf_sysex_id_2(1)
@@ -678,12 +677,12 @@ TEST_F(UMPDispatcherStream, DeviceIdentityNotification) {
                                .sw_revision_2(0x7D)
                                .sw_revision_3(0x7B)
                                .sw_revision_4(0x79);
-  EXPECT_CALL(config_.ump_stream, device_identity_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, device_identity_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, EndpointNameNotification) {
-  constexpr auto message = midi2::ump::ump_stream::endpoint_name_notification{}
+  constexpr auto message = midi2::ump::stream::endpoint_name_notification{}
                                .format(0x00)
                                .name1(std::uint8_t{'a'})
                                .name2(std::uint8_t{'b'})
@@ -699,12 +698,12 @@ TEST_F(UMPDispatcherStream, EndpointNameNotification) {
                                .name12(std::uint8_t{'l'})
                                .name13(std::uint8_t{'m'})
                                .name14(std::uint8_t{'m'});
-  EXPECT_CALL(config_.ump_stream, endpoint_name_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, endpoint_name_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, ProductInstanceIdNotification) {
-  constexpr auto message = midi2::ump::ump_stream::product_instance_id_notification{}
+  constexpr auto message = midi2::ump::stream::product_instance_id_notification{}
                                .format(0x00)
                                .pid1(0x22)
                                .pid2(0x33)
@@ -720,32 +719,31 @@ TEST_F(UMPDispatcherStream, ProductInstanceIdNotification) {
                                .pid12(0xDD)
                                .pid13(0xEE)
                                .pid14(0xFF);
-  EXPECT_CALL(config_.ump_stream, product_instance_id_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, product_instance_id_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, JRConfigurationRequest) {
-  constexpr auto message =
-      midi2::ump::ump_stream::jr_configuration_request{}.format(0x00).protocol(0x02).rxjr(1).txjr(0);
-  EXPECT_CALL(config_.ump_stream, jr_configuration_request(config_.context, message)).Times(1);
+  constexpr auto message = midi2::ump::stream::jr_configuration_request{}.format(0x00).protocol(0x02).rxjr(1).txjr(0);
+  EXPECT_CALL(config_.stream, jr_configuration_request(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, JRConfigurationNotification) {
   constexpr auto message =
-      midi2::ump::ump_stream::jr_configuration_notification{}.format(0x00).protocol(0x02).rxjr(1).txjr(0);
-  EXPECT_CALL(config_.ump_stream, jr_configuration_notification(config_.context, message)).Times(1);
+      midi2::ump::stream::jr_configuration_notification{}.format(0x00).protocol(0x02).rxjr(1).txjr(0);
+  EXPECT_CALL(config_.stream, jr_configuration_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, FunctionBlockDiscovery) {
-  constexpr auto message = midi2::ump::ump_stream::function_block_discovery{}.format(0x00).block_num(0xFF).filter(0x03);
-  EXPECT_CALL(config_.ump_stream, function_block_discovery(config_.context, message)).Times(1);
+  constexpr auto message = midi2::ump::stream::function_block_discovery{}.format(0x00).block_num(0xFF).filter(0x03);
+  EXPECT_CALL(config_.stream, function_block_discovery(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, FunctionBlockInfoNotification) {
-  constexpr auto message = midi2::ump::ump_stream::function_block_info_notification{}
+  constexpr auto message = midi2::ump::stream::function_block_info_notification{}
                                .format(0x00)
                                .block_active(1)
                                .block_num(0x1F)
@@ -756,12 +754,12 @@ TEST_F(UMPDispatcherStream, FunctionBlockInfoNotification) {
                                .num_spanned(0x10)
                                .ci_message_version(0x1)
                                .max_sys8_streams(2);
-  EXPECT_CALL(config_.ump_stream, function_block_info_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, function_block_info_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
-  constexpr auto message = midi2::ump::ump_stream::function_block_name_notification{}
+  constexpr auto message = midi2::ump::stream::function_block_name_notification{}
                                .format(0x00)
                                .block_num(0x1F)
                                .name0('a')
@@ -777,19 +775,19 @@ TEST_F(UMPDispatcherStream, FunctionBlockNameNotification) {
                                .name10('l')
                                .name11('m')
                                .name12('n');
-  EXPECT_CALL(config_.ump_stream, function_block_name_notification(config_.context, message)).Times(1);
+  EXPECT_CALL(config_.stream, function_block_name_notification(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, StartOfClip) {
-  constexpr auto message = midi2::ump::ump_stream::start_of_clip{}.format(0x00);
-  EXPECT_CALL(config_.ump_stream, start_of_clip(config_.context, message)).Times(1);
+  constexpr auto message = midi2::ump::stream::start_of_clip{}.format(0x00);
+  EXPECT_CALL(config_.stream, start_of_clip(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherStream, EndOfClip) {
-  constexpr auto message = midi2::ump::ump_stream::end_of_clip{}.format(0x00);
-  EXPECT_CALL(config_.ump_stream, end_of_clip(config_.context, message)).Times(1);
+  constexpr auto message = midi2::ump::stream::end_of_clip{}.format(0x00);
+  EXPECT_CALL(config_.stream, end_of_clip(config_.context, message)).Times(1);
   this->apply(message);
 }
 
@@ -945,7 +943,7 @@ void flex_data(std::vector<std::uint32_t> message) {
   process_message<midi2::ump::message_type::flex_data>({std::begin(message), std::end(message)});
 }
 void stream(std::vector<std::uint32_t> message) {
-  process_message<midi2::ump::message_type::ump_stream>({std::begin(message), std::end(message)});
+  process_message<midi2::ump::message_type::stream>({std::begin(message), std::end(message)});
 }
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
 // NOLINTNEXTLINE

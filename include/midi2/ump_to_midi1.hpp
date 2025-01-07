@@ -168,7 +168,7 @@ private:
     [[no_unique_address]] struct data64 data64{};
     [[no_unique_address]] class m2cvm m2cvm{};
     [[no_unique_address]] dispatcher_backend::data128_null<decltype(context)> data128{};
-    [[no_unique_address]] dispatcher_backend::ump_stream_null<decltype(context)> ump_stream{};
+    [[no_unique_address]] dispatcher_backend::stream_null<decltype(context)> stream{};
     [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex{};
   };
   context_type context_;

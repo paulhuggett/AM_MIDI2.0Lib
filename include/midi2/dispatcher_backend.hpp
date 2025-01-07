@@ -106,19 +106,19 @@ concept data128 = requires(T v, Context context) {
   { v.mds_payload(context, ump::data128::mds_payload{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
-concept ump_stream = requires(T v, Context context) {
-  { v.endpoint_discovery(context, ump::ump_stream::endpoint_discovery{}) } -> std::same_as<void>;
-  { v.endpoint_info_notification(context, ump::ump_stream::endpoint_info_notification{}) } -> std::same_as<void>;
-  { v.device_identity_notification(context, ump::ump_stream::device_identity_notification{}) } -> std::same_as<void>;
-  { v.endpoint_name_notification(context, ump::ump_stream::endpoint_name_notification{}) } -> std::same_as<void>;
-  { v.product_instance_id_notification(context, ump::ump_stream::product_instance_id_notification{}) } -> std::same_as<void>;
-  { v.jr_configuration_request(context, ump::ump_stream::jr_configuration_request{}) } -> std::same_as<void>;
-  { v.jr_configuration_notification(context, ump::ump_stream::jr_configuration_notification{}) } -> std::same_as<void>;
-  { v.function_block_discovery(context, ump::ump_stream::function_block_discovery{}) } -> std::same_as<void>;
-  { v.function_block_info_notification(context, ump::ump_stream::function_block_info_notification{}) } -> std::same_as<void>;
-  { v.function_block_name_notification(context, ump::ump_stream::function_block_name_notification{}) } -> std::same_as<void>;
-  { v.start_of_clip(context, ump::ump_stream::start_of_clip{}) } -> std::same_as<void>;
-  { v.end_of_clip(context, ump::ump_stream::end_of_clip{}) } -> std::same_as<void>;
+concept stream = requires(T v, Context context) {
+  { v.endpoint_discovery(context, ump::stream::endpoint_discovery{}) } -> std::same_as<void>;
+  { v.endpoint_info_notification(context, ump::stream::endpoint_info_notification{}) } -> std::same_as<void>;
+  { v.device_identity_notification(context, ump::stream::device_identity_notification{}) } -> std::same_as<void>;
+  { v.endpoint_name_notification(context, ump::stream::endpoint_name_notification{}) } -> std::same_as<void>;
+  { v.product_instance_id_notification(context, ump::stream::product_instance_id_notification{}) } -> std::same_as<void>;
+  { v.jr_configuration_request(context, ump::stream::jr_configuration_request{}) } -> std::same_as<void>;
+  { v.jr_configuration_notification(context, ump::stream::jr_configuration_notification{}) } -> std::same_as<void>;
+  { v.function_block_discovery(context, ump::stream::function_block_discovery{}) } -> std::same_as<void>;
+  { v.function_block_info_notification(context, ump::stream::function_block_info_notification{}) } -> std::same_as<void>;
+  { v.function_block_name_notification(context, ump::stream::function_block_name_notification{}) } -> std::same_as<void>;
+  { v.start_of_clip(context, ump::stream::start_of_clip{}) } -> std::same_as<void>;
+  { v.end_of_clip(context, ump::stream::end_of_clip{}) } -> std::same_as<void>;
 };
 template <typename T, typename Context>
 concept flex_data = requires(T v, Context context) {
@@ -146,7 +146,7 @@ template <typename Context> struct utility_null {
   constexpr static void unknown(Context, std::span<std::uint32_t>) { /* do nothing */ }
 };
 
-static_assert(utility<utility_null<int>, int>);
+static_assert(utility<utility_null<int>, int>, "utility_null must implement the utility concept");
 
 template <typename Context> struct system_null {
   // 7.6 System Common and System Real Time Messages
@@ -162,7 +162,7 @@ template <typename Context> struct system_null {
   constexpr static void reset(Context, ump::system::reset const &) { /* do nothing */ }
 };
 
-static_assert(system<system_null<int>, int>);
+static_assert(system<system_null<int>, int>, "system_null must implement the system concept");
 
 template <typename Context> struct m1cvm_null {
   constexpr static void note_off(Context, ump::m1cvm::note_off const &) { /* do nothing */ }
@@ -174,7 +174,7 @@ template <typename Context> struct m1cvm_null {
   constexpr static void pitch_bend(Context, ump::m1cvm::pitch_bend const &) { /* do nothing */ }
 };
 
-static_assert(m1cvm<m1cvm_null<int>, int>);
+static_assert(m1cvm<m1cvm_null<int>, int>, "m1cvm_null must implement the m1cvm concept");
 
 template <typename Context> struct data64_null {
   constexpr static void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) { /* do nothing */ }
@@ -183,7 +183,7 @@ template <typename Context> struct data64_null {
   constexpr static void sysex7_end(Context, ump::data64::sysex7_end const &) { /* do nothing */ }
 };
 
-static_assert(data64<data64_null<int>, int>);
+static_assert(data64<data64_null<int>, int>, "data64_null must implement the data64 concept");
 
 template <typename Context> struct m2cvm_null {
   constexpr static void note_off(Context, ump::m2cvm::note_off const &) { /* do nothing */ }
@@ -215,7 +215,7 @@ template <typename Context> struct m2cvm_null {
   constexpr static void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) { /* do nothing */ }
 };
 
-static_assert(m2cvm<m2cvm_null<int>, int>);
+static_assert(m2cvm<m2cvm_null<int>, int>, "m2cvm_null must implement the m2cvm concept");
 
 template <typename Context> struct data128_null {
   constexpr static void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) { /* do nothing */ }
@@ -226,35 +226,35 @@ template <typename Context> struct data128_null {
   constexpr static void mds_payload(Context, ump::data128::mds_payload const &) { /* do nothing */ }
 };
 
-static_assert(data128<data128_null<int>, int>);
+static_assert(data128<data128_null<int>, int>, "data128_null must implement the data128 concept");
 
-template <typename Context> struct ump_stream_null {
-  constexpr static void endpoint_discovery(Context, ump::ump_stream::endpoint_discovery const &) { /* do nothing */ }
-  constexpr static void endpoint_info_notification(
-      Context, ump::ump_stream::endpoint_info_notification const &) { /* do nothing */ }
+template <typename Context> struct stream_null {
+  constexpr static void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) { /* do nothing */ }
+  constexpr static void endpoint_info_notification(Context,
+                                                   ump::stream::endpoint_info_notification const &) { /* do nothing */ }
   constexpr static void device_identity_notification(
-      Context, ump::ump_stream::device_identity_notification const &) { /* do nothing */ }
-  constexpr static void endpoint_name_notification(
-      Context, ump::ump_stream::endpoint_name_notification const &) { /* do nothing */ }
+      Context, ump::stream::device_identity_notification const &) { /* do nothing */ }
+  constexpr static void endpoint_name_notification(Context,
+                                                   ump::stream::endpoint_name_notification const &) { /* do nothing */ }
   constexpr static void product_instance_id_notification(
-      Context, ump::ump_stream::product_instance_id_notification const &) { /* do nothing */ }
+      Context, ump::stream::product_instance_id_notification const &) { /* do nothing */ }
   constexpr static void jr_configuration_request(Context,
-                                                 ump::ump_stream::jr_configuration_request const &) { /* do nothing */ }
+                                                 ump::stream::jr_configuration_request const &) { /* do nothing */ }
   constexpr static void jr_configuration_notification(
-      Context, ump::ump_stream::jr_configuration_notification const &) { /* do nothing */ }
+      Context, ump::stream::jr_configuration_notification const &) { /* do nothing */ }
 
   constexpr static void function_block_discovery(Context,
-                                                 ump::ump_stream::function_block_discovery const &) { /* do nothing */ }
+                                                 ump::stream::function_block_discovery const &) { /* do nothing */ }
   constexpr static void function_block_info_notification(
-      Context, ump::ump_stream::function_block_info_notification const &) { /* do nothing */ }
+      Context, ump::stream::function_block_info_notification const &) { /* do nothing */ }
   constexpr static void function_block_name_notification(
-      Context, ump::ump_stream::function_block_name_notification const &) { /* do nothing */ }
+      Context, ump::stream::function_block_name_notification const &) { /* do nothing */ }
 
-  constexpr static void start_of_clip(Context, ump::ump_stream::start_of_clip const &) { /* do nothing */ }
-  constexpr static void end_of_clip(Context, ump::ump_stream::end_of_clip const &) { /* do nothing */ }
+  constexpr static void start_of_clip(Context, ump::stream::start_of_clip const &) { /* do nothing */ }
+  constexpr static void end_of_clip(Context, ump::stream::end_of_clip const &) { /* do nothing */ }
 };
 
-static_assert(ump_stream<ump_stream_null<int>, int>);
+static_assert(stream<stream_null<int>, int>, "stream_null must implement the stream concept");
 
 template <typename Context> struct flex_data_null {
   constexpr static void set_tempo(Context, ump::flex_data::set_tempo const &) { /* do nothing */ }
@@ -265,7 +265,7 @@ template <typename Context> struct flex_data_null {
   constexpr static void text(Context, ump::flex_data::text_common const &) { /* do nothing */ }
 };
 
-static_assert(flex_data<flex_data_null<int>, int>);
+static_assert(flex_data<flex_data_null<int>, int>, "flex_data_null must implement the flex_data concept");
 
 template <typename Context> struct utility_pure {
   virtual ~utility_pure() noexcept = default;
@@ -284,7 +284,7 @@ template <typename Context> struct utility_pure {
   virtual void unknown(Context, std::span<std::uint32_t>) = 0;
 };
 
-static_assert(utility<utility_pure<int>, int>);
+static_assert(utility<utility_pure<int>, int>, "utility_pure must implement the utility concept");
 
 template <typename Context> struct system_pure {
   virtual ~system_pure() = default;
@@ -302,7 +302,7 @@ template <typename Context> struct system_pure {
   virtual void reset(Context, ump::system::reset const &) = 0;
 };
 
-static_assert(system<system_pure<int>, int>);
+static_assert(system<system_pure<int>, int>, "system_pure must implement the system concept");
 
 template <typename Context> struct m1cvm_pure {
   virtual ~m1cvm_pure() = default;
@@ -316,7 +316,7 @@ template <typename Context> struct m1cvm_pure {
   virtual void pitch_bend(Context, ump::m1cvm::pitch_bend const &) = 0;
 };
 
-static_assert(m1cvm<m1cvm_pure<int>, int>);
+static_assert(m1cvm<m1cvm_pure<int>, int>, "m1cvm_pure must implement the m1cvm concept");
 
 template <typename Context> struct data64_pure {
   virtual ~data64_pure() = default;
@@ -327,7 +327,7 @@ template <typename Context> struct data64_pure {
   virtual void sysex7_end(Context, ump::data64::sysex7_end const &) = 0;
 };
 
-static_assert(data64<data64_pure<int>, int>);
+static_assert(data64<data64_pure<int>, int>, "data64_pure must implement the data64 concept");
 
 template <typename Context> struct m2cvm_pure {
   virtual ~m2cvm_pure() = default;
@@ -357,7 +357,7 @@ template <typename Context> struct m2cvm_pure {
   virtual void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) = 0;
 };
 
-static_assert(m2cvm<m2cvm_pure<int>, int>);
+static_assert(m2cvm<m2cvm_pure<int>, int>, "m2cvm_pure must implement the m2cvm concept");
 
 template <typename Context> struct data128_pure {
   virtual ~data128_pure() = default;
@@ -370,28 +370,28 @@ template <typename Context> struct data128_pure {
   virtual void mds_payload(Context, ump::data128::mds_payload const &) = 0;
 };
 
-static_assert(data128<data128_pure<int>, int>);
+static_assert(data128<data128_pure<int>, int>, "data128_pure must implement the data128 concept");
 
-template <typename Context> struct ump_stream_pure {
-  virtual ~ump_stream_pure() = default;
+template <typename Context> struct stream_pure {
+  virtual ~stream_pure() = default;
 
-  virtual void endpoint_discovery(Context, ump::ump_stream::endpoint_discovery const &) = 0;
-  virtual void endpoint_info_notification(Context, ump::ump_stream::endpoint_info_notification const &) = 0;
-  virtual void device_identity_notification(Context, ump::ump_stream::device_identity_notification const &) = 0;
-  virtual void endpoint_name_notification(Context, ump::ump_stream::endpoint_name_notification const &) = 0;
-  virtual void product_instance_id_notification(Context, ump::ump_stream::product_instance_id_notification const &) = 0;
-  virtual void jr_configuration_request(Context, ump::ump_stream::jr_configuration_request const &) = 0;
-  virtual void jr_configuration_notification(Context, ump::ump_stream::jr_configuration_notification const &) = 0;
+  virtual void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) = 0;
+  virtual void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) = 0;
+  virtual void device_identity_notification(Context, ump::stream::device_identity_notification const &) = 0;
+  virtual void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) = 0;
+  virtual void product_instance_id_notification(Context, ump::stream::product_instance_id_notification const &) = 0;
+  virtual void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) = 0;
+  virtual void jr_configuration_notification(Context, ump::stream::jr_configuration_notification const &) = 0;
 
-  virtual void function_block_discovery(Context, ump::ump_stream::function_block_discovery const &) = 0;
-  virtual void function_block_info_notification(Context, ump::ump_stream::function_block_info_notification const &) = 0;
-  virtual void function_block_name_notification(Context, ump::ump_stream::function_block_name_notification const &) = 0;
+  virtual void function_block_discovery(Context, ump::stream::function_block_discovery const &) = 0;
+  virtual void function_block_info_notification(Context, ump::stream::function_block_info_notification const &) = 0;
+  virtual void function_block_name_notification(Context, ump::stream::function_block_name_notification const &) = 0;
 
-  virtual void start_of_clip(Context, ump::ump_stream::start_of_clip const &) = 0;
-  virtual void end_of_clip(Context, ump::ump_stream::end_of_clip const &) = 0;
+  virtual void start_of_clip(Context, ump::stream::start_of_clip const &) = 0;
+  virtual void end_of_clip(Context, ump::stream::end_of_clip const &) = 0;
 };
 
-static_assert(ump_stream<ump_stream_pure<int>, int>);
+static_assert(stream<stream_pure<int>, int>, "stream_pure must implement the stream concept");
 
 template <typename Context> struct flex_data_pure {
   virtual ~flex_data_pure() = default;
@@ -404,7 +404,7 @@ template <typename Context> struct flex_data_pure {
   virtual void text(Context, ump::flex_data::text_common const &) = 0;
 };
 
-static_assert(flex_data<flex_data_pure<int>, int>);
+static_assert(flex_data<flex_data_pure<int>, int>, "flex_data_pure must implement the flex_data concept");
 
 template <typename Context> struct utility_base : public utility_pure<Context> {
   // 7.2.1 NOOP
@@ -481,31 +481,27 @@ template <typename Context> struct data128_base : public data128_pure<Context> {
   void mds_header(Context, ump::data128::mds_header const &) override { /* do nothing */ }
   void mds_payload(Context, ump::data128::mds_payload const &) override { /* do nothing */ }
 };
-template <typename Context> struct ump_stream_base : public ump_stream_pure<Context> {
-  void endpoint_discovery(Context, ump::ump_stream::endpoint_discovery const &) override { /* do nothing */ }
-  void endpoint_info_notification(Context,
-                                  ump::ump_stream::endpoint_info_notification const &) override { /* do nothing */ }
+template <typename Context> struct stream_base : public stream_pure<Context> {
+  void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) override { /* do nothing */ }
+  void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) override { /* do nothing */ }
   void device_identity_notification(Context,
-                                    ump::ump_stream::device_identity_notification const &) override { /* do nothing */ }
-  void endpoint_name_notification(Context,
-                                  ump::ump_stream::endpoint_name_notification const &) override { /* do nothing */ }
+                                    ump::stream::device_identity_notification const &) override { /* do nothing */ }
+  void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) override { /* do nothing */
+  }
   void product_instance_id_notification(
-      Context, ump::ump_stream::product_instance_id_notification const &) override { /* do nothing */ }
-  void jr_configuration_request(Context, ump::ump_stream::jr_configuration_request const &) override { /* do nothing */
-  }
+      Context, ump::stream::product_instance_id_notification const &) override { /* do nothing */ }
+  void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) override { /* do nothing */ }
   void jr_configuration_notification(Context,
-                                     ump::ump_stream::jr_configuration_notification const &) override { /* do nothing */
-  }
+                                     ump::stream::jr_configuration_notification const &) override { /* do nothing */ }
 
-  void function_block_discovery(Context, ump::ump_stream::function_block_discovery const &) override { /* do nothing */
-  }
+  void function_block_discovery(Context, ump::stream::function_block_discovery const &) override { /* do nothing */ }
   void function_block_info_notification(
-      Context, ump::ump_stream::function_block_info_notification const &) override { /* do nothing */ }
+      Context, ump::stream::function_block_info_notification const &) override { /* do nothing */ }
   void function_block_name_notification(
-      Context, ump::ump_stream::function_block_name_notification const &) override { /* do nothing */ }
+      Context, ump::stream::function_block_name_notification const &) override { /* do nothing */ }
 
-  void start_of_clip(Context, ump::ump_stream::start_of_clip const &) override { /* do nothing */ }
-  void end_of_clip(Context, ump::ump_stream::end_of_clip const &) override { /* do nothing */ }
+  void start_of_clip(Context, ump::stream::start_of_clip const &) override { /* do nothing */ }
+  void end_of_clip(Context, ump::stream::end_of_clip const &) override { /* do nothing */ }
 };
 template <typename Context> struct flex_data_base : public flex_data_pure<Context> {
   void set_tempo(Context, ump::flex_data::set_tempo const &) override { /* do nothing */ }
@@ -588,7 +584,7 @@ private:
   unknown_fn unknown_;
 };
 
-static_assert(utility<utility_function<int>, int>);
+static_assert(utility<utility_function<int>, int>, "utility_function must implement the utility concept");
 
 template <typename Context> class system_function {
 public:
@@ -683,7 +679,7 @@ private:
   reset_fn reset_;
 };
 
-static_assert(system<system_function<int>, int>);
+static_assert(system<system_function<int>, int>, "system_function must implement the system concept");
 
 template <typename Context> class m1cvm_function {
 public:
@@ -750,7 +746,7 @@ private:
   pitch_bend_fn pitch_bend_;
 };
 
-static_assert(m1cvm<m1cvm_function<int>, int>);
+static_assert(m1cvm<m1cvm_function<int>, int>, "m1cvm_function must implement the m1cvm concept");
 
 template <typename Context> class data64_function {
 public:
@@ -790,7 +786,7 @@ private:
   sysex7_end_fn sysex7_end_;
 };
 
-static_assert(data64<data64_function<int>, int>);
+static_assert(data64<data64_function<int>, int>, "data64_function must implement the data64 concept");
 
 template <typename Context> class m2cvm_function {
 public:
@@ -929,7 +925,7 @@ private:
   per_note_pitch_bend_fn per_note_pitch_bend_;
 };
 
-static_assert(m2cvm<m2cvm_function<int>, int>);
+static_assert(m2cvm<m2cvm_function<int>, int>, "m2cvm_function must implement the m2cvm concept");
 
 template <typename Context> class data128_function {
 public:
@@ -989,123 +985,117 @@ private:
   mds_payload_fn mds_payload_;
 };
 
-static_assert(data128<data128_function<int>, int>);
+static_assert(data128<data128_function<int>, int>, "data128_function must implement the data128 concept");
 
-template <typename Context> class ump_stream_function {
+template <typename Context> class stream_function {
 public:
-  using endpoint_discovery_fn = std::function<void(Context, ump::ump_stream::endpoint_discovery const &)>;
-  using endpoint_info_notification_fn =
-      std::function<void(Context, ump::ump_stream::endpoint_info_notification const &)>;
+  using endpoint_discovery_fn = std::function<void(Context, ump::stream::endpoint_discovery const &)>;
+  using endpoint_info_notification_fn = std::function<void(Context, ump::stream::endpoint_info_notification const &)>;
   using device_identity_notification_fn =
-      std::function<void(Context, ump::ump_stream::device_identity_notification const &)>;
-  using endpoint_name_notification_fn =
-      std::function<void(Context, ump::ump_stream::endpoint_name_notification const &)>;
+      std::function<void(Context, ump::stream::device_identity_notification const &)>;
+  using endpoint_name_notification_fn = std::function<void(Context, ump::stream::endpoint_name_notification const &)>;
   using product_instance_id_notification_fn =
-      std::function<void(Context, ump::ump_stream::product_instance_id_notification const &)>;
-  using jr_configuration_request_fn = std::function<void(Context, ump::ump_stream::jr_configuration_request const &)>;
+      std::function<void(Context, ump::stream::product_instance_id_notification const &)>;
+  using jr_configuration_request_fn = std::function<void(Context, ump::stream::jr_configuration_request const &)>;
   using jr_configuration_notification_fn =
-      std::function<void(Context, ump::ump_stream::jr_configuration_notification const &)>;
-  using function_block_discovery_fn = std::function<void(Context, ump::ump_stream::function_block_discovery const &)>;
+      std::function<void(Context, ump::stream::jr_configuration_notification const &)>;
+  using function_block_discovery_fn = std::function<void(Context, ump::stream::function_block_discovery const &)>;
   using function_block_info_notification_fn =
-      std::function<void(Context, ump::ump_stream::function_block_info_notification const &)>;
+      std::function<void(Context, ump::stream::function_block_info_notification const &)>;
   using function_block_name_notification_fn =
-      std::function<void(Context, ump::ump_stream::function_block_name_notification const &)>;
-  using start_of_clip_fn = std::function<void(Context, ump::ump_stream::start_of_clip const &)>;
-  using end_of_clip_fn = std::function<void(Context, ump::ump_stream::end_of_clip const &)>;
+      std::function<void(Context, ump::stream::function_block_name_notification const &)>;
+  using start_of_clip_fn = std::function<void(Context, ump::stream::start_of_clip const &)>;
+  using end_of_clip_fn = std::function<void(Context, ump::stream::end_of_clip const &)>;
 
-  constexpr ump_stream_function &on_endpoint_discovery(endpoint_discovery_fn discovery) noexcept {
+  constexpr stream_function &on_endpoint_discovery(endpoint_discovery_fn discovery) noexcept {
     endpoint_discovery_ = std::move(discovery);
     return *this;
   }
-  constexpr ump_stream_function &on_endpoint_info_notification(endpoint_info_notification_fn notification) noexcept {
+  constexpr stream_function &on_endpoint_info_notification(endpoint_info_notification_fn notification) noexcept {
     endpoint_info_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_device_identity_notification(
-      device_identity_notification_fn notification) noexcept {
+  constexpr stream_function &on_device_identity_notification(device_identity_notification_fn notification) noexcept {
     device_identity_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_endpoint_name_notification(endpoint_name_notification_fn notification) noexcept {
+  constexpr stream_function &on_endpoint_name_notification(endpoint_name_notification_fn notification) noexcept {
     endpoint_name_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_product_instance_id_notification(
+  constexpr stream_function &on_product_instance_id_notification(
       product_instance_id_notification_fn notification) noexcept {
     product_instance_id_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_jr_configuration_request(jr_configuration_request_fn request) noexcept {
+  constexpr stream_function &on_jr_configuration_request(jr_configuration_request_fn request) noexcept {
     jr_configuration_request_ = std::move(request);
     return *this;
   }
-  constexpr ump_stream_function &on_jr_configuration_notification(
-      jr_configuration_notification_fn notification) noexcept {
+  constexpr stream_function &on_jr_configuration_notification(jr_configuration_notification_fn notification) noexcept {
     jr_configuration_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_function_block_discovery(function_block_discovery_fn discovery) noexcept {
+  constexpr stream_function &on_function_block_discovery(function_block_discovery_fn discovery) noexcept {
     function_block_discovery_ = std::move(discovery);
     return *this;
   }
-  constexpr ump_stream_function &on_function_block_info_notification(
+  constexpr stream_function &on_function_block_info_notification(
       function_block_info_notification_fn notification) noexcept {
     function_block_info_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_function_block_name_notification(
+  constexpr stream_function &on_function_block_name_notification(
       function_block_name_notification_fn notification) noexcept {
     function_block_name_notification_ = std::move(notification);
     return *this;
   }
-  constexpr ump_stream_function &on_start_of_clip(start_of_clip_fn clip) noexcept {
+  constexpr stream_function &on_start_of_clip(start_of_clip_fn clip) noexcept {
     start_of_clip_ = std::move(clip);
     return *this;
   }
-  constexpr ump_stream_function &on_end_of_clip(end_of_clip_fn clip) noexcept {
+  constexpr stream_function &on_end_of_clip(end_of_clip_fn clip) noexcept {
     end_of_clip_ = std::move(clip);
     return *this;
   }
 
-  void endpoint_discovery(Context context, ump::ump_stream::endpoint_discovery const &discovery) {
+  void endpoint_discovery(Context context, ump::stream::endpoint_discovery const &discovery) {
     details::call(endpoint_discovery_, context, discovery);
   }
-  void endpoint_info_notification(Context context, ump::ump_stream::endpoint_info_notification const &notification) {
+  void endpoint_info_notification(Context context, ump::stream::endpoint_info_notification const &notification) {
     details::call(endpoint_info_notification_, context, notification);
   }
-  void device_identity_notification(Context context,
-                                    ump::ump_stream::device_identity_notification const &notification) {
+  void device_identity_notification(Context context, ump::stream::device_identity_notification const &notification) {
     details::call(device_identity_notification_, context, notification);
   }
-  void endpoint_name_notification(Context context, ump::ump_stream::endpoint_name_notification const &notification) {
+  void endpoint_name_notification(Context context, ump::stream::endpoint_name_notification const &notification) {
     details::call(endpoint_name_notification_, context, notification);
   }
   void product_instance_id_notification(Context context,
-                                        ump::ump_stream::product_instance_id_notification const &notification) {
+                                        ump::stream::product_instance_id_notification const &notification) {
     details::call(product_instance_id_notification_, context, notification);
   }
-  void jr_configuration_request(Context context, ump::ump_stream::jr_configuration_request const &request) {
+  void jr_configuration_request(Context context, ump::stream::jr_configuration_request const &request) {
     details::call(jr_configuration_request_, context, request);
   }
-  void jr_configuration_notification(Context context,
-                                     ump::ump_stream::jr_configuration_notification const &notification) {
+  void jr_configuration_notification(Context context, ump::stream::jr_configuration_notification const &notification) {
     details::call(jr_configuration_notification_, context, notification);
   }
-  void function_block_discovery(Context context, ump::ump_stream::function_block_discovery const &discovery) {
+  void function_block_discovery(Context context, ump::stream::function_block_discovery const &discovery) {
     details::call(function_block_discovery_, context, discovery);
   }
   void function_block_info_notification(Context context,
-                                        ump::ump_stream::function_block_info_notification const &notification) {
+                                        ump::stream::function_block_info_notification const &notification) {
     details::call(function_block_info_notification_, context, notification);
   }
   void function_block_name_notification(Context context,
-                                        ump::ump_stream::function_block_name_notification const &notification) {
+                                        ump::stream::function_block_name_notification const &notification) {
     details::call(function_block_name_notification_, context, notification);
   }
-  void start_of_clip(Context context, ump::ump_stream::start_of_clip const &clip) {
+  void start_of_clip(Context context, ump::stream::start_of_clip const &clip) {
     details::call(start_of_clip_, context, clip);
   }
-  void end_of_clip(Context context, ump::ump_stream::end_of_clip const &clip) {
+  void end_of_clip(Context context, ump::stream::end_of_clip const &clip) {
     details::call(end_of_clip_, context, clip);
   }
 
@@ -1126,7 +1116,7 @@ private:
   end_of_clip_fn end_of_clip_;
 };
 
-static_assert(ump_stream<ump_stream_function<int>, int>);
+static_assert(stream<stream_function<int>, int>, "stream_function must implement the stream concept");
 
 template <typename Context> class flex_data_function {
 public:
@@ -1186,7 +1176,7 @@ private:
   text_fn text_;
 };
 
-static_assert(flex_data<flex_data_function<int>, int>);
+static_assert(flex_data<flex_data_function<int>, int>, "flex_data_function must implement the flex_data concept");
 
 }  // end namespace midi2::dispatcher_backend
 

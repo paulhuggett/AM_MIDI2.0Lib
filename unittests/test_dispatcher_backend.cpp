@@ -553,11 +553,11 @@ TEST_F(DispatcherBackendData128, MDSPayload) {
 class DispatcherBackendStream : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::ump_stream_function<context_type> be_;
+  midi2::dispatcher_backend::stream_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointDiscovery) {
-  midi2::ump::ump_stream::endpoint_discovery message;
+  midi2::ump::stream::endpoint_discovery message;
   // The first call should do nothing since no handler has been installed.
   be_.endpoint_discovery(context_, message);
   // Install a handler for the noop message.
@@ -569,7 +569,7 @@ TEST_F(DispatcherBackendStream, EndpointDiscovery) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointNotification) {
-  midi2::ump::ump_stream::endpoint_info_notification message;
+  midi2::ump::stream::endpoint_info_notification message;
   be_.endpoint_info_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::endpoint_info_notification_fn>> fn;
@@ -579,7 +579,7 @@ TEST_F(DispatcherBackendStream, EndpointNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, DeviceIdentityNotification) {
-  midi2::ump::ump_stream::device_identity_notification message;
+  midi2::ump::stream::device_identity_notification message;
   be_.device_identity_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::device_identity_notification_fn>> fn;
@@ -589,7 +589,7 @@ TEST_F(DispatcherBackendStream, DeviceIdentityNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointNameNotification) {
-  midi2::ump::ump_stream::endpoint_name_notification message;
+  midi2::ump::stream::endpoint_name_notification message;
   be_.endpoint_name_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::endpoint_name_notification_fn>> fn;
@@ -599,7 +599,7 @@ TEST_F(DispatcherBackendStream, EndpointNameNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, ProduceInstanceIDNotification) {
-  midi2::ump::ump_stream::product_instance_id_notification message;
+  midi2::ump::stream::product_instance_id_notification message;
   be_.product_instance_id_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::product_instance_id_notification_fn>> fn;
@@ -609,7 +609,7 @@ TEST_F(DispatcherBackendStream, ProduceInstanceIDNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, JRConfigurationRequest) {
-  midi2::ump::ump_stream::jr_configuration_request message;
+  midi2::ump::stream::jr_configuration_request message;
   be_.jr_configuration_request(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::jr_configuration_request_fn>> fn;
@@ -619,7 +619,7 @@ TEST_F(DispatcherBackendStream, JRConfigurationRequest) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, JRConfigurationNotification) {
-  midi2::ump::ump_stream::jr_configuration_notification message;
+  midi2::ump::stream::jr_configuration_notification message;
   be_.jr_configuration_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::jr_configuration_notification_fn>> fn;
@@ -629,7 +629,7 @@ TEST_F(DispatcherBackendStream, JRConfigurationNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockDiscovery) {
-  midi2::ump::ump_stream::function_block_discovery message;
+  midi2::ump::stream::function_block_discovery message;
   be_.function_block_discovery(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_discovery_fn>> fn;
@@ -639,7 +639,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockDiscovery) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockInfoNotification) {
-  midi2::ump::ump_stream::function_block_info_notification message;
+  midi2::ump::stream::function_block_info_notification message;
   be_.function_block_info_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_info_notification_fn>> fn;
@@ -649,7 +649,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockInfoNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockNameNotification) {
-  midi2::ump::ump_stream::function_block_name_notification message;
+  midi2::ump::stream::function_block_name_notification message;
   be_.function_block_name_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_name_notification_fn>> fn;
@@ -659,7 +659,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockNameNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, StartOfClip) {
-  midi2::ump::ump_stream::start_of_clip message;
+  midi2::ump::stream::start_of_clip message;
   be_.start_of_clip(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::start_of_clip_fn>> fn;
@@ -669,7 +669,7 @@ TEST_F(DispatcherBackendStream, StartOfClip) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndOfClip) {
-  midi2::ump::ump_stream::end_of_clip message;
+  midi2::ump::stream::end_of_clip message;
   be_.end_of_clip(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::end_of_clip_fn>> fn;

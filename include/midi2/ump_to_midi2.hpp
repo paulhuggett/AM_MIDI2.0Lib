@@ -220,19 +220,19 @@ private:
       constexpr static void mds_header(context *const ctxt, ump::data128::mds_header const &in) { ctxt->push(in); }
       constexpr static void mds_payload(context *const ctxt, ump::data128::mds_payload const &in) { ctxt->push(in); }
     };
-    struct ump_stream {
-      constexpr static void endpoint_discovery(context *const ctxt, ump::ump_stream::endpoint_discovery const &in) { ctxt->push(in); }
-      constexpr static void endpoint_info_notification(context *const ctxt, ump::ump_stream::endpoint_info_notification const &in) { ctxt->push(in); }
-      constexpr static void device_identity_notification(context *const ctxt, ump::ump_stream::device_identity_notification const &in) { ctxt->push(in); }
-      constexpr static void endpoint_name_notification(context *const ctxt, ump::ump_stream::endpoint_name_notification const &in) { ctxt->push(in); }
-      constexpr static void product_instance_id_notification(context *const ctxt, ump::ump_stream::product_instance_id_notification const &in) { ctxt->push(in); }
-      constexpr static void jr_configuration_request(context *const ctxt, ump::ump_stream::jr_configuration_request const &in) { ctxt->push(in); }
-      constexpr static void jr_configuration_notification(context *const ctxt, ump::ump_stream::jr_configuration_notification const &in) { ctxt->push(in); }
-      constexpr static void function_block_discovery(context *const ctxt, ump::ump_stream::function_block_discovery const &in) { ctxt->push(in); }
-      constexpr static void function_block_info_notification(context *const ctxt, ump::ump_stream::function_block_info_notification const &in) { ctxt->push(in); }
-      constexpr static void function_block_name_notification(context *const ctxt, ump::ump_stream::function_block_name_notification const &in) { ctxt->push(in); }
-      constexpr static void start_of_clip(context *const ctxt, ump::ump_stream::start_of_clip const &in) { ctxt->push(in); }
-      constexpr static void end_of_clip(context *const ctxt, ump::ump_stream::end_of_clip const &in) { ctxt->push(in); }
+    struct stream {
+      constexpr static void endpoint_discovery(context *const ctxt, ump::stream::endpoint_discovery const &in) { ctxt->push(in); }
+      constexpr static void endpoint_info_notification(context *const ctxt, ump::stream::endpoint_info_notification const &in) { ctxt->push(in); }
+      constexpr static void device_identity_notification(context *const ctxt, ump::stream::device_identity_notification const &in) { ctxt->push(in); }
+      constexpr static void endpoint_name_notification(context *const ctxt, ump::stream::endpoint_name_notification const &in) { ctxt->push(in); }
+      constexpr static void product_instance_id_notification(context *const ctxt, ump::stream::product_instance_id_notification const &in) { ctxt->push(in); }
+      constexpr static void jr_configuration_request(context *const ctxt, ump::stream::jr_configuration_request const &in) { ctxt->push(in); }
+      constexpr static void jr_configuration_notification(context *const ctxt, ump::stream::jr_configuration_notification const &in) { ctxt->push(in); }
+      constexpr static void function_block_discovery(context *const ctxt, ump::stream::function_block_discovery const &in) { ctxt->push(in); }
+      constexpr static void function_block_info_notification(context *const ctxt, ump::stream::function_block_info_notification const &in) { ctxt->push(in); }
+      constexpr static void function_block_name_notification(context *const ctxt, ump::stream::function_block_name_notification const &in) { ctxt->push(in); }
+      constexpr static void start_of_clip(context *const ctxt, ump::stream::start_of_clip const &in) { ctxt->push(in); }
+      constexpr static void end_of_clip(context *const ctxt, ump::stream::end_of_clip const &in) { ctxt->push(in); }
     };
     struct flex_data {
       constexpr static void set_tempo(context *const ctxt, ump::flex_data::set_tempo const &in) { ctxt->push(in); }
@@ -249,7 +249,7 @@ private:
     [[no_unique_address]] struct data64 data64{};
     [[no_unique_address]] struct m2cvm m2cvm{};
     [[no_unique_address]] struct data128 data128{};
-    [[no_unique_address]] struct ump_stream ump_stream{};
+    [[no_unique_address]] struct stream stream{};
     [[no_unique_address]] struct flex_data flex{};
   };
 
