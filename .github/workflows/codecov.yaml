@@ -39,6 +39,7 @@ jobs:
             -S .                                     \
             -B "$BUILD_DIR"                          \
             -D MIDI2_COVERAGE=Yes                    \
+            -D MIDI2_DEMO=Yes                        \
             -D CMAKE_C_COMPILER="gcc-$GCC_VERSION"   \
             -D CMAKE_CXX_COMPILER="g++-$GCC_VERSION"
 

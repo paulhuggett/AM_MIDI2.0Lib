@@ -170,6 +170,7 @@ jobs:
                 -B "${{ github.workspace }}/build"           \
                 -G "${{ matrix.generator }}"                 \
                 -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -D MIDI2_DEMO=Yes                            \
                 -D MIDI2_WERROR=Yes                          \
                 ${{ matrix.cxx_compiler }}                   \
                 ${{ matrix.options }}
