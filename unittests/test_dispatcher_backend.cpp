@@ -34,7 +34,7 @@ using testing::StrictMock;
 class DispatcherBackendUtility : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::utility_function<context_type> be_;
+  midi2::ump::dispatcher_backend::utility_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, Noop) {
@@ -111,7 +111,7 @@ TEST_F(DispatcherBackendUtility, Chained) {
 class DispatcherBackendSystem : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::system_function<context_type> be_;
+  midi2::ump::dispatcher_backend::system_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, MidiTimeCode) {
@@ -217,7 +217,7 @@ TEST_F(DispatcherBackendSystem, Reset) {
 class DispatcherBackendM1CVM : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::m1cvm_function<context_type> be_;
+  midi2::ump::dispatcher_backend::m1cvm_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, NoteOff) {
@@ -289,7 +289,7 @@ TEST_F(DispatcherBackendM1CVM, PitchBend) {
 class DispatcherBackendData64 : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::data64_function<context_type> be_;
+  midi2::ump::dispatcher_backend::data64_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData64, Sysex7In1) {
@@ -334,7 +334,7 @@ TEST_F(DispatcherBackendData64, Sysex7End) {
 class DispatcherBackendM2CVM : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::m2cvm_function<context_type> be_;
+  midi2::ump::dispatcher_backend::m2cvm_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NoteOff) {
@@ -490,7 +490,7 @@ TEST_F(DispatcherBackendM2CVM, PerNotePitchBend) {
 class DispatcherBackendData128 : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::data128_function<context_type> be_;
+  midi2::ump::dispatcher_backend::data128_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, SysEx8In1) {
@@ -553,7 +553,7 @@ TEST_F(DispatcherBackendData128, MDSPayload) {
 class DispatcherBackendStream : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::stream_function<context_type> be_;
+  midi2::ump::dispatcher_backend::stream_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointDiscovery) {
@@ -681,7 +681,7 @@ TEST_F(DispatcherBackendStream, EndOfClip) {
 class DispatcherBackendFlexData : public testing::Test {
 protected:
   context_type context_;
-  midi2::dispatcher_backend::flex_data_function<context_type> be_;
+  midi2::ump::dispatcher_backend::flex_data_function<context_type> be_;
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetTempo) {

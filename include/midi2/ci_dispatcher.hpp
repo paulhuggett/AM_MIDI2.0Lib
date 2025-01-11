@@ -85,6 +85,73 @@ concept process_inquiry_backend = requires(T &&v) {
   { v.midi_message_report_end(midi_ci{}) } -> std::same_as<void>;
 };
 
+template <typename T>
+concept ci_dispatcher_config = requires(T v) {
+  { v.management } -> management_backend;
+  { v.profile } -> profile_backend;
+  { v.property_exchange } -> property_exchange_backend;
+  { v.process_inquiry } -> process_inquiry_backend;
+};
+
+struct management_null {
+  constexpr bool check_muid(std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
+
+  constexpr void discovery(midi_ci const &, ci::discovery const &) { /* do nothing */ }
+  constexpr void discovery_reply(midi_ci const &, ci::discovery_reply const &) { /* do nothing */ }
+  constexpr void endpoint_info(midi_ci const &, ci::endpoint_info const &) { /* do nothing*/ }
+  constexpr void endpoint_info_reply(midi_ci const &, ci::endpoint_info_reply const &) { /* do nothing */ }
+  constexpr void invalidate_muid(midi_ci const &, ci::invalidate_muid const &) { /* do nothing */ }
+  constexpr void ack(midi_ci const &, ci::ack const &) { /* do nothing */ }
+  constexpr void nak(midi_ci const &, ci::nak const &) { /* do nothing */ }
+
+  constexpr void unknown_midici(midi_ci const &) { /* do nothing */ }
+  constexpr void buffer_overflow() { /* do nothing */ }
+};
+
+static_assert(management_backend<management_null>);
+
+struct profile_null {
+  constexpr void inquiry(midi_ci const &) { /* do nothing */ }
+  constexpr void inquiry_reply(midi_ci const &, ci::profile_configuration::inquiry_reply const &) { /* do nothing */ }
+  constexpr void added(midi_ci const &, ci::profile_configuration::added const &) { /* do nothing */ }
+  constexpr void removed(midi_ci const &, ci::profile_configuration::removed const &) { /* do nothing */ }
+  constexpr void details(midi_ci const &, ci::profile_configuration::details const &) { /* do nothing */ }
+  constexpr void details_reply(midi_ci const &, ci::profile_configuration::details_reply const &) { /* do nothing */ }
+  constexpr void on(midi_ci const &, ci::profile_configuration::on const &) { /* do nothing */ }
+  constexpr void off(midi_ci const &, ci::profile_configuration::off const &) { /* do nothing */ }
+  constexpr void enabled(midi_ci const &, ci::profile_configuration::enabled const &) { /* do nothing */ }
+  constexpr void disabled(midi_ci const &, ci::profile_configuration::disabled const &) { /* do nothing */ }
+  constexpr void specific_data(midi_ci const &, ci::profile_configuration::specific_data const &) { /* do nothing */ }
+};
+
+static_assert(profile_backend<profile_null>);
+
+struct property_exchange_null {
+  constexpr void capabilities(midi_ci const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
+  constexpr void capabilities_reply(midi_ci const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
+
+  constexpr void get(midi_ci const &, ci::property_exchange::get const &) { /* do nothing */ }
+  constexpr void get_reply(midi_ci const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
+  constexpr void set(midi_ci const &, ci::property_exchange::set const &) { /* do nothing */ }
+  constexpr void set_reply(midi_ci const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
+
+  constexpr void subscription(midi_ci const &, ci::property_exchange::subscription const &) { /* do nothing */ }
+  constexpr void subscription_reply(midi_ci const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
+  constexpr void notify(midi_ci const &, ci::property_exchange::notify const &) { /* do nothing */ }
+};
+
+static_assert(property_exchange_backend<property_exchange_null>);
+
+struct process_inquiry_null {
+  constexpr void capabilities(midi_ci const &) { /* do nothing */ }
+  constexpr void capabilities_reply(midi_ci const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
+  constexpr void midi_message_report(midi_ci const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
+  constexpr void midi_message_report_reply(midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
+  constexpr void midi_message_report_end(midi_ci const &) { /* do nothing */ }
+};
+
+static_assert(process_inquiry_backend<process_inquiry_null>);
+
 class management_callbacks {
 public:
   management_callbacks() = default;
@@ -109,6 +176,8 @@ public:
   virtual void buffer_overflow() { /* do nothing */ }
 };
 
+static_assert(management_backend<management_callbacks>);
+
 class profile_callbacks {
 public:
   profile_callbacks() = default;
@@ -132,6 +201,8 @@ public:
   virtual void specific_data(midi_ci const &, ci::profile_configuration::specific_data const &) { /* do nothing */ }
 };
 
+static_assert(profile_backend<profile_callbacks>);
+
 class property_exchange_callbacks {
 public:
   property_exchange_callbacks() = default;
@@ -143,8 +214,7 @@ public:
   property_exchange_callbacks &operator=(property_exchange_callbacks &&) noexcept = default;
 
   virtual void capabilities(midi_ci const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
-  virtual void capabilities_reply(midi_ci const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */
-  }
+  virtual void capabilities_reply(midi_ci const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
 
   virtual void get(midi_ci const &, ci::property_exchange::get const &) { /* do nothing */ }
   virtual void get_reply(midi_ci const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
@@ -152,10 +222,11 @@ public:
   virtual void set_reply(midi_ci const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
 
   virtual void subscription(midi_ci const &, ci::property_exchange::subscription const &) { /* do nothing */ }
-  virtual void subscription_reply(midi_ci const &, ci::property_exchange::subscription_reply const &) { /* do nothing */
-  }
+  virtual void subscription_reply(midi_ci const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
   virtual void notify(midi_ci const &, ci::property_exchange::notify const &) { /* do nothing */ }
 };
+
+static_assert(property_exchange_backend<property_exchange_callbacks>);
 
 class process_inquiry_callbacks {
 public:
@@ -169,27 +240,18 @@ public:
 
   virtual void capabilities(midi_ci const &) { /* do nothing */ }
   virtual void capabilities_reply(midi_ci const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
-  virtual void midi_message_report(midi_ci const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */
-  }
-  virtual void midi_message_report_reply(midi_ci const &,
-                                         ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
+  virtual void midi_message_report(midi_ci const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
+  virtual void midi_message_report_reply(midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
   virtual void midi_message_report_end(midi_ci const &) { /* do nothing */ }
 };
 
+static_assert(process_inquiry_backend<process_inquiry_callbacks>);
+
 template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
-template <management_backend ManagementBackend = management_callbacks,
-          profile_backend ProfileBackend = profile_callbacks,
-          property_exchange_backend PEBackend = property_exchange_callbacks,
-          process_inquiry_backend PIBackend = process_inquiry_callbacks>
-class ci_dispatcher {
+template <ci_dispatcher_config Config> class ci_dispatcher {
 public:
-  explicit ci_dispatcher(ManagementBackend management = ManagementBackend{}, ProfileBackend profile = ProfileBackend{},
-                         PEBackend pe_backend = PEBackend{}, PIBackend pi_backend = PIBackend{})
-      : management_backend_{management},
-        profile_backend_{profile},
-        property_exchange_backend_{pe_backend},
-        process_inquiry_backend_{pi_backend} {}
+  explicit ci_dispatcher(Config config) : config_{config} {}
 
   void startSysex7(std::uint8_t group, std::byte deviceId);
   void endSysex7() {}
@@ -199,10 +261,7 @@ public:
 private:
   static constexpr auto header_size = sizeof(ci::packed::header);
 
-  [[no_unique_address]] ManagementBackend management_backend_;
-  [[no_unique_address]] ProfileBackend profile_backend_;
-  [[no_unique_address]] PEBackend property_exchange_backend_;
-  [[no_unique_address]] PIBackend process_inquiry_backend_;
+  [[no_unique_address]] Config config_;
 
   using consumer_fn = void (ci_dispatcher::*)();
 
@@ -252,40 +311,18 @@ private:
   void process_inquiry_midi_message_report_end();
 };
 
-ci_dispatcher() -> ci_dispatcher<>;
-template <management_backend C> ci_dispatcher(C) -> ci_dispatcher<C>;
-template <management_backend C> ci_dispatcher(std::reference_wrapper<C>) -> ci_dispatcher<C &>;
-template <management_backend C, profile_backend P> ci_dispatcher(C, P) -> ci_dispatcher<C, P>;
-template <management_backend C, profile_backend P, property_exchange_backend PE>
-ci_dispatcher(C, P, PE) -> ci_dispatcher<C, P, PE>;
-template <management_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
-ci_dispatcher(C, P, PE, PI) -> ci_dispatcher<C, P, PE, PI>;
-
-template <management_backend C, profile_backend P>
-ci_dispatcher(std::reference_wrapper<C>, std::reference_wrapper<P>) -> ci_dispatcher<C &, P &>;
-template <management_backend C, profile_backend P, property_exchange_backend PE>
-ci_dispatcher(std::reference_wrapper<C>, std::reference_wrapper<P>, std::reference_wrapper<PE>)
-    -> ci_dispatcher<C &, P &, PE &>;
-template <management_backend C, profile_backend P, property_exchange_backend PE, process_inquiry_backend PI>
-ci_dispatcher(std::reference_wrapper<C>, std::reference_wrapper<P>, std::reference_wrapper<PE>,
-              std::reference_wrapper<PI>) -> ci_dispatcher<C &, P &, PE &, PI &>;
-
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::startSysex7(std::uint8_t group,
-                                                                                         std::byte deviceId) {
+template <ci_dispatcher_config Config>
+void ci_dispatcher<Config>::startSysex7(std::uint8_t group, std::byte device_id) {
   midici_ = midi_ci{};
   midici_.group = group;
-  midici_.params.device_id = static_cast<std::uint8_t>(deviceId);
+  midici_.params.device_id = static_cast<std::uint8_t>(device_id);
 
   count_ = header_size;
   pos_ = 0;
   consumer_ = &ci_dispatcher::header;
 }
 
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::header() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::header() {
   struct message_dispatch_info {
     ci_message type;
     std::uint8_t v1size;
@@ -390,9 +427,9 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::hea
     consumer_ = &ci_dispatcher::discard;
     count_ = 0;
 
-    management_backend_.unknown_midici(midici_);
+    config_.management.unknown_midici(midici_);
   } else if (midici_.params.local_muid != M2_CI_BROADCAST &&
-             !management_backend_.check_muid(midici_.group, midici_.params.local_muid)) {
+             !config_.management.check_muid(midici_.group, midici_.params.local_muid)) {
     // The message wasn't intended for us.
     consumer_ = &ci_dispatcher::discard;
     count_ = 0;
@@ -409,12 +446,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::hea
 
 // discovery
 // ~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discovery() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::discovery() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    management_backend_.discovery(midici_, ci::discovery{*v});
+    config_.management.discovery(midici_, ci::discovery{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::packed::discovery_v1 const *>(buffer_.data()));
@@ -426,12 +461,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::dis
 
 // discovery reply
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discovery_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::discovery_reply() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    management_backend_.discovery_reply(midici_, ci::discovery_reply{*v});
+    config_.management.discovery_reply(midici_, ci::discovery_reply{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::packed::discovery_reply_v1 const *>(buffer_.data()));
@@ -443,19 +476,15 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::dis
 
 // invalidate muid
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::invalidate_muid() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::invalidate_muid() {
   using type = ci::packed::invalidate_muid_v1;
-  management_backend_.invalidate_muid(midici_, ci::invalidate_muid{*std::bit_cast<type const *>(buffer_.data())});
+  config_.management.invalidate_muid(midici_, ci::invalidate_muid{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // ack
 // ~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::ack() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::ack() {
   using type = ci::packed::ack_v1;
   auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
   auto const message_length = ci::from_le7(ptr->message_length);
@@ -465,20 +494,18 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::ack
     return;
   }
   assert(pos_ == offsetof(type, message) + message_length);
-  management_backend_.ack(midici_, ci::ack{*ptr});
+  config_.management.ack(midici_, ci::ack{*ptr});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // nak
 // ~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::nak() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::nak() {
   using v1_type = ci::packed::nak_v1;
   using v2_type = ci::packed::nak_v2;
 
   auto const handler = [this](unaligned_copyable auto const &reply) {
-    management_backend_.nak(midici_, ci::nak{reply});
+    config_.management.nak(midici_, ci::nak{reply});
     consumer_ = &ci_dispatcher::discard;
   };
   if (midici_.params.version == 1) {
@@ -499,20 +526,16 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::nak
 
 // endpoint info
 // ~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::endpoint_info() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::endpoint_info() {
   using type = ci::packed::endpoint_info_v1;
   assert(pos_ == sizeof(type));
-  management_backend_.endpoint_info(midici_, ci::endpoint_info{*std::bit_cast<type const *>(buffer_.data())});
+  config_.management.endpoint_info(midici_, ci::endpoint_info{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // endpoint info reply
 // ~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::endpoint_info_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::endpoint_info_reply() {
   using type = ci::packed::endpoint_info_reply_v1;
   auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
   auto const data_length = ci::from_le7(ptr->data_length);
@@ -522,24 +545,20 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::end
     return;
   }
   assert(pos_ == offsetof(type, data) + data_length);
-  management_backend_.endpoint_info_reply(midici_, ci::endpoint_info_reply{*ptr});
+  config_.management.endpoint_info_reply(midici_, ci::endpoint_info_reply{*ptr});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile inquiry
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_inquiry() {
-  profile_backend_.inquiry(midici_);
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_inquiry() {
+  config_.profile.inquiry(midici_);
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile inquiry reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_inquiry_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_inquiry_reply() {
   using pt1_type = ci::profile_configuration::packed::inquiry_reply_v1_pt1;
   using pt2_type = ci::profile_configuration::packed::inquiry_reply_v1_pt2;
   auto const *const pt1 = std::bit_cast<pt1_type const *>(buffer_.data());
@@ -558,66 +577,56 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
     count_ = num_disabled * sizeof(pt2->ids[0]);
     return;
   }
-  profile_backend_.inquiry_reply(midici_, ci::profile_configuration::inquiry_reply{*pt1, *pt2});
+  config_.profile.inquiry_reply(midici_, ci::profile_configuration::inquiry_reply{*pt1, *pt2});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile added
 // ~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_added() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_added() {
   using type = ci::profile_configuration::packed::added_v1;
   assert(pos_ == sizeof(type));
-  profile_backend_.added(midici_, ci::profile_configuration::added{*std::bit_cast<type const *>(buffer_.data())});
+  config_.profile.added(midici_, ci::profile_configuration::added{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile removed
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_removed() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_removed() {
   using type = ci::profile_configuration::packed::removed_v1;
   assert(pos_ == sizeof(type));
-  profile_backend_.removed(midici_, ci::profile_configuration::removed{*std::bit_cast<type const *>(buffer_.data())});
+  config_.profile.removed(midici_, ci::profile_configuration::removed{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile details inquiry
 // ~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_details() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_details() {
   using type = ci::profile_configuration::packed::details_v1;
   assert(pos_ == sizeof(type));
-  profile_backend_.details(midici_, ci::profile_configuration::details{*std::bit_cast<type const *>(buffer_.data())});
+  config_.profile.details(midici_, ci::profile_configuration::details{*std::bit_cast<type const *>(buffer_.data())});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile details reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_details_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_details_reply() {
   using type = ci::profile_configuration::packed::details_reply_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
   if (auto const data_length = ci::from_le7(reply->data_length); pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
     return;
   }
-  profile_backend_.details_reply(midici_, ci::profile_configuration::details_reply{*reply});
+  config_.profile.details_reply(midici_, ci::profile_configuration::details_reply{*reply});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // profile on
 // ~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_on() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_on() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    profile_backend_.on(midici_, ci::profile_configuration::on{*v});
+    config_.profile.on(midici_, ci::profile_configuration::on{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::profile_configuration::packed::on_v1 const *>(buffer_.data()));
@@ -629,12 +638,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // profile off
 // ~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_off() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_off() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    profile_backend_.off(midici_, ci::profile_configuration::off{*v});
+    config_.profile.off(midici_, ci::profile_configuration::off{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::profile_configuration::packed::off_v1 const *>(buffer_.data()));
@@ -646,12 +653,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // profile enabled
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_enabled() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_enabled() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    profile_backend_.enabled(midici_, ci::profile_configuration::enabled{*v});
+    config_.profile.enabled(midici_, ci::profile_configuration::enabled{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::profile_configuration::packed::enabled_v1 const *>(buffer_.data()));
@@ -663,12 +668,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // profile disabled
 // ~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_disabled() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_disabled() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    profile_backend_.disabled(midici_, ci::profile_configuration::disabled{*v});
+    config_.profile.disabled(midici_, ci::profile_configuration::disabled{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::profile_configuration::packed::disabled_v1 const *>(buffer_.data()));
@@ -680,27 +683,23 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // profile specific data
 // ~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::profile_specific_data() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::profile_specific_data() {
   using type = ci::profile_configuration::packed::specific_data_v1;
   auto const *const reply = std::bit_cast<type const *>(buffer_.data());
   if (auto const data_length = ci::from_le7(reply->data_length); pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
     return;
   }
-  profile_backend_.specific_data(midici_, ci::profile_configuration::specific_data{*reply});
+  config_.profile.specific_data(midici_, ci::profile_configuration::specific_data{*reply});
   consumer_ = &ci_dispatcher::discard;
 }
 
 // pe capabilities
 // ~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_capabilities() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::pe_capabilities() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    property_exchange_backend_.capabilities(midici_, ci::property_exchange::capabilities{*v});
+    config_.property_exchange.capabilities(midici_, ci::property_exchange::capabilities{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::property_exchange::packed::capabilities_v1 const *>(buffer_.data()));
@@ -712,12 +711,10 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_
 
 // pe capabilities reply
 // ~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_capabilities_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::pe_capabilities_reply() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    property_exchange_backend_.capabilities_reply(midici_, ci::property_exchange::capabilities_reply{*v});
+    config_.property_exchange.capabilities_reply(midici_, ci::property_exchange::capabilities_reply{*v});
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v1 const *>(buffer_.data()));
@@ -729,9 +726,7 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pe_
 
 // property exchange
 // ~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::property_exchange() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::property_exchange() {
   using ci::property_exchange::packed::property_exchange_pt1;
   using ci::property_exchange::packed::property_exchange_pt2;
   auto size = offsetof(property_exchange_pt1, header);
@@ -764,24 +759,13 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
   using enum ci_message;
   switch (midici_.type) {
-  case pe_get: property_exchange_backend_.get(midici_, ci::property_exchange::get{chunk, request, header}); break;
-  case pe_get_reply:
-    property_exchange_backend_.get_reply(midici_, ci::property_exchange::get_reply{chunk, request, header, data});
-    break;
-  case pe_set: property_exchange_backend_.set(midici_, ci::property_exchange::set{chunk, request, header, data}); break;
-  case pe_set_reply:
-    property_exchange_backend_.set_reply(midici_, ci::property_exchange::set_reply{chunk, request, header, data});
-    break;
-  case pe_sub:
-    property_exchange_backend_.subscription(midici_, ci::property_exchange::subscription{chunk, request, header, data});
-    break;
-  case pe_sub_reply:
-    property_exchange_backend_.subscription_reply(
-        midici_, ci::property_exchange::subscription_reply{chunk, request, header, data});
-    break;
-  case pe_notify:
-    property_exchange_backend_.notify(midici_, ci::property_exchange::notify{chunk, request, header, data});
-    break;
+  case pe_get: config_.property_exchange.get(midici_, ci::property_exchange::get{chunk, request, header}); break;
+  case pe_get_reply: config_.property_exchange.get_reply(midici_, ci::property_exchange::get_reply{chunk, request, header, data}); break;
+  case pe_set: config_.property_exchange.set(midici_, ci::property_exchange::set{chunk, request, header, data}); break;
+  case pe_set_reply: config_.property_exchange.set_reply(midici_, ci::property_exchange::set_reply{chunk, request, header, data}); break;
+  case pe_sub: config_.property_exchange.subscription(midici_, ci::property_exchange::subscription{chunk, request, header, data}); break;
+  case pe_sub_reply: config_.property_exchange.subscription_reply(midici_, ci::property_exchange::subscription_reply{chunk, request, header, data}); break;
+  case pe_notify: config_.property_exchange.notify(midici_, ci::property_exchange::notify{chunk, request, header, data}); break;
   default: assert(false); break;
   }
   consumer_ = &ci_dispatcher::discard;
@@ -789,22 +773,18 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // process inquiry capabilities
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::process_inquiry_capabilities() {
   if (midici_.params.version > 1) {
-    process_inquiry_backend_.capabilities(midici_);
+    config_.process_inquiry.capabilities(midici_);
   }
   consumer_ = &ci_dispatcher::discard;
 }
 
 // process inquiry capabilities reply
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_capabilities_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::process_inquiry_capabilities_reply() {
   if (midici_.params.version > 1) {
-    process_inquiry_backend_.capabilities_reply(
+    config_.process_inquiry.capabilities_reply(
         midici_, ci::process_inquiry::capabilities_reply{
                      *std::bit_cast<ci::process_inquiry::packed::capabilities_reply_v2 const *>(buffer_.data())});
   }
@@ -813,11 +793,9 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // process inquiry midi message report
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::process_inquiry_midi_message_report() {
   if (midici_.params.version > 1) {
-    process_inquiry_backend_.midi_message_report(
+    config_.process_inquiry.midi_message_report(
         midici_, ci::process_inquiry::midi_message_report{
                      *std::bit_cast<ci::process_inquiry::packed::midi_message_report_v2 const *>(buffer_.data())});
   }
@@ -826,12 +804,9 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::pro
 
 // process inquiry midi message report reply
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend,
-                   PIBackend>::process_inquiry_midi_message_report_reply() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::process_inquiry_midi_message_report_reply() {
   if (midici_.params.version > 1) {
-    process_inquiry_backend_.midi_message_report_reply(
+    config_.process_inquiry.midi_message_report_reply(
         midici_,
         ci::process_inquiry::midi_message_report_reply{
             *std::bit_cast<ci::process_inquiry::packed::midi_message_report_reply_v2 const *>(buffer_.data())});
@@ -841,40 +816,32 @@ void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend,
 
 // process inquiry midi message report end
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::process_inquiry_midi_message_report_end() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::process_inquiry_midi_message_report_end() {
   if (midici_.params.version > 1) {
-    process_inquiry_backend_.midi_message_report_end(midici_);
+    config_.process_inquiry.midi_message_report_end(midici_);
   }
   consumer_ = &ci_dispatcher::discard;
 }
 
 // discard
 // ~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::discard() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::discard() {
   pos_ = 0;
   count_ = buffer_.size();
 }
 
 // overflow
 // ~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::overflow() {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::overflow() {
   count_ = 0;
   pos_ = 0;
-  management_backend_.buffer_overflow();
+  config_.management.buffer_overflow();
   consumer_ = &ci_dispatcher::discard;
 }
 
 // processMIDICI
 // ~~~~~~~~~~~~~
-template <management_backend ManagementBackend, profile_backend ProfileBackend, property_exchange_backend PEBackend,
-          process_inquiry_backend PIBackend>
-void ci_dispatcher<ManagementBackend, ProfileBackend, PEBackend, PIBackend>::processMIDICI(std::byte const s7) {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::processMIDICI(std::byte const s7) {
   if (count_ > 0) {
     if (pos_ >= buffer_.size()) {
       this->overflow();

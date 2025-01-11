@@ -12,7 +12,7 @@
 
 #include "midi2/ump_types.hpp"
 
-namespace midi2::dispatcher_backend {
+namespace midi2::ump::dispatcher_backend {
 
 // clang-format off
 template <typename T, typename Context>
@@ -1178,6 +1178,6 @@ private:
 
 static_assert(flex_data<flex_data_function<int>, int>, "flex_data_function must implement the flex_data concept");
 
-}  // end namespace midi2::dispatcher_backend
+}  // end namespace midi2::ump::dispatcher_backend
 
 #endif  // MIDI2_DISPATCHER_BACKEND_HPP

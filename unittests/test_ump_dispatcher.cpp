@@ -64,7 +64,7 @@ TEST(UMPApply, ErrorCodeFails) {
 
 using context_type = int;
 
-class UtilityMocks : public midi2::dispatcher_backend::utility_pure<context_type> {
+class UtilityMocks : public midi2::ump::dispatcher_backend::utility_pure<context_type> {
 public:
   MOCK_METHOD(void, noop, (context_type), (override));
   MOCK_METHOD(void, jr_clock, (context_type, midi2::ump::utility::jr_clock const &), (override));
@@ -75,7 +75,7 @@ public:
 
   MOCK_METHOD(void, unknown, (context_type, std::span<std::uint32_t>), (override));
 };
-class SystemMocks : public midi2::dispatcher_backend::system_pure<context_type> {
+class SystemMocks : public midi2::ump::dispatcher_backend::system_pure<context_type> {
 public:
   MOCK_METHOD(void, midi_time_code, (context_type, midi2::ump::system::midi_time_code const &), (override));
   MOCK_METHOD(void, song_position_pointer, (context_type, midi2::ump::system::song_position_pointer const &),
@@ -89,7 +89,7 @@ public:
   MOCK_METHOD(void, active_sensing, (context_type, midi2::ump::system::active_sensing const &), (override));
   MOCK_METHOD(void, reset, (context_type, midi2::ump::system::reset const &), (override));
 };
-class M1CVMMocks : public midi2::dispatcher_backend::m1cvm_pure<context_type> {
+class M1CVMMocks : public midi2::ump::dispatcher_backend::m1cvm_pure<context_type> {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::ump::m1cvm::note_off const &), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::ump::m1cvm::note_on const &), (override));
@@ -99,14 +99,14 @@ public:
   MOCK_METHOD(void, channel_pressure, (context_type, midi2::ump::m1cvm::channel_pressure const &), (override));
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::ump::m1cvm::pitch_bend const &), (override));
 };
-class Data64Mocks : public midi2::dispatcher_backend::data64_pure<context_type> {
+class Data64Mocks : public midi2::ump::dispatcher_backend::data64_pure<context_type> {
 public:
   MOCK_METHOD(void, sysex7_in_1, (context_type, midi2::ump::data64::sysex7_in_1 const &), (override));
   MOCK_METHOD(void, sysex7_start, (context_type, midi2::ump::data64::sysex7_start const &), (override));
   MOCK_METHOD(void, sysex7_continue, (context_type, midi2::ump::data64::sysex7_continue const &), (override));
   MOCK_METHOD(void, sysex7_end, (context_type, midi2::ump::data64::sysex7_end const &), (override));
 };
-class M2CVMMocks : public midi2::dispatcher_backend::m2cvm_pure<context_type> {
+class M2CVMMocks : public midi2::ump::dispatcher_backend::m2cvm_pure<context_type> {
 public:
   MOCK_METHOD(void, note_off, (context_type, midi2::ump::m2cvm::note_off const &), (override));
   MOCK_METHOD(void, note_on, (context_type, midi2::ump::m2cvm::note_on const &), (override));
@@ -130,7 +130,7 @@ public:
   MOCK_METHOD(void, pitch_bend, (context_type, midi2::ump::m2cvm::pitch_bend const &), (override));
   MOCK_METHOD(void, per_note_pitch_bend, (context_type, midi2::ump::m2cvm::per_note_pitch_bend const &), (override));
 };
-class Data128Mocks : public midi2::dispatcher_backend::data128_pure<context_type> {
+class Data128Mocks : public midi2::ump::dispatcher_backend::data128_pure<context_type> {
 public:
   MOCK_METHOD(void, sysex8_in_1, (context_type, midi2::ump::data128::sysex8_in_1 const &), (override));
   MOCK_METHOD(void, sysex8_start, (context_type, midi2::ump::data128::sysex8_start const &), (override));
@@ -139,7 +139,7 @@ public:
   MOCK_METHOD(void, mds_header, (context_type, midi2::ump::data128::mds_header const &), (override));
   MOCK_METHOD(void, mds_payload, (context_type, midi2::ump::data128::mds_payload const &), (override));
 };
-class UMPStreamMocks : public midi2::dispatcher_backend::stream_pure<context_type> {
+class UMPStreamMocks : public midi2::ump::dispatcher_backend::stream_pure<context_type> {
 public:
   MOCK_METHOD(void, endpoint_discovery, (context_type, midi2::ump::stream::endpoint_discovery const &), (override));
   MOCK_METHOD(void, endpoint_info_notification, (context_type, midi2::ump::stream::endpoint_info_notification const &),
@@ -166,7 +166,7 @@ public:
   MOCK_METHOD(void, start_of_clip, (context_type, midi2::ump::stream::start_of_clip const &), (override));
   MOCK_METHOD(void, end_of_clip, (context_type, midi2::ump::stream::end_of_clip const &), (override));
 };
-class FlexDataMocks : public midi2::dispatcher_backend::flex_data_pure<context_type> {
+class FlexDataMocks : public midi2::ump::dispatcher_backend::flex_data_pure<context_type> {
 public:
   MOCK_METHOD(void, set_tempo, (context_type, midi2::ump::flex_data::set_tempo const &), (override));
   MOCK_METHOD(void, set_time_signature, (context_type, midi2::ump::flex_data::set_time_signature const &), (override));
@@ -203,7 +203,7 @@ public:
     StrictMock<FlexDataMocks> flex;
   };
   mocked_config config_;
-  midi2::ump_dispatcher<mocked_config &> dispatcher_;
+  midi2::ump::ump_dispatcher<mocked_config &> dispatcher_;
 };
 
 //*       _   _ _ _ _         *
@@ -898,7 +898,7 @@ TEST_F(UMPDispatcherFlexData, Text) {
 }
 
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
-  midi2::ump_dispatcher p;
+  midi2::ump::ump_dispatcher p;
   std::ranges::for_each(in, [&p](std::uint32_t ump) { p.processUMP(ump); });
 }
 
@@ -914,7 +914,7 @@ TEST(UMPDispatcherFuzz, Empty) {
 template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::message_size<MessageType>::value) {
     message[0] = (message[0] & 0x00FFFFFF) | (static_cast<std::uint32_t>(MessageType) << 24);
-    midi2::ump_dispatcher p;
+    midi2::ump::ump_dispatcher p;
     for (auto const w : message) {
       p.processUMP(w);
     }

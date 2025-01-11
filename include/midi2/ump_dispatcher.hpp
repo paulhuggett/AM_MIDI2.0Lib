@@ -20,7 +20,7 @@
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 
-namespace midi2 {
+namespace midi2::ump {
 
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
@@ -37,9 +37,9 @@ constexpr unsigned ump_message_size(ump::message_type const mt) {
 }
 
 template <typename T>
-concept ump_dispatcher_config = requires (T v) {
+concept ump_dispatcher_config = requires(T v) {
   { v.context };
-  { v.utility } -> dispatcher_backend::utility<decltype(v.context)>;
+  { v.utility } -> ump::dispatcher_backend::utility<decltype(v.context)>;
   { v.system } -> dispatcher_backend::system<decltype(v.context)>;
   { v.m1cvm } -> dispatcher_backend::m1cvm<decltype(v.context)>;
   { v.data64 } -> dispatcher_backend::data64<decltype(v.context)>;
@@ -48,7 +48,6 @@ concept ump_dispatcher_config = requires (T v) {
   { v.stream } -> dispatcher_backend::stream<decltype(v.context)>;
   { v.flex } -> dispatcher_backend::flex_data<decltype(v.context)>;
 };
-// clang-format on
 
 struct default_config {
   struct empty {};
@@ -464,6 +463,6 @@ ump_dispatcher<function_config<Context>> make_ump_function_dispatcher(Context co
   return ump_dispatcher{function_config{context}};
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::ump
 
 #endif  // MIDI2_UMP_DISPATCHER_HPP

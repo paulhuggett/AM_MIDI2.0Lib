@@ -254,7 +254,7 @@ private:
   };
 
   context context_;
-  ump_dispatcher<to_midi2_config> p_{to_midi2_config{&context_}};
+  ump::ump_dispatcher<to_midi2_config> p_{to_midi2_config{&context_}};
 };
 
 }  // end namespace midi2
