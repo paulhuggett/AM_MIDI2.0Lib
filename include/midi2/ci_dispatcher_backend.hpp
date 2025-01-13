@@ -9,6 +9,8 @@
 #ifndef MIDI2_CI_DISPATCHER_BACKEND_HPP
 #define MIDI2_CI_DISPATCHER_BACKEND_HPP
 
+#include <functional>
+
 #include "midi2/ci_types.hpp"
 
 namespace midi2::ci::dispatcher_backend {
