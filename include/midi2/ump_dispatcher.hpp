@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <span>
 
-#include "midi2/dispatcher_backend.hpp"
+#include "midi2/ump_dispatcher_backend.hpp"
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
 

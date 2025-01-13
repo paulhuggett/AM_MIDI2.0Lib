@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
-#ifndef MIDI2_DISPATCHER_BACKEND_HPP
-#define MIDI2_DISPATCHER_BACKEND_HPP
+#ifndef MIDI2_UMP_DISPATCHER_BACKEND_HPP
+#define MIDI2_UMP_DISPATCHER_BACKEND_HPP
 
 #include <functional>
 
@@ -486,19 +486,14 @@ template <typename Context> struct stream_base : public stream_pure<Context> {
   void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) override { /* do nothing */ }
   void device_identity_notification(Context,
                                     ump::stream::device_identity_notification const &) override { /* do nothing */ }
-  void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) override { /* do nothing */
-  }
-  void product_instance_id_notification(
-      Context, ump::stream::product_instance_id_notification const &) override { /* do nothing */ }
+  void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) override { /* do nothing */ }
+  void product_instance_id_notification(Context, ump::stream::product_instance_id_notification const &) override { /* do nothing */ }
   void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) override { /* do nothing */ }
-  void jr_configuration_notification(Context,
-                                     ump::stream::jr_configuration_notification const &) override { /* do nothing */ }
+  void jr_configuration_notification(Context, ump::stream::jr_configuration_notification const &) override { /* do nothing */ }
 
   void function_block_discovery(Context, ump::stream::function_block_discovery const &) override { /* do nothing */ }
-  void function_block_info_notification(
-      Context, ump::stream::function_block_info_notification const &) override { /* do nothing */ }
-  void function_block_name_notification(
-      Context, ump::stream::function_block_name_notification const &) override { /* do nothing */ }
+  void function_block_info_notification(Context, ump::stream::function_block_info_notification const &) override { /* do nothing */ }
+  void function_block_name_notification(Context, ump::stream::function_block_name_notification const &) override { /* do nothing */ }
 
   void start_of_clip(Context, ump::stream::start_of_clip const &) override { /* do nothing */ }
   void end_of_clip(Context, ump::stream::end_of_clip const &) override { /* do nothing */ }
@@ -511,22 +506,6 @@ template <typename Context> struct flex_data_base : public flex_data_pure<Contex
   void set_chord_name(Context, ump::flex_data::set_chord_name const &) override { /* do nothing */ }
   void text(Context, ump::flex_data::text_common const &) override { /* do nothing */ }
 };
-
-namespace details {
-
-template <typename Function, typename Context> void call(Function const &function, Context &&context) {
-  if (function) {
-    function(std::forward<Context>(context));
-  }
-}
-template <typename Function, typename Context, typename Argument>
-void call(Function const &function, Context &&context, Argument &&argument) {
-  if (function) {
-    function(std::forward<Context>(context), std::forward<Argument>(argument));
-  }
-}
-
-}  // end namespace details
 
 template <typename Context> class utility_function {
 public:
@@ -562,18 +541,16 @@ public:
     return *this;
   }
 
-  void noop(Context context) { details::call(noop_, context); }
-  void jr_clock(Context context, ump::utility::jr_clock const &clock) { details::call(jr_clock_, context, clock); }
-  void jr_timestamp(Context context, ump::utility::jr_timestamp const &ts) {
-    details::call(jr_timestamp_, context, ts);
+  void noop(Context context) const { call(noop_, context); }
+  void jr_clock(Context context, ump::utility::jr_clock const &clock) const { call(jr_clock_, context, clock); }
+  void jr_timestamp(Context context, ump::utility::jr_timestamp const &ts) const { call(jr_timestamp_, context, ts); }
+  void delta_clockstamp_tpqn(Context context, ump::utility::delta_clockstamp_tpqn const &time) const {
+    call(delta_clockstamp_tpqn_, context, time);
   }
-  void delta_clockstamp_tpqn(Context context, ump::utility::delta_clockstamp_tpqn const &time) {
-    details::call(delta_clockstamp_tpqn_, context, time);
+  void delta_clockstamp(Context context, ump::utility::delta_clockstamp const &time) const {
+    call(delta_clockstamp_, context, time);
   }
-  void delta_clockstamp(Context context, ump::utility::delta_clockstamp const &time) {
-    details::call(delta_clockstamp_, context, time);
-  }
-  void unknown(Context context, std::span<std::uint32_t> data) { details::call(unknown_, context, data); }
+  void unknown(Context context, std::span<std::uint32_t> data) const { call(unknown_, context, data); }
 
 private:
   noop_fn noop_;
@@ -641,30 +618,28 @@ public:
   }
 
   // 7.6 System Common and System Real Time Messages
-  void midi_time_code(Context context, ump::system::midi_time_code const &mtc) {
-    details::call(midi_time_code_, context, mtc);
+  void midi_time_code(Context context, ump::system::midi_time_code const &mtc) const {
+    call(midi_time_code_, context, mtc);
   }
-  void song_position_pointer(Context context, ump::system::song_position_pointer const &spp) {
-    details::call(song_position_pointer_, context, spp);
+  void song_position_pointer(Context context, ump::system::song_position_pointer const &spp) const {
+    call(song_position_pointer_, context, spp);
   }
-  void song_select(Context context, ump::system::song_select const &song) {
-    details::call(song_select_, context, song);
+  void song_select(Context context, ump::system::song_select const &song) const { call(song_select_, context, song); }
+  void tune_request(Context context, ump::system::tune_request const &request) const {
+    call(tune_request_, context, request);
   }
-  void tune_request(Context context, ump::system::tune_request const &request) {
-    details::call(tune_request_, context, request);
+  void timing_clock(Context context, ump::system::timing_clock const &clock) const {
+    call(timing_clock_, context, clock);
   }
-  void timing_clock(Context context, ump::system::timing_clock const &clock) {
-    details::call(timing_clock_, context, clock);
+  void seq_start(Context context, ump::system::sequence_start const &ss) const { call(seq_start_, context, ss); }
+  void seq_continue(Context context, ump::system::sequence_continue const &sc) const {
+    call(seq_continue_, context, sc);
   }
-  void seq_start(Context context, ump::system::sequence_start const &ss) { details::call(seq_start_, context, ss); }
-  void seq_continue(Context context, ump::system::sequence_continue const &sc) {
-    details::call(seq_continue_, context, sc);
+  void seq_stop(Context context, ump::system::sequence_stop const &ss) const { call(seq_stop_, context, ss); }
+  void active_sensing(Context context, ump::system::active_sensing const &as) const {
+    call(active_sensing_, context, as);
   }
-  void seq_stop(Context context, ump::system::sequence_stop const &ss) { details::call(seq_stop_, context, ss); }
-  void active_sensing(Context context, ump::system::active_sensing const &as) {
-    details::call(active_sensing_, context, as);
-  }
-  void reset(Context context, ump::system::reset const &r) { details::call(reset_, context, r); }
+  void reset(Context context, ump::system::reset const &r) const { call(reset_, context, r); }
 
 private:
   midi_time_code_fn midi_time_code_;
@@ -720,21 +695,21 @@ public:
     return *this;
   }
 
-  void note_off(Context context, ump::m1cvm::note_off const &noff) { details::call(note_off_, context, noff); }
-  void note_on(Context context, ump::m1cvm::note_on const &non) { details::call(note_on_, context, non); }
-  void poly_pressure(Context context, ump::m1cvm::poly_pressure const &pressure) {
-    details::call(poly_pressure_, context, pressure);
+  void note_off(Context context, ump::m1cvm::note_off const &noff) const { call(note_off_, context, noff); }
+  void note_on(Context context, ump::m1cvm::note_on const &non) const { call(note_on_, context, non); }
+  void poly_pressure(Context context, ump::m1cvm::poly_pressure const &pressure) const {
+    call(poly_pressure_, context, pressure);
   }
-  void control_change(Context context, ump::m1cvm::control_change const &cc) {
-    details::call(control_change_, context, cc);
+  void control_change(Context context, ump::m1cvm::control_change const &cc) const {
+    call(control_change_, context, cc);
   }
-  void program_change(Context context, ump::m1cvm::program_change const &program) {
-    details::call(program_change_, context, program);
+  void program_change(Context context, ump::m1cvm::program_change const &program) const {
+    call(program_change_, context, program);
   }
-  void channel_pressure(Context context, ump::m1cvm::channel_pressure const &pressure) {
-    details::call(channel_pressure_, context, pressure);
+  void channel_pressure(Context context, ump::m1cvm::channel_pressure const &pressure) const {
+    call(channel_pressure_, context, pressure);
   }
-  void pitch_bend(Context context, ump::m1cvm::pitch_bend const &bend) { details::call(pitch_bend_, context, bend); }
+  void pitch_bend(Context context, ump::m1cvm::pitch_bend const &bend) const { call(pitch_bend_, context, bend); }
 
 private:
   note_off_fn note_off_;
@@ -772,12 +747,12 @@ public:
     return *this;
   }
 
-  void sysex7_in_1(Context context, ump::data64::sysex7_in_1 const &sx) { details::call(sysex7_in_1_, context, sx); }
-  void sysex7_start(Context context, ump::data64::sysex7_start const &sx) { details::call(sysex7_start_, context, sx); }
-  void sysex7_continue(Context context, ump::data64::sysex7_continue const &sx) {
-    details::call(sysex7_continue_, context, sx);
+  void sysex7_in_1(Context context, ump::data64::sysex7_in_1 const &sx) const { call(sysex7_in_1_, context, sx); }
+  void sysex7_start(Context context, ump::data64::sysex7_start const &sx) const { call(sysex7_start_, context, sx); }
+  void sysex7_continue(Context context, ump::data64::sysex7_continue const &sx) const {
+    call(sysex7_continue_, context, sx);
   }
-  void sysex7_end(Context context, ump::data64::sysex7_end const &sx) { details::call(sysex7_end_, context, sx); }
+  void sysex7_end(Context context, ump::data64::sysex7_end const &sx) const { call(sysex7_end_, context, sx); }
 
 private:
   sysex7_in_1_fn sysex7_in_1_;
@@ -867,44 +842,44 @@ public:
     return *this;
   }
 
-  void note_off(Context context, ump::m2cvm::note_off const &noff) { details::call(note_off_, context, noff); }
-  void note_on(Context context, ump::m2cvm::note_on const &non) { details::call(note_on_, context, non); }
-  void poly_pressure(Context context, ump::m2cvm::poly_pressure const &pressure) {
-    details::call(poly_pressure_, context, pressure);
+  void note_off(Context context, ump::m2cvm::note_off const &noff) const { call(note_off_, context, noff); }
+  void note_on(Context context, ump::m2cvm::note_on const &non) const { call(note_on_, context, non); }
+  void poly_pressure(Context context, ump::m2cvm::poly_pressure const &pressure) const {
+    call(poly_pressure_, context, pressure);
   }
-  void program_change(Context context, ump::m2cvm::program_change const &program) {
-    details::call(program_change_, context, program);
+  void program_change(Context context, ump::m2cvm::program_change const &program) const {
+    call(program_change_, context, program);
   }
-  void channel_pressure(Context context, ump::m2cvm::channel_pressure const &pressure) {
-    details::call(channel_pressure_, context, pressure);
+  void channel_pressure(Context context, ump::m2cvm::channel_pressure const &pressure) const {
+    call(channel_pressure_, context, pressure);
   }
-  void rpn_per_note_controller(Context context, ump::m2cvm::rpn_per_note_controller const &rpn) {
-    details::call(rpn_per_note_controller_, context, rpn);
+  void rpn_per_note_controller(Context context, ump::m2cvm::rpn_per_note_controller const &rpn) const {
+    call(rpn_per_note_controller_, context, rpn);
   }
-  void nrpn_per_note_controller(Context context, ump::m2cvm::nrpn_per_note_controller const &nrpn) {
-    details::call(nrpn_per_note_controller_, context, nrpn);
+  void nrpn_per_note_controller(Context context, ump::m2cvm::nrpn_per_note_controller const &nrpn) const {
+    call(nrpn_per_note_controller_, context, nrpn);
   }
-  void rpn_controller(Context context, ump::m2cvm::rpn_controller const &rpn) {
-    details::call(rpn_controller_, context, rpn);
+  void rpn_controller(Context context, ump::m2cvm::rpn_controller const &rpn) const {
+    call(rpn_controller_, context, rpn);
   }
-  void nrpn_controller(Context context, ump::m2cvm::nrpn_controller const &nrpn) {
-    details::call(nrpn_controller_, context, nrpn);
+  void nrpn_controller(Context context, ump::m2cvm::nrpn_controller const &nrpn) const {
+    call(nrpn_controller_, context, nrpn);
   }
-  void rpn_relative_controller(Context context, ump::m2cvm::rpn_relative_controller const &rpn) {
-    details::call(rpn_relative_controller_, context, rpn);
+  void rpn_relative_controller(Context context, ump::m2cvm::rpn_relative_controller const &rpn) const {
+    call(rpn_relative_controller_, context, rpn);
   }
-  void nrpn_relative_controller(Context context, ump::m2cvm::nrpn_relative_controller const &nrpn) {
-    details::call(nrpn_relative_controller_, context, nrpn);
+  void nrpn_relative_controller(Context context, ump::m2cvm::nrpn_relative_controller const &nrpn) const {
+    call(nrpn_relative_controller_, context, nrpn);
   }
-  void per_note_management(Context context, ump::m2cvm::per_note_management const &pnm) {
-    details::call(per_note_management_, context, pnm);
+  void per_note_management(Context context, ump::m2cvm::per_note_management const &pnm) const {
+    call(per_note_management_, context, pnm);
   }
-  void control_change(Context context, ump::m2cvm::control_change const &cc) {
-    details::call(control_change_, context, cc);
+  void control_change(Context context, ump::m2cvm::control_change const &cc) const {
+    call(control_change_, context, cc);
   }
-  void pitch_bend(Context context, ump::m2cvm::pitch_bend const &pb) { details::call(pitch_bend_, context, pb); }
-  void per_note_pitch_bend(Context context, ump::m2cvm::per_note_pitch_bend const &pb) {
-    details::call(per_note_pitch_bend_, context, pb);
+  void pitch_bend(Context context, ump::m2cvm::pitch_bend const &pb) const { call(pitch_bend_, context, pb); }
+  void per_note_pitch_bend(Context context, ump::m2cvm::per_note_pitch_bend const &pb) const {
+    call(per_note_pitch_bend_, context, pb);
   }
 
 private:
@@ -961,20 +936,18 @@ public:
     return *this;
   }
 
-  void sysex8_in_1(Context context, ump::data128::sysex8_in_1 const &sysex) {
-    details::call(sysex8_in_1_, context, sysex);
+  void sysex8_in_1(Context context, ump::data128::sysex8_in_1 const &sysex) const {
+    call(sysex8_in_1_, context, sysex);
   }
-  void sysex8_start(Context context, ump::data128::sysex8_start const &sysex) {
-    details::call(sysex8_start_, context, sysex);
+  void sysex8_start(Context context, ump::data128::sysex8_start const &sysex) const {
+    call(sysex8_start_, context, sysex);
   }
-  void sysex8_continue(Context context, ump::data128::sysex8_continue const &sysex) {
-    details::call(sysex8_continue_, context, sysex);
+  void sysex8_continue(Context context, ump::data128::sysex8_continue const &sysex) const {
+    call(sysex8_continue_, context, sysex);
   }
-  void sysex8_end(Context context, ump::data128::sysex8_end const &sysex) {
-    details::call(sysex8_end_, context, sysex);
-  }
-  void mds_header(Context context, ump::data128::mds_header const &mds) { details::call(mds_header_, context, mds); }
-  void mds_payload(Context context, ump::data128::mds_payload const &mds) { details::call(mds_payload_, context, mds); }
+  void sysex8_end(Context context, ump::data128::sysex8_end const &sysex) const { call(sysex8_end_, context, sysex); }
+  void mds_header(Context context, ump::data128::mds_header const &mds) const { call(mds_header_, context, mds); }
+  void mds_payload(Context context, ump::data128::mds_payload const &mds) const { call(mds_payload_, context, mds); }
 
 private:
   sysex8_in_1_fn sysex8_in_1_;
@@ -1059,45 +1032,43 @@ public:
     return *this;
   }
 
-  void endpoint_discovery(Context context, ump::stream::endpoint_discovery const &discovery) {
-    details::call(endpoint_discovery_, context, discovery);
+  void endpoint_discovery(Context context, ump::stream::endpoint_discovery const &discovery) const {
+    call(endpoint_discovery_, context, discovery);
   }
-  void endpoint_info_notification(Context context, ump::stream::endpoint_info_notification const &notification) {
-    details::call(endpoint_info_notification_, context, notification);
+  void endpoint_info_notification(Context context, ump::stream::endpoint_info_notification const &notification) const {
+    call(endpoint_info_notification_, context, notification);
   }
-  void device_identity_notification(Context context, ump::stream::device_identity_notification const &notification) {
-    details::call(device_identity_notification_, context, notification);
+  void device_identity_notification(Context context, ump::stream::device_identity_notification const &notification) const {
+    call(device_identity_notification_, context, notification);
   }
-  void endpoint_name_notification(Context context, ump::stream::endpoint_name_notification const &notification) {
-    details::call(endpoint_name_notification_, context, notification);
+  void endpoint_name_notification(Context context, ump::stream::endpoint_name_notification const &notification) const {
+    call(endpoint_name_notification_, context, notification);
   }
   void product_instance_id_notification(Context context,
-                                        ump::stream::product_instance_id_notification const &notification) {
-    details::call(product_instance_id_notification_, context, notification);
+                                        ump::stream::product_instance_id_notification const &notification) const {
+    call(product_instance_id_notification_, context, notification);
   }
-  void jr_configuration_request(Context context, ump::stream::jr_configuration_request const &request) {
-    details::call(jr_configuration_request_, context, request);
+  void jr_configuration_request(Context context, ump::stream::jr_configuration_request const &request) const {
+    call(jr_configuration_request_, context, request);
   }
-  void jr_configuration_notification(Context context, ump::stream::jr_configuration_notification const &notification) {
-    details::call(jr_configuration_notification_, context, notification);
+  void jr_configuration_notification(Context context, ump::stream::jr_configuration_notification const &notification) const {
+    call(jr_configuration_notification_, context, notification);
   }
-  void function_block_discovery(Context context, ump::stream::function_block_discovery const &discovery) {
-    details::call(function_block_discovery_, context, discovery);
+  void function_block_discovery(Context context, ump::stream::function_block_discovery const &discovery) const {
+    call(function_block_discovery_, context, discovery);
   }
   void function_block_info_notification(Context context,
-                                        ump::stream::function_block_info_notification const &notification) {
-    details::call(function_block_info_notification_, context, notification);
+                                        ump::stream::function_block_info_notification const &notification) const {
+    call(function_block_info_notification_, context, notification);
   }
   void function_block_name_notification(Context context,
-                                        ump::stream::function_block_name_notification const &notification) {
-    details::call(function_block_name_notification_, context, notification);
+                                        ump::stream::function_block_name_notification const &notification) const {
+    call(function_block_name_notification_, context, notification);
   }
-  void start_of_clip(Context context, ump::stream::start_of_clip const &clip) {
-    details::call(start_of_clip_, context, clip);
+  void start_of_clip(Context context, ump::stream::start_of_clip const &clip) const {
+    call(start_of_clip_, context, clip);
   }
-  void end_of_clip(Context context, ump::stream::end_of_clip const &clip) {
-    details::call(end_of_clip_, context, clip);
-  }
+  void end_of_clip(Context context, ump::stream::end_of_clip const &clip) const { call(end_of_clip_, context, clip); }
 
 private:
   endpoint_discovery_fn endpoint_discovery_;
@@ -1152,20 +1123,20 @@ public:
     return *this;
   }
 
-  void set_tempo(Context context, ump::flex_data::set_tempo const &tempo) { details::call(set_tempo_, context, tempo); }
-  void set_time_signature(Context context, ump::flex_data::set_time_signature const &ts) {
-    details::call(set_time_signature_, context, ts);
+  void set_tempo(Context context, ump::flex_data::set_tempo const &tempo) const { call(set_tempo_, context, tempo); }
+  void set_time_signature(Context context, ump::flex_data::set_time_signature const &ts) const {
+    call(set_time_signature_, context, ts);
   }
-  void set_metronome(Context context, ump::flex_data::set_metronome const &metronome) {
-    details::call(set_metronome_, context, metronome);
+  void set_metronome(Context context, ump::flex_data::set_metronome const &metronome) const {
+    call(set_metronome_, context, metronome);
   }
-  void set_key_signature(Context context, ump::flex_data::set_key_signature const &ks) {
-    details::call(set_key_signature_, context, ks);
+  void set_key_signature(Context context, ump::flex_data::set_key_signature const &ks) const {
+    call(set_key_signature_, context, ks);
   }
-  void set_chord_name(Context context, ump::flex_data::set_chord_name const &chord) {
-    details::call(set_chord_name_, context, chord);
+  void set_chord_name(Context context, ump::flex_data::set_chord_name const &chord) const {
+    call(set_chord_name_, context, chord);
   }
-  void text(Context context, ump::flex_data::text_common const &t) { details::call(text_, context, t); }
+  void text(Context context, ump::flex_data::text_common const &t) const { call(text_, context, t); }
 
 private:
   set_tempo_fn set_tempo_;
@@ -1180,4 +1151,4 @@ static_assert(flex_data<flex_data_function<int>, int>, "flex_data_function must 
 
 }  // end namespace midi2::ump::dispatcher_backend
 
-#endif  // MIDI2_DISPATCHER_BACKEND_HPP
+#endif  // MIDI2_UMP_DISPATCHER_BACKEND_HPP

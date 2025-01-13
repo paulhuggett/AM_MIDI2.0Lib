@@ -129,70 +129,84 @@ using testing::IsEmpty;
 using testing::Return;
 using testing::StrictMock;
 
-using midi2::midi_ci;
 using midi2::ci::byte_array_5;
 using midi2::ci::from_le7;
+using midi2::ci::midi_ci;
 
-class mock_management_callbacks : public midi2::management_callbacks {
-public:
-  MOCK_METHOD(bool, check_muid, (std::uint8_t group, std::uint32_t muid), (override));
-
-  MOCK_METHOD(void, discovery, (midi_ci const &, midi2::ci::discovery const &), (override));
-  MOCK_METHOD(void, discovery_reply, (midi_ci const &, midi2::ci::discovery_reply const &), (override));
-  MOCK_METHOD(void, endpoint_info, (midi_ci const &, midi2::ci::endpoint_info const &), (override));
-  MOCK_METHOD(void, endpoint_info_reply, (midi_ci const &, midi2::ci::endpoint_info_reply const &), (override));
-  MOCK_METHOD(void, invalidate_muid, (midi_ci const &, midi2::ci::invalidate_muid const &), (override));
-  MOCK_METHOD(void, ack, (midi_ci const &, midi2::ci::ack const &), (override));
-  MOCK_METHOD(void, nak, (midi_ci const &, midi2::ci::nak const &), (override));
-
-  MOCK_METHOD(void, buffer_overflow, (), (override));
-  MOCK_METHOD(void, unknown_midici, (midi_ci const &), (override));
+struct context_type {
+  constexpr bool operator==(context_type const &) const noexcept = default;
 };
 
-class mock_profile_callbacks : public midi2::profile_callbacks {
+class mock_management_callbacks : public midi2::ci::dispatcher_backend::management_pure<context_type> {
 public:
-  MOCK_METHOD(void, inquiry, (midi_ci const &), (override));
-  MOCK_METHOD(void, inquiry_reply, (midi_ci const &, midi2::ci::profile_configuration::inquiry_reply const &),
+  MOCK_METHOD(bool, check_muid, (context_type, std::uint8_t group, std::uint32_t muid), (override));
+  MOCK_METHOD(void, buffer_overflow, (context_type), (override));
+  MOCK_METHOD(void, unknown_midici, (context_type, midi_ci const &), (override));
+
+  MOCK_METHOD(void, discovery, (context_type, midi_ci const &, midi2::ci::discovery const &), (override));
+  MOCK_METHOD(void, discovery_reply, (context_type, midi_ci const &, midi2::ci::discovery_reply const &), (override));
+  MOCK_METHOD(void, endpoint_info, (context_type, midi_ci const &, midi2::ci::endpoint_info const &), (override));
+  MOCK_METHOD(void, endpoint_info_reply, (context_type, midi_ci const &, midi2::ci::endpoint_info_reply const &),
               (override));
-  MOCK_METHOD(void, added, (midi_ci const &, midi2::ci::profile_configuration::added const &), (override));
-  MOCK_METHOD(void, removed, (midi_ci const &, midi2::ci::profile_configuration::removed const &), (override));
-  MOCK_METHOD(void, details, (midi_ci const &, midi2::ci::profile_configuration::details const &), (override));
-  MOCK_METHOD(void, details_reply, (midi_ci const &, midi2::ci::profile_configuration::details_reply const &),
-              (override));
-  MOCK_METHOD(void, on, (midi_ci const &, midi2::ci::profile_configuration::on const &), (override));
-  MOCK_METHOD(void, off, (midi_ci const &, midi2::ci::profile_configuration::off const &), (override));
-  MOCK_METHOD(void, enabled, (midi_ci const &, midi2::ci::profile_configuration::enabled const &), (override));
-  MOCK_METHOD(void, disabled, (midi_ci const &, midi2::ci::profile_configuration::disabled const &), (override));
-  MOCK_METHOD(void, specific_data, (midi_ci const &, midi2::ci::profile_configuration::specific_data const &),
-              (override));
+  MOCK_METHOD(void, invalidate_muid, (context_type, midi_ci const &, midi2::ci::invalidate_muid const &), (override));
+  MOCK_METHOD(void, ack, (context_type, midi_ci const &, midi2::ci::ack const &), (override));
+  MOCK_METHOD(void, nak, (context_type, midi_ci const &, midi2::ci::nak const &), (override));
 };
 
-class mock_property_exchange_callbacks : public midi2::property_exchange_callbacks {
+class mock_profile_callbacks : public midi2::ci::dispatcher_backend::profile_pure<context_type> {
 public:
-  MOCK_METHOD(void, capabilities, (midi_ci const &, midi2::ci::property_exchange::capabilities const &), (override));
-  MOCK_METHOD(void, capabilities_reply, (midi_ci const &, midi2::ci::property_exchange::capabilities_reply const &),
+  MOCK_METHOD(void, inquiry, (context_type, midi_ci const &), (override));
+  MOCK_METHOD(void, inquiry_reply,
+              (context_type, midi_ci const &, midi2::ci::profile_configuration::inquiry_reply const &), (override));
+  MOCK_METHOD(void, added, (context_type, midi_ci const &, midi2::ci::profile_configuration::added const &),
               (override));
-
-  MOCK_METHOD(void, get, (midi_ci const &, midi2::ci::property_exchange::get const &), (override));
-  MOCK_METHOD(void, get_reply, (midi_ci const &, midi2::ci::property_exchange::get_reply const &), (override));
-  MOCK_METHOD(void, set, (midi_ci const &, midi2::ci::property_exchange::set const &), (override));
-  MOCK_METHOD(void, set_reply, (midi_ci const &, midi2::ci::property_exchange::set_reply const &), (override));
-  MOCK_METHOD(void, subscription, (midi_ci const &, midi2::ci::property_exchange::subscription const &), (override));
-  MOCK_METHOD(void, subscription_reply, (midi_ci const &, midi2::ci::property_exchange::subscription_reply const &),
+  MOCK_METHOD(void, removed, (context_type, midi_ci const &, midi2::ci::profile_configuration::removed const &),
               (override));
-  MOCK_METHOD(void, notify, (midi_ci const &, midi2::ci::property_exchange::notify const &), (override));
+  MOCK_METHOD(void, details, (context_type, midi_ci const &, midi2::ci::profile_configuration::details const &),
+              (override));
+  MOCK_METHOD(void, details_reply,
+              (context_type, midi_ci const &, midi2::ci::profile_configuration::details_reply const &), (override));
+  MOCK_METHOD(void, on, (context_type, midi_ci const &, midi2::ci::profile_configuration::on const &), (override));
+  MOCK_METHOD(void, off, (context_type, midi_ci const &, midi2::ci::profile_configuration::off const &), (override));
+  MOCK_METHOD(void, enabled, (context_type, midi_ci const &, midi2::ci::profile_configuration::enabled const &),
+              (override));
+  MOCK_METHOD(void, disabled, (context_type, midi_ci const &, midi2::ci::profile_configuration::disabled const &),
+              (override));
+  MOCK_METHOD(void, specific_data,
+              (context_type, midi_ci const &, midi2::ci::profile_configuration::specific_data const &), (override));
 };
 
-class mock_process_inquiry_callbacks : public midi2::process_inquiry_callbacks {
+class mock_property_exchange_callbacks : public midi2::ci::dispatcher_backend::property_exchange_pure<context_type> {
 public:
-  MOCK_METHOD(void, capabilities, (midi_ci const &), (override));
-  MOCK_METHOD(void, capabilities_reply, (midi_ci const &, midi2::ci::process_inquiry::capabilities_reply const &),
+  MOCK_METHOD(void, capabilities, (context_type, midi_ci const &, midi2::ci::property_exchange::capabilities const &),
               (override));
-  MOCK_METHOD(void, midi_message_report, (midi_ci const &, midi2::ci::process_inquiry::midi_message_report const &),
+  MOCK_METHOD(void, capabilities_reply,
+              (context_type, midi_ci const &, midi2::ci::property_exchange::capabilities_reply const &), (override));
+
+  MOCK_METHOD(void, get, (context_type, midi_ci const &, midi2::ci::property_exchange::get const &), (override));
+  MOCK_METHOD(void, get_reply, (context_type, midi_ci const &, midi2::ci::property_exchange::get_reply const &),
               (override));
+  MOCK_METHOD(void, set, (context_type, midi_ci const &, midi2::ci::property_exchange::set const &), (override));
+  MOCK_METHOD(void, set_reply, (context_type, midi_ci const &, midi2::ci::property_exchange::set_reply const &),
+              (override));
+  MOCK_METHOD(void, subscription, (context_type, midi_ci const &, midi2::ci::property_exchange::subscription const &),
+              (override));
+  MOCK_METHOD(void, subscription_reply,
+              (context_type, midi_ci const &, midi2::ci::property_exchange::subscription_reply const &), (override));
+  MOCK_METHOD(void, notify, (context_type, midi_ci const &, midi2::ci::property_exchange::notify const &), (override));
+};
+
+class mock_process_inquiry_callbacks : public midi2::ci::dispatcher_backend::process_inquiry_pure<context_type> {
+public:
+  MOCK_METHOD(void, capabilities, (context_type, midi_ci const &), (override));
+  MOCK_METHOD(void, capabilities_reply,
+              (context_type, midi_ci const &, midi2::ci::process_inquiry::capabilities_reply const &), (override));
+  MOCK_METHOD(void, midi_message_report,
+              (context_type, midi_ci const &, midi2::ci::process_inquiry::midi_message_report const &), (override));
   MOCK_METHOD(void, midi_message_report_reply,
-              (midi_ci const &, midi2::ci::process_inquiry::midi_message_report_reply const &), (override));
-  MOCK_METHOD(void, midi_message_report_end, (midi_ci const &), (override));
+              (context_type, midi_ci const &, midi2::ci::process_inquiry::midi_message_report_reply const &),
+              (override));
+  MOCK_METHOD(void, midi_message_report_end, (context_type, midi_ci const &), (override));
 };
 
 constexpr auto broadcast_muid = std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
@@ -203,13 +217,14 @@ public:
 
 protected:
   struct mocked_config {
+    context_type context;
     StrictMock<mock_management_callbacks> management;
     StrictMock<mock_profile_callbacks> profile;
     StrictMock<mock_property_exchange_callbacks> property_exchange;
     StrictMock<mock_process_inquiry_callbacks> process_inquiry;
   };
   mocked_config config_;
-  midi2::ci_dispatcher<mocked_config &> processor_;
+  midi2::ci::ci_dispatcher<mocked_config &> processor_;
 
   static constexpr auto sender_muid_ =
       from_le7(std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}});
@@ -254,7 +269,7 @@ TEST_F(CIDispatcher, DiscoveryV1) {
   discovery.capability = std::uint8_t{0x7F};
   discovery.max_sysex_size = (1 << (7 * 4)) - 1;
 
-  EXPECT_CALL(config_.management, discovery(midici, discovery)).Times(1);
+  EXPECT_CALL(config_.management, discovery(config_.context, midici, discovery)).Times(1);
   this->dispatch_ci(midici, discovery);
 }
 // NOLINTNEXTLINE
@@ -277,7 +292,7 @@ TEST_F(CIDispatcher, DiscoveryV2) {
   discovery.max_sysex_size = from_le7(std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}});
   discovery.output_path_id = std::uint8_t{0x71};
 
-  EXPECT_CALL(config_.management, discovery(midici, discovery)).Times(1);
+  EXPECT_CALL(config_.management, discovery(config_.context, midici, discovery)).Times(1);
   this->dispatch_ci(midici, discovery);
 }
 // NOLINTNEXTLINE
@@ -310,7 +325,7 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
   reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
   reply.function_block = static_cast<std::uint8_t>(function_block);
 
-  EXPECT_CALL(config_.management, discovery_reply(midici, reply)).Times(1);
+  EXPECT_CALL(config_.management, discovery_reply(config_.context, midici, reply)).Times(1);
   this->dispatch_ci(midici, reply);
 }
 // NOLINTNEXTLINE
@@ -331,8 +346,9 @@ TEST_F(CIDispatcher, EndpointInfo) {
   midi2::ci::endpoint_info endpoint_info;
   endpoint_info.status = status;
 
-  EXPECT_CALL(config_.management, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management, endpoint_info(midici, endpoint_info)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, endpoint_info(config_.context, midici, endpoint_info)).Times(1);
 
   this->dispatch_ci(midici, endpoint_info);
 }
@@ -359,11 +375,12 @@ TEST_F(CIDispatcher, EndpointInfoReply) {
   reply.status = status;
   reply.information = information;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management,
-              endpoint_info_reply(midici, AllOf(Field("status", &midi2::ci::endpoint_info_reply::status, Eq(status)),
-                                                Field("information", &midi2::ci::endpoint_info_reply::information,
-                                                      ElementsAreArray(information)))))
+              endpoint_info_reply(config_.context, midici,
+                                  AllOf(Field("status", &midi2::ci::endpoint_info_reply::status, Eq(status)),
+                                        Field("information", &midi2::ci::endpoint_info_reply::information,
+                                              ElementsAreArray(information)))))
       .Times(1);
 
   this->dispatch_ci(midici, reply);
@@ -386,8 +403,9 @@ TEST_F(CIDispatcher, InvalidateMuid) {
   midi2::ci::invalidate_muid invalidate_muid;
   invalidate_muid.target_muid = from_le7(target_muid);
 
-  EXPECT_CALL(config_.management, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management, invalidate_muid(midici, invalidate_muid)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, invalidate_muid(config_.context, midici, invalidate_muid)).Times(1);
 
   this->dispatch_ci(midici, invalidate_muid);
 }
@@ -419,13 +437,13 @@ TEST_F(CIDispatcher, Ack) {
   ack.details = ack_details;
   ack.message = text;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management,
-              ack(midici, AllOf(Field("original_id", &midi2::ci::ack::original_id, Eq(original_id)),
-                                Field("status_code", &midi2::ci::ack::status_code, Eq(ack_status_code)),
-                                Field("status_data", &midi2::ci::ack::status_data, Eq(ack_status_data)),
-                                Field("details", &midi2::ci::ack::details, ElementsAreArray(ack_details)),
-                                Field("message", &midi2::ci::ack::message, ElementsAreArray(text)))))
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, ack(config_.context, midici,
+                                      AllOf(Field("original_id", &midi2::ci::ack::original_id, Eq(original_id)),
+                                            Field("status_code", &midi2::ci::ack::status_code, Eq(ack_status_code)),
+                                            Field("status_data", &midi2::ci::ack::status_data, Eq(ack_status_data)),
+                                            Field("details", &midi2::ci::ack::details, ElementsAreArray(ack_details)),
+                                            Field("message", &midi2::ci::ack::message, ElementsAreArray(text)))))
       .Times(1);
 
   this->dispatch_ci(midici, ack);
@@ -455,8 +473,8 @@ TEST_F(CIDispatcher, AckMessageTooLong) {
   ack.details = std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
   ack.message = text;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management, buffer_overflow()).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, buffer_overflow(config_.context)).Times(1);
 
   this->dispatch_ci(midici, ack);
 }
@@ -477,12 +495,13 @@ TEST_F(CIDispatcher, NakV1) {
 
   midi2::ci::nak nak;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management, nak(midici, AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
-                                                    Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
-                                                    Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
-                                                    Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
-                                                    Field("message", &midi2::ci::nak::message, IsEmpty()))))
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, nak(config_.context, midici,
+                                      AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
+                                            Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
+                                            Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
+                                            Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
+                                            Field("message", &midi2::ci::nak::message, IsEmpty()))))
       .Times(1);
 
   this->dispatch_ci(midici, nak);
@@ -515,13 +534,14 @@ TEST_F(CIDispatcher, NakV2) {
   nak.details = nak_details;
   nak.message = text;
 
-  EXPECT_CALL(config_.management, check_muid(group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management,
-              nak(midici, AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(original_id)),
-                                Field("status_code", &midi2::ci::nak::status_code, Eq(nak_status_code)),
-                                Field("status_data", &midi2::ci::nak::status_data, Eq(nak_status_data)),
-                                Field("details", &midi2::ci::nak::details, ElementsAreArray(nak_details)),
-                                Field("message", &midi2::ci::nak::message, ElementsAreArray(text)))))
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, nak(config_.context, midici,
+                                      AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(original_id)),
+                                            Field("status_code", &midi2::ci::nak::status_code, Eq(nak_status_code)),
+                                            Field("status_data", &midi2::ci::nak::status_data, Eq(nak_status_data)),
+                                            Field("details", &midi2::ci::nak::details, ElementsAreArray(nak_details)),
+                                            Field("message", &midi2::ci::nak::message, ElementsAreArray(text)))))
       .Times(1);
 
   this->dispatch_ci(midici, nak);
@@ -540,8 +560,8 @@ TEST_F(CIDispatcher, ProfileInquiry) {
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = receiver_muid;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.profile, inquiry(midici)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.profile, inquiry(config_.context, midici)).Times(1);
 
   this->dispatch_ci(midici, midi2::ci::profile_configuration::inquiry{});
 }
@@ -567,11 +587,12 @@ TEST_F(CIDispatcher, ProfileInquiryReply) {
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = receiver_muid;
 
-  EXPECT_CALL(config_.management, check_muid(group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   using midi2::ci::profile_configuration::inquiry_reply;
   EXPECT_CALL(config_.profile,
-              inquiry_reply(midici, AllOf(Field("enabled", &inquiry_reply::enabled, ElementsAreArray(enabled)),
-                                          Field("disabled", &inquiry_reply::disabled, ElementsAreArray(disabled)))))
+              inquiry_reply(config_.context, midici,
+                            AllOf(Field("enabled", &inquiry_reply::enabled, ElementsAreArray(enabled)),
+                                  Field("disabled", &inquiry_reply::disabled, ElementsAreArray(disabled)))))
       .Times(1);
 
   this->dispatch_ci(midici, inquiry_reply{enabled, disabled});
@@ -589,7 +610,7 @@ TEST_F(CIDispatcher, ProfileAdded) {
   midi2::ci::profile_configuration::added added;
   added.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
-  EXPECT_CALL(config_.profile, added(midici, added)).Times(1);
+  EXPECT_CALL(config_.profile, added(config_.context, midici, added)).Times(1);
 
   this->dispatch_ci(midici, added);
 }
@@ -606,7 +627,7 @@ TEST_F(CIDispatcher, ProfileRemoved) {
   midi2::ci::profile_configuration::removed removed;
   removed.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
-  EXPECT_CALL(config_.profile, removed(midici, removed)).Times(1);
+  EXPECT_CALL(config_.profile, removed(config_.context, midici, removed)).Times(1);
 
   this->dispatch_ci(midici, removed);
 }
@@ -626,8 +647,8 @@ TEST_F(CIDispatcher, ProfileDetails) {
   details.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   details.target = 0x23;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.profile, details(midici, details)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.profile, details(config_.context, midici, details)).Times(1);
 
   this->dispatch_ci(midici, details);
 }
@@ -649,11 +670,11 @@ TEST_F(CIDispatcher, ProfileDetailsReply) {
 
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.profile,
-              details_reply(midici, AllOf(Field("pid", &details_reply::pid, Eq(pid)),
-                                          Field("target", &details_reply::target, Eq(target)),
-                                          Field("data", &details_reply::data, ElementsAreArray(data)))))
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.profile, details_reply(config_.context, midici,
+                                             AllOf(Field("pid", &details_reply::pid, Eq(pid)),
+                                                   Field("target", &details_reply::target, Eq(target)),
+                                                   Field("data", &details_reply::data, ElementsAreArray(data)))))
       .Times(1);
 
   this->dispatch_ci(midici, details_reply{pid, target, data});
@@ -674,8 +695,8 @@ TEST_F(CIDispatcher, ProfileOn) {
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
       std::uint16_t{23}};
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.profile, on(midici, on)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.profile, on(config_.context, midici, on)).Times(1);
 
   this->dispatch_ci(midici, on);
 }
@@ -694,8 +715,8 @@ TEST_F(CIDispatcher, ProfileOff) {
   constexpr midi2::ci::profile_configuration::off off{
       byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}}};
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.profile, off(midici, off)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.profile, off(config_.context, midici, off)).Times(1);
 
   this->dispatch_ci(midici, off);
 }
@@ -713,7 +734,7 @@ TEST_F(CIDispatcher, ProfileEnabled) {
   enabled.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   enabled.num_channels = 0x1122;
 
-  EXPECT_CALL(config_.profile, enabled(midici, enabled)).Times(1);
+  EXPECT_CALL(config_.profile, enabled(config_.context, midici, enabled)).Times(1);
 
   this->dispatch_ci(midici, enabled);
 }
@@ -731,7 +752,7 @@ TEST_F(CIDispatcher, ProfileDisabled) {
   disabled.pid = byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   disabled.num_channels = 0x123;
 
-  EXPECT_CALL(config_.profile, disabled(midici, disabled)).Times(1);
+  EXPECT_CALL(config_.profile, disabled(config_.context, midici, disabled)).Times(1);
 
   this->dispatch_ci(midici, disabled);
 }
@@ -752,9 +773,9 @@ TEST_F(CIDispatcher, ProfileSpecificData) {
   midici.params.local_muid = from_le7(broadcast_muid);
 
   using midi2::ci::profile_configuration::specific_data;
-  EXPECT_CALL(config_.profile,
-              specific_data(midici, AllOf(Field("pid", &specific_data::pid, Eq(pid)),
-                                          Field("data", &specific_data::data, ElementsAreArray(data)))))
+  EXPECT_CALL(config_.profile, specific_data(config_.context, midici,
+                                             AllOf(Field("pid", &specific_data::pid, Eq(pid)),
+                                                   Field("data", &specific_data::data, ElementsAreArray(data)))))
       .Times(1);
 
   this->dispatch_ci(midici, specific_data{pid, data});
@@ -775,8 +796,8 @@ TEST_F(CIDispatcher, PropertyExchangeCapabilities) {
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.property_exchange, capabilities(midici, caps)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.property_exchange, capabilities(config_.context, midici, caps)).Times(1);
 
   this->dispatch_ci(midici, caps);
 }
@@ -797,8 +818,8 @@ TEST_F(CIDispatcher, PropertyExchangeCapabilitiesReply) {
   caps.major_version = 3;
   caps.minor_version = 4;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.property_exchange, capabilities_reply(midici, caps)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.property_exchange, capabilities_reply(config_.context, midici, caps)).Times(1);
 
   this->dispatch_ci(midici, caps);
 }
@@ -824,10 +845,11 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyData) {
   g.request = std::uint8_t{1};
   g.header = R"({"status":200})"sv;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.property_exchange, get(midici, AllOf(Field("chunk", &get::chunk, Eq(g.chunk)),
-                                                           Field("request", &get::request, Eq(g.request)),
-                                                           Field("header", &get::header, ElementsAreArray(g.header)))));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.property_exchange,
+              get(config_.context, midici,
+                  AllOf(Field("chunk", &get::chunk, Eq(g.chunk)), Field("request", &get::request, Eq(g.request)),
+                        Field("header", &get::header, ElementsAreArray(g.header)))));
 
   this->dispatch_ci(midici, g);
 }
@@ -851,12 +873,13 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyDataReply) {
   gr.header = R"({"status":200})"sv;
   gr.data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])"sv;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
-              get_reply(midici, AllOf(Field("chunk", &get_reply::chunk, Eq(gr.chunk)),
-                                      Field("request", &get_reply::request, Eq(gr.request)),
-                                      Field("header", &get_reply::header, ElementsAreArray(gr.header)),
-                                      Field("data", &get_reply::data, ElementsAreArray(gr.data)))));
+              get_reply(config_.context, midici,
+                        AllOf(Field("chunk", &get_reply::chunk, Eq(gr.chunk)),
+                              Field("request", &get_reply::request, Eq(gr.request)),
+                              Field("header", &get_reply::header, ElementsAreArray(gr.header)),
+                              Field("data", &get_reply::data, ElementsAreArray(gr.data)))));
 
   this->dispatch_ci(midici, gr);
 }
@@ -880,11 +903,12 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyData) {
   spd.header = R"({"resource":"X-ProgramEdit","resId":"abcd"})"sv;
   spd.data = R"({"name":"Violin 2","lfoSpeed":10,"lfoWaveform":"sine"})"sv;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.property_exchange, set(midici, AllOf(Field("chunk", &set::chunk, Eq(spd.chunk)),
-                                                           Field("request", &set::request, Eq(spd.request)),
-                                                           Field("header", &set::header, ElementsAreArray(spd.header)),
-                                                           Field("data", &set::data, ElementsAreArray(spd.data)))));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.property_exchange,
+              set(config_.context, midici,
+                  AllOf(Field("chunk", &set::chunk, Eq(spd.chunk)), Field("request", &set::request, Eq(spd.request)),
+                        Field("header", &set::header, ElementsAreArray(spd.header)),
+                        Field("data", &set::data, ElementsAreArray(spd.data)))));
 
   this->dispatch_ci(midici, spd);
 }
@@ -907,11 +931,12 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyDataReply) {
   spd_reply.request = 2;
   spd_reply.header = R"({"status":200})"sv;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
-              set_reply(midici, AllOf(Field("chunk", &set_reply::chunk, Eq(spd_reply.chunk)),
-                                      Field("request", &set_reply::request, Eq(spd_reply.request)),
-                                      Field("header", &set_reply::header, ElementsAreArray(spd_reply.header)))));
+              set_reply(config_.context, midici,
+                        AllOf(Field("chunk", &set_reply::chunk, Eq(spd_reply.chunk)),
+                              Field("request", &set_reply::request, Eq(spd_reply.request)),
+                              Field("header", &set_reply::header, ElementsAreArray(spd_reply.header)))));
 
   this->dispatch_ci(midici, spd_reply);
 }
@@ -939,12 +964,13 @@ TEST_F(CIDispatcher, PropertyExchangeSubscription) {
   sub.header = header;
   sub.data = data;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
-              subscription(midici, AllOf(Field("chunk", &subscription::chunk, Eq(sub.chunk)),
-                                         Field("request", &subscription::request, Eq(sub.request)),
-                                         Field("header", &subscription::header, ElementsAreArray(header)),
-                                         Field("data", &subscription::data, ElementsAreArray(data)))));
+              subscription(config_.context, midici,
+                           AllOf(Field("chunk", &subscription::chunk, Eq(sub.chunk)),
+                                 Field("request", &subscription::request, Eq(sub.request)),
+                                 Field("header", &subscription::header, ElementsAreArray(header)),
+                                 Field("data", &subscription::data, ElementsAreArray(data)))));
 
   this->dispatch_ci(midici, sub);
 }
@@ -971,12 +997,13 @@ TEST_F(CIDispatcher, PropertyExchangeSubscriptionReply) {
   sub_reply.header = header;
   sub_reply.data = data;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
-              subscription_reply(midici, AllOf(Field("chunk", &subscription_reply::chunk, Eq(sub_reply.chunk)),
-                                               Field("request", &subscription_reply::request, Eq(sub_reply.request)),
-                                               Field("header", &subscription_reply::header, ElementsAreArray(header)),
-                                               Field("data", &subscription_reply::data, ElementsAreArray(data)))));
+              subscription_reply(config_.context, midici,
+                                 AllOf(Field("chunk", &subscription_reply::chunk, Eq(sub_reply.chunk)),
+                                       Field("request", &subscription_reply::request, Eq(sub_reply.request)),
+                                       Field("header", &subscription_reply::header, ElementsAreArray(header)),
+                                       Field("data", &subscription_reply::data, ElementsAreArray(data)))));
 
   this->dispatch_ci(midici, sub_reply);
 }
@@ -1003,12 +1030,12 @@ TEST_F(CIDispatcher, PropertyExchangeNotify) {
   note.header = header;
   note.data = data;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.property_exchange,
-              notify(midici, AllOf(Field("chunk", &notify::chunk, Eq(note.chunk)),
-                                   Field("request", &notify::request, Eq(note.request)),
-                                   Field("header", &notify::header, ElementsAreArray(header)),
-                                   Field("data", &notify::data, ElementsAreArray(data)))));
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.property_exchange, notify(config_.context, midici,
+                                                AllOf(Field("chunk", &notify::chunk, Eq(note.chunk)),
+                                                      Field("request", &notify::request, Eq(note.request)),
+                                                      Field("header", &notify::header, ElementsAreArray(header)),
+                                                      Field("data", &notify::data, ElementsAreArray(data)))));
 
   this->dispatch_ci(midici, note);
 }
@@ -1024,8 +1051,8 @@ TEST_F(CIDispatcher, ProcessInquiryCapabilities) {
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = destination_muid_;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.process_inquiry, capabilities(midici)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.process_inquiry, capabilities(config_.context, midici)).Times(1);
 
   this->dispatch_ci(midici, midi2::ci::process_inquiry::capabilities{});
 }
@@ -1046,8 +1073,8 @@ TEST_F(CIDispatcher, ProcessInquiryCapabilitiesReply) {
   midi2::ci::process_inquiry::capabilities_reply reply;
   reply.features = features;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.process_inquiry, capabilities_reply(midici, reply)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.process_inquiry, capabilities_reply(config_.context, midici, reply)).Times(1);
 
   this->dispatch_ci(midici, reply);
 }
@@ -1083,8 +1110,8 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReport) {
   report.registered_per_note_controller = 0;
   report.assignable_per_note_controller = 1;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.process_inquiry, midi_message_report(midici, report)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.process_inquiry, midi_message_report(config_.context, midici, report)).Times(1);
 
   this->dispatch_ci(midici, report);
 }
@@ -1119,8 +1146,8 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportReply) {
   reply.registered_per_note_controller = 0;
   reply.assignable_per_note_controller = 1;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.process_inquiry, midi_message_report_reply(midici, reply)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.process_inquiry, midi_message_report_reply(config_.context, midici, reply)).Times(1);
 
   this->dispatch_ci(midici, reply);
 }
@@ -1136,8 +1163,8 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportEnd) {
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = destination_muid_;
 
-  EXPECT_CALL(config_.management, check_muid(group, destination_muid_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.process_inquiry, midi_message_report_end(midici)).Times(1);
+  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.process_inquiry, midi_message_report_end(config_.context, midici)).Times(1);
 
   this->dispatch_ci(midici, midi2::ci::process_inquiry::midi_message_report_end{});
 }
@@ -1148,13 +1175,16 @@ void NeverCrashes(std::vector<std::byte> const &message) {
   std::vector<std::byte> message2;
   message2.reserve(message.size());
   std::ranges::transform(message, std::back_inserter(message2), [](std::byte v) { return v & std::byte{0x7F}; });
+  struct empty {};
   struct config {
-    midi2::management_callbacks management;
-    midi2::profile_callbacks profile;
-    midi2::property_exchange_callbacks property_exchange;
-    midi2::process_inquiry_callbacks process_inquiry;
+    empty context;
+    midi2::ci::dispatcher_backend::management_function<decltype(config::context)> management;
+    midi2::ci::dispatcher_backend::profile_function<decltype(config::context)> profile;
+    midi2::ci::dispatcher_backend::property_exchange_function<decltype(config::context)> property_exchange;
+    midi2::ci::dispatcher_backend::process_inquiry_function<decltype(config::context)> process_inquiry;
   };
-  midi2::ci_dispatcher dispatcher{config{}};
+  midi2::ci::ci_dispatcher dispatcher{config{}};
+  dispatcher.config().management.on_check_muid([](empty, std::uint8_t, std::uint32_t) { return true; });
   std::ranges::for_each(message2, std::bind_front(&decltype(dispatcher)::processMIDICI, &dispatcher));
 }
 

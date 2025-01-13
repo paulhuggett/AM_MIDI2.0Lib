@@ -51,6 +51,12 @@ template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) no
   return n > 0U && !(n & (n - 1U));
 }
 
+template <typename Function, typename... Args> void call(Function const &function, Args &&...args) {
+  if (function) {
+    function(std::forward<Args>(args)...);
+  }
+}
+
 enum class status : std::uint8_t {
   // Channel voice messages
   note_off = 0x80,

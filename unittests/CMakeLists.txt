@@ -13,8 +13,8 @@ add_executable (m2unittests
   test_ci7.cpp
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp
+  test_ci_dispatcher_backend.cpp
   test_ci_types.cpp
-  test_dispatcher_backend.cpp
   test_fifo.cpp
   test_iumap.cpp
   test_lru.cpp
@@ -22,6 +22,7 @@ add_executable (m2unittests
   test_scale.cpp
   test_ump_bytestream_round_trip.cpp
   test_ump_dispatcher.cpp
+  test_ump_dispatcher_backend.cpp
   test_ump_to_bytestream.cpp
   test_ump_to_midi1.cpp
   test_ump_to_midi2.cpp

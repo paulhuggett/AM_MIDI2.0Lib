@@ -1,3 +1,4 @@
+
 #===-- CMakeLists ------------------------------------------------------------*- C++ -*-===//
 #
 # midi2 library under the MIT license.
@@ -32,11 +33,12 @@ set(MIDI2_HEADERS
   "${INCLUDE_DIR}/midi2/ci7text.hpp"
   "${INCLUDE_DIR}/midi2/ci_create_message.hpp"
   "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
+  "${INCLUDE_DIR}/midi2/ci_dispatcher_backend.hpp"
   "${INCLUDE_DIR}/midi2/ci_types.hpp"
-  "${INCLUDE_DIR}/midi2/dispatcher_backend.hpp"
   "${INCLUDE_DIR}/midi2/icubaby.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
+  "${INCLUDE_DIR}/midi2/ump_dispatcher_backend.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
   "${INCLUDE_DIR}/midi2/ump_to_midi2.hpp"

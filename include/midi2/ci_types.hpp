@@ -336,7 +336,7 @@ struct endpoint_info {
   constexpr endpoint_info &operator=(endpoint_info const &) = default;
   constexpr endpoint_info &operator=(endpoint_info &&) noexcept = default;
 
-  bool operator==(endpoint_info const &) const = default;
+  constexpr bool operator==(endpoint_info const &) const noexcept = default;
 
   explicit constexpr operator packed::endpoint_info_v1() const;
 
@@ -382,6 +382,10 @@ struct endpoint_info_reply {
 
   constexpr endpoint_info_reply &operator=(endpoint_info_reply const &) = default;
   constexpr endpoint_info_reply &operator=(endpoint_info_reply &&) noexcept = default;
+
+  constexpr bool operator==(endpoint_info_reply const &other) const noexcept {
+    return status == other.status && std::ranges::equal(information, other.information);
+  }
 
   explicit constexpr operator packed::endpoint_info_reply_v1() const;
 
@@ -478,6 +482,8 @@ struct ack {
 
   explicit constexpr operator packed::ack_v1() const;
 
+  constexpr bool operator==(ack const &other) const noexcept;
+
   std::uint8_t original_id = 0;
   std::uint8_t status_code = 0;
   std::uint8_t status_data = 0;
@@ -500,6 +506,11 @@ constexpr ack::operator packed::ack_v1() const {
           details,
           to_le7(static_cast<std::uint16_t>(message.size())),
           {std::byte{0}}};
+}
+
+constexpr bool ack::operator==(ack const &other) const noexcept {
+  return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
+         details == other.details && std::ranges::equal(message, other.message);
 }
 
 //*            _    *
@@ -577,6 +588,11 @@ constexpr nak::operator packed::nak_v2() const {
           {std::byte{0}}};
 }
 
+constexpr bool nak::operator==(nak const &other) const {
+  return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
+         details == other.details && std::ranges::equal(message, other.message);
+}
+
 namespace profile_configuration {
 
 //*                __ _ _       _                _           *
@@ -630,6 +646,9 @@ struct inquiry_reply {
   constexpr inquiry_reply &operator=(inquiry_reply const &) = default;
   constexpr inquiry_reply &operator=(inquiry_reply &&) noexcept = default;
 
+  constexpr bool operator==(inquiry_reply const &other) const {
+    return std::ranges::equal(enabled, other.enabled) && std::ranges::equal(disabled, other.disabled);
+  }
   explicit constexpr operator packed::inquiry_reply_v1_pt1() const;
   explicit constexpr operator packed::inquiry_reply_v1_pt2() const;
 
@@ -807,6 +826,10 @@ struct details_reply {
   constexpr details_reply &operator=(details_reply &&) noexcept = default;
 
   explicit constexpr operator packed::details_reply_v1() const;
+
+  constexpr bool operator==(details_reply const &other) const {
+    return pid == other.pid && target == other.target && std::ranges::equal(data, other.data);
+  }
 
   byte_array_5 pid{};       ///< Profile ID of profile
   std::uint8_t target = 0;  ///< Inquiry target
@@ -1107,6 +1130,10 @@ struct specific_data {
 
   explicit constexpr operator packed::specific_data_v1() const;
 
+  constexpr bool operator==(specific_data const &other) const {
+    return pid == other.pid && std::ranges::equal(data, other.data);
+  }
+
   byte_array_5 pid{};               ///< Profile ID
   std::span<std::byte const> data;  ///< Profile specific data
 };
@@ -1299,7 +1326,8 @@ static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 
 }  // end namespace packed
 
-struct property_exchange {
+class property_exchange {
+public:
   struct chunk_info {
     chunk_info() = default;
     chunk_info(std::uint16_t const number_of_chunks_, std::uint16_t const chunk_number_)
@@ -1316,9 +1344,10 @@ struct property_exchange {
   explicit constexpr operator packed::property_exchange_pt1() const;
   explicit constexpr operator packed::property_exchange_pt2() const;
 
+  constexpr bool operator==(property_exchange const &other) const;
+
 protected:
   constexpr property_exchange() = default;
-
   constexpr property_exchange(chunk_info const &chunk_, std::uint8_t request_, std::span<char const> header_,
                               std::span<char const> data_)
       : chunk{chunk_}, request{request_}, header{header_}, data{data_} {}
@@ -1339,6 +1368,11 @@ constexpr property_exchange::operator packed::property_exchange_pt2() const {
       to_le7(static_cast<std::uint16_t>(data.size())),
       {std::byte{0}},
   };
+}
+
+constexpr bool property_exchange::operator==(property_exchange const &other) const {
+  return chunk == other.chunk && request == other.request && std::ranges::equal(header, other.header) &&
+         std::ranges::equal(data, other.data);
 }
 
 struct get : public property_exchange {
