@@ -107,7 +107,7 @@ template <ci_dispatcher_config Config>
 void ci_dispatcher<Config>::startSysex7(std::uint8_t group, std::byte device_id) {
   midici_ = midi_ci{};
   midici_.group = group;
-  midici_.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici_.params.device_id = to_underlying(device_id);
 
   count_ = header_size;
   pos_ = 0;
@@ -205,7 +205,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::header() {
   };
   auto const *const h = std::bit_cast<ci::packed::header const *>(buffer_.data());
   midici_.type = static_cast<ci_message>(h->sub_id_2);
-  midici_.params.version = static_cast<std::uint8_t>(h->version);
+  midici_.params.version = to_underlying(h->version);
   midici_.params.remote_muid = ci::from_le7(h->source_muid);
   midici_.params.local_muid = ci::from_le7(h->destination_muid);
 
@@ -551,7 +551,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::property_exch
 
   using chunk_info = ci::property_exchange::property_exchange::chunk_info;
   auto const chunk = chunk_info{ci::from_le7(pt2->number_of_chunks), ci::from_le7(pt2->chunk_number)};
-  auto const request = static_cast<std::uint8_t>(pt1->request_id);
+  auto const request = to_underlying(pt1->request_id);
   auto const header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
   auto const data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
 

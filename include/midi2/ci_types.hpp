@@ -343,8 +343,7 @@ struct endpoint_info {
   std::uint8_t status = 0;
 };
 
-constexpr endpoint_info::endpoint_info(packed::endpoint_info_v1 const &other)
-    : status{static_cast<std::uint8_t>(other.status)} {
+constexpr endpoint_info::endpoint_info(packed::endpoint_info_v1 const &other) : status{to_underlying(other.status)} {
 }
 
 constexpr endpoint_info::operator packed::endpoint_info_v1() const {
@@ -569,9 +568,9 @@ struct nak {
 constexpr nak::nak(packed::nak_v1 const &) {
 }
 constexpr nak::nak(packed::nak_v2 const &other)
-    : original_id{static_cast<std::uint8_t>(other.original_id)},
-      status_code{static_cast<std::uint8_t>(other.status_code)},
-      status_data{static_cast<std::uint8_t>(other.status_data)},
+    : original_id{to_underlying(other.original_id)},
+      status_code{to_underlying(other.status_code)},
+      status_data{to_underlying(other.status_data)},
       details{other.details},
       message{std::begin(other.message), from_le7(other.message_length)} {
 }
@@ -787,8 +786,7 @@ struct details {
   std::uint8_t target = 0;
 };
 
-constexpr details::details(packed::details_v1 const &other)
-    : pid{other.pid}, target{static_cast<std::uint8_t>(other.target)} {
+constexpr details::details(packed::details_v1 const &other) : pid{other.pid}, target{to_underlying(other.target)} {
 }
 constexpr details::operator packed::details_v1() const {
   return {pid, to_le7(target)};
@@ -837,9 +835,7 @@ struct details_reply {
 };
 
 constexpr details_reply::details_reply(packed::details_reply_v1 const &other)
-    : pid{other.pid},
-      target{static_cast<std::uint8_t>(other.target)},
-      data{std::begin(other.data), from_le7(other.data_length)} {
+    : pid{other.pid}, target{to_underlying(other.target)}, data{std::begin(other.data), from_le7(other.data_length)} {
 }
 
 constexpr details_reply::operator packed::details_reply_v1() const {
@@ -1207,11 +1203,11 @@ constexpr capabilities::capabilities(std::uint8_t ns, std::uint8_t major, std::u
     : num_simultaneous{ns}, major_version{major}, minor_version{minor} {
 }
 constexpr capabilities::capabilities(packed::capabilities_v1 const &other)
-    : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
+    : num_simultaneous{to_underlying(other.num_simultaneous)} {
 }
 constexpr capabilities::capabilities(packed::capabilities_v2 const &other) : capabilities{other.v1} {
-  major_version = static_cast<std::uint8_t>(other.major_version);
-  minor_version = static_cast<std::uint8_t>(other.minor_version);
+  major_version = to_underlying(other.major_version);
+  minor_version = to_underlying(other.minor_version);
 }
 constexpr capabilities::operator packed::capabilities_v1() const {
   return {static_cast<std::byte>(num_simultaneous)};
@@ -1276,12 +1272,12 @@ constexpr capabilities_reply::capabilities_reply(std::uint8_t ns, std::uint8_t m
     : num_simultaneous{ns}, major_version{major}, minor_version{minor} {
 }
 constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v1 const &other)
-    : num_simultaneous{static_cast<std::uint8_t>(other.num_simultaneous)} {
+    : num_simultaneous{to_underlying(other.num_simultaneous)} {
 }
 constexpr capabilities_reply::capabilities_reply(packed::capabilities_reply_v2 const &other)
     : capabilities_reply{other.v1} {
-  major_version = static_cast<std::uint8_t>(other.major_version);
-  minor_version = static_cast<std::uint8_t>(other.minor_version);
+  major_version = to_underlying(other.major_version);
+  minor_version = to_underlying(other.minor_version);
 }
 constexpr capabilities_reply::operator packed::capabilities_reply_v1() const {
   return {static_cast<std::byte>(num_simultaneous)};

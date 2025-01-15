@@ -310,7 +310,7 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
   midi_ci midici;
   midici.group = 0xFF;
   midici.type = midi2::ci_message::discovery_reply;
-  midici.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 2;
   midici.params.remote_muid = 0;
   midici.params.local_muid = midi2::M2_CI_BROADCAST;
@@ -320,10 +320,10 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
   reply.family = from_le7(family);
   reply.model = from_le7(model);
   reply.version = midi2::ci::from_array(version);
-  reply.capability = static_cast<std::uint8_t>(capability);
+  reply.capability = midi2::to_underlying(capability);
   reply.max_sysex_size = from_le7(max_sysex_size);
-  reply.output_path_id = static_cast<std::uint8_t>(output_path_id);
-  reply.function_block = static_cast<std::uint8_t>(function_block);
+  reply.output_path_id = midi2::to_underlying(output_path_id);
+  reply.function_block = midi2::to_underlying(function_block);
 
   EXPECT_CALL(config_.management, discovery_reply(config_.context, midici, reply)).Times(1);
   this->dispatch_ci(midici, reply);
@@ -338,7 +338,7 @@ TEST_F(CIDispatcher, EndpointInfo) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::endpoint_info;
-  midici.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 1;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = from_le7(receiver_muid);
@@ -395,7 +395,7 @@ TEST_F(CIDispatcher, InvalidateMuid) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::invalidate_muid;
-  midici.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 1;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = from_le7(receiver_muid);
@@ -488,7 +488,7 @@ TEST_F(CIDispatcher, NakV1) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::nak;
-  midici.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 1;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = receiver_muid;
@@ -522,7 +522,7 @@ TEST_F(CIDispatcher, NakV2) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::nak;
-  midici.params.device_id = static_cast<std::uint8_t>(device_id);
+  midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 2;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = from_le7(receiver_muid);
@@ -530,7 +530,7 @@ TEST_F(CIDispatcher, NakV2) {
   midi2::ci::nak nak;
   nak.original_id = original_id;
   nak.status_code = nak_status_code;
-  nak.status_data = static_cast<std::uint8_t>(nak_status_data);
+  nak.status_data = nak_status_data;
   nak.details = nak_details;
   nak.message = text;
 
@@ -951,7 +951,7 @@ TEST_F(CIDispatcher, PropertyExchangeSubscription) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::pe_sub;
-  midici.params.device_id = static_cast<std::uint8_t>(destination);
+  midici.params.device_id = midi2::to_underlying(destination);
   midici.params.version = 2;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = destination_muid_;
@@ -1026,7 +1026,7 @@ TEST_F(CIDispatcher, PropertyExchangeNotify) {
   notify note;
   note.chunk.number_of_chunks = 1;
   note.chunk.chunk_number = 1;
-  note.request = static_cast<std::uint8_t>(request);
+  note.request = midi2::to_underlying(request);
   note.header = header;
   note.data = data;
 
@@ -1065,7 +1065,7 @@ TEST_F(CIDispatcher, ProcessInquiryCapabilitiesReply) {
   midi_ci midici;
   midici.group = group;
   midici.type = midi2::ci_message::pi_capability_reply;
-  midici.params.device_id = static_cast<std::uint8_t>(destination);
+  midici.params.device_id = midi2::to_underlying(destination);
   midici.params.version = 2;
   midici.params.remote_muid = sender_muid_;
   midici.params.local_muid = destination_muid_;
