@@ -268,7 +268,13 @@ template <typename Context> struct flex_data_null {
 static_assert(flex_data<flex_data_null<int>, int>, "flex_data_null must implement the flex_data concept");
 
 template <typename Context> struct utility_pure {
+  constexpr utility_pure() noexcept = default;
+  constexpr utility_pure(utility_pure const &) = default;
+  constexpr utility_pure(utility_pure &&) noexcept = default;
   virtual ~utility_pure() noexcept = default;
+
+  constexpr utility_pure &operator=(utility_pure const &) = default;
+  constexpr utility_pure &operator=(utility_pure &&) noexcept = default;
 
   // 7.2.1 NOOP
   virtual void noop(Context) = 0;
@@ -287,7 +293,13 @@ template <typename Context> struct utility_pure {
 static_assert(utility<utility_pure<int>, int>, "utility_pure must implement the utility concept");
 
 template <typename Context> struct system_pure {
+  constexpr system_pure() noexcept = default;
+  constexpr system_pure(system_pure const &) = default;
+  constexpr system_pure(system_pure &&) noexcept = default;
   virtual ~system_pure() = default;
+
+  constexpr system_pure &operator=(system_pure const &) = default;
+  constexpr system_pure &operator=(system_pure &&) noexcept = default;
 
   // 7.6 System Common and System Real Time Messages
   virtual void midi_time_code(Context, ump::system::midi_time_code const &) = 0;
@@ -305,7 +317,13 @@ template <typename Context> struct system_pure {
 static_assert(system<system_pure<int>, int>, "system_pure must implement the system concept");
 
 template <typename Context> struct m1cvm_pure {
+  constexpr m1cvm_pure() noexcept = default;
+  constexpr m1cvm_pure(m1cvm_pure const &) = default;
+  constexpr m1cvm_pure(m1cvm_pure &&) noexcept = default;
   virtual ~m1cvm_pure() = default;
+
+  constexpr m1cvm_pure &operator=(m1cvm_pure const &) = default;
+  constexpr m1cvm_pure &operator=(m1cvm_pure &&) noexcept = default;
 
   virtual void note_off(Context, ump::m1cvm::note_off const &) = 0;
   virtual void note_on(Context, ump::m1cvm::note_on const &) = 0;
@@ -319,7 +337,13 @@ template <typename Context> struct m1cvm_pure {
 static_assert(m1cvm<m1cvm_pure<int>, int>, "m1cvm_pure must implement the m1cvm concept");
 
 template <typename Context> struct data64_pure {
+  constexpr data64_pure() noexcept = default;
+  constexpr data64_pure(data64_pure const &) = default;
+  constexpr data64_pure(data64_pure &&) noexcept = default;
   virtual ~data64_pure() = default;
+
+  constexpr data64_pure &operator=(data64_pure const &) = default;
+  constexpr data64_pure &operator=(data64_pure &&) noexcept = default;
 
   virtual void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) = 0;
   virtual void sysex7_start(Context, ump::data64::sysex7_start const &) = 0;
@@ -330,7 +354,13 @@ template <typename Context> struct data64_pure {
 static_assert(data64<data64_pure<int>, int>, "data64_pure must implement the data64 concept");
 
 template <typename Context> struct m2cvm_pure {
+  constexpr m2cvm_pure() noexcept = default;
+  constexpr m2cvm_pure(m2cvm_pure const &) = default;
+  constexpr m2cvm_pure(m2cvm_pure &&) noexcept = default;
   virtual ~m2cvm_pure() = default;
+
+  constexpr m2cvm_pure &operator=(m2cvm_pure const &) = default;
+  constexpr m2cvm_pure &operator=(m2cvm_pure &&) noexcept = default;
 
   virtual void note_off(Context, ump::m2cvm::note_off const &) = 0;
   virtual void note_on(Context, ump::m2cvm::note_on const &) = 0;
@@ -360,7 +390,13 @@ template <typename Context> struct m2cvm_pure {
 static_assert(m2cvm<m2cvm_pure<int>, int>, "m2cvm_pure must implement the m2cvm concept");
 
 template <typename Context> struct data128_pure {
+  constexpr data128_pure() noexcept = default;
+  constexpr data128_pure(data128_pure const &) = default;
+  constexpr data128_pure(data128_pure &&) noexcept = default;
   virtual ~data128_pure() = default;
+
+  constexpr data128_pure &operator=(data128_pure const &) = default;
+  constexpr data128_pure &operator=(data128_pure &&) noexcept = default;
 
   virtual void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) = 0;
   virtual void sysex8_start(Context, ump::data128::sysex8_start const &) = 0;
@@ -373,7 +409,13 @@ template <typename Context> struct data128_pure {
 static_assert(data128<data128_pure<int>, int>, "data128_pure must implement the data128 concept");
 
 template <typename Context> struct stream_pure {
+  constexpr stream_pure() noexcept = default;
+  constexpr stream_pure(stream_pure const &) = default;
+  constexpr stream_pure(stream_pure &&) noexcept = default;
   virtual ~stream_pure() = default;
+
+  constexpr stream_pure &operator=(stream_pure const &) = default;
+  constexpr stream_pure &operator=(stream_pure &&) noexcept = default;
 
   virtual void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) = 0;
   virtual void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) = 0;
@@ -394,7 +436,13 @@ template <typename Context> struct stream_pure {
 static_assert(stream<stream_pure<int>, int>, "stream_pure must implement the stream concept");
 
 template <typename Context> struct flex_data_pure {
+  constexpr flex_data_pure() noexcept = default;
+  constexpr flex_data_pure(flex_data_pure const &) = default;
+  constexpr flex_data_pure(flex_data_pure &&) noexcept = default;
   virtual ~flex_data_pure() = default;
+
+  constexpr flex_data_pure &operator=(flex_data_pure const &) = default;
+  constexpr flex_data_pure &operator=(flex_data_pure &&) noexcept = default;
 
   virtual void set_tempo(Context, ump::flex_data::set_tempo const &) = 0;
   virtual void set_time_signature(Context, ump::flex_data::set_time_signature const &) = 0;
