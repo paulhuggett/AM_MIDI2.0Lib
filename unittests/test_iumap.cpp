@@ -12,6 +12,8 @@
 // Standard library
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 // Google Test/Mock
 #include <gmock/gmock.h>
@@ -25,7 +27,7 @@ using namespace std::string_literals;
 namespace {
 
 TEST(IUMap, Empty) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::iumap<int, std::string, 8> const h;
   EXPECT_EQ(h.size(), 0U);
   EXPECT_EQ(h.max_size(), 8U);
   EXPECT_EQ(h.capacity(), 8U);
