@@ -125,8 +125,8 @@ public:
     }
   }
 
-  constexpr Config &config() noexcept { return config_; }
-  constexpr Config const &config() const noexcept { return config_; }
+  [[nodiscard]] constexpr Config &config() noexcept { return config_; }
+  [[nodiscard]] constexpr Config const &config() const noexcept { return config_; }
 
 private:
   void utility_message();
