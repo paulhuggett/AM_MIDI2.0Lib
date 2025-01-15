@@ -96,47 +96,38 @@ public:
     constexpr reference operator*() const noexcept { return static_cast<reference>(*slot_); }
     constexpr pointer operator->() const noexcept { return &static_cast<reference>(*slot_); }
 
-    iterator_type &operator--() {
+    constexpr iterator_type &operator--() {
       --slot_;
       this->move_backward_to_occupied();
       return *this;
     }
-    iterator_type &operator++() {
+    constexpr iterator_type &operator++() {
       ++slot_;
       this->move_forward_to_occupied();
       return *this;
     }
-    iterator_type operator++(int) {
+    constexpr iterator_type operator++(int) {
       auto const tmp = *this;
       ++*this;
       return tmp;
     }
-    iterator_type operator--(int) {
+    constexpr iterator_type operator--(int) {
       auto const tmp = *this;
       --*this;
       return tmp;
     }
 
-    iterator_type &operator+=(difference_type n) {
+    constexpr iterator_type &operator+=(difference_type n) {
       if (n < 0) {
-        *this = *this - (-n);
-      } else {
-        for (; n > 0; --n) {
-          ++(*this);
-        }
+        return decrement_n(-n);
       }
-      return *this;
+      return increment_n(n);
     }
-
-    iterator_type &operator-=(difference_type n) {
+    constexpr iterator_type &operator-=(difference_type n) {
       if (n < 0) {
-        *this = *this + (-n);
-      } else {
-        for (; n > 0; --n) {
-          --(*this);
-        }
+        return increment_n(-n);
       }
-      return *this;
+      return decrement_n(n);
     }
 
     friend iterator_type operator+(iterator_type it, difference_type n) {
@@ -168,6 +159,20 @@ public:
         ++slot_;
       }
     }
+    constexpr iterator_type &increment_n(difference_type n) {
+      assert(n >= 0);
+      for (; n > 0; --n) {
+        ++(*this);
+      }
+      return *this;
+    }
+    constexpr iterator_type &decrement_n(difference_type n) {
+      assert(n >= 0);
+      for (; n > 0; --n) {
+        --(*this);
+      }
+      return *this;
+    }
 
     T *slot_;
     container_type *container_;
@@ -185,17 +190,17 @@ public:
   iumap &operator=(iumap &&other) noexcept;
 
   // Iterators
-  constexpr auto begin() { return iterator{v_.data(), &v_}; }
-  constexpr auto begin() const { return const_iterator{v_.data(), &v_}; }
+  [[nodiscard]] constexpr auto begin() { return iterator{v_.data(), &v_}; }
+  [[nodiscard]] constexpr auto begin() const { return const_iterator{v_.data(), &v_}; }
 
-  constexpr auto end() noexcept { return iterator{v_.data() + v_.size(), &v_}; }
-  constexpr auto end() const noexcept { return const_iterator{v_.data() + v_.size(), &v_}; }
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{v_.data() + v_.size(), &v_}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{v_.data() + v_.size(), &v_}; }
 
   // Capacity
-  constexpr auto empty() const noexcept { return size_ == 0; }
-  constexpr auto size() const noexcept { return size_; }
-  constexpr auto max_size() const noexcept { return v_.max_size(); }
-  constexpr auto capacity() const noexcept { return Size; }
+  [[nodiscard]] constexpr auto empty() const noexcept { return size_ == 0; }
+  [[nodiscard]] constexpr auto size() const noexcept { return size_; }
+  [[nodiscard]] constexpr auto max_size() const noexcept { return v_.max_size(); }
+  [[nodiscard]] constexpr auto capacity() const noexcept { return Size; }
 
   // Modifiers
   void clear() noexcept;
@@ -209,12 +214,12 @@ public:
   iterator erase(iterator pos);
 
   // Lookup
-  iterator find(Key const &k);
-  const_iterator find(Key const &k) const;
+  [[nodiscard]] iterator find(Key const &k);
+  [[nodiscard]] const_iterator find(Key const &k) const;
 
   // Observers
-  hasher hash_function() const { return Hash{}; }
-  key_equal key_eq() const { return KeyEqual{}; }
+  [[nodiscard]] hasher hash_function() const { return Hash{}; }
+  [[nodiscard]] key_equal key_eq() const { return KeyEqual{}; }
 
 #ifdef IUMAP_TRACE
   void dump(std::ostream &os) const {
