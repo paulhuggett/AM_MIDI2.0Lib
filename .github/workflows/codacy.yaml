@@ -3,12 +3,12 @@ name: Codacy Clang-Tidy
 on:
   push:
     paths:
-      - '**.[ch]pp'
-      - '**/codacy.yaml'
+      - "**.[ch]pp"
+      - "**/codacy.yaml"
   pull_request:
     paths:
-      - '**.[ch]pp'
-      - '**/codacy.yaml'
+      - "**.[ch]pp"
+      - "**/codacy.yaml"
 
 permissions:
   contents: read

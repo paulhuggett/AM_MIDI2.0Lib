@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
-          submodules: 'True'
+          submodules: "True"
 
       - name: Install Dependencies
         run: |
@@ -73,4 +73,3 @@ jobs:
         uses: codecov/test-results-action@9739113ad922ea0a9abb4b2c0f8bf6a4aa8ef820 #v1.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-

@@ -10,15 +10,15 @@ name: Microsoft C++ Code Analysis
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
-    - cron: '40 6 * * 6'
+    - cron: "40 6 * * 6"
 
 env:
   # Path to the CMake build directory.
-  build: '${{ github.workspace }}/build'
+  build: "${{ github.workspace }}/build"
 
 permissions:
   contents: read
