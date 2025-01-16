@@ -19,23 +19,30 @@
 #include <midi2/ump_dispatcher.hpp>
 
 int main() {
-  // We must pass a "context" to the dispatcher which will be forwarded to the callbacks as they are invoked.
-  // The context enables message handlers to efficiently share state but we don't need that in this simple example so a
-  // struct with no members will suffice.
-  struct context {};
-  // Create the dispatcher with default-initialized context.
-  auto dispatcher = midi2::ump::make_ump_function_dispatcher<context>();
-  // Ask the dispatcher for its configuration object and install handlers for MIDI2 note on/off channel voice messages.
-  dispatcher.config()
-    .m2cvm
-      .on_note_off([](context, midi2::ump::m2cvm::note_off const& noff) {
-        std::cout << "note off: #" << unsigned{noff.note()} << ", velocity " << noff.velocity() << '\n';
-      })
-      .on_note_on([](context, midi2::ump::m2cvm::note_on const& non) {
-        std::cout << "note on: #" << unsigned{non.note()} << ", velocity " << non.velocity() << '\n';
-      });
-  // Send note-on/off messages to the dispatcher.
-  for (std::uint32_t const v : {0x40913C00U, 0x7F100000U, 0x40813C00U, 0x7FFF0000U}) {
-    dispatcher.processUMP(v);
+  try {
+    // We must pass a "context" to the dispatcher which will be forwarded to the callbacks as they are invoked.
+    // The context enables message handlers to efficiently share state but we don't need that in this simple example so
+    // a struct with no members will suffice.
+    struct context {};
+    // Create the dispatcher with default-initialized context.
+    auto dispatcher = midi2::ump::make_ump_function_dispatcher<context>();
+    // Ask the dispatcher for its configuration object and install handlers for MIDI2 note on/off channel voice
+    // messages.
+    dispatcher.config()
+        .m2cvm
+        .on_note_off([](context, midi2::ump::m2cvm::note_off const& noff) {
+          std::cout << "note off: #" << unsigned{noff.note()} << ", velocity " << noff.velocity() << '\n';
+        })
+        .on_note_on([](context, midi2::ump::m2cvm::note_on const& non) {
+          std::cout << "note on: #" << unsigned{non.note()} << ", velocity " << non.velocity() << '\n';
+        });
+    // Send note-on/off messages to the dispatcher.
+    for (std::uint32_t const v : {0x40913C00U, 0x7F100000U, 0x40813C00U, 0x7FFF0000U}) {
+      dispatcher.processUMP(v);
+    }
+  } catch (std::exception const& ex) {
+    std::cerr << "Error: " << ex.what() << '\n';
+  } catch (...) {
+    std::cerr << "An unknown error\n";
   }
 }
