@@ -66,7 +66,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   sysex7_.state = sysex7::status::none;
 }
 
-void bytestream_to_ump::sysex_data_byte(std::byte const midi1Byte) {
+void bytestream_to_ump::sysex_data_byte(std::byte const midi1_byte) {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
     switch (sysex7_.state) {
     case sysex7::status::start: push_sysex7<ump::data64::sysex7_start>(); break;
@@ -77,20 +77,20 @@ void bytestream_to_ump::sysex_data_byte(std::byte const midi1Byte) {
     sysex7_.state = sysex7::status::cont;
     sysex7_.pos = 0;
   }
-  sysex7_.bytes[sysex7_.pos] = midi1Byte;
+  sysex7_.bytes[sysex7_.pos] = midi1_byte;
   ++sysex7_.pos;
 }
 
-void bytestream_to_ump::push(std::byte const midi1Byte) {
-  auto const midi1int = static_cast<status>(midi1Byte);
+void bytestream_to_ump::push(std::byte const midi1_byte) {
+  auto const midi1int = static_cast<status>(midi1_byte);
 
-  if (is_status_byte(midi1Byte)) {
-    if (is_system_real_time_message(midi1Byte)) {
-      this->to_ump(midi1Byte, std::byte{0}, std::byte{0});
+  if (is_status_byte(midi1_byte)) {
+    if (is_system_real_time_message(midi1_byte)) {
+      this->to_ump(midi1_byte, std::byte{0}, std::byte{0});
       return;
     }
 
-    d0_ = midi1Byte;
+    d0_ = midi1_byte;
     d1_ = unknown;
 
     // Except for real-time messages, receiving a status byte will implicitly end any in-progress
@@ -102,7 +102,7 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     }
 
     switch (midi1int) {
-    case status::tune_request: this->to_ump(midi1Byte, std::byte{0}, std::byte{0}); break;
+    case status::tune_request: this->to_ump(midi1_byte, std::byte{0}, std::byte{0}); break;
     case status::sysex_start:
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
@@ -112,16 +112,16 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
   } else {
     // Data byte handling.
     if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
-      this->sysex_data_byte(midi1Byte);
+      this->sysex_data_byte(midi1_byte);
     } else if (d1_ != unknown) {  // Second byte
-      this->to_ump(d0_, d1_, midi1Byte);
+      this->to_ump(d0_, d1_, midi1_byte);
       d1_ = unknown;
     } else if (d0_ != std::byte{0}) {  // status byte set
       if (is_one_byte_message(d0_)) {
-        this->to_ump(d0_, midi1Byte, std::byte{0});
+        this->to_ump(d0_, midi1_byte, std::byte{0});
       } else if (d0_ < std::byte{to_underlying(status::sysex_start)} || d0_ == std::byte{to_underlying(status::spp)}) {
         // This is the first of a two data byte message.
-        d1_ = midi1Byte;
+        d1_ = midi1_byte;
       }
     }
   }
