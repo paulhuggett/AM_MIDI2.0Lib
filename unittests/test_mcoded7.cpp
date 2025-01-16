@@ -92,8 +92,7 @@ raw_and_encoded const eight{
 }  // end anonymous namespace
 
 // NOLINTNEXTLINE
-INSTANTIATE_TEST_SUITE_P(Mcoded7, Mcoded7,
-                         testing::Values(empty, four, seven, eight));
+INSTANTIATE_TEST_SUITE_P(Mcoded7, Mcoded7, testing::Values(empty, four, seven, eight));
 
 namespace {
 
@@ -134,8 +133,7 @@ TEST(Mcoded7, BadInput) {
   out = decoder.parse_byte(std::byte{0b00000000}, out);
   EXPECT_TRUE(decoder.good());
   out = decoder.parse_byte(std::byte{0b10010010}, out);
-  EXPECT_FALSE(decoder.good())
-      << "Most significant bit was set: state should be bad";
+  EXPECT_FALSE(decoder.good()) << "Most significant bit was set: state should be bad";
   out = decoder.parse_byte(std::byte{0b00010010}, out);
   EXPECT_FALSE(decoder.good()) << "Expected the 'good' state to be sticky";
   EXPECT_EQ(out, output.data() + 2);

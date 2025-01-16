@@ -54,8 +54,7 @@ std::vector<unsigned> toVector(std::queue<unsigned> q) {
   }
   return result;
 }
-template <std::uint32_t Elements>
-std::vector<unsigned> toVector(midi2::fifo<unsigned, Elements> q) {
+template <std::uint32_t Elements> std::vector<unsigned> toVector(midi2::fifo<unsigned, Elements> q) {
   std::vector<unsigned> result;
   result.reserve(q.size());
   while (!q.empty()) {
@@ -71,12 +70,11 @@ template <typename Size> class Fifo : public testing::Test {};
 // compile-time constants for use as template arguments. Values were chosen to
 // exercise the boundary values for the choice of bitfield type in the FIFO
 // instance.
-using TestTypes =
-    ::testing::Types<std::integral_constant<unsigned, 2>,   // 2 bits
-                     std::integral_constant<unsigned, 4>,   // 3 bits
-                     std::integral_constant<unsigned, 8>,   // 4 bits
-                     std::integral_constant<unsigned, 128>  // 8 bits
-                     >;
+using TestTypes = ::testing::Types<std::integral_constant<unsigned, 2>,   // 2 bits
+                                   std::integral_constant<unsigned, 4>,   // 3 bits
+                                   std::integral_constant<unsigned, 8>,   // 4 bits
+                                   std::integral_constant<unsigned, 128>  // 8 bits
+                                   >;
 TYPED_TEST_SUITE(Fifo, TestTypes);
 
 TYPED_TEST(Fifo, InitialState) {
@@ -104,8 +102,7 @@ TYPED_TEST(Fifo, Push) {
   EXPECT_TRUE(fifo.full()) << "Container should now be full";
   EXPECT_EQ(fifo.size(), fifo.max_size());
 
-  EXPECT_FALSE(fifo.push_back(ctr))
-      << "A push when the FIFO is at maximum capacity should fail";
+  EXPECT_FALSE(fifo.push_back(ctr)) << "A push when the FIFO is at maximum capacity should fail";
   EXPECT_FALSE(fifo.empty());
   EXPECT_TRUE(fifo.full());
   EXPECT_EQ(fifo.size(), fifo.max_size());
@@ -144,14 +141,12 @@ TYPED_TEST(Fifo, PushTwoPopOne) {
   auto value = 0U;
   for (auto iteration = 0U; iteration < elements - 1U; ++iteration) {
     // Push two values
-    EXPECT_LE(fifo.size() + 2U, elements)
-        << "Not enough room to push two values";
+    EXPECT_LE(fifo.size() + 2U, elements) << "Not enough room to push two values";
     for (auto i = 0; i < 2; ++i) {
       ++value;
       EXPECT_TRUE(fifo.push_back(value));
       queue.push(value);
-      EXPECT_EQ(fifo.size(), queue.size())
-          << "Queue and FIFO should have the same number of elements";
+      EXPECT_EQ(fifo.size(), queue.size()) << "Queue and FIFO should have the same number of elements";
     }
     EXPECT_THAT(toVector(fifo), testing::ContainerEq(toVector(queue)));
     // Pop one.
@@ -177,16 +172,14 @@ TYPED_TEST(Fifo, PushUntilFullPopOne) {
       ++value;
       EXPECT_TRUE(fifo.push_back(value));
       queue.push(value);
-      EXPECT_EQ(fifo.size(), queue.size())
-          << "Queue and FIFO should have the same number of elements";
+      EXPECT_EQ(fifo.size(), queue.size()) << "Queue and FIFO should have the same number of elements";
     }
     EXPECT_THAT(toVector(fifo), testing::ContainerEq(toVector(queue)));
 
     while (fifo.size() > 1) {
       EXPECT_EQ(fifo.pop_front(), queue.front());
       queue.pop();
-      EXPECT_EQ(fifo.size(), queue.size())
-          << "Queue and FIFO should have the same number of elements";
+      EXPECT_EQ(fifo.size(), queue.size()) << "Queue and FIFO should have the same number of elements";
     }
     EXPECT_THAT(toVector(fifo), testing::ContainerEq(toVector(queue)));
   }

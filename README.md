@@ -1,4 +1,5 @@
-# AM MIDI 2.0 Lib 
+# AM MIDI 2.0 Lib
+
 A MIDI 2.0 Library
 
 This is a general purpose Library which provides the building blocks, processing and translations needed for most MIDI 2.0 devices and applications. This library aims to work on everything from embedded devices through to large scale applications with minimal code and data footprint.
@@ -18,24 +19,24 @@ This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM
 [![Fuzz Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml)
 
 ## What does this do?
+
 Please read the MIDI 2.0 specification on https://midi.org/specifications to understand the following.
 
 This library can:
 
-* Convert a MIDI 1.0 byte-stream to UMP and back
-* Process and construct UMP streams
-* Process and construct MIDI CI messages
+- Convert a MIDI 1.0 byte-stream to UMP and back
+- Process and construct UMP streams
+- Process and construct MIDI CI messages
 
 This library is designed to use a small footprint. It does this by processing each UMP packet (or MIDI 1.0 Byte stream) one at a time. This way large data is handled in small chunks to keep memory small.
 
 Note it is up to the application to:
 
- * Store Remote MIDI-CI Device details
- * Upon receiving MIDI-CI Message to interpret the Messages data structure (e.g. Profile Id bytes, Note On Articulation etc.)
- * Handle logic and NAK sending and receiving.
+- Store Remote MIDI-CI Device details
+- Upon receiving MIDI-CI Message to interpret the Messages data structure (e.g. Profile Id bytes, Note On Articulation etc.)
+- Handle logic and NAK sending and receiving.
 
 This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a memory footprint of around 1k.
-
 
 ### Example: Creating and Sending UMP Messages
 
@@ -138,10 +139,11 @@ int main() {
 > THIS EXAMPLE IS OBSOLETE
 
 MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing most MIDI-CI Messages.
+
 ```C++
 
 #include "midiCIProcessor.h"
-midi2Processor midiCIProcess; 
+midi2Processor midiCIProcess;
 uint32_t localMUID;
 uint8_t sysexId[3] = {0x00 , 0x02, 0x22};
 uint8_t famId[2] = {0x7F, 0x00};
@@ -150,7 +152,7 @@ uint8_t ver[4];
 unint8_t sysexBuffer[512];
 
 bool checkMUID(uint8_t group, uint32_t muid){
-	return (localMUID==muid);  
+	return (localMUID==muid);
 }
 
 void recvDiscovery(uint8_t group, struct MIDICI ciDetails, uint8_t* remotemanuId, uint8_t* remotefamId, uint8_t* remotemodelId, uint8_t *remoteverId, uint8_t remoteciSupport, uint16_t remotemaxSysex){
@@ -162,10 +164,10 @@ void recvDiscovery(uint8_t group, struct MIDICI ciDetails, uint8_t* remotemanuId
 void setup()
 {
   localMUID = random(0xFFFFEFF);
-  
+
   midiCIProcess.setRecvDiscovery(recvDiscovery);
   midiCIProcess.setCheckMUID(checkMUID);
-  
+
   uint16_t sBuffLen = sendDiscoveryRequest(sysexBuffer,1, sysexId, famId, modelId, ver,12, 512);
   sendSysExOutOfDevice(sysexBuffer, sBuffLen);
 }
@@ -176,12 +178,9 @@ void loop()
   while(uint8_t sysexByte = getNextSysexByte()){
     midiCIProcess.processUMP(sysexByte);
   }
-...  
+...
 }
 
 ```
 
 ---
-
-
-

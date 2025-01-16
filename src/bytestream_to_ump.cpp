@@ -66,7 +66,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   sysex7_.state = sysex7::status::none;
 }
 
-void bytestream_to_ump::sysex_data_byte (std::byte const midi1Byte) {
+void bytestream_to_ump::sysex_data_byte(std::byte const midi1Byte) {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
     switch (sysex7_.state) {
     case sysex7::status::start: push_sysex7<ump::data64::sysex7_start>(); break;
@@ -102,20 +102,17 @@ void bytestream_to_ump::push(std::byte const midi1Byte) {
     }
 
     switch (midi1int) {
-    case status::tune_request:
-      this->to_ump(midi1Byte, std::byte{0}, std::byte{0});
-      break;
+    case status::tune_request: this->to_ump(midi1Byte, std::byte{0}, std::byte{0}); break;
     case status::sysex_start:
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
       break;
-    default:
-      break;
+    default: break;
     }
   } else {
     // Data byte handling.
     if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
-      this->sysex_data_byte (midi1Byte);
+      this->sysex_data_byte(midi1Byte);
     } else if (d1_ != unknown) {  // Second byte
       this->to_ump(d0_, d1_, midi1Byte);
       d1_ = unknown;

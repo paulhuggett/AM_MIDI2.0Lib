@@ -63,7 +63,7 @@ private:
   void to_ump(std::byte b0, std::byte b1, std::byte b2);
 
   template <typename T> void push_sysex7();
-  void sysex_data_byte (std::byte midi1Byte);
+  void sysex_data_byte(std::byte midi1Byte);
 };
 
 }  // end namespace midi2

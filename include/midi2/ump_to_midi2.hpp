@@ -116,24 +116,38 @@ private:
   struct to_midi2_config {
     // utility messages go straight through.
     struct utility {
-      static constexpr void noop(context const *const) { /* Just consume NOOP messages */ }
+      static constexpr void noop(context const *const) { /* Just consume NOOP messages */
+      }
       static constexpr void jr_clock(context *const ctxt, ump::utility::jr_clock const &in) { ctxt->push(in); }
       static constexpr void jr_timestamp(context *const ctxt, ump::utility::jr_timestamp const &in) { ctxt->push(in); }
-      static constexpr void delta_clockstamp_tpqn(context *const ctxt, ump::utility::delta_clockstamp_tpqn const &in) { ctxt->push(in); }
-      static constexpr void delta_clockstamp(context *const ctxt, ump::utility::delta_clockstamp const &in) { ctxt->push(in); }
-      static constexpr void unknown(context const *, std::span<std::uint32_t>) { /* Just drop bad messages */ }
+      static constexpr void delta_clockstamp_tpqn(context *const ctxt, ump::utility::delta_clockstamp_tpqn const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void delta_clockstamp(context *const ctxt, ump::utility::delta_clockstamp const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void unknown(context const *, std::span<std::uint32_t>) { /* Just drop bad messages */
+      }
     };
     // system messages go straight through.
     struct system {
-      static constexpr void midi_time_code(context *const ctxt, ump::system::midi_time_code const &in) { ctxt->push(in); }
-      static constexpr void song_position_pointer(context *const ctxt, ump::system::song_position_pointer const &in) { ctxt->push(in); }
+      static constexpr void midi_time_code(context *const ctxt, ump::system::midi_time_code const &in) {
+        ctxt->push(in);
+      }
+      static constexpr void song_position_pointer(context *const ctxt, ump::system::song_position_pointer const &in) {
+        ctxt->push(in);
+      }
       static constexpr void song_select(context *const ctxt, ump::system::song_select const &in) { ctxt->push(in); }
       static constexpr void tune_request(context *const ctxt, ump::system::tune_request const &in) { ctxt->push(in); }
       static constexpr void timing_clock(context *const ctxt, ump::system::timing_clock const &in) { ctxt->push(in); }
       static constexpr void seq_start(context *const ctxt, ump::system::sequence_start const &in) { ctxt->push(in); }
-      static constexpr void seq_continue(context *const ctxt, ump::system::sequence_continue const &in) { ctxt->push(in); }
+      static constexpr void seq_continue(context *const ctxt, ump::system::sequence_continue const &in) {
+        ctxt->push(in);
+      }
       static constexpr void seq_stop(context *const ctxt, ump::system::sequence_stop const &in) { ctxt->push(in); }
-      static constexpr void active_sensing(context *const ctxt, ump::system::active_sensing const &in) { ctxt->push(in); }
+      static constexpr void active_sensing(context *const ctxt, ump::system::active_sensing const &in) {
+        ctxt->push(in);
+      }
       static constexpr void reset(context *const ctxt, ump::system::reset const &in) { ctxt->push(in); }
     };
     // m1cvm messages are converted to m2cvm messages.
@@ -170,9 +184,7 @@ private:
     public:
       static constexpr void note_off(context *const ctxt, ump::m2cvm::note_off const &in) { ctxt->push(in); }
       static constexpr void note_on(context *const ctxt, ump::m2cvm::note_on const &in) { ctxt->push(in); }
-      static constexpr void poly_pressure(context *const ctxt, ump::m2cvm::poly_pressure const &in) {
-        ctxt->push(in);
-      }
+      static constexpr void poly_pressure(context *const ctxt, ump::m2cvm::poly_pressure const &in) { ctxt->push(in); }
       static constexpr void program_change(context *const ctxt, ump::m2cvm::program_change const &in) {
         ctxt->push(in);
       }
@@ -215,42 +227,81 @@ private:
     struct data128 {
       constexpr static void sysex8_in_1(context *const ctxt, ump::data128::sysex8_in_1 const &in) { ctxt->push(in); }
       constexpr static void sysex8_start(context *const ctxt, ump::data128::sysex8_start const &in) { ctxt->push(in); }
-      constexpr static void sysex8_continue(context *const ctxt, ump::data128::sysex8_continue const &in) { ctxt->push(in); }
+      constexpr static void sysex8_continue(context *const ctxt, ump::data128::sysex8_continue const &in) {
+        ctxt->push(in);
+      }
       constexpr static void sysex8_end(context *const ctxt, ump::data128::sysex8_end const &in) { ctxt->push(in); }
       constexpr static void mds_header(context *const ctxt, ump::data128::mds_header const &in) { ctxt->push(in); }
       constexpr static void mds_payload(context *const ctxt, ump::data128::mds_payload const &in) { ctxt->push(in); }
     };
     struct stream {
-      constexpr static void endpoint_discovery(context *const ctxt, ump::stream::endpoint_discovery const &in) { ctxt->push(in); }
-      constexpr static void endpoint_info_notification(context *const ctxt, ump::stream::endpoint_info_notification const &in) { ctxt->push(in); }
-      constexpr static void device_identity_notification(context *const ctxt, ump::stream::device_identity_notification const &in) { ctxt->push(in); }
-      constexpr static void endpoint_name_notification(context *const ctxt, ump::stream::endpoint_name_notification const &in) { ctxt->push(in); }
-      constexpr static void product_instance_id_notification(context *const ctxt, ump::stream::product_instance_id_notification const &in) { ctxt->push(in); }
-      constexpr static void jr_configuration_request(context *const ctxt, ump::stream::jr_configuration_request const &in) { ctxt->push(in); }
-      constexpr static void jr_configuration_notification(context *const ctxt, ump::stream::jr_configuration_notification const &in) { ctxt->push(in); }
-      constexpr static void function_block_discovery(context *const ctxt, ump::stream::function_block_discovery const &in) { ctxt->push(in); }
-      constexpr static void function_block_info_notification(context *const ctxt, ump::stream::function_block_info_notification const &in) { ctxt->push(in); }
-      constexpr static void function_block_name_notification(context *const ctxt, ump::stream::function_block_name_notification const &in) { ctxt->push(in); }
+      constexpr static void endpoint_discovery(context *const ctxt, ump::stream::endpoint_discovery const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void endpoint_info_notification(context *const ctxt,
+                                                       ump::stream::endpoint_info_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void device_identity_notification(context *const ctxt,
+                                                         ump::stream::device_identity_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void endpoint_name_notification(context *const ctxt,
+                                                       ump::stream::endpoint_name_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void product_instance_id_notification(context *const ctxt,
+                                                             ump::stream::product_instance_id_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void jr_configuration_request(context *const ctxt,
+                                                     ump::stream::jr_configuration_request const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void jr_configuration_notification(context *const ctxt,
+                                                          ump::stream::jr_configuration_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void function_block_discovery(context *const ctxt,
+                                                     ump::stream::function_block_discovery const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void function_block_info_notification(context *const ctxt,
+                                                             ump::stream::function_block_info_notification const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void function_block_name_notification(context *const ctxt,
+                                                             ump::stream::function_block_name_notification const &in) {
+        ctxt->push(in);
+      }
       constexpr static void start_of_clip(context *const ctxt, ump::stream::start_of_clip const &in) { ctxt->push(in); }
       constexpr static void end_of_clip(context *const ctxt, ump::stream::end_of_clip const &in) { ctxt->push(in); }
     };
     struct flex_data {
       constexpr static void set_tempo(context *const ctxt, ump::flex_data::set_tempo const &in) { ctxt->push(in); }
-      constexpr static void set_time_signature(context *const ctxt, ump::flex_data::set_time_signature const &in) { ctxt->push(in); }
-      constexpr static void set_metronome(context *const ctxt, ump::flex_data::set_metronome const &in) { ctxt->push(in); }
-      constexpr static void set_key_signature(context *const ctxt, ump::flex_data::set_key_signature const &in) { ctxt->push(in); }
-      constexpr static void set_chord_name(context *const ctxt, ump::flex_data::set_chord_name const &in) { ctxt->push(in); }
+      constexpr static void set_time_signature(context *const ctxt, ump::flex_data::set_time_signature const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void set_metronome(context *const ctxt, ump::flex_data::set_metronome const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void set_key_signature(context *const ctxt, ump::flex_data::set_key_signature const &in) {
+        ctxt->push(in);
+      }
+      constexpr static void set_chord_name(context *const ctxt, ump::flex_data::set_chord_name const &in) {
+        ctxt->push(in);
+      }
       constexpr static void text(context *const ctxt, ump::flex_data::text_common const &in) { ctxt->push(in); }
     };
     struct context *context = nullptr;
-    [[no_unique_address]] struct utility utility{};
-    [[no_unique_address]] struct system system{};
-    [[no_unique_address]] class m1cvm m1cvm{};
-    [[no_unique_address]] struct data64 data64{};
-    [[no_unique_address]] struct m2cvm m2cvm{};
-    [[no_unique_address]] struct data128 data128{};
-    [[no_unique_address]] struct stream stream{};
-    [[no_unique_address]] struct flex_data flex{};
+    [[no_unique_address]] struct utility utility {};
+    [[no_unique_address]] struct system system {};
+    [[no_unique_address]] class m1cvm m1cvm {};
+    [[no_unique_address]] struct data64 data64 {};
+    [[no_unique_address]] struct m2cvm m2cvm {};
+    [[no_unique_address]] struct data128 data128 {};
+    [[no_unique_address]] struct stream stream {};
+    [[no_unique_address]] struct flex_data flex {};
   };
 
   context context_;

@@ -76,7 +76,8 @@ template <typename Context> struct function_config {
   dispatcher_backend::flex_data_function<Context> flex;
 };
 
-template <typename T> concept word_memfun = requires(T a) {
+template <typename T>
+concept word_memfun = requires(T a) {
   { a.word() } -> std::convertible_to<std::uint32_t>;
 };
 

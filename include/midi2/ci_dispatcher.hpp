@@ -36,7 +36,8 @@ concept ci_dispatcher_config = requires(T v) {
   { v.process_inquiry } -> dispatcher_backend::process_inquiry<decltype(v.context)>;
 };
 
-template <typename T> concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
+template <typename T>
+concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
 template <ci_dispatcher_config Config> class ci_dispatcher {
 public:
@@ -557,13 +558,32 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::property_exch
 
   using enum ci_message;
   switch (midici_.type) {
-  case pe_get: config_.property_exchange.get(config_.context, midici_, ci::property_exchange::get{chunk, request, header}); break;
-  case pe_get_reply: config_.property_exchange.get_reply(config_.context, midici_, ci::property_exchange::get_reply{chunk, request, header, data}); break;
-  case pe_set: config_.property_exchange.set(config_.context, midici_, ci::property_exchange::set{chunk, request, header, data}); break;
-  case pe_set_reply: config_.property_exchange.set_reply(config_.context, midici_, ci::property_exchange::set_reply{chunk, request, header, data}); break;
-  case pe_sub: config_.property_exchange.subscription(config_.context, midici_, ci::property_exchange::subscription{chunk, request, header, data}); break;
-  case pe_sub_reply: config_.property_exchange.subscription_reply(config_.context, midici_, ci::property_exchange::subscription_reply{chunk, request, header, data}); break;
-  case pe_notify: config_.property_exchange.notify(config_.context, midici_, ci::property_exchange::notify{chunk, request, header, data}); break;
+  case pe_get:
+    config_.property_exchange.get(config_.context, midici_, ci::property_exchange::get{chunk, request, header});
+    break;
+  case pe_get_reply:
+    config_.property_exchange.get_reply(config_.context, midici_,
+                                        ci::property_exchange::get_reply{chunk, request, header, data});
+    break;
+  case pe_set:
+    config_.property_exchange.set(config_.context, midici_, ci::property_exchange::set{chunk, request, header, data});
+    break;
+  case pe_set_reply:
+    config_.property_exchange.set_reply(config_.context, midici_,
+                                        ci::property_exchange::set_reply{chunk, request, header, data});
+    break;
+  case pe_sub:
+    config_.property_exchange.subscription(config_.context, midici_,
+                                           ci::property_exchange::subscription{chunk, request, header, data});
+    break;
+  case pe_sub_reply:
+    config_.property_exchange.subscription_reply(
+        config_.context, midici_, ci::property_exchange::subscription_reply{chunk, request, header, data});
+    break;
+  case pe_notify:
+    config_.property_exchange.notify(config_.context, midici_,
+                                     ci::property_exchange::notify{chunk, request, header, data});
+    break;
   default: assert(false); break;
   }
   consumer_ = &ci_dispatcher::discard;

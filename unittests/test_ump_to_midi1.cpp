@@ -44,11 +44,10 @@ TEST(UMPToMIDI1, Foo) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, Sysex) {
-  std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B},
-                         std::uint32_t{0x3026607A}, std::uint32_t{0x737F7F7F},
-                         std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
-                         std::uint32_t{0x30260100}, std::uint32_t{0x00000300},
-                         std::uint32_t{0x30360000}, std::uint32_t{0x10000000}};
+  std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
+                         std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
+                         std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
+                         std::uint32_t{0x10000000}};
   EXPECT_THAT(convert(input), ElementsAreArray(input));
 }
 // NOLINTNEXTLINE
@@ -427,7 +426,7 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
   add(midi2::ump::system::active_sensing{});
   add(midi2::ump::system::reset{});
 
-  for (auto const message: input) {
+  for (auto const message : input) {
     ump2m1.push(message);
     while (!ump2m1.empty()) {
       output.push_back(ump2m1.pop());
@@ -435,6 +434,5 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
   }
   EXPECT_THAT(input, ContainerEq(output));
 }
-
 
 }  // end anonymous namespace

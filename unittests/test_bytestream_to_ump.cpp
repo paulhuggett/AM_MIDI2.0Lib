@@ -198,7 +198,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
                          static_cast<std::byte>(midi2::status::program_change) | channel, program};
 
   constexpr auto message_type = static_cast<std::uint32_t>(midi2::ump::message_type::m1cvm);  // 4 bits
-  constexpr auto group = std::uint32_t{0x00};                                                // 4 bits
+  constexpr auto group = std::uint32_t{0x00};                                                 // 4 bits
 
   std::array const expected{
       // MSB (Coarse) Bank Select
@@ -270,8 +270,8 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
   constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
-  std::array const input{start, b8{1}, b8{2}, b8{3}, b8{4}, b8{5}, b8{6}, b8{7},
-                         note_off | b8{channel}, b8{note_number}, b8{0}};
+  std::array const input{start,           b8{1}, b8{2}, b8{3}, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel},
+                         b8{note_number}, b8{0}};
 
   std::vector<std::uint32_t> expected;
   {
@@ -346,27 +346,53 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
   std::array const input{
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x0A}, std::byte{0x0B}, std::byte{0x0C}, std::byte{0x0D},
-      std::byte{0x0E}, std::byte{0x0F}, std::byte{0x1A}, std::byte{0x1B},
-      std::byte{0x1C}, std::byte{0x1D}, std::byte{0x1E}, std::byte{0x1F},
+      std::byte{0x0A},
+      std::byte{0x0B},
+      std::byte{0x0C},
+      std::byte{0x0D},
+      std::byte{0x0E},
+      std::byte{0x0F},
+      std::byte{0x1A},
+      std::byte{0x1B},
+      std::byte{0x1C},
+      std::byte{0x1D},
+      std::byte{0x1E},
+      std::byte{0x1F},
       static_cast<std::byte>(stop),   // end sysex
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x2A}, std::byte{0x2B}, std::byte{0x2C}, std::byte{0x2D},
-      std::byte{0x2E}, std::byte{0x2F}, std::byte{0x3A}, std::byte{0x3B},
-      std::byte{0x3C}, std::byte{0x3D}, std::byte{0x3E},
+      std::byte{0x2A},
+      std::byte{0x2B},
+      std::byte{0x2C},
+      std::byte{0x2D},
+      std::byte{0x2E},
+      std::byte{0x2F},
+      std::byte{0x3A},
+      std::byte{0x3B},
+      std::byte{0x3C},
+      std::byte{0x3D},
+      std::byte{0x3E},
       static_cast<std::byte>(stop),   // end sysex
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x4A}, std::byte{0x4B}, std::byte{0x4C}, std::byte{0x4D},
+      std::byte{0x4A},
+      std::byte{0x4B},
+      std::byte{0x4C},
+      std::byte{0x4D},
       std::byte{0x4E},
       static_cast<std::byte>(stop),   // end sysex
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x5A}, std::byte{0x5B}, std::byte{0x5C}, std::byte{0x5D},
+      std::byte{0x5A},
+      std::byte{0x5B},
+      std::byte{0x5C},
+      std::byte{0x5D},
       static_cast<std::byte>(stop),   // end sysex
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x6A}, std::byte{0x6B}, std::byte{0x6C},
+      std::byte{0x6A},
+      std::byte{0x6B},
+      std::byte{0x6C},
       static_cast<std::byte>(stop),   // end sysex
       static_cast<std::byte>(start),  // start sysex
-      std::byte{0x7A}, std::byte{0x7B},
+      std::byte{0x7A},
+      std::byte{0x7B},
       static_cast<std::byte>(stop),  // end sysex
   };
 
