@@ -27,7 +27,7 @@ public:
   using input_type = std::uint32_t;
   using output_type = std::uint32_t;
 
-  explicit constexpr ump_to_midi2(std::uint8_t const group) {
+  explicit constexpr ump_to_midi2(std::uint8_t const group) noexcept {
     assert(group <= 0b1111);
     context_.group = group;
   }
@@ -305,7 +305,7 @@ private:
   };
 
   context context_;
-  ump::ump_dispatcher<to_midi2_config> p_{to_midi2_config{&context_}};
+  ump::ump_dispatcher<to_midi2_config> p_{to_midi2_config{.context = &context_}};
 };
 
 }  // end namespace midi2
