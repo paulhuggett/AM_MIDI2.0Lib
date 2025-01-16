@@ -1,5 +1,6 @@
 // DUT
 #include "midi2/ump_to_midi2.hpp"
+#include "midi2/ump_types.hpp"
 
 // Standard Library
 #include <array>
