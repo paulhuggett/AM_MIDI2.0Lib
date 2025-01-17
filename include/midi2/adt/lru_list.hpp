@@ -30,15 +30,15 @@ public:
     friend class lru_list;
 
   public:
-    explicit constexpr operator ValueType &() noexcept { return *std::bit_cast<ValueType *>(&payload[0]); }
+    explicit constexpr operator ValueType &() noexcept { return *std::bit_cast<ValueType *>(&payload_[0]); }
     explicit constexpr operator ValueType const &() const noexcept {
-      return *std::bit_cast<ValueType const *>(&payload[0]);
+      return *std::bit_cast<ValueType const *>(&payload_[0]);
     }
 
   private:
-    alignas(ValueType) std::byte payload[sizeof(ValueType)]{};
-    node *prev = nullptr;
-    node *next = nullptr;
+    alignas(ValueType) std::byte payload_[sizeof(ValueType)]{};
+    node *prev_ = nullptr;
+    node *next_ = nullptr;
   };
 
   void clear();
@@ -91,18 +91,18 @@ void lru_list<ValueType, Size>::touch(node &n) {
   }
   // Unhook 'n' from the list in its current position.
   if (last_ == &n) {
-    last_ = n.prev;
+    last_ = n.prev_;
   }
-  if (n.next != nullptr) {
-    n.next->prev = n.prev;
+  if (n.next_ != nullptr) {
+    n.next_->prev_ = n.prev_;
   }
-  if (n.prev != nullptr) {
-    n.prev->next = n.next;
+  if (n.prev_ != nullptr) {
+    n.prev_->next_ = n.next_;
   }
   // Push on the front of the list.
-  n.prev = nullptr;
-  n.next = first_;
-  first_->prev = &n;
+  n.prev_ = nullptr;
+  n.next_ = first_;
+  first_->prev_ = &n;
   first_ = &n;
   this->check_invariants();
 }
@@ -145,16 +145,16 @@ auto lru_list<ValueType, Size>::add_impl(OtherValueType &&payload, Evictor const
     lru_value = std::forward<OtherValueType>(payload);
     // Set about moving this element to the front of the list as the most recently used.
     result = last_;
-    last_ = last_->prev;
-    last_->next = nullptr;
+    last_ = last_->prev_;
+    last_->next_ = nullptr;
   }
 
-  result->prev = nullptr;
-  result->next = first_;
+  result->prev_ = nullptr;
+  result->next_ = first_;
 
   if (first_ != nullptr) {
-    assert(first_->prev == nullptr);
-    first_->prev = result;
+    assert(first_->prev_ == nullptr);
+    first_->prev_ = result;
   }
   first_ = result;
   this->check_invariants();
@@ -169,12 +169,12 @@ void lru_list<ValueType, Size>::check_invariants() const noexcept {
 #ifndef NDEBUG
   assert((first_ == nullptr) == (size_ == 0) && "first_ must be null if and only if the container is empty");
   assert((first_ == last_) == (size_ < 2) && "with < 2 members, first_ and last_ must be equal");
-  assert((first_ == nullptr || first_->prev == nullptr) && "prev of the first element must be null");
-  assert((last_ == nullptr || last_->next == nullptr) && "next of the last element must be null");
+  assert((first_ == nullptr || first_->prev_ == nullptr) && "prev of the first element must be null");
+  assert((last_ == nullptr || last_->next_ == nullptr) && "next of the last element must be null");
 
   node const *prev = nullptr;
-  for (auto const *n = first_; n != nullptr; n = n->next) {
-    assert(n->prev == prev && "next and prev pointers are inconsistent between two nodes");
+  for (auto const *n = first_; n != nullptr; n = n->next_) {
+    assert(n->prev_ == prev && "next and prev pointers are inconsistent between two nodes");
     prev = n;
   }
   assert(last_ == prev && "the last pointer is not correct");
