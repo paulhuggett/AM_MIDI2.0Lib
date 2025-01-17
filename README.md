@@ -69,10 +69,11 @@ void send_note_on(std::uint8_t channel, std::uint8_t note, std::uint32_t velocit
 #include <midi2/ump_dispatcher.hpp>
 
 int main() {
-  // We must pass a "context" to the dispatcher which will be forwarded to the callbacks
-  // as they are invoked. The context enables message handlers to efficiently share state
-  // but we don't need that in this simple example so a struct with no members will
-  // suffice.
+  // In this scenario, we need to pass a “context” to the dispatcher,
+  // which will be forwarded to the callbacks as they are invoked.
+  // The context facilitates efficient state sharing among message
+  // handlers, but this is not necessary for our simple example.
+  // Therefore, a struct with no members will suffice.
   struct context {};
 
   // Create the dispatcher with default-initialized context.
