@@ -145,7 +145,7 @@ public:
   constexpr bool operator==(move_only const &) const noexcept = default;
 
 private:
-  [[maybe_unused]] int a_;
+  int a_;
 };
 
 TEST(LruList, MoveOnly) {
