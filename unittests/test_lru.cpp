@@ -27,7 +27,6 @@ TEST(LruList, Empty) {
 class evictor_base {
 public:
   virtual ~evictor_base() noexcept = default;
-
   void operator()(int &v) { return this->evict(v); }
   virtual void evict(int &v) = 0;
 };
@@ -132,6 +131,37 @@ FUZZ_TEST(LruList, Thrash);
 #endif
 TEST(LruList, NoThrash) {
   Thrash({});
+}
+
+class move_only {
+public:
+  constexpr explicit move_only(int a) noexcept : a_{a} {}
+  constexpr move_only(move_only const &) = delete;
+  constexpr move_only(move_only &&) noexcept = default;
+
+  constexpr move_only &operator=(move_only const &) = delete;
+  constexpr move_only &operator=(move_only &&) noexcept = default;
+
+  constexpr bool operator==(move_only const &) const noexcept = default;
+
+private:
+  [[maybe_unused]] int a_;
+};
+
+TEST(LruList, MoveOnly) {
+  midi2::lru_list<move_only, 2> lru;
+  auto evictor = [](move_only &) {};
+
+  auto &node0 = lru.add(move_only{3}, evictor);
+  EXPECT_EQ(static_cast<move_only &>(node0), move_only{3});
+  auto &node1 = lru.add(move_only{5}, evictor);
+  EXPECT_EQ(static_cast<move_only &>(node1), move_only{5});
+  auto &node2 = lru.add(move_only{7}, evictor);
+  EXPECT_EQ(static_cast<move_only &>(node2), move_only{7});
+  auto &node3 = lru.add(move_only{11}, evictor);
+  EXPECT_EQ(static_cast<move_only &>(node3), move_only{11});
+  auto &node4 = lru.add(move_only{13}, evictor);
+  EXPECT_EQ(static_cast<move_only &>(node4), move_only{13});
 }
 
 }  // end anonymous namespace

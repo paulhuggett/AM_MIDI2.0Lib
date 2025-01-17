@@ -30,8 +30,10 @@ public:
     friend class lru_list;
 
   public:
-    explicit operator ValueType &() noexcept { return *std::bit_cast<ValueType *>(&payload[0]); }
-    explicit operator ValueType const &() const noexcept { return *std::bit_cast<ValueType const *>(&payload[0]); }
+    explicit constexpr operator ValueType &() noexcept { return *std::bit_cast<ValueType *>(&payload[0]); }
+    explicit constexpr operator ValueType const &() const noexcept {
+      return *std::bit_cast<ValueType const *>(&payload[0]);
+    }
 
   private:
     alignas(ValueType) std::byte payload[sizeof(ValueType)]{};
@@ -44,6 +46,7 @@ public:
   [[nodiscard]] constexpr std::size_t size() const noexcept { return size_; }
   void touch(node &n);
 
+  template <std::invocable<ValueType &> Evictor = void(ValueType &)> node &add(ValueType &&payload, Evictor evictor);
   template <std::invocable<ValueType &> Evictor = void(ValueType &)>
   node &add(ValueType const &payload, Evictor evictor);
 
@@ -56,6 +59,9 @@ private:
   node *last_ = nullptr;
   std::size_t size_ = 0;
   std::array<node, Size> v_;
+
+  template <typename OtherValueType, std::invocable<ValueType &> Evictor>
+  node &add_impl(OtherValueType &&payload, Evictor const evictor);
 
   void check_invariants() const noexcept;
 };
@@ -106,27 +112,40 @@ void lru_list<ValueType, Size>::touch(node &n) {
 template <typename ValueType, std::size_t Size>
   requires(Size > 1)
 template <std::invocable<ValueType &> Evictor>
-auto lru_list<ValueType, Size>::add(ValueType const &payload, Evictor evictor) -> node & {
+auto lru_list<ValueType, Size>::add(ValueType const &payload, Evictor const evictor) -> node & {
+  return this->add_impl(payload, evictor);
+}
+
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+template <std::invocable<ValueType &> Evictor>
+auto lru_list<ValueType, Size>::add(ValueType &&payload, Evictor const evictor) -> node & {
+  return this->add_impl(std::move(payload), evictor);
+}
+
+template <typename ValueType, std::size_t Size>
+  requires(Size > 1)
+template <typename OtherValueType, std::invocable<ValueType &> Evictor>
+auto lru_list<ValueType, Size>::add_impl(OtherValueType &&payload, Evictor const evictor) -> node & {
   node *result = nullptr;
   if (size_ < v_.size()) {
+    // Add this is and push it onto the front of the list.
     result = &v_[size_];
-    new (std::to_address(result)) ValueType{payload};
-
+    new (std::to_address(result)) ValueType{std::forward<OtherValueType>(payload)};
     ++size_;
     if (last_ == nullptr) {
       last_ = result;
     }
   } else {
     assert(first_ != nullptr && last_ != nullptr);
-    result = last_;
-    // Throw out the least recently used element.
-    auto &lru_value = static_cast<ValueType &>(*result);
+    // The list is full so we must evict the last item.
+    auto &lru_value = static_cast<ValueType &>(*last_);
     evictor(lru_value);
     // Re-use the array entry for the new value.
-    lru_value = std::move(payload);
-
+    lru_value = std::forward<OtherValueType>(payload);
     // Set about moving this element to the front of the list as the most recently used.
-    last_ = result->prev;
+    result = last_;
+    last_ = last_->prev;
     last_->next = nullptr;
   }
 
