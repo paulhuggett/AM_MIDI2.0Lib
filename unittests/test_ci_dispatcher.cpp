@@ -259,7 +259,7 @@ TEST_F(CIDispatcher, DiscoveryV1) {
   midici.params.device_id = std::uint8_t{0x7F};
   midici.params.version = 1;
   midici.params.remote_muid = 0;
-  midici.params.local_muid = midi2::M2_CI_BROADCAST;
+  midici.params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = std::array{std::uint8_t{0x12}, std::uint8_t{0x23}, std::uint8_t{0x34}};
@@ -280,7 +280,7 @@ TEST_F(CIDispatcher, DiscoveryV2) {
   midici.params.device_id = std::uint8_t{0x7F};
   midici.params.version = 2;
   midici.params.remote_muid = 0;
-  midici.params.local_muid = midi2::M2_CI_BROADCAST;
+  midici.params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = std::array{std::uint8_t{0x12}, std::uint8_t{0x23}, std::uint8_t{0x34}};
@@ -313,7 +313,7 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
   midici.params.device_id = midi2::to_underlying(device_id);
   midici.params.version = 2;
   midici.params.remote_muid = 0;
-  midici.params.local_muid = midi2::M2_CI_BROADCAST;
+  midici.params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery_reply reply;
   reply.manufacturer = midi2::ci::from_array(manufacturer);

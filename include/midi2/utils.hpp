@@ -208,11 +208,11 @@ enum class pe_encoding : std::uint8_t {
   mcoded7zlib = 3,
 };
 
-constexpr auto M2_CI_BROADCAST = std::uint32_t{0x0FFFFFFF};
+constexpr auto ci_broadcast = std::uint32_t{0x0FFFFFFF};
 
 enum : std::uint32_t {
-  UMP_VER_MAJOR = 1,
-  UMP_VER_MINOR = 1,
+  ump_ver_major = 1,
+  ump_ver_minor = 1,
 };
 
 template <unsigned Bits>

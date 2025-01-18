@@ -221,7 +221,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::header() {
     count_ = 0;
 
     config_.management.unknown_midici(config_.context, midici_);
-  } else if (midici_.params.local_muid != M2_CI_BROADCAST &&
+  } else if (midici_.params.local_muid != ci_broadcast &&
              !config_.management.check_muid(config_.context, midici_.group, midici_.params.local_muid)) {
     // The message wasn't intended for us.
     consumer_ = &ci_dispatcher::discard;

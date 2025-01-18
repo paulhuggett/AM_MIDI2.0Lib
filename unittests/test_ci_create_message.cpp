@@ -87,7 +87,7 @@ TEST_F(CICreateMessage, DiscoveryV1) {
   params.device_id = midi2::to_underlying(device_id);
   params.version = 1;
   params.remote_muid = 0;
-  params.local_muid = midi2::M2_CI_BROADCAST;
+  params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
@@ -133,7 +133,7 @@ TEST_F(CICreateMessage, DiscoveryV2) {
   params.device_id = midi2::to_underlying(device_id);
   params.version = 2;
   params.remote_muid = 0;
-  params.local_muid = midi2::M2_CI_BROADCAST;
+  params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery discovery;
   discovery.manufacturer = midi2::ci::from_array(manufacturer);
@@ -182,7 +182,7 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
   params.device_id = midi2::to_underlying(device_id);
   params.version = 2;
   params.remote_muid = 0;
-  params.local_muid = midi2::M2_CI_BROADCAST;
+  params.local_muid = midi2::ci_broadcast;
 
   midi2::ci::discovery_reply reply;
   reply.manufacturer = midi2::ci::from_array(manufacturer);
