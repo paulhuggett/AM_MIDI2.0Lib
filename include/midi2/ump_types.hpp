@@ -649,7 +649,7 @@ public:
   };
 
   constexpr tune_request() noexcept = default;
-  constexpr explicit tune_request(std::uint32_t const w0_) noexcept : words_{w0_} {}
+  constexpr explicit tune_request(std::uint32_t const w0) noexcept : words_{w0} {}
   friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1124,7 +1124,7 @@ public:
   };
 
   constexpr channel_pressure() noexcept = default;
-  constexpr explicit channel_pressure(std::uint32_t const w0_) noexcept : words_{w0_} {}
+  constexpr explicit channel_pressure(std::uint32_t const w0) noexcept : words_{w0} {}
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
