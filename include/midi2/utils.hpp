@@ -103,8 +103,8 @@ constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept 
   return (midi1_byte & std::byte{0x80}) != std::byte{0x00};
 }
 
-constexpr auto S7UNIVERSAL_NRT = std::byte{0x7E};
-constexpr auto S7MIDICI = std::byte{0x0D};
+constexpr auto s7_universal_nrt = std::byte{0x7E};
+constexpr auto s7_midi_ci = std::byte{0x0D};
 
 // The MIDI 1.0 Specification defines Control Change indexes 98, 99, 100, and
 // 101 (0x62, 0x63, 0x64, and 0x65) to be used as compound sequences for

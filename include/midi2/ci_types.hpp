@@ -112,9 +112,9 @@ struct params {
 };
 
 constexpr params::operator packed::header() const {
-  return packed::header{.sysex = S7UNIVERSAL_NRT,
+  return packed::header{.sysex = s7_universal_nrt,
                         .source = static_cast<std::byte>(device_id),
-                        .sub_id_1 = S7MIDICI,
+                        .sub_id_1 = s7_midi_ci,
                         .sub_id_2 = std::byte{0},  // message type
                         .version = static_cast<std::byte>(version),
                         .source_muid = ci::to_le7(remote_muid),
@@ -1587,12 +1587,12 @@ constexpr midi_message_report::midi_message_report(packed::midi_message_report_v
 }
 
 constexpr midi_message_report::operator packed::midi_message_report_v2() const {
-  union packed::midi_message_report_v2::system_message sm{};
+  union packed::midi_message_report_v2::system_message sm {};
   sm.mtc_quarter_frame = mtc_quarter_frame;
   sm.song_position = song_position;
   sm.song_select = song_select;
 
-  union packed::midi_message_report_v2::channel_controller cc{};
+  union packed::midi_message_report_v2::channel_controller cc {};
   cc.pitchbend = pitchbend;
   cc.control_change = control_change;
   cc.rpn_registered_controller = rpn_registered_controller;
@@ -1600,7 +1600,7 @@ constexpr midi_message_report::operator packed::midi_message_report_v2() const {
   cc.program_change = program_change;
   cc.channel_pressure = channel_pressure;
 
-  union packed::midi_message_report_v2::note_data_messages ndm{};
+  union packed::midi_message_report_v2::note_data_messages ndm {};
   ndm.notes = notes;
   ndm.poly_pressure = poly_pressure;
   ndm.per_note_pitchbend = per_note_pitchbend;
@@ -1710,12 +1710,12 @@ constexpr midi_message_report_reply::midi_message_report_reply(packed::midi_mess
 }
 
 constexpr midi_message_report_reply::operator packed::midi_message_report_reply_v2() const {
-  union packed::midi_message_report_reply_v2::system_message sm{};
+  union packed::midi_message_report_reply_v2::system_message sm {};
   sm.mtc_quarter_frame = mtc_quarter_frame;
   sm.song_position = song_position;
   sm.song_select = song_select;
 
-  union packed::midi_message_report_reply_v2::channel_controller cc{};
+  union packed::midi_message_report_reply_v2::channel_controller cc {};
   cc.pitchbend = pitchbend;
   cc.control_change = control_change;
   cc.rpn_registered_controller = rpn_registered_controller;
@@ -1723,7 +1723,7 @@ constexpr midi_message_report_reply::operator packed::midi_message_report_reply_
   cc.program_change = program_change;
   cc.channel_pressure = channel_pressure;
 
-  union packed::midi_message_report_reply_v2::note_data_messages ndm{};
+  union packed::midi_message_report_reply_v2::note_data_messages ndm {};
   ndm.notes = notes;
   ndm.poly_pressure = poly_pressure;
   ndm.per_note_pitchbend = per_note_pitchbend;
