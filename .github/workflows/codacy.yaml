@@ -5,10 +5,13 @@ on:
     paths:
       - "**.[ch]pp"
       - "**/codacy.yaml"
+      - "**.clang-tidy"
   pull_request:
     paths:
       - "**.[ch]pp"
       - "**/codacy.yaml"
+      - "**.clang-tidy"
+  workflow_dispatch:
 
 permissions:
   contents: read
