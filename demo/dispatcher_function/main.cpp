@@ -16,7 +16,8 @@
 // For resource-constrained applications, one of the other backend options may be more suitable.
 
 #include <iostream>
-#include <midi2/ump_dispatcher.hpp>
+
+#include "midi2/ump_dispatcher.hpp"
 
 int main() {
   try {

@@ -10,7 +10,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <midi2/bytestream_to_ump.hpp>
+
+#include "midi2/bytestream_to_ump.hpp"
 
 namespace {
 
