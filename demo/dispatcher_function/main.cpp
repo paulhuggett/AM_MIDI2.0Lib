@@ -38,7 +38,7 @@ int main() {
         });
     // Send note-on/off messages to the dispatcher.
     for (std::uint32_t const v : {0x40913C00U, 0x7F100000U, 0x40813C00U, 0x7FFF0000U}) {
-      dispatcher.processUMP(v);
+      dispatcher.process_ump(v);
     }
   } catch (std::exception const& ex) {
     std::cerr << "Error: " << ex.what() << '\n';
