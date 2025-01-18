@@ -61,7 +61,7 @@ private:
   std::array<node, Size> v_;
 
   template <typename OtherValueType, std::invocable<ValueType &> Evictor>
-  node &add_impl(OtherValueType &&payload, Evictor const evictor);
+  node &add_impl(OtherValueType &&payload, Evictor evictor);
 
   void check_invariants() const noexcept;
 };
@@ -145,7 +145,9 @@ auto lru_list<ValueType, Size>::add_impl(OtherValueType &&payload, Evictor const
     lru_value = std::forward<OtherValueType>(payload);
     // Set about moving this element to the front of the list as the most recently used.
     result = last_;
+    assert(last_->prev_ != nullptr);
     last_ = last_->prev_;
+    assert(last_->next_ != nullptr);
     last_->next_ = nullptr;
   }
 
