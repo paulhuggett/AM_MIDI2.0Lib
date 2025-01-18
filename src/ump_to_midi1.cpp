@@ -97,16 +97,16 @@ void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const 
 // ~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
                                                           ump::m2cvm::rpn_controller const &in) {
-  pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), true}, std::make_pair(in.bank(), in.index()),
-             in.value());
+  pn_message(ctxt, context_type::pn_cache_key{.group = in.group(), .channel = in.channel(), .is_rpn = true},
+             std::make_pair(in.bank(), in.index()), in.value());
 }
 
 // nrpn controller
 // ~~~~~~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
                                                            ump::m2cvm::nrpn_controller const &in) {
-  pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), false}, std::make_pair(in.bank(), in.index()),
-             in.value());
+  pn_message(ctxt, context_type::pn_cache_key{.group = in.group(), .channel = in.channel(), .is_rpn = false},
+             std::make_pair(in.bank(), in.index()), in.value());
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
