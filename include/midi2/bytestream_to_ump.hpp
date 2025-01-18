@@ -34,7 +34,7 @@ public:
     return output_.pop_front();
   }
 
-  void push(input_type midi1Byte);
+  void push(input_type midi1_byte);
 
 private:
   static constexpr auto unknown = std::byte{0xFF};
@@ -63,7 +63,7 @@ private:
   void to_ump(std::byte b0, std::byte b1, std::byte b2);
 
   template <typename T> void push_sysex7();
-  void sysex_data_byte(std::byte midi1Byte);
+  void sysex_data_byte(std::byte midi1_byte);
 };
 
 }  // end namespace midi2
