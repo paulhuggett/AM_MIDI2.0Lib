@@ -3147,13 +3147,13 @@ enum class sharps_flats : std::int8_t {
 
 enum class note : std::uint8_t {
   unknown = 0x0,
-  A = 0x1,
-  B = 0x2,
-  C = 0x3,
-  D = 0x4,
-  E = 0x5,
-  F = 0x6,
-  G = 0x7,
+  a = 0x1,
+  b = 0x2,
+  c = 0x3,
+  d = 0x4,
+  e = 0x5,
+  f = 0x6,
+  g = 0x7,
 };
 
 enum class chord_type : std::uint8_t {

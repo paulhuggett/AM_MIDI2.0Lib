@@ -845,7 +845,7 @@ TEST_F(UMPDispatcherFlexData, SetKeySignature) {
                                .channel(3)
                                .status_bank(0)
                                .sharps_flats(0b100)  // (-8)
-                               .tonic_note(midi2::to_underlying(midi2::ump::flex_data::note::E));
+                               .tonic_note(midi2::to_underlying(midi2::ump::flex_data::note::e));
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
   this->apply(message);
 }
@@ -858,7 +858,7 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
                                .channel(3)
                                .status_bank(0x00)
                                .tonic_sharps_flats(0x1)
-                               .chord_tonic(midi2::to_underlying(midi2::ump::flex_data::note::E))
+                               .chord_tonic(midi2::to_underlying(midi2::ump::flex_data::note::e))
                                .chord_type(midi2::to_underlying(midi2::ump::flex_data::chord_type::augmented))
                                .alter_1_type(1)
                                .alter_1_degree(5)
