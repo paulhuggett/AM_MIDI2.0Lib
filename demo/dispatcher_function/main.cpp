@@ -15,6 +15,8 @@
 // Be aware that std::function<> is powerful and simple to use but may allocate memory or throw exceptions.
 // For resource-constrained applications, one of the other backend options may be more suitable.
 
+#include <cstdint>
+#include <exception>
 #include <iostream>
 
 #include "midi2/ump_dispatcher.hpp"
