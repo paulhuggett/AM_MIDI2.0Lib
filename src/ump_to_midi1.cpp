@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <utility>
 
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"
