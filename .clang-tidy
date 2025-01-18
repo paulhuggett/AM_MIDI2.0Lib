@@ -4,6 +4,7 @@ Checks:            |-
   -altera-*,
   -bugprone-easily-swappable-parameters,
   -cert-dcl21-cpp,
+  -cert-dcl58-cpp,
   -cert-err58-cpp,
   -cppcoreguidelines-avoid-c-arrays,
   -cppcoreguidelines-avoid-magic-numbers,
