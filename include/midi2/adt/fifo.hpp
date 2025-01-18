@@ -41,14 +41,14 @@ public:
     if (this->full()) {
       return false;
     }
-    arr_[(writeIndex_++) & mask_] = value;
+    arr_[(write_index_++) & mask_] = value;
     return true;
   }
   constexpr bool push_back(ElementType&& value) {
     if (this->full()) {
       return false;
     }
-    arr_[(writeIndex_++) & mask_] = std::move(value);
+    arr_[(write_index_++) & mask_] = std::move(value);
     return true;
   }
   /// \brief Removes the first element of the container and returns it.
@@ -56,23 +56,23 @@ public:
   /// \returns The first element in the container.
   constexpr ElementType pop_front() {
     assert(!this->empty());
-    auto result = std::move(arr_[readIndex_ & mask_]);
-    ++readIndex_;
+    auto result = std::move(arr_[read_index_ & mask_]);
+    ++read_index_;
     return result;
   }
   /// \brief Checks whether the container is empty.
   /// The FIFO is empty when both indices are equal.
   /// \returns True if the container is empty, false otherwise.
-  [[nodiscard]] constexpr bool empty() const { return writeIndex_ == readIndex_; }
+  [[nodiscard]] constexpr bool empty() const { return write_index_ == read_index_; }
   /// \brief Checks whether the container is full.
   /// The FIFO is full then when both indices are equal but the "wrap" fields
   /// different.
   /// \returns True if the container is full, false otherwise.
-  [[nodiscard]] constexpr bool full() const { return (writeIndex_ & mask_) == (readIndex_ & mask_) && wrapped(); }
+  [[nodiscard]] constexpr bool full() const { return (write_index_ & mask_) == (read_index_ & mask_) && wrapped(); }
   /// \brief Returns the number of elements.
   [[nodiscard]] constexpr std::size_t size() const {
-    auto const w = (writeIndex_ & mask_) + (wrapped() ? Elements : 0U);
-    auto const r = readIndex_ & mask_;
+    auto const w = (write_index_ & mask_) + (wrapped() ? Elements : 0U);
+    auto const r = read_index_ & mask_;
     assert(w >= r);
     return w - r;
   }
@@ -82,7 +82,7 @@ public:
 private:
   std::array<ElementType, Elements> arr_{};
 
-  [[nodiscard]] constexpr bool wrapped() const { return (writeIndex_ & ~mask_) != (readIndex_ & ~mask_); }
+  [[nodiscard]] constexpr bool wrapped() const { return (write_index_ & ~mask_) != (read_index_ & ~mask_); }
 
   // The number of bits required to represent the maximum index in the arr_
   // container.
@@ -91,8 +91,8 @@ private:
       std::conditional_t<(bits_ < 4U), std::uint8_t, std::conditional_t<(bits_ < 8U), std::uint16_t, std::uint32_t>>;
   static constexpr auto mask_ = (bitfield_type{1} << bits_) - 1U;
 
-  bitfield_type writeIndex_ : bits_ + 1 = 0;
-  bitfield_type readIndex_ : bits_ + 1 = 0;
+  bitfield_type write_index_ : bits_ + 1 = 0;
+  bitfield_type read_index_ : bits_ + 1 = 0;
 };
 
 }  // end namespace midi2

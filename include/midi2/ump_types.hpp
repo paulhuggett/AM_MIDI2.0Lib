@@ -33,11 +33,11 @@ namespace midi2::ump {
   X(reserved32_07, 0x07)  \
   X(reserved64_08, 0x08)  \
   X(reserved64_09, 0x09)  \
-  X(reserved64_0A, 0x0A)  \
-  X(reserved96_0B, 0x0B)  \
-  X(reserved96_0C, 0x0C)  \
+  X(reserved64_0a, 0x0A)  \
+  X(reserved96_0b, 0x0B)  \
+  X(reserved96_0c, 0x0C)  \
   X(flex_data, 0x0D)      \
-  X(reserved128_0E, 0x0E) \
+  X(reserved128_0e, 0x0E) \
   X(stream, 0x0F)
 
 #define X(a, b) a = (b),
@@ -3599,13 +3599,13 @@ struct midi2::message_size<midi2::ump::message_type::reserved64_08> : std::integ
 template <>
 struct midi2::message_size<midi2::ump::message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved64_0A> : std::integral_constant<unsigned, 2> {};
+struct midi2::message_size<midi2::ump::message_type::reserved64_0a> : std::integral_constant<unsigned, 2> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved96_0B> : std::integral_constant<unsigned, 3> {};
+struct midi2::message_size<midi2::ump::message_type::reserved96_0b> : std::integral_constant<unsigned, 3> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved96_0C> : std::integral_constant<unsigned, 3> {};
+struct midi2::message_size<midi2::ump::message_type::reserved96_0c> : std::integral_constant<unsigned, 3> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved128_0E> : std::integral_constant<unsigned, 4> {};
+struct midi2::message_size<midi2::ump::message_type::reserved128_0e> : std::integral_constant<unsigned, 4> {};
 
 #undef UMP_GETTER
 #undef UMP_SETTER

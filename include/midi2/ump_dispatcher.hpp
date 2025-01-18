@@ -111,10 +111,10 @@ public:
       case ump::message_type::reserved32_07:
       case ump::message_type::reserved64_08:
       case ump::message_type::reserved64_09:
-      case ump::message_type::reserved64_0A:
-      case ump::message_type::reserved96_0B:
-      case ump::message_type::reserved96_0C:
-      case ump::message_type::reserved128_0E:
+      case ump::message_type::reserved64_0a:
+      case ump::message_type::reserved96_0b:
+      case ump::message_type::reserved96_0c:
+      case ump::message_type::reserved128_0e:
         config_.utility.unknown(config_.context, std::span{message_.data(), pos_});
         break;
       default:
