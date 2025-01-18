@@ -30,7 +30,7 @@ public:
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
   [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
 
-  void push(input_type const ump) { p_.processUMP(ump); }
+  void push(input_type const ump) { p_.process_ump(ump); }
 
 private:
   struct context_type {

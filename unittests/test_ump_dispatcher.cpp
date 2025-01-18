@@ -186,7 +186,7 @@ public:
 
   void apply(auto const &message) {
     midi2::ump::apply(message, [this](auto const v) {
-      dispatcher_.processUMP(std::uint32_t{v});
+      dispatcher_.process_ump(std::uint32_t{v});
       return false;
     });
   }
@@ -250,7 +250,7 @@ TEST_F(UMPDispatcherUtility, BadMessage) {
   constexpr std::uint32_t message =
       (midi2::to_underlying(midi2::ump::message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
-  dispatcher_.processUMP(message);
+  dispatcher_.process_ump(message);
 }
 
 //*  ___         _              *
@@ -331,7 +331,7 @@ TEST_F(UMPDispatcherSystem, BadStatus) {
   constexpr std::uint32_t message =
       (midi2::to_underlying(midi2::ump::message_type::system) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
-  dispatcher_.processUMP(message);
+  dispatcher_.process_ump(message);
 }
 
 //*        _    _ _   _   __   *
@@ -625,12 +625,12 @@ TEST_F(UMPDispatcher, PartialMessageThenClear) {
 
   // The first half of a 64-bit MIDI 2 note-on message.
   constexpr auto m2on = midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note_number);
-  dispatcher_.processUMP(std::uint32_t{get<0>(m2on)});
-  dispatcher_.clearUMP();
+  dispatcher_.process_ump(std::uint32_t{get<0>(m2on)});
+  dispatcher_.clear();
 
   // An entire 32-bit MIDI 1 note-on message.
   constexpr auto m1on = midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
-  dispatcher_.processUMP(std::uint32_t{get<0>(m1on)});
+  dispatcher_.process_ump(std::uint32_t{get<0>(m1on)});
 }
 
 //*  _   _ __  __ ___   ___ _                       *
@@ -899,7 +899,7 @@ TEST_F(UMPDispatcherFlexData, Text) {
 
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
   midi2::ump::ump_dispatcher p;
-  std::ranges::for_each(in, [&p](std::uint32_t ump) { p.processUMP(ump); });
+  std::ranges::for_each(in, [&p](std::uint32_t ump) { p.process_ump(ump); });
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
@@ -916,7 +916,7 @@ template <midi2::ump::message_type MessageType> void process_message(std::span<s
     message[0] = (message[0] & 0x00FFFFFF) | (static_cast<std::uint32_t>(MessageType) << 24);
     midi2::ump::ump_dispatcher p;
     for (auto const w : message) {
-      p.processUMP(w);
+      p.process_ump(w);
     }
   }
 }

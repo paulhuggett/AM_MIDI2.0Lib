@@ -85,13 +85,13 @@ template <ump_dispatcher_config Config = default_config> class ump_dispatcher {
 public:
   explicit constexpr ump_dispatcher(Config const &config = default_config{}) : config_{config} {}
 
-  void clearUMP() {
+  void clear() {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     pos_ = 0;
     std::ranges::fill(message_, std::uint8_t{0});
   }
-  void processUMP(std::uint32_t const ump) {
+  void process_ump(std::uint32_t const ump) {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());

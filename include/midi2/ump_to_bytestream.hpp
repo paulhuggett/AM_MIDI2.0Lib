@@ -58,7 +58,7 @@ public:
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
   [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
 
-  void push(input_type const ump) { p_.processUMP(ump); }
+  void push(input_type const ump) { p_.process_ump(ump); }
 
   void group_filter(std::uint16_t const group_bitmap) {
     context_.only_groups = group_bitmap == 0 ? std::uint16_t{0xFFFF} : group_bitmap;
@@ -287,9 +287,9 @@ private:
     };
     context_type *context = nullptr;
     [[no_unique_address]] ump::dispatcher_backend::utility_null<decltype(context)> utility{};
-    [[no_unique_address]] class system system{};
-    [[no_unique_address]] class m1cvm m1cvm{};
-    [[no_unique_address]] class data64 data64{};
+    [[no_unique_address]] class system system {};
+    [[no_unique_address]] class m1cvm m1cvm {};
+    [[no_unique_address]] class data64 data64 {};
     [[no_unique_address]] ump::dispatcher_backend::m2cvm_null<decltype(context)> m2cvm{};
     [[no_unique_address]] ump::dispatcher_backend::data128_null<decltype(context)> data128{};
     [[no_unique_address]] ump::dispatcher_backend::stream_null<decltype(context)> stream{};
