@@ -44,9 +44,9 @@ private:
   std::uint8_t cable_;
   fifo<std::byte, 4> output_;
 
-  static constexpr std::uint8_t cable(std::uint32_t const p) noexcept { return (p >> 28) & 0x0F; }
-  static constexpr std::uint8_t get_cin(std::uint32_t const p) noexcept { return (p >> 24) & 0x0F; }
-  static constexpr unsigned midi_x_size(std::uint8_t const cin) noexcept {
+  [[nodiscard]] static constexpr std::uint8_t cable(std::uint32_t const p) noexcept { return (p >> 28) & 0x0F; }
+  [[nodiscard]] static constexpr std::uint8_t get_cin(std::uint32_t const p) noexcept { return (p >> 24) & 0x0F; }
+  [[nodiscard]] static constexpr unsigned midi_x_size(std::uint8_t const cin) noexcept {
     assert(cin < 0x10U && "code index number should be four bits");
     // The contents of this switch are based on Table 4-1: "Code Index Number Classifications" in the "Universal
     // Serial Bus Device Class Definition for MIDI Devices" (Release 1.0 Nov 1, 1999)
