@@ -172,30 +172,31 @@ constexpr auto apply(T const &message, Function function) {
 
 namespace details {
 
-constexpr auto status_to_message_type(mt::system_crt) noexcept {
-  return message_type::system;
-}
-constexpr auto status_to_message_type(mt::ump_utility) noexcept {
-  return message_type::utility;
-}
-constexpr auto status_to_message_type(mt::m1cvm) noexcept {
-  return message_type::m1cvm;
-}
-constexpr auto status_to_message_type(mt::data64) noexcept {
-  return message_type::data64;
-}
-constexpr auto status_to_message_type(mt::m2cvm) noexcept {
-  return message_type::m2cvm;
-}
-constexpr auto status_to_message_type(mt::data128) noexcept {
-  return message_type::data128;
-}
-constexpr auto status_to_message_type(mt::flex_data) noexcept {
-  return message_type::flex_data;
-}
-constexpr auto status_to_message_type(mt::stream) noexcept {
-  return message_type::stream;
-}
+template <typename T> struct status_to_message_type;
+template <> struct status_to_message_type<mt::system_crt> {
+  static constexpr auto value = message_type::system;
+};
+template <> struct status_to_message_type<mt::ump_utility> {
+  static constexpr auto value = message_type::utility;
+};
+template <> struct status_to_message_type<mt::m1cvm> {
+  static constexpr auto value = message_type::m1cvm;
+};
+template <> struct status_to_message_type<mt::data64> {
+  static constexpr auto value = message_type::data64;
+};
+template <> struct status_to_message_type<mt::m2cvm> {
+  static constexpr auto value = message_type::m2cvm;
+};
+template <> struct status_to_message_type<mt::data128> {
+  static constexpr auto value = message_type::data128;
+};
+template <> struct status_to_message_type<mt::flex_data> {
+  static constexpr auto value = message_type::flex_data;
+};
+template <> struct status_to_message_type<mt::stream> {
+  static constexpr auto value = message_type::stream;
+};
 
 template <unsigned Index, unsigned Bits> struct bitfield {
   using index = std::integral_constant<unsigned, Index>;
@@ -233,7 +234,7 @@ public:
 
 protected:
   template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) noexcept {
-    this->set<MtField>(to_underlying(status_to_message_type(status)));
+    this->set<MtField>(to_underlying(status_to_message_type<std::remove_const_t<decltype(status)>>::value));
     this->set<StatusField>(to_underlying(status));
   }
 
