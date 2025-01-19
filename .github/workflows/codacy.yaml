@@ -68,7 +68,8 @@ jobs:
                 -D CMAKE_BUILD_TYPE=Release                    \
                 -D CMAKE_EXPORT_COMPILE_COMMANDS=Yes           \
                 -D "CMAKE_C_COMPILER=clang-$CLANG_VERSION"     \
-                -D "CMAKE_CXX_COMPILER=clang++-$CLANG_VERSION"
+                -D "CMAKE_CXX_COMPILER=clang++-$CLANG_VERSION" \
+                -D MIDI2_DEMO=yes
 
       - name: Run clang-tidy
         run: |
