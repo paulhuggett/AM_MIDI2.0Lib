@@ -33,15 +33,15 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 [[nodiscard]] constexpr std::uint32_t from_le7(byte_array_4 const &v) noexcept {
   assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
-  return (static_cast<std::uint32_t>(v[0] & mask7b) << (7 * 0)) |
-         (static_cast<std::uint32_t>(v[1] & mask7b) << (7 * 1)) |
-         (static_cast<std::uint32_t>(v[2] & mask7b) << (7 * 2)) |
-         (static_cast<std::uint32_t>(v[3] & mask7b) << (7 * 3));
+  return (static_cast<std::uint32_t>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
+         (static_cast<std::uint32_t>(to_underlying(v[1] & mask7b)) << (7 * 1)) |
+         (static_cast<std::uint32_t>(to_underlying(v[2] & mask7b)) << (7 * 2)) |
+         (static_cast<std::uint32_t>(to_underlying(v[3] & mask7b)) << (7 * 3));
 }
 [[nodiscard]] constexpr std::uint16_t from_le7(byte_array_2 const &v) noexcept {
   assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
-  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(v[0] & mask7b) << (7 * 0)) |
-                                    (static_cast<std::uint16_t>(v[1] & mask7b) << (7 * 1)));
+  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
+                                    (static_cast<std::uint16_t>(to_underlying(v[1] & mask7b)) << (7 * 1)));
 }
 [[nodiscard]] constexpr std::uint8_t from_le7(std::byte const v) noexcept {
   return to_underlying(v);
