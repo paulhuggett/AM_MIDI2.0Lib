@@ -15,6 +15,7 @@
 
 namespace midi2::ci::dispatcher_backend {
 
+// clang-format off
 template <typename T, typename Context>
 concept management = requires(T v, Context context) {
   { v.check_muid(context, std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
@@ -68,53 +69,56 @@ concept process_inquiry = requires(T v, Context context) {
   { v.midi_message_report_reply(context, midi_ci{}, ci::process_inquiry::midi_message_report_reply{}) } -> std::same_as<void>;
   { v.midi_message_report_end(context, midi_ci{}) } -> std::same_as<void>;
 };
+// clang-format on
 
+// clang-format off
 template <typename Context> struct management_null {
-  constexpr bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
-  constexpr void unknown_midici(Context, midi_ci const &) { /* do nothing */ }
-  constexpr void buffer_overflow(Context) { /* do nothing */ }
+  constexpr static bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
+  constexpr static void unknown_midici(Context, midi_ci const &) { /* do nothing */ }
+  constexpr static void buffer_overflow(Context) { /* do nothing */ }
 
-  constexpr void discovery(Context, midi_ci const &, ci::discovery const &) { /* do nothing */ }
-  constexpr void discovery_reply(Context, midi_ci const &, ci::discovery_reply const &) { /* do nothing */ }
-  constexpr void endpoint_info(Context, midi_ci const &, ci::endpoint_info const &) { /* do nothing*/ }
-  constexpr void endpoint_info_reply(Context, midi_ci const &, ci::endpoint_info_reply const &) { /* do nothing */ }
-  constexpr void invalidate_muid(Context, midi_ci const &, ci::invalidate_muid const &) { /* do nothing */ }
-  constexpr void ack(Context, midi_ci const &, ci::ack const &) { /* do nothing */ }
-  constexpr void nak(Context, midi_ci const &, ci::nak const &) { /* do nothing */ }
+  constexpr static void discovery(Context, midi_ci const &, ci::discovery const &) { /* do nothing */ }
+  constexpr static void discovery_reply(Context, midi_ci const &, ci::discovery_reply const &) { /* do nothing */ }
+  constexpr static void endpoint_info(Context, midi_ci const &, ci::endpoint_info const &) { /* do nothing*/ }
+  constexpr static void endpoint_info_reply(Context, midi_ci const &, ci::endpoint_info_reply const &) { /* do nothing */ }
+  constexpr static void invalidate_muid(Context, midi_ci const &, ci::invalidate_muid const &) { /* do nothing */ }
+  constexpr static void ack(Context, midi_ci const &, ci::ack const &) { /* do nothing */ }
+  constexpr static void nak(Context, midi_ci const &, ci::nak const &) { /* do nothing */ }
 };
 template <typename Context> struct profile_null {
-  constexpr void inquiry(Context, midi_ci const &) { /* do nothing */ }
-  constexpr void inquiry_reply(Context, midi_ci const &, ci::profile_configuration::inquiry_reply const &) { /* do nothing */ }
-  constexpr void added(Context, midi_ci const &, ci::profile_configuration::added const &) { /* do nothing */ }
-  constexpr void removed(Context, midi_ci const &, ci::profile_configuration::removed const &) { /* do nothing */ }
-  constexpr void details(Context, midi_ci const &, ci::profile_configuration::details const &) { /* do nothing */ }
-  constexpr void details_reply(Context, midi_ci const &, ci::profile_configuration::details_reply const &) { /* do nothing */ }
-  constexpr void on(Context, midi_ci const &, ci::profile_configuration::on const &) { /* do nothing */ }
-  constexpr void off(Context, midi_ci const &, ci::profile_configuration::off const &) { /* do nothing */ }
-  constexpr void enabled(Context, midi_ci const &, ci::profile_configuration::enabled const &) { /* do nothing */ }
-  constexpr void disabled(Context, midi_ci const &, ci::profile_configuration::disabled const &) { /* do nothing */ }
-  constexpr void specific_data(Context, midi_ci const &, ci::profile_configuration::specific_data const &) { /* do nothing */ }
+  constexpr static void inquiry(Context, midi_ci const &) { /* do nothing */ }
+  constexpr static void inquiry_reply(Context, midi_ci const &, ci::profile_configuration::inquiry_reply const &) { /* do nothing */ }
+  constexpr static void added(Context, midi_ci const &, ci::profile_configuration::added const &) { /* do nothing */ }
+  constexpr static void removed(Context, midi_ci const &, ci::profile_configuration::removed const &) { /* do nothing */ }
+  constexpr static void details(Context, midi_ci const &, ci::profile_configuration::details const &) { /* do nothing */ }
+  constexpr static void details_reply(Context, midi_ci const &, ci::profile_configuration::details_reply const &) { /* do nothing */ }
+  constexpr static void on(Context, midi_ci const &, ci::profile_configuration::on const &) { /* do nothing */ }
+  constexpr static void off(Context, midi_ci const &, ci::profile_configuration::off const &) { /* do nothing */ }
+  constexpr static void enabled(Context, midi_ci const &, ci::profile_configuration::enabled const &) { /* do nothing */ }
+  constexpr static void disabled(Context, midi_ci const &, ci::profile_configuration::disabled const &) { /* do nothing */ }
+  constexpr static void specific_data(Context, midi_ci const &, ci::profile_configuration::specific_data const &) { /* do nothing */ }
 };
 template <typename Context> struct property_exchange_null {
-  constexpr void capabilities(Context, midi_ci const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
-  constexpr void capabilities_reply(Context, midi_ci const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
+  constexpr static void capabilities(Context, midi_ci const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
+  constexpr static void capabilities_reply(Context, midi_ci const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
 
-  constexpr void get(Context, midi_ci const &, ci::property_exchange::get const &) { /* do nothing */ }
-  constexpr void get_reply(Context, midi_ci const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
-  constexpr void set(Context, midi_ci const &, ci::property_exchange::set const &) { /* do nothing */ }
-  constexpr void set_reply(Context, midi_ci const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
+  constexpr static void get(Context, midi_ci const &, ci::property_exchange::get const &) { /* do nothing */ }
+  constexpr static void get_reply(Context, midi_ci const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
+  constexpr static void set(Context, midi_ci const &, ci::property_exchange::set const &) { /* do nothing */ }
+  constexpr static void set_reply(Context, midi_ci const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
 
-  constexpr void subscription(Context, midi_ci const &, ci::property_exchange::subscription const &) { /* do nothing */ }
-  constexpr void subscription_reply(Context, midi_ci const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
-  constexpr void notify(Context, midi_ci const &, ci::property_exchange::notify const &) { /* do nothing */ }
+  constexpr static void subscription(Context, midi_ci const &, ci::property_exchange::subscription const &) { /* do nothing */ }
+  constexpr static void subscription_reply(Context, midi_ci const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
+  constexpr static void notify(Context, midi_ci const &, ci::property_exchange::notify const &) { /* do nothing */ }
 };
 template <typename Context> struct process_inquiry_null {
-  constexpr void capabilities(Context, midi_ci const &) { /* do nothing */ }
-  constexpr void capabilities_reply(Context, midi_ci const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
-  constexpr void midi_message_report(Context, midi_ci const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
-  constexpr void midi_message_report_reply(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
-  constexpr void midi_message_report_end(Context, midi_ci const &) { /* do nothing */ }
+  constexpr static void capabilities(Context, midi_ci const &) { /* do nothing */ }
+  constexpr static void capabilities_reply(Context, midi_ci const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
+  constexpr static void midi_message_report(Context, midi_ci const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
+  constexpr static void midi_message_report_reply(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
+  constexpr static void midi_message_report_end(Context, midi_ci const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(management<management_null<int>, int>);
 static_assert(profile<profile_null<int>, int>);
@@ -196,7 +200,8 @@ template <typename Context> struct process_inquiry_pure {
   virtual void capabilities(Context, midi_ci const &) = 0;
   virtual void capabilities_reply(Context, midi_ci const &, ci::process_inquiry::capabilities_reply const &) = 0;
   virtual void midi_message_report(Context, midi_ci const &, ci::process_inquiry::midi_message_report const &) = 0;
-  virtual void midi_message_report_reply(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) = 0;
+  virtual void midi_message_report_reply(Context, midi_ci const &,
+                                         ci::process_inquiry::midi_message_report_reply const &) = 0;
   virtual void midi_message_report_end(Context, midi_ci const &) = 0;
 };
 
@@ -205,6 +210,7 @@ static_assert(profile<profile_pure<int>, int>);
 static_assert(property_exchange<property_exchange_pure<int>, int>);
 static_assert(process_inquiry<process_inquiry_pure<int>, int>);
 
+// clang-format off
 template <typename Context> struct management_base : management_pure<Context> {
   bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) override { return false; }
   void unknown_midici(Context, midi_ci const &) override { /* do nothing */ }
@@ -251,6 +257,7 @@ template <typename Context> struct process_inquiry_base : process_inquiry_pure<C
   void midi_message_report_reply(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &) override { /* do nothing */ }
   void midi_message_report_end(Context, midi_ci const &) override { /* do nothing */ }
 };
+// clang-format on
 
 template <typename Context> class management_function {
 public:
@@ -351,16 +358,19 @@ static_assert(management<management_function<int>, int>);
 template <typename Context> class profile_function {
 public:
   using inquiry_fn = std::function<void(Context, midi_ci const &)>;
-  using inquiry_reply_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::inquiry_reply const &)>;
+  using inquiry_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::profile_configuration::inquiry_reply const &)>;
   using added_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::added const &)>;
   using removed_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::removed const &)>;
   using details_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::details const &)>;
-  using details_reply_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::details_reply const &)>;
+  using details_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::profile_configuration::details_reply const &)>;
   using on_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::on const &)>;
   using off_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::off const &)>;
   using enabled_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::enabled const &)>;
   using disabled_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::disabled const &)>;
-  using specific_data_fn = std::function<void(Context, midi_ci const &, ci::profile_configuration::specific_data const &)>;
+  using specific_data_fn =
+      std::function<void(Context, midi_ci const &, ci::profile_configuration::specific_data const &)>;
 
   constexpr profile_function &on_inquiry(inquiry_fn inquiry) {
     inquiry_ = std::move(inquiry);
@@ -458,13 +468,15 @@ static_assert(profile<profile_function<int>, int>);
 template <typename Context> class property_exchange_function {
 public:
   using capabilities_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::capabilities const &)>;
-  using capabilities_reply_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::capabilities_reply const &)>;
+  using capabilities_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::property_exchange::capabilities_reply const &)>;
   using get_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::get const &)>;
   using get_reply_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::get_reply const &)>;
   using set_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::set const &)>;
   using set_reply_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::set_reply const &)>;
   using subscription_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::subscription const &)>;
-  using subscription_reply_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::subscription_reply const &)>;
+  using subscription_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::property_exchange::subscription_reply const &)>;
   using notify_fn = std::function<void(Context, midi_ci const &, ci::property_exchange::notify const &)>;
 
   constexpr property_exchange_function &on_capabilities(capabilities_fn capabilities) {
@@ -551,9 +563,12 @@ static_assert(property_exchange<property_exchange_function<int>, int>);
 template <typename Context> class process_inquiry_function {
 public:
   using capabilities_fn = std::function<void(Context, midi_ci const &)>;
-  using capabilities_reply_fn = std::function<void(Context, midi_ci const &, ci::process_inquiry::capabilities_reply const &)>;
-  using midi_message_report_fn = std::function<void(Context, midi_ci const &, ci::process_inquiry::midi_message_report const &)>;
-  using midi_message_report_reply_fn = std::function<void(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &)>;
+  using capabilities_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::process_inquiry::capabilities_reply const &)>;
+  using midi_message_report_fn =
+      std::function<void(Context, midi_ci const &, ci::process_inquiry::midi_message_report const &)>;
+  using midi_message_report_reply_fn =
+      std::function<void(Context, midi_ci const &, ci::process_inquiry::midi_message_report_reply const &)>;
   using midi_message_report_end_fn = std::function<void(Context, midi_ci const &)>;
 
   constexpr process_inquiry_function &on_capabilities(capabilities_fn capabilities) {
