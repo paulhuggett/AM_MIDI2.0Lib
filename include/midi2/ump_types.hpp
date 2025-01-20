@@ -172,7 +172,9 @@ constexpr auto apply(T const &message, Function function) {
 
 namespace details {
 
-template <typename T> struct status_to_message_type;
+template <typename T>
+  requires std::is_enum_v<T>
+struct status_to_message_type;
 template <> struct status_to_message_type<mt::system_crt> {
   static constexpr auto value = message_type::system;
 };
@@ -197,6 +199,10 @@ template <> struct status_to_message_type<mt::flex_data> {
 template <> struct status_to_message_type<mt::stream> {
   static constexpr auto value = message_type::stream;
 };
+
+template <typename T>
+  requires std::is_enum_v<T>
+constexpr message_type status_to_message_type_v = status_to_message_type<T>::value;
 
 template <unsigned Index, unsigned Bits> struct bitfield {
   using index = std::integral_constant<unsigned, Index>;
@@ -233,8 +239,10 @@ public:
   }
 
 protected:
-  template <bitfield_type MtField, bitfield_type StatusField> constexpr void init(auto const status) noexcept {
-    this->set<MtField>(to_underlying(status_to_message_type<std::remove_const_t<decltype(status)>>::value));
+  template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
+    requires std::is_enum_v<StatusType>
+  constexpr void init(StatusType const status) noexcept {
+    this->set<MtField>(to_underlying(status_to_message_type_v<StatusType>));
     this->set<StatusField>(to_underlying(status));
   }
 
