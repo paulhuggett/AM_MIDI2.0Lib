@@ -217,7 +217,7 @@ public:
 
 protected:
   struct mocked_config {
-    context_type context;
+    [[no_unique_address]] context_type context;
     StrictMock<mock_management_callbacks> management;
     StrictMock<mock_profile_callbacks> profile;
     StrictMock<mock_property_exchange_callbacks> property_exchange;
@@ -1177,7 +1177,7 @@ void NeverCrashes(std::vector<std::byte> const &message) {
   std::ranges::transform(message, std::back_inserter(message2), [](std::byte v) { return v & std::byte{0x7F}; });
   struct empty {};
   struct config {
-    empty context;
+    [[no_unique_address]] empty context;
     midi2::ci::dispatcher_backend::management_function<decltype(config::context)> management;
     midi2::ci::dispatcher_backend::profile_function<decltype(config::context)> profile;
     midi2::ci::dispatcher_backend::property_exchange_function<decltype(config::context)> property_exchange;
