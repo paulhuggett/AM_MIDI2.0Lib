@@ -291,6 +291,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::ctor(OtherMap &&other) -> iumap &
       break;
     case state::tombstone: ++tombstones_; break;
     case state::unused: break;
+    default: assert(false && "Member is in an invalid state"); break;
     }
     entry.state = in->state;
     ++in;
@@ -359,6 +360,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::assign(OtherMap &&other) -> iumap
         break;
       case state::tombstone: --tombstones_; break;
       case state::unused: break;
+      default: assert(false && "Member is in an invalid state"); break;
       }
       break;
     }
@@ -522,6 +524,7 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::lookup_slot(Container &container
         return slot;
       }
       break;
+    default: assert(false && "Slot is in an invalid state"); break;
     }
     pos = (pos + iteration) % size;
   }
@@ -556,6 +559,7 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::find_insert_slot(Container &cont
       }
       break;
     case state::unused: return first_tombstone != nullptr ? first_tombstone : slot;
+    default: assert(false && "Slot is in an invalid state"); break;
     }
     // The next quadratic probing location
     pos = (pos + iteration) % size;
