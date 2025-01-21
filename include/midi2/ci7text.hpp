@@ -14,6 +14,7 @@
 #include <type_traits>
 
 #include "midi2/icubaby.hpp"
+#include "midi2/utils.hpp"
 
 template <midi2::icubaby::unicode_char_type InputEncoding> class midi2::icubaby::transcoder<InputEncoding, char> {
 public:
@@ -137,7 +138,7 @@ public:
     case state::hex2:
     case state::hex3:
       if (this->hex_char(code_unit)) {
-        state_ = static_cast<state>(static_cast<std::underlying_type_t<state>>(state_) + 1);
+        state_ = static_cast<state>(to_underlying(state_) + 1);
       } else {
         state_ = state::normal;
         hex_ = 0;
