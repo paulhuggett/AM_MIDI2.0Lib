@@ -87,7 +87,7 @@ enum class status : std::uint8_t {
   systemreset = 0xFF,
 };
 
-constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept {
+[[nodiscard]] constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept {
   switch (static_cast<status>(midi1_byte)) {
   case status::timing_clock:
   case status::sequence_start:

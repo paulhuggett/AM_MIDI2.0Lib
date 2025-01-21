@@ -25,7 +25,7 @@ namespace midi2::ump {
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 
-constexpr unsigned ump_message_size(ump::message_type const mt) {
+[[nodiscard]] constexpr unsigned ump_message_size(ump::message_type const mt) {
   using enum ump::message_type;
 #define X(a, b) \
   case a: return message_size<a>();

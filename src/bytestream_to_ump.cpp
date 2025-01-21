@@ -20,7 +20,7 @@
 namespace {
 
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
-constexpr bool is_one_byte_message(std::byte const midi1_byte) {
+[[nodiscard]] constexpr bool is_one_byte_message(std::byte const midi1_byte) {
   using midi2::status;
   using status_type = std::underlying_type_t<status>;
   auto const value = std::to_integer<status_type>(midi1_byte);
