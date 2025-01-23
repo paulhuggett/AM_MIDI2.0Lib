@@ -44,7 +44,7 @@ TEST(UMPApply, AlwaysTrue) {
 
 TEST(UMPApply, ErrorCodeAlwaysSuccess) {
   std::vector<int> values;
-  midi2::ump::apply(std::tuple{1, 2}, [&values](int const v) -> std::error_code {
+  midi2::ump::apply(std::tuple{1, 2}, [&values](int const v) {
     values.push_back(v);
     return std::error_code{};
   });
@@ -329,7 +329,7 @@ TEST_F(UMPDispatcherSystem, Reset) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, BadStatus) {
   constexpr std::uint32_t message =
-      (midi2::to_underlying(midi2::ump::message_type::system) << 28) | (std::uint32_t{0xF} << 20);
+      (std::uint32_t{midi2::to_underlying(midi2::ump::message_type::system)} << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
   dispatcher_.process_ump(message);
 }
@@ -913,7 +913,7 @@ TEST(UMPDispatcherFuzz, Empty) {
 
 template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::message_size<MessageType>::value) {
-    message[0] = (message[0] & 0x00FFFFFF) | (static_cast<std::uint32_t>(MessageType) << 24);
+    message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{midi2::to_underlying(MessageType)} << 24);
     midi2::ump::ump_dispatcher p;
     for (auto const w : message) {
       p.process_ump(w);
