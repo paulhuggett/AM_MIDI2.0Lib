@@ -222,6 +222,55 @@ TEST(IUMap, MoveCtor) {
   EXPECT_EQ(*b.find(3), three);
 }
 
+class move_only {
+public:
+  constexpr explicit move_only(int a) noexcept : a_{a} {}
+  constexpr move_only(move_only const &) = delete;
+  constexpr move_only(move_only &&) noexcept = default;
+
+  constexpr move_only &operator=(move_only const &) = delete;
+  constexpr move_only &operator=(move_only &&) noexcept = delete;
+
+  constexpr bool operator==(move_only const &) const noexcept = default;
+
+private:
+  int a_;
+};
+TEST(IUMap, MoveOnlyCtor) {
+  midi2::iumap<int, move_only, 4> a;
+  a.try_emplace(3, 43);
+  auto pa5 = a.try_emplace(5, 47).first;
+  a.try_emplace(7, 53);
+  a.erase(pa5);  // an erase so that the container holds a tombstone record
+
+  midi2::iumap<int, move_only, 4> const b{std::move(a)};
+  EXPECT_EQ(b.size(), 2U);
+  ASSERT_NE(b.find(3), b.end());
+  EXPECT_EQ(*b.find(3), std::make_pair(3, move_only{43}));
+  ASSERT_EQ(b.find(5), b.end());
+  ASSERT_NE(b.find(7), b.end());
+  EXPECT_EQ(*b.find(7), std::make_pair(7, move_only{53}));
+}
+TEST(IUMap, MoveOnlyAssign) {
+  midi2::iumap<int, move_only, 4> a;
+  midi2::iumap<int, move_only, 4> b;
+
+  a.try_emplace(3, 43);
+  auto pa5 = a.try_emplace(5, 47).first;
+  a.try_emplace(7, 53);
+  a.erase(pa5);  // an erase so that the container holds a tombstone record
+
+  b.try_emplace(11, 59);
+
+  b = std::move(a);
+  EXPECT_EQ(b.size(), 2U);
+  ASSERT_NE(b.find(3), b.end());
+  EXPECT_EQ(*b.find(3), std::make_pair(3, move_only{43}));
+  ASSERT_EQ(b.find(5), b.end());
+  ASSERT_NE(b.find(7), b.end());
+  EXPECT_EQ(*b.find(7), std::make_pair(7, move_only{53}));
+}
+
 TEST(IUMap, IteratorAdd) {
   midi2::iumap<int, int, 4> a;
   a.try_emplace(1, 1);

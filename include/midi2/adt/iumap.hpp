@@ -93,8 +93,8 @@ public:
     constexpr auto operator==(sentinel<T>) const noexcept { return slot_ == this->end_limit(); }
     constexpr auto operator!=(sentinel<T> other) const noexcept { return !operator==(other); }
 
-    constexpr reference operator*() const noexcept { return static_cast<reference>(*slot_); }
-    constexpr pointer operator->() const noexcept { return &static_cast<reference>(*slot_); }
+    constexpr reference operator*() const noexcept { return *slot_->pointer(); }
+    constexpr pointer operator->() const noexcept { return slot_->pointer(); }
 
     constexpr iterator_type &operator--() {
       --slot_;
@@ -182,16 +182,16 @@ public:
   using const_iterator = iterator_type<member const>;
 
   constexpr iumap() noexcept = default;
-  iumap(iumap const &other);
-  iumap(iumap &&other) noexcept;
-  ~iumap() noexcept;
+  iumap(iumap const &other) = default;
+  iumap(iumap &&other) noexcept = default;
+  ~iumap() noexcept = default;
 
-  iumap &operator=(iumap const &other);
-  iumap &operator=(iumap &&other) noexcept;
+  iumap &operator=(iumap const &other) = default;
+  iumap &operator=(iumap &&other) noexcept = default;
 
   // Iterators
-  [[nodiscard]] constexpr auto begin() { return iterator{v_.data(), &v_}; }
-  [[nodiscard]] constexpr auto begin() const { return const_iterator{v_.data(), &v_}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{v_.data(), &v_}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{v_.data(), &v_}; }
 
   [[nodiscard]] constexpr auto end() noexcept { return iterator{v_.data() + v_.size(), &v_}; }
   [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{v_.data() + v_.size(), &v_}; }
@@ -243,14 +243,58 @@ public:
 private:
   enum class state { occupied, tombstone, unused };
   struct member {
-    [[nodiscard]] constexpr explicit operator value_type &() noexcept {
-      assert(state == state::occupied);
-      return *std::bit_cast<value_type *>(&storage[0]);
+    member() = default;
+    member(member const &other) : state{other.state} {
+      if (state == state::occupied) {
+        new (storage) value_type(*other.pointer());
+      }
     }
-    [[nodiscard]] constexpr explicit operator value_type const &() const noexcept {
-      assert(state == state::occupied);
-      return *std::bit_cast<value_type const *>(&storage[0]);
+    member(member &&other) : state{other.state} {
+      if (state == state::occupied) {
+        new (storage) value_type(std::move(*other.pointer()));
+      }
     }
+    ~member() noexcept {
+      if (state == state::occupied) {
+        (*std::bit_cast<value_type *>(&storage[0])).~value_type();
+      }
+    }
+    member &operator=(member const &other) {
+      if (this == &other) {
+        return *this;
+      }
+      // TODO: this violates a strong exception guarantee.
+      if (state == state::occupied) {
+        pointer()->~value_type();
+      }
+      if (other.state == state::occupied) {
+        new (pointer()) value_type(*other.pointer());
+      }
+      state = other.state;
+      return *this;
+    }
+    member &operator=(member &&other) noexcept {
+      if (this == &other) {
+        return *this;
+      }
+      // TODO: this violates a strong exception guarantee.
+      if (state == state::occupied) {
+        pointer()->~value_type();
+      }
+      if (other.state == state::occupied) {
+        new (pointer()) value_type(std::move(*other.pointer()));
+      }
+      state = other.state;
+      return *this;
+    }
+    void destroy() {
+      if (state == state::occupied) {
+        pointer()->~value_type();
+      }
+      state = state::unused;
+    }
+    constexpr value_type *pointer() noexcept { return std::bit_cast<value_type *>(&storage[0]); }
+    constexpr value_type const *pointer() const noexcept { return std::bit_cast<value_type const *>(&storage[0]); }
 
     enum state state = state::unused;
     alignas(value_type) std::byte storage[sizeof(value_type)]{};
@@ -259,132 +303,9 @@ private:
   std::size_t tombstones_ = 0;
   std::array<member, Size> v_{};
 
-  template <typename OtherMap> iumap &ctor(OtherMap &&other);
-  template <typename OtherMap> iumap &assign(OtherMap &&other);
-
   template <typename Container> static auto *lookup_slot(Container &container, Key const &key);
   template <typename Container> static auto *find_insert_slot(Container &container, Key const &key);
 };
-
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-iumap<Key, Mapped, Size, Hash, KeyEqual>::~iumap() noexcept {
-  this->clear();
-}
-
-// ctor
-// ~~~~
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-template <typename OtherMap>
-auto iumap<Key, Mapped, Size, Hash, KeyEqual>::ctor(OtherMap &&other) -> iumap & {
-  member const *in = other.v_.data();
-  for (member &entry : v_) {
-    switch (in->state) {
-    case state::occupied:
-      if constexpr (std::is_rvalue_reference_v<OtherMap>) {
-        new (entry.storage) value_type{std::move(static_cast<value_type &>(*in))};
-      } else {
-        new (entry.storage) value_type{static_cast<value_type const &>(*in)};
-      }
-      ++size_;
-      break;
-    case state::tombstone: ++tombstones_; break;
-    case state::unused: break;
-    default: assert(false && "Member is in an invalid state"); break;
-    }
-    entry.state = in->state;
-    ++in;
-  }
-  assert(size_ == other.size_);
-  assert(tombstones_ == other.tombstones_);
-  return *this;
-}
-
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-iumap<Key, Mapped, Size, Hash, KeyEqual>::iumap(iumap const &other) {
-  this->ctor(other);
-}
-
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-iumap<Key, Mapped, Size, Hash, KeyEqual>::iumap(iumap &&other) noexcept {
-  this->ctor(std::move(other));
-}
-
-// operator=
-// ~~~~~~~~~
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-template <typename OtherMap>
-auto iumap<Key, Mapped, Size, Hash, KeyEqual>::assign(OtherMap &&other) -> iumap & {
-  if (this == &other) {
-    return *this;
-  }
-  auto *in = other.v_.data();
-  for (member &entry : v_) {
-    switch (in->state) {
-    case state::occupied:
-      if (entry.state == state::occupied) {
-        static_cast<value_type &>(entry).~value_type();
-        --size_;
-        entry.state = state::unused;
-      }
-      if constexpr (std::is_rvalue_reference_v<decltype(other)>) {
-        new (entry.storage) value_type{std::move(static_cast<value_type &>(*in))};
-      } else {
-        new (entry.storage) value_type{static_cast<value_type const &>(*in)};
-      }
-      if (entry.state == state::tombstone) {
-        --tombstones_;
-      }
-      ++size_;
-      break;
-
-    case state::tombstone:
-      if (entry.state == state::occupied) {
-        static_cast<value_type &>(entry).~value_type();
-        --size_;
-      }
-      if (entry.state != state::tombstone) {
-        ++tombstones_;
-      }
-      break;
-
-    case state::unused:
-      switch (entry.state) {
-      case state::occupied:
-        static_cast<value_type &>(entry).~value_type();
-        --size_;
-        break;
-      case state::tombstone: --tombstones_; break;
-      case state::unused: break;
-      default: assert(false && "Member is in an invalid state"); break;
-      }
-      break;
-    }
-    entry.state = in->state;
-    ++in;
-  }
-  assert(size_ == other.size_);
-  assert(tombstones_ == other.tombstones_);
-  return *this;
-}
-
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-auto iumap<Key, Mapped, Size, Hash, KeyEqual>::operator=(iumap const &other) -> iumap & {
-  this->assign(other);
-  return *this;
-}
-
-template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
-auto iumap<Key, Mapped, Size, Hash, KeyEqual>::operator=(iumap &&other) noexcept -> iumap & {
-  this->assign(std::move(other));
-  return *this;
-}
 
 // clear
 // ~~~~~
@@ -392,10 +313,7 @@ template <typename Key, typename Mapped, std::size_t Size, typename Hash, typena
   requires(is_power_of_two(Size))
 void iumap<Key, Mapped, Size, Hash, KeyEqual>::clear() noexcept {
   for (auto &entry : v_) {
-    if (entry.state == state::occupied) {
-      (void)static_cast<reference>(entry).~value_type();
-    }
-    entry.state = state::unused;
+    entry.destroy();
   }
   size_ = 0;
   tombstones_ = 0;
@@ -456,7 +374,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert_or_assign(Key const &key, 
     slot->state = state::occupied;
     return std::make_pair(iterator{slot, &v_}, true);
   }
-  static_cast<reference>(*slot).second = value;  // Overwrite the existing value.
+  slot->pointer()->second = value;  // Overwrite the existing value.
   return std::make_pair(iterator{slot, &v_}, false);
 }
 
@@ -491,7 +409,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::erase(iterator pos) -> iterator {
   auto const result = pos + 1;
   if (slot->state == state::occupied) {
     assert(size_ > 0);
-    (void)static_cast<reference>(*slot).~value_type();
+    slot->destroy();
     slot->state = state::tombstone;
     --size_;
     ++tombstones_;
@@ -520,7 +438,7 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::lookup_slot(Container &container
       // Keep searching.
       break;
     case state::occupied:
-      if (equal(static_cast<const_reference>(*slot).first, key)) {
+      if (equal(slot->pointer()->first, key)) {
         return slot;
       }
       break;
@@ -554,7 +472,7 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::find_insert_slot(Container &cont
       }
       break;
     case state::occupied:
-      if (equal(static_cast<reference>(*slot).first, key)) {
+      if (equal(slot->pointer()->first, key)) {
         return slot;
       }
       break;
