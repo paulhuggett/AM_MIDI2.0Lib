@@ -224,6 +224,11 @@ constexpr O write_pe(O first, S const last, struct params const &params, propert
 
 }  // end namespace details
 
+template <typename T> struct trivial_sentinel {
+  constexpr bool operator==(T) const noexcept { return false; }
+  friend constexpr bool operator==(T, trivial_sentinel) noexcept { return false; }
+};
+
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, struct params const &params, T const &t) {
   using v1_type = details::type_to_packed<T>::v1;

@@ -242,7 +242,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::header() {
 template <ci_dispatcher_config Config> void ci_dispatcher<Config>::discovery() {
   auto const handler = [this](unaligned_copyable auto const *const v) {
     assert(pos_ == sizeof(*v));
-    config_.management.discovery(config_.context, midici_, ci::discovery{*v});
+    config_.management.discovery(config_.context, midici_, ci::discovery::make(*v));
   };
   if (midici_.params.version == 1) {
     handler(std::bit_cast<ci::packed::discovery_v1 const *>(buffer_.data()));

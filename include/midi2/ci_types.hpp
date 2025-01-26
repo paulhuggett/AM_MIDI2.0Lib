@@ -169,17 +169,10 @@ static_assert(sizeof(discovery_v2) > sizeof(discovery_v1));
 }  // end namespace packed
 
 struct discovery {
-  constexpr discovery() = default;
-  constexpr discovery(discovery const &) = default;
-  constexpr discovery(discovery &&) noexcept = default;
-  constexpr explicit discovery(packed::discovery_v1 const &v1);
-  constexpr explicit discovery(packed::discovery_v2 const &v2);
-  ~discovery() noexcept = default;
+  static constexpr discovery make(packed::discovery_v1 const &v1, std::uint8_t output_path_id = 0);
+  static constexpr discovery make(packed::discovery_v2 const &v2);
 
-  constexpr discovery &operator=(discovery const &) = default;
-  constexpr discovery &operator=(discovery &&) noexcept = default;
-
-  bool operator==(discovery const &) const = default;
+  constexpr bool operator==(discovery const &) const noexcept = default;
 
   explicit constexpr operator packed::discovery_v1() const;
   explicit constexpr operator packed::discovery_v2() const;
@@ -193,17 +186,19 @@ struct discovery {
   std::uint8_t output_path_id = 0;
 };
 
-constexpr discovery::discovery(packed::discovery_v1 const &v1)
-    : manufacturer{from_array(v1.manufacturer)},
-      family{from_le7(v1.family)},
-      model{from_le7(v1.model)},
-      version{from_array(v1.version)},
-      capability{from_le7(v1.capability)},
-      max_sysex_size{from_le7(v1.max_sysex_size)} {
+constexpr discovery discovery::make(packed::discovery_v1 const &v1, std::uint8_t output_path_id) {
+  return discovery{.manufacturer = from_array(v1.manufacturer),
+                   .family = from_le7(v1.family),
+                   .model = from_le7(v1.model),
+                   .version = from_array(v1.version),
+                   .capability = from_le7(v1.capability),
+                   .max_sysex_size = from_le7(v1.max_sysex_size),
+                   .output_path_id = output_path_id};
 }
-constexpr discovery::discovery(packed::discovery_v2 const &v2) : discovery(v2.v1) {
-  output_path_id = from_le7(v2.output_path_id);
+constexpr discovery discovery::make(packed::discovery_v2 const &v2) {
+  return make(v2.v1, from_le7(v2.output_path_id));
 }
+
 constexpr discovery::operator packed::discovery_v1() const {
   return {.manufacturer = to_array(manufacturer),
           .family = to_le7(family),
