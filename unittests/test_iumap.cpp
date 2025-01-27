@@ -246,10 +246,10 @@ TEST(IUMap, MoveOnlyCtor) {
   midi2::iumap<int, move_only, 4> const b{std::move(a)};
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(3), b.end());
-  EXPECT_EQ(*b.find(3), std::make_pair(3, move_only{43}));
+  EXPECT_EQ(*b.find(3), (decltype(b)::value_type{3, move_only{43}}));
   ASSERT_EQ(b.find(5), b.end());
   ASSERT_NE(b.find(7), b.end());
-  EXPECT_EQ(*b.find(7), std::make_pair(7, move_only{53}));
+  EXPECT_EQ(*b.find(7), (decltype(b)::value_type{7, move_only{53}}));
 }
 TEST(IUMap, MoveOnlyAssign) {
   midi2::iumap<int, move_only, 4> a;
@@ -265,10 +265,10 @@ TEST(IUMap, MoveOnlyAssign) {
   b = std::move(a);
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(3), b.end());
-  EXPECT_EQ(*b.find(3), std::make_pair(3, move_only{43}));
+  EXPECT_EQ(*b.find(3), (decltype(b)::value_type{3, move_only{43}}));
   ASSERT_EQ(b.find(5), b.end());
   ASSERT_NE(b.find(7), b.end());
-  EXPECT_EQ(*b.find(7), std::make_pair(7, move_only{53}));
+  EXPECT_EQ(*b.find(7), (decltype(b)::value_type{7, move_only{53}}));
 }
 
 TEST(IUMap, IteratorAdd) {
