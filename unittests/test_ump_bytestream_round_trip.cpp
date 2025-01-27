@@ -13,6 +13,7 @@
 // Standard Library
 #include <algorithm>
 #include <cstdint>
+#include <format>
 #include <ios>
 #include <ostream>
 #include <vector>
@@ -61,7 +62,7 @@ template <typename Vt> hex_values(Vt a) -> hex_values<typename Vt::value_type>;
 template <typename T> std::ostream& operator<<(std::ostream& os, hex_values<T> const& v) {
   auto const* separator = "";
   for (auto const b : v.bytes) {
-    os << separator << "0x" << std::hex << std::uppercase << static_cast<unsigned>(b);
+    os << std::format("{}0x{:02X}", separator, static_cast<unsigned>(b));
     separator = ", ";
   }
   return os;
@@ -90,7 +91,7 @@ void UMPByteStreamRoundTrip(byte_vector const& b1) {
   auto const b2 = umpToBytes(ump1);
   auto const ump2 = bytesToUMP(b2);
   auto const b3 = umpToBytes(ump2);
-  EXPECT_THAT(b3, testing::ContainerEq(b2)) << "Converting from " << std::hex << std::uppercase << hex_values{b1};
+  EXPECT_THAT(b3, testing::ContainerEq(b2)) << "Converting from " << hex_values{b1};
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
