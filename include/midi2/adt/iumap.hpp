@@ -32,7 +32,7 @@ namespace midi2 {
 // An in-place unordered hash table.
 template <typename Key, typename Mapped, std::size_t Size, typename Hash = std::hash<std::remove_cv_t<Key>>,
           typename KeyEqual = std::equal_to<Key>>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 class iumap {
   friend class iterator;
   struct member;
@@ -241,7 +241,7 @@ public:
 #endif  // IUMAP_TRACE
 
 private:
-  enum class state { occupied, tombstone, unused };
+  enum class state : std::uint8_t { occupied, tombstone, unused };
   struct member {
     member() = default;
     member(member const &other) : state{other.state} {
@@ -249,24 +249,18 @@ private:
         new (storage) value_type(*other.pointer());
       }
     }
-    member(member &&other) : state{other.state} {
+    member(member &&other) noexcept : state{other.state} {
       if (state == state::occupied) {
         new (storage) value_type(std::move(*other.pointer()));
       }
     }
-    ~member() noexcept {
-      if (state == state::occupied) {
-        (*std::bit_cast<value_type *>(&storage[0])).~value_type();
-      }
-    }
+    ~member() noexcept { this->destroy(); }
     member &operator=(member const &other) {
       if (this == &other) {
         return *this;
       }
       // TODO: this violates a strong exception guarantee.
-      if (state == state::occupied) {
-        pointer()->~value_type();
-      }
+      this->destroy();
       if (other.state == state::occupied) {
         new (pointer()) value_type(*other.pointer());
       }
@@ -278,16 +272,14 @@ private:
         return *this;
       }
       // TODO: this violates a strong exception guarantee.
-      if (state == state::occupied) {
-        pointer()->~value_type();
-      }
+      this->destroy();
       if (other.state == state::occupied) {
         new (pointer()) value_type(std::move(*other.pointer()));
       }
       state = other.state;
       return *this;
     }
-    void destroy() {
+    void destroy() noexcept {
       if (state == state::occupied) {
         pointer()->~value_type();
       }
@@ -310,7 +302,7 @@ private:
 // clear
 // ~~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 void iumap<Key, Mapped, Size, Hash, KeyEqual>::clear() noexcept {
   for (auto &entry : v_) {
     entry.destroy();
@@ -322,7 +314,7 @@ void iumap<Key, Mapped, Size, Hash, KeyEqual>::clear() noexcept {
 // try emplace
 // ~~~~~~~~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 template <typename... Args>
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::try_emplace(Key const &key, Args &&...args)
     -> std::pair<iterator, bool> {
@@ -347,7 +339,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::try_emplace(Key const &key, Args 
 // insert
 // ~~~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert(value_type const &value) -> std::pair<iterator, bool> {
   return try_emplace(value.first, value.second);
 }
@@ -355,7 +347,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert(value_type const &value) -
 // insert or assign
 // ~~~~~~~~~~~~~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 template <typename M>
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert_or_assign(Key const &key, M &&value)
     -> std::pair<iterator, bool> {
@@ -381,7 +373,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert_or_assign(Key const &key, 
 // find
 // ~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::find(Key const &k) const -> const_iterator {
   auto *const slot = iumap::lookup_slot(*this, k);
   if (slot == nullptr || slot->state != state::occupied) {
@@ -391,7 +383,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::find(Key const &k) const -> const
 }
 
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::find(Key const &k) -> iterator {
   auto *const slot = iumap::lookup_slot(*this, k);
   if (slot == nullptr || slot->state != state::occupied) {
@@ -403,7 +395,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::find(Key const &k) -> iterator {
 // erase
 // ~~~~~
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 auto iumap<Key, Mapped, Size, Hash, KeyEqual>::erase(iterator pos) -> iterator {
   member *const slot = pos.raw();
   auto const result = pos + 1;
@@ -423,7 +415,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::erase(iterator pos) -> iterator {
 /// Searches the container for a specified key. Stops when the key is found or an unused slot is probed.
 /// Tombstones are ignored.
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 template <typename Container>
 auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::lookup_slot(Container &container, Key const &key) {
   using slot_type = std::remove_pointer_t<decltype(container.v_.data())>;
@@ -454,7 +446,7 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::lookup_slot(Container &container
 /// key or an unused slot are found. If tombstones are encountered, then returns the first tombstone slot
 /// so that when inserted, the key's probing distance is as short as possible.
 template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
-  requires(is_power_of_two(Size))
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
 template <typename Container>
 auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::find_insert_slot(Container &container, Key const &key) {
   using slot_type = std::remove_pointer_t<decltype(container.v_.data())>;
