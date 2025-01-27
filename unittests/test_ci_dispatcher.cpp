@@ -241,10 +241,10 @@ protected:
   }
 
   template <typename Content> void dispatch_ci(midi_ci const &midici, Content const &content) {
-    processor_.startSysex7(midici.group, static_cast<std::byte>(midici.params.device_id));
+    processor_.start(midici.group, static_cast<std::byte>(midici.params.device_id));
     std::ranges::for_each(make_message(midici.params, content),
                           [this](std::byte const b) { processor_.processMIDICI(b); });
-    processor_.endSysex7();
+    processor_.finish();
   }
 };
 // NOLINTNEXTLINE

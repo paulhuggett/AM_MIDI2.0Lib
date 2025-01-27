@@ -43,8 +43,9 @@ template <ci_dispatcher_config Config> class ci_dispatcher {
 public:
   explicit ci_dispatcher(Config config) : config_{config} {}
 
-  void startSysex7(std::uint8_t group, std::byte deviceId);
-  void endSysex7() {}
+  void start(std::uint8_t group, std::byte deviceId);
+  void finish() { /* here for symmetry with start */
+  }
 
   void processMIDICI(std::byte s7Byte);
 
@@ -104,8 +105,7 @@ private:
   void process_inquiry_midi_message_report_end();
 };
 
-template <ci_dispatcher_config Config>
-void ci_dispatcher<Config>::startSysex7(std::uint8_t group, std::byte device_id) {
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::start(std::uint8_t group, std::byte device_id) {
   midici_ = midi_ci{};
   midici_.group = group;
   midici_.params.device_id = to_underlying(device_id);
