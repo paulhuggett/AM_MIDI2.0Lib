@@ -65,26 +65,6 @@ jobs:
             os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-24.04/clang-16/Debug
-            apt_install: cmake ninja-build
-            llvm_install: 16
-            build_type: Debug
-            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
-            generator: Ninja
-            options: -D MIDI2_SANITIZE=Yes
-            os: ubuntu-24.04
-            package: TGZ
-
-          - name: Ubuntu-24.04/clang-16/Release
-            apt_install: cmake ninja-build
-            llvm_install: 16
-            build_type: Release
-            cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
-            generator: Ninja
-            options:
-            os: ubuntu-24.04
-            package: TGZ
-
           - name: Ubuntu-24.04/clang-18/Debug
             apt_install: cmake ninja-build
             llvm_install: 18
