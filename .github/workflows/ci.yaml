@@ -36,73 +36,73 @@ jobs:
 
           # Ubuntu builds
           # ~~~~~~~~~~~~~
-          - name: Ubuntu-22.04/gcc-13/Debug
+          - name: Ubuntu-24.04/gcc-13/Debug
             apt_install: cmake
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
             options:
             generator: Unix Makefiles
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/gcc-13/RelWithDebug/Sanitizers
+          - name: ubuntu-24.04/gcc-13/RelWithDebug/Sanitizers
             apt_install: cmake
             build_type: RelWithDebug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
             options: -D MIDI2_SANITIZE=Yes
             generator: Unix Makefiles
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/gcc-13/Release
+          - name: Ubuntu-24.04/gcc-13/Release
             apt_install: cmake
             build_type: Release
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
             generator: Unix Makefiles
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/clang-16/Debug
+          - name: Ubuntu-24.04/clang-16/Debug
             apt_install: cmake ninja-build
             llvm_install: 16
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
             generator: Ninja
             options: -D MIDI2_SANITIZE=Yes
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/clang-16/Release
+          - name: Ubuntu-24.04/clang-16/Release
             apt_install: cmake ninja-build
             llvm_install: 16
             build_type: Release
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-16 -D CMAKE_C_COMPILER=clang-16
             generator: Ninja
             options:
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/clang-18/Debug
+          - name: Ubuntu-24.04/clang-18/Debug
             apt_install: cmake ninja-build
             llvm_install: 18
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
             generator: Ninja
             options: -D MIDI2_SANITIZE=Yes
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
-          - name: Ubuntu-22.04/clang-18/Release
+          - name: Ubuntu-24.04/clang-18/Release
             apt_install: cmake ninja-build
             llvm_install: 18
             build_type: Release
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
             generator: Ninja
             options:
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             package: TGZ
 
           # Windows builds
