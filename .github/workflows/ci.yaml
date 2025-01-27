@@ -36,15 +36,6 @@ jobs:
 
           # Ubuntu builds
           # ~~~~~~~~~~~~~
-          - name: Ubuntu-22.04/gcc-11/Release
-            apt_install: cmake ninja-build
-            build_type: Release
-            cxx_compiler: -D CMAKE_CXX_COMPILER=g++-11 -D CMAKE_C_COMPILER=gcc-11
-            options:
-            generator: Ninja
-            os: ubuntu-22.04
-            package: TGZ
-
           - name: Ubuntu-22.04/gcc-13/Debug
             apt_install: cmake
             build_type: Debug
