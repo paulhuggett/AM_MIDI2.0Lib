@@ -773,6 +773,7 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyData) {
       .chunk = midi2::ci::property_exchange::chunk_info{2, 1},
       .request = 1_u8,
       .header = R"({"status":200})"sv,
+      .data = {},
   };
   EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange, get(config_.context, midici, g));
@@ -856,6 +857,7 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyDataReply) {
       .chunk.chunk_number = 1,
       .request = 2,
       .header = R"({"status":200})"sv,
+      .data = {},
   };
   EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
