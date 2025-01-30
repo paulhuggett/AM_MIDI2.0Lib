@@ -728,7 +728,7 @@ constexpr details_reply::operator packed::details_reply_v1() const noexcept {
       .pid = pid,
       .target = static_cast<std::byte>(target),
       .data_length = to_le7(static_cast<std::uint16_t>(data.size_bytes())),  ///< Inquiry target data length (LSB first)
-      .data[0] = std::byte{0},
+      .data = {std::byte{0}},
   };
 }
 
@@ -991,7 +991,7 @@ constexpr specific_data::operator packed::specific_data_v1() const noexcept {
   return {
       .pid = pid,
       .data_length = to_le7(static_cast<std::uint16_t>(data.size_bytes())),
-      .data[0] = std::byte{0},
+      .data = {std::byte{0}},
   };
 }
 
