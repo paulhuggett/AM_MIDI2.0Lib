@@ -910,6 +910,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
           },
       .request = midi2::to_underlying(request),
       .header = header,
+      .data = {},
   };
   EXPECT_THAT(make_message(params, set_reply), testing::ElementsAreArray(expected));
 }
