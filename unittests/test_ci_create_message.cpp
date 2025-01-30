@@ -719,8 +719,11 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::get get{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
   };
@@ -776,8 +779,11 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::get_reply get_reply{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,
@@ -835,8 +841,11 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::set set{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,
@@ -893,8 +902,11 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::set_reply set_reply{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
   };
@@ -948,8 +960,11 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::subscription subscription{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,
@@ -1004,8 +1019,11 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::subscription_reply subscription_reply{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,
@@ -1058,8 +1076,11 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::property_exchange::notify notify{
-      .chunk.number_of_chunks = from_le7(total_chunks),
-      .chunk.chunk_number = from_le7(chunk_number),
+      .chunk =
+          midi2::ci::property_exchange::chunk_info{
+              .number_of_chunks = from_le7(total_chunks),
+              .chunk_number = from_le7(chunk_number),
+          },
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,

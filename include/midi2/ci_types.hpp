@@ -1163,11 +1163,7 @@ static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 }  // end namespace packed
 
 struct chunk_info {
-  constexpr chunk_info() noexcept = default;
-  constexpr chunk_info(std::uint16_t const number_of_chunks_, std::uint16_t const chunk_number_) noexcept
-      : number_of_chunks{number_of_chunks_}, chunk_number{chunk_number_} {}
   constexpr bool operator==(chunk_info const &) const noexcept = default;
-
   std::uint16_t number_of_chunks = 0;
   std::uint16_t chunk_number = 0;
 };
