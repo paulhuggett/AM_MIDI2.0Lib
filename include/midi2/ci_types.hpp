@@ -168,8 +168,9 @@ static_assert(sizeof(discovery_v2) > sizeof(discovery_v1));
 }  // end namespace packed
 
 struct discovery {
-  static constexpr discovery make(packed::discovery_v1 const &v1, std::uint8_t output_path_id = 0) noexcept;
-  static constexpr discovery make(packed::discovery_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr discovery make(packed::discovery_v1 const &v1,
+                                                std::uint8_t output_path_id = 0) noexcept;
+  [[nodiscard]] static constexpr discovery make(packed::discovery_v2 const &v2) noexcept;
   explicit constexpr operator packed::discovery_v1() const noexcept;
   explicit constexpr operator packed::discovery_v2() const noexcept;
   constexpr bool operator==(discovery const &) const noexcept = default;
@@ -250,9 +251,10 @@ static_assert(sizeof(discovery_reply_v1) <= sizeof(discovery_reply_v2));
 }  // end namespace packed
 
 struct discovery_reply {
-  static constexpr discovery_reply make(packed::discovery_reply_v1 const &v1, std::uint8_t output_path_id = 0,
-                                        std::uint8_t function_block = 0) noexcept;
-  static constexpr discovery_reply make(packed::discovery_reply_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v1 const &v1,
+                                                      std::uint8_t output_path_id = 0,
+                                                      std::uint8_t function_block = 0) noexcept;
+  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v2 const &v2) noexcept;
   explicit constexpr operator packed::discovery_reply_v1() const noexcept;
   explicit constexpr operator packed::discovery_reply_v2() const noexcept;
   constexpr bool operator==(discovery_reply const &) const noexcept = default;
@@ -313,7 +315,7 @@ static_assert(std::is_trivially_copyable_v<endpoint_info_v1>);
 }  // end namespace packed
 
 struct endpoint_info {
-  static constexpr endpoint_info make(packed::endpoint_info_v1 const &) noexcept;
+  [[nodiscard]] static constexpr endpoint_info make(packed::endpoint_info_v1 const &) noexcept;
   explicit constexpr operator packed::endpoint_info_v1() const noexcept;
   constexpr bool operator==(endpoint_info const &) const noexcept = default;
 
@@ -351,7 +353,7 @@ static_assert(std::is_trivially_copyable_v<endpoint_info_reply_v1>);
 }  // end namespace packed
 
 struct endpoint_info_reply {
-  static constexpr endpoint_info_reply make(packed::endpoint_info_reply_v1 const &) noexcept;
+  [[nodiscard]] static constexpr endpoint_info_reply make(packed::endpoint_info_reply_v1 const &) noexcept;
   explicit constexpr operator packed::endpoint_info_reply_v1() const noexcept;
   constexpr bool operator==(endpoint_info_reply const &other) const noexcept {
     return status == other.status && std::ranges::equal(information, other.information);
@@ -389,7 +391,7 @@ static_assert(std::is_trivially_copyable_v<invalidate_muid_v1>);
 }  // end namespace packed
 
 struct invalidate_muid {
-  static constexpr invalidate_muid make(packed::invalidate_muid_v1 const &) noexcept;
+  [[nodiscard]] static constexpr invalidate_muid make(packed::invalidate_muid_v1 const &) noexcept;
   explicit constexpr operator packed::invalidate_muid_v1() const noexcept;
   constexpr bool operator==(invalidate_muid const &) const noexcept = default;
 
@@ -431,7 +433,7 @@ static_assert(alignof(ack_v1) == 1);
 }  // end namespace packed
 
 struct ack {
-  static constexpr ack make(packed::ack_v1 const &) noexcept;
+  [[nodiscard]] static constexpr ack make(packed::ack_v1 const &) noexcept;
   explicit constexpr operator packed::ack_v1() const noexcept;
   constexpr bool operator==(ack const &other) const noexcept;
 
@@ -495,8 +497,8 @@ static_assert(sizeof(nak_v1) <= sizeof(nak_v2));
 }  // end namespace packed
 
 struct nak {
-  static constexpr nak make(packed::nak_v1 const &) noexcept;
-  static constexpr nak make(packed::nak_v2 const &) noexcept;
+  [[nodiscard]] static constexpr nak make(packed::nak_v1 const &) noexcept;
+  [[nodiscard]] static constexpr nak make(packed::nak_v2 const &) noexcept;
   explicit constexpr operator packed::nak_v1() const noexcept;
   explicit constexpr operator packed::nak_v2() const noexcept;
   constexpr bool operator==(nak const &) const noexcept;
@@ -579,8 +581,8 @@ static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt2>);
 }  // end namespace packed
 
 struct inquiry_reply {
-  static constexpr inquiry_reply make(packed::inquiry_reply_v1_pt1 const &,
-                                      packed::inquiry_reply_v1_pt2 const &) noexcept;
+  [[nodiscard]] static constexpr inquiry_reply make(packed::inquiry_reply_v1_pt1 const &,
+                                                    packed::inquiry_reply_v1_pt2 const &) noexcept;
   explicit constexpr operator packed::inquiry_reply_v1_pt1() const noexcept;
   explicit constexpr operator packed::inquiry_reply_v1_pt2() const noexcept;
   constexpr bool operator==(inquiry_reply const &other) const noexcept {
@@ -624,7 +626,7 @@ static_assert(std::is_trivially_copyable_v<added_v1>);
 }  // end namespace packed
 
 struct added {
-  static constexpr added make(packed::added_v1 const &other) noexcept { return {.pid = other.pid}; }
+  [[nodiscard]] static constexpr added make(packed::added_v1 const &other) noexcept { return {.pid = other.pid}; }
   explicit constexpr operator packed::added_v1() const noexcept { return {.pid = pid}; }
   constexpr bool operator==(added const &) const noexcept = default;
 
@@ -649,7 +651,7 @@ static_assert(std::is_trivially_copyable_v<removed_v1>);
 }  // end namespace packed
 
 struct removed {
-  static constexpr removed make(packed::removed_v1 const &other) noexcept { return {.pid = other.pid}; }
+  [[nodiscard]] static constexpr removed make(packed::removed_v1 const &other) noexcept { return {.pid = other.pid}; }
   explicit constexpr operator packed::removed_v1() const noexcept { return {.pid = pid}; }
   constexpr bool operator==(removed const &) const noexcept = default;
 
@@ -676,7 +678,7 @@ static_assert(std::is_trivially_copyable_v<details_v1>);
 }  // end namespace packed
 
 struct details {
-  static constexpr details make(packed::details_v1 const &other) noexcept {
+  [[nodiscard]] static constexpr details make(packed::details_v1 const &other) noexcept {
     return {.pid = other.pid, .target = to_underlying(other.target)};
   }
   explicit constexpr operator packed::details_v1() const noexcept { return {.pid = pid, .target = to_le7(target)}; }
@@ -706,7 +708,7 @@ static_assert(std::is_trivially_copyable_v<details_reply_v1>);
 }  // end namespace packed
 
 struct details_reply {
-  static constexpr details_reply make(packed::details_reply_v1 const &) noexcept;
+  [[nodiscard]] static constexpr details_reply make(packed::details_reply_v1 const &) noexcept;
   explicit constexpr operator packed::details_reply_v1() const noexcept;
   constexpr bool operator==(details_reply const &other) const noexcept {
     return pid == other.pid && target == other.target && std::ranges::equal(data, other.data);
@@ -763,8 +765,8 @@ static_assert(sizeof(on_v1) <= sizeof(on_v2));
 }  // end namespace packed
 
 struct on {
-  static constexpr on make(packed::on_v1 const &, std::uint16_t num_channels = 0) noexcept;
-  static constexpr on make(packed::on_v2 const &) noexcept;
+  [[nodiscard]] static constexpr on make(packed::on_v1 const &, std::uint16_t num_channels = 0) noexcept;
+  [[nodiscard]] static constexpr on make(packed::on_v2 const &) noexcept;
   explicit constexpr operator packed::on_v1() const noexcept;
   explicit constexpr operator packed::on_v2() const noexcept;
   constexpr bool operator==(on const &) const noexcept = default;
@@ -816,8 +818,8 @@ static_assert(sizeof(off_v1) <= sizeof(off_v2));
 }  // end namespace packed
 
 struct off {
-  static constexpr off make(packed::off_v1 const &) noexcept;
-  static constexpr off make(packed::off_v2 const &) noexcept;
+  [[nodiscard]] static constexpr off make(packed::off_v1 const &) noexcept;
+  [[nodiscard]] static constexpr off make(packed::off_v2 const &) noexcept;
   explicit constexpr operator packed::off_v1() const noexcept;
   explicit constexpr operator packed::off_v2() const noexcept;
   constexpr bool operator==(off const &) const noexcept = default;
@@ -869,8 +871,8 @@ static_assert(sizeof(enabled_v1) <= sizeof(enabled_v2));
 }  // end namespace packed
 
 struct enabled {
-  static constexpr enabled make(packed::enabled_v1 const &, std::uint16_t num_channels = 0) noexcept;
-  static constexpr enabled make(packed::enabled_v2 const &) noexcept;
+  [[nodiscard]] static constexpr enabled make(packed::enabled_v1 const &, std::uint16_t num_channels = 0) noexcept;
+  [[nodiscard]] static constexpr enabled make(packed::enabled_v2 const &) noexcept;
   explicit constexpr operator packed::enabled_v1() const noexcept;
   explicit constexpr operator packed::enabled_v2() const noexcept;
   constexpr bool operator==(enabled const &) const noexcept = default;
@@ -925,8 +927,8 @@ static_assert(sizeof(disabled_v1) <= sizeof(disabled_v2));
 }  // end namespace packed
 
 struct disabled {
-  static constexpr disabled make(packed::disabled_v1 const &) noexcept;
-  static constexpr disabled make(packed::disabled_v2 const &) noexcept;
+  [[nodiscard]] static constexpr disabled make(packed::disabled_v1 const &) noexcept;
+  [[nodiscard]] static constexpr disabled make(packed::disabled_v2 const &) noexcept;
   explicit constexpr operator packed::disabled_v1() const noexcept;
   explicit constexpr operator packed::disabled_v2() const noexcept;
 
@@ -971,7 +973,7 @@ static_assert(std::is_trivially_copyable_v<specific_data_v1>);
 }  // end namespace packed
 
 struct specific_data {
-  static constexpr specific_data make(packed::specific_data_v1 const &) noexcept;
+  [[nodiscard]] static constexpr specific_data make(packed::specific_data_v1 const &) noexcept;
   explicit constexpr operator packed::specific_data_v1() const noexcept;
   constexpr bool operator==(specific_data const &other) const noexcept {
     return pid == other.pid && std::ranges::equal(data, other.data);
@@ -1029,8 +1031,8 @@ static_assert(std::is_trivially_copyable_v<capabilities_v2>);
 }  // end namespace packed
 
 struct capabilities {
-  static constexpr capabilities make(packed::capabilities_v1 const &other) noexcept;
-  static constexpr capabilities make(packed::capabilities_v2 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v1 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v2 const &other) noexcept;
   explicit constexpr operator packed::capabilities_v1() const noexcept;
   explicit constexpr operator packed::capabilities_v2() const noexcept;
   constexpr bool operator==(capabilities const &) const noexcept = default;
@@ -1091,8 +1093,8 @@ static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 }  // end namespace packed
 
 struct capabilities_reply {
-  static constexpr capabilities_reply make(packed::capabilities_reply_v1 const &other) noexcept;
-  static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v1 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &other) noexcept;
   explicit constexpr operator packed::capabilities_reply_v1() const noexcept;
   explicit constexpr operator packed::capabilities_reply_v2() const noexcept;
   constexpr bool operator==(capabilities_reply const &) const noexcept = default;
@@ -1171,9 +1173,9 @@ struct chunk_info {
 enum class property_exchange_type { get, get_reply, set, set_reply, subscription, subscription_reply, notify };
 template <property_exchange_type Pet> class property_exchange {
 public:
-  static constexpr property_exchange make(chunk_info const &chunk, std::uint8_t const request,
-                                          std::span<char const> const header,
-                                          std::span<char const> const data = {}) noexcept {
+  [[nodiscard]] static constexpr property_exchange make(chunk_info const &chunk, std::uint8_t const request,
+                                                        std::span<char const> const header,
+                                                        std::span<char const> const data = {}) noexcept {
     return {.chunk = chunk, .request = request, .header = header, .data = data};
   }
   explicit constexpr operator packed::property_exchange_pt1() const noexcept {
@@ -1239,7 +1241,7 @@ static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 }  // end namespace packed
 
 struct capabilities_reply {
-  static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &v2) noexcept;
   explicit constexpr operator packed::capabilities_reply_v2() const noexcept;
   constexpr bool operator==(capabilities_reply const &) const noexcept = default;
 
@@ -1304,7 +1306,7 @@ static_assert(std::is_trivially_copyable_v<midi_message_report_v2>);
 }  // end namespace packed
 
 struct midi_message_report {
-  static constexpr midi_message_report make(packed::midi_message_report_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr midi_message_report make(packed::midi_message_report_v2 const &v2) noexcept;
   constexpr explicit operator packed::midi_message_report_v2() const noexcept;
   constexpr bool operator==(midi_message_report const &) const noexcept = default;
 
@@ -1427,7 +1429,8 @@ static_assert(std::is_trivially_copyable_v<midi_message_report_reply_v2>);
 }  // end namespace packed
 
 struct midi_message_report_reply {
-  static constexpr midi_message_report_reply make(packed::midi_message_report_reply_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr midi_message_report_reply make(
+      packed::midi_message_report_reply_v2 const &v2) noexcept;
   constexpr explicit operator packed::midi_message_report_reply_v2() const noexcept;
   constexpr bool operator==(midi_message_report_reply const &) const noexcept = default;
 
