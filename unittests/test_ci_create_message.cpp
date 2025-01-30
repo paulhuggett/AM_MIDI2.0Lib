@@ -726,6 +726,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
           },
       .request = midi2::to_underlying(request),
       .header = header,
+      .data = {},
   };
   EXPECT_THAT(make_message(params, get), testing::ElementsAreArray(expected));
 }
