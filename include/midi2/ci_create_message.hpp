@@ -203,9 +203,9 @@ constexpr O write_header(O first, S const last, struct params const &params, ci_
   return details::safe_copy(first, last, header);
 }
 
-template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O write_pe(O first, S const last, struct params const &params, property_exchange::property_exchange const &pe,
-                     ci_message const id) {
+template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
+constexpr O write_pe(O first, S const last, struct params const &params,
+                     property_exchange::property_exchange<Pet> const &pe, ci_message const id) {
   first = details::write_header(first, last, params, id);
 
   using property_exchange::packed::property_exchange_pt1;
