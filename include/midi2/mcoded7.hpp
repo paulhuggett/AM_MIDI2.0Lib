@@ -1,3 +1,11 @@
+//===-- Mcoded7 Codec ---------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 #ifndef MIDI2_MCODED7_HPP
 #define MIDI2_MCODED7_HPP
 
@@ -7,6 +15,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+
+#include "midi2/utils.hpp"
 
 // MIDI Mcoded7 Encoding
 // ~~~~~~~~~~~~~~~~~~~~~
@@ -151,7 +161,7 @@ OutputIterator decoder::parse_byte(std::byte const value, OutputIterator out) {
   if (pos_ == msbs_byte_pos_) {
     // This the the byte that encodes the sign bits of the seven following
     // bytes.
-    msbs_ = static_cast<std::uint8_t>(value);
+    msbs_ = to_underlying(value);
   } else {
     // The MSB should not be set in mcoded7 data.
     bad_ |= static_cast<std::uint8_t>(value >> 7U);
