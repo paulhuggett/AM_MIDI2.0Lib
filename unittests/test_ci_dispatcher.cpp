@@ -794,8 +794,7 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyDataReply) {
                            }};
   using get_reply = midi2::ci::property_exchange::get_reply;
   constexpr get_reply gr{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = 1_u8,
       .header = R"({"status":200})"sv,
       .data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])"sv,
@@ -824,8 +823,7 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyData) {
                            }};
   using midi2::ci::property_exchange::set;
   constexpr set spd{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = 1_u8,
       .header = R"({"resource":"X-ProgramEdit","resId":"abcd"})"sv,
       .data = R"({"name":"Violin 2","lfoSpeed":10,"lfoWaveform":"sine"})"sv,
@@ -853,8 +851,7 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyDataReply) {
                            }};
   using midi2::ci::property_exchange::set_reply;
   constexpr set_reply spd_reply{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = 2,
       .header = R"({"status":200})"sv,
       .data = {},
@@ -886,8 +883,7 @@ TEST_F(CIDispatcher, PropertyExchangeSubscription) {
                            }};
   using midi2::ci::property_exchange::subscription;
   constexpr subscription sub{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = 17_u8,
       .header = header,
       .data = data,
@@ -919,8 +915,7 @@ TEST_F(CIDispatcher, PropertyExchangeSubscriptionReply) {
                            }};
   using midi2::ci::property_exchange::subscription_reply;
   constexpr subscription_reply sub_reply{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = 17_u8,
       .header = header,
       .data = data,
@@ -952,8 +947,7 @@ TEST_F(CIDispatcher, PropertyExchangeNotify) {
                            }};
   using midi2::ci::property_exchange::notify;
   constexpr notify note{
-      .chunk.number_of_chunks = 1,
-      .chunk.chunk_number = 1,
+      .chunk = midi2::ci::property_exchange::chunk_info{1, 1},
       .request = midi2::to_underlying(request),
       .header = header,
       .data = data,
