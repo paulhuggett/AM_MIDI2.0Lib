@@ -526,12 +526,12 @@ constexpr nak::operator packed::nak_v1() const noexcept {
   return {};
 }
 constexpr nak::operator packed::nak_v2() const noexcept {
-  return {to_le7(original_id),
-          to_le7(status_code),
-          to_le7(status_data),
-          details,
-          to_le7(static_cast<std::uint16_t>(message.size())),
-          {std::byte{0}}};
+  return {.original_id = to_le7(original_id),
+          .status_code = to_le7(status_code),
+          .status_data = to_le7(status_data),
+          .details = details,
+          .message_length = to_le7(static_cast<std::uint16_t>(message.size())),
+          .message = {std::byte{0}}};
 }
 
 constexpr bool nak::operator==(nak const &other) const noexcept {
@@ -602,10 +602,10 @@ constexpr inquiry_reply inquiry_reply::make(packed::inquiry_reply_v1_pt1 const &
 }
 
 constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt1() const noexcept {
-  return {to_le7(static_cast<std::uint16_t>(enabled.size())), {byte_array_5{}}};
+  return {.num_enabled = to_le7(static_cast<std::uint16_t>(enabled.size())), .ids = {byte_array_5{}}};
 }
 constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt2() const noexcept {
-  return {to_le7(static_cast<std::uint16_t>(disabled.size())), {byte_array_5{}}};
+  return {.num_disabled = to_le7(static_cast<std::uint16_t>(disabled.size())), .ids = {byte_array_5{}}};
 }
 
 //*                __ _ _               _    _        _  *
@@ -838,7 +838,7 @@ constexpr off::operator packed::off_v1() const noexcept {
   return {.pid = pid};
 }
 constexpr off::operator packed::off_v2() const noexcept {
-  return {static_cast<packed::off_v1>(*this), byte_array_2{}};
+  return {.v1 = static_cast<packed::off_v1>(*this), .reserved = byte_array_2{}};
 }
 
 //*                __ _ _                     _    _        _  *
