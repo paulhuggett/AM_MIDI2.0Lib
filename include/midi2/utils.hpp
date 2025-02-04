@@ -34,7 +34,7 @@ namespace midi2 {
 /// \returns The integer value of the underlying type of Enum, converted from \p e.
 template <typename Enum>
   requires std::is_enum_v<Enum>
-constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
+[[nodiscard]] constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
 #if defined(__cpp_lib_to_underlying) && __cpp_lib_to_underlying > 202102L
   return std::to_underlying(e);
 #else
@@ -47,7 +47,7 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
 /// \tparam T An unsigned integer type.
 /// \param n An integer value to check whether it is a power of two.
 /// \returns True if the input value is a power of 2.
-template <std::unsigned_integral T> constexpr bool is_power_of_two(T const n) noexcept {
+template <std::unsigned_integral T> [[nodiscard]] constexpr bool is_power_of_two(T const n) noexcept {
   // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
   return n > 0U && !(n & (n - 1U));
 }
@@ -224,7 +224,7 @@ using small_type = std::conditional_t<
 /// Resolution v1.0.1 23-May-2023"
 template <unsigned SourceBits, unsigned DestBits>
   requires(SourceBits > 1 && DestBits <= 32)
-constexpr small_type<DestBits> mcm_scale(small_type<SourceBits> const value) noexcept {
+[[nodiscard]] constexpr small_type<DestBits> mcm_scale(small_type<SourceBits> const value) noexcept {
   if constexpr (SourceBits >= DestBits) {
     return static_cast<small_type<DestBits>>(value >> (SourceBits - DestBits));
   } else {

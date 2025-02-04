@@ -21,7 +21,10 @@ public:
   }
 
   [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
-  [[nodiscard]] constexpr std::byte read() { return output_.pop_front(); }
+  [[nodiscard]] constexpr std::byte read() {
+    assert(!empty());
+    return output_.pop_front();
+  }
 
   constexpr void receive(std::uint32_t const usbm1) {
     if (cable(usbm1) != cable_) {

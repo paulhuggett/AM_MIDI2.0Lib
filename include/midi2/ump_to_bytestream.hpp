@@ -56,7 +56,10 @@ public:
 
   /// Checks if the output has no elements
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
-  [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
+  [[nodiscard]] constexpr output_type pop() {
+    assert(!empty());
+    return context_.output.pop_front();
+  }
 
   void push(input_type const ump) { p_.process_ump(ump); }
 

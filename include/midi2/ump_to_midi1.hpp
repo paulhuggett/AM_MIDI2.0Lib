@@ -9,6 +9,7 @@
 #ifndef MIDI2_UMPTOMIDI1_HPP
 #define MIDI2_UMPTOMIDI1_HPP
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <tuple>
@@ -28,7 +29,10 @@ public:
 
   /// Checks if the output is empty
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
-  [[nodiscard]] constexpr output_type pop() { return context_.output.pop_front(); }
+  [[nodiscard]] constexpr output_type pop() {
+    assert(!empty());
+    return context_.output.pop_front();
+  }
 
   void push(input_type const ump) { p_.process_ump(ump); }
 
@@ -44,7 +48,7 @@ private:
     }
 
     struct pn_cache_key {
-      bool operator==(pn_cache_key const &) const noexcept = default;
+      constexpr bool operator==(pn_cache_key const &) const noexcept = default;
 
       std::uint8_t group : 4 = 0;
       std::uint8_t channel : 4 = 0;
@@ -178,7 +182,7 @@ private:
 }  // end namespace midi2
 
 template <> struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key> {
-  std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
+  constexpr std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
     return std::hash<unsigned>{}(static_cast<unsigned>(key.group << 5) | static_cast<unsigned>(key.channel << 1) |
                                  static_cast<unsigned>(key.is_rpn));
   }
