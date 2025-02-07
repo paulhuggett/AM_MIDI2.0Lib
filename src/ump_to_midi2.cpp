@@ -63,25 +63,26 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
   auto const value = in.value();
 
   auto &c = ctxt->parameter_number[group][channel];
+  using enum control;
   switch (static_cast<control>(controller)) {
-  case control::bank_select: ctxt->bank[group][channel].set_msb(value); break;
-  case control::bank_select_lsb: ctxt->bank[group][channel].set_lsb(value); break;
+  case bank_select: ctxt->bank[group][channel].set_msb(value); break;
+  case bank_select_lsb: ctxt->bank[group][channel].set_lsb(value); break;
 
-  case control::nrpn_msb:
+  case nrpn_msb:
     c.pn_is_rpn = false;
     c.set_number_msb(value);
     break;
-  case control::nrpn_lsb:
+  case nrpn_lsb:
     c.pn_is_rpn = false;
     c.pn_lsb_valid = true;
     c.pn_lsb = value;
     break;
 
-  case control::rpn_msb:
+  case rpn_msb:
     c.pn_is_rpn = true;
     c.set_number_msb(value);
     break;
-  case control::rpn_lsb:
+  case rpn_lsb:
     // Setting RPN to 7FH,7FH will disable the data entry, data increment, and data decrement controllers
     // until a new RPN or NRPN is selected. (MIDI 1.0 Approved Protocol JMSC-0011)
     if (c.pn_is_rpn && c.pn_msb_valid && c.pn_msb == 0x7F && value == 0x7F) {
@@ -92,9 +93,9 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
     }
     break;
 
-  case control::data_entry_msb: c.set_value_msb(value); break;
+  case data_entry_msb: c.set_value_msb(value); break;
 
-  case control::data_entry_lsb:
+  case data_entry_lsb:
     if (c.pn_msb_valid && c.pn_lsb_valid && c.value_msb_valid) {
       if (c.pn_is_rpn) {
         pn_control_message<ump::m2cvm::rpn_controller>(ctxt, c, group, channel, value);
@@ -104,7 +105,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
     }
     break;
 
-  case control::reset_all_controllers: c.reset_number(); [[fallthrough]];
+  case reset_all_controllers: c.reset_number(); [[fallthrough]];
 
   default: {
     constexpr auto m2v = ump::m2cvm::control_change::word1::value::bits();

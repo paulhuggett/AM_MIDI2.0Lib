@@ -16,6 +16,7 @@
 #include <bit>
 #include <cassert>
 #include <cstdint>
+#include <format>
 #include <ostream>
 #include <type_traits>
 #include <vector>
@@ -40,7 +41,7 @@ template <typename ArrayLike> struct HexContainer {
   friend std::ostream& operator<<(std::ostream& os, HexContainer<ArrayLike> const& hc) {
     auto const* separator = "";
     for (auto v : *hc.container) {
-      os << separator << "0x" << std::hex << std::uppercase << static_cast<unsigned>(v);
+      os << std::format("{}0x{:x}", separator, static_cast<unsigned>(v));
       separator = ", ";
     }
     return os;
