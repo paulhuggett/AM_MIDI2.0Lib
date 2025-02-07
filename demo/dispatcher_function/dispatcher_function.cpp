@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include "midi2/ump_dispatcher.hpp"
+#include "midi2/ump_types.hpp"
 
 int main() {
   try {

@@ -1,4 +1,4 @@
-add_executable(demo_dispatcher_function main.cpp)
+add_executable(demo_dispatcher_function dispatcher_function.cpp)
 target_link_libraries(demo_dispatcher_function PRIVATE midi2)
 setup_target(demo_dispatcher_function)
 add_test(NAME demo-dispatcher-function COMMAND demo_dispatcher_function)

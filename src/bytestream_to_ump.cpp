@@ -8,7 +8,6 @@
 
 #include "midi2/bytestream_to_ump.hpp"
 
-#include <bit>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>

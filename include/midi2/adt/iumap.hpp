@@ -285,8 +285,10 @@ private:
       }
       state = state::unused;
     }
-    constexpr value_type *pointer() noexcept { return std::bit_cast<value_type *>(&storage[0]); }
-    constexpr value_type const *pointer() const noexcept { return std::bit_cast<value_type const *>(&storage[0]); }
+    [[nodiscard]] constexpr value_type *pointer() noexcept { return std::bit_cast<value_type *>(&storage[0]); }
+    [[nodiscard]] constexpr value_type const *pointer() const noexcept {
+      return std::bit_cast<value_type const *>(&storage[0]);
+    }
 
     enum state state = state::unused;
     alignas(value_type) std::byte storage[sizeof(value_type)]{};
