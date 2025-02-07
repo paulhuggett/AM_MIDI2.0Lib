@@ -88,13 +88,14 @@ enum class status : std::uint8_t {
 };
 
 [[nodiscard]] constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept {
+  using enum status;
   switch (static_cast<status>(midi1_byte)) {
-  case status::timing_clock:
-  case status::sequence_start:
-  case status::sequence_continue:
-  case status::sequence_stop:
-  case status::active_sensing:
-  case status::systemreset: return true;
+  case timing_clock:
+  case sequence_start:
+  case sequence_continue:
+  case sequence_stop:
+  case active_sensing:
+  case systemreset: return true;
   default: return false;
   }
 }

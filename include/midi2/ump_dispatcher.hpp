@@ -97,26 +97,25 @@ public:
     assert(pos_ < message_.size());
     message_[pos_++] = ump;
     if (auto const mt = static_cast<ump::message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
+      using enum ump::message_type;
       switch (mt) {
-      case ump::message_type::utility: this->utility_message(); break;
-      case ump::message_type::system: this->system_message(); break;
-      case ump::message_type::m1cvm: this->m1cvm_message(); break;
-      case ump::message_type::m2cvm: this->m2cvm_message(); break;
-      case ump::message_type::flex_data: this->flex_data_message(); break;
-      case ump::message_type::stream: this->stream_message(); break;
-      case ump::message_type::data64: this->data64_message(); break;
-      case ump::message_type::data128: this->data128_message(); break;
+      case utility: this->utility_message(); break;
+      case system: this->system_message(); break;
+      case m1cvm: this->m1cvm_message(); break;
+      case m2cvm: this->m2cvm_message(); break;
+      case flex_data: this->flex_data_message(); break;
+      case stream: this->stream_message(); break;
+      case data64: this->data64_message(); break;
+      case data128: this->data128_message(); break;
 
-      case ump::message_type::reserved32_06:
-      case ump::message_type::reserved32_07:
-      case ump::message_type::reserved64_08:
-      case ump::message_type::reserved64_09:
-      case ump::message_type::reserved64_0a:
-      case ump::message_type::reserved96_0b:
-      case ump::message_type::reserved96_0c:
-      case ump::message_type::reserved128_0e:
-        config_.utility.unknown(config_.context, std::span{message_.data(), pos_});
-        break;
+      case reserved32_06:
+      case reserved32_07:
+      case reserved64_08:
+      case reserved64_09:
+      case reserved64_0a:
+      case reserved96_0b:
+      case reserved96_0c:
+      case reserved128_0e: config_.utility.unknown(config_.context, std::span{message_.data(), pos_}); break;
       default:
         assert(false);
         unreachable();

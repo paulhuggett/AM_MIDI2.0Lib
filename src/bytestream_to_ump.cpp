@@ -20,12 +20,11 @@ namespace {
 
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
 [[nodiscard]] constexpr bool is_one_byte_message(std::byte const midi1_byte) {
-  using midi2::status;
-  using status_type = std::underlying_type_t<status>;
-  auto const value = std::to_integer<status_type>(midi1_byte);
-  auto const top_nibble = std::to_integer<status_type>(midi1_byte & std::byte{0xF0});
-  return top_nibble == to_underlying(status::program_change) || top_nibble == to_underlying(status::channel_pressure) ||
-         value == to_underlying(status::timing_code) || value == to_underlying(status::song_select);
+  using enum midi2::status;
+  auto const value = midi2::to_underlying(midi1_byte);
+  auto const top_nibble = midi2::to_underlying(midi1_byte & std::byte{0xF0});
+  return top_nibble == to_underlying(program_change) || top_nibble == to_underlying(channel_pressure) ||
+         value == to_underlying(timing_code) || value == to_underlying(song_select);
 }
 
 }  // end anonymous namespace
@@ -67,9 +66,10 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
 
 void bytestream_to_ump::sysex_data_byte(std::byte const midi1_byte) {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
+    using enum sysex7::status;
     switch (sysex7_.state) {
-    case sysex7::status::start: push_sysex7<ump::data64::sysex7_start>(); break;
-    case sysex7::status::cont: push_sysex7<ump::data64::sysex7_continue>(); break;
+    case start: push_sysex7<ump::data64::sysex7_start>(); break;
+    case cont: push_sysex7<ump::data64::sysex7_continue>(); break;
     default: assert(false); break;
     }
     sysex7_.reset();
