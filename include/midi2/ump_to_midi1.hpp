@@ -182,7 +182,7 @@ private:
 }  // end namespace midi2
 
 template <> struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key> {
-  constexpr std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
+  std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
     return std::hash<unsigned>{}(static_cast<unsigned>(key.group << 5) | static_cast<unsigned>(key.channel << 1) |
                                  static_cast<unsigned>(key.is_rpn));
   }
