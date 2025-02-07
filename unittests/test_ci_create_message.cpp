@@ -83,8 +83,10 @@ TEST_F(CICreateMessage, DiscoveryV1) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
-      .device_id = midi2::to_underlying(device_id), .version = 1, .remote_muid = 0, .local_muid = midi2::ci_broadcast};
+  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
+                                     .version = 1,
+                                     .remote_muid = 0,
+                                     .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
@@ -123,8 +125,10 @@ TEST_F(CICreateMessage, DiscoveryV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
-      .device_id = midi2::to_underlying(device_id), .version = 2, .remote_muid = 0, .local_muid = midi2::ci_broadcast};
+  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
+                                     .version = 2,
+                                     .remote_muid = 0,
+                                     .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
@@ -166,8 +170,10 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
-      .device_id = midi2::to_underlying(device_id), .version = 2, .remote_muid = 0, .local_muid = midi2::ci_broadcast};
+  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
+                                     .version = 2,
+                                     .remote_muid = 0,
+                                     .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery_reply reply{.manufacturer = midi2::ci::from_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),

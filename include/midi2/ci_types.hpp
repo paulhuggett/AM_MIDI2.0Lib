@@ -100,6 +100,8 @@ static_assert(std::is_trivially_copyable_v<header>);
 
 }  // end namespace packed
 
+constexpr auto broadcast_muid = std::uint32_t{0x0FFFFFFF};
+
 struct params {
   constexpr bool operator==(params const &) const noexcept = default;
   explicit constexpr operator packed::header() const noexcept;

@@ -267,8 +267,8 @@ TEST_F(CIDispatcher, DiscoveryV1) {
   constexpr midi_ci midici{
       .group = 0xFF_u8,
       .type = midi2::ci_message::discovery,
-      .params =
-          midi2::ci::params{.device_id = 0x7F_u8, .version = 1, .remote_muid = 0, .local_muid = midi2::ci_broadcast}};
+      .params = midi2::ci::params{
+          .device_id = 0x7F_u8, .version = 1, .remote_muid = 0, .local_muid = midi2::ci::broadcast_muid}};
   constexpr midi2::ci::discovery discovery{.manufacturer = std::array{0x12_u8, 0x23_u8, 0x34_u8},
                                            .family = (1U << (7 * 2)) - 1U,
                                            .model = (1U << (7 * 2)) - 2U,
@@ -283,8 +283,8 @@ TEST_F(CIDispatcher, DiscoveryV2) {
   constexpr midi_ci midici{
       .group = 0xFF_u8,
       .type = midi2::ci_message::discovery,
-      .params =
-          midi2::ci::params{.device_id = 0x7F_u8, .version = 2, .remote_muid = 0, .local_muid = midi2::ci_broadcast}};
+      .params = midi2::ci::params{
+          .device_id = 0x7F_u8, .version = 2, .remote_muid = 0, .local_muid = midi2::ci::broadcast_muid}};
   constexpr midi2::ci::discovery discovery{.manufacturer = std::array{0x12_u8, 0x23_u8, 0x34_u8},
                                            .family = from_le7(std::array{0x67_b, 0x79_b}),
                                            .model = from_le7(std::array{0x6B_b, 0x5D_b}),
@@ -312,7 +312,7 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
                            .params = midi2::ci::params{.device_id = midi2::to_underlying(device_id),
                                                        .version = 2,
                                                        .remote_muid = 0,
-                                                       .local_muid = midi2::ci_broadcast}};
+                                                       .local_muid = midi2::ci::broadcast_muid}};
   constexpr midi2::ci::discovery_reply reply{.manufacturer = midi2::ci::from_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),

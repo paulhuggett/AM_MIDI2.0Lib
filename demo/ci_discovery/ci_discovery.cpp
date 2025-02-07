@@ -7,18 +7,20 @@
 //===------------------------------------------------------------------------------------===//
 
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 #include "midi2/ci_create_message.hpp"
 #include "midi2/ci_types.hpp"
+#include "midi2/utils.hpp"
 
 namespace {
 
 std::vector<std::byte> discovery() {
-  midi2::ci::params const params{.device_id = 0x7F, .version = 2, .remote_muid = 0, .local_muid = midi2::ci_broadcast};
+  midi2::ci::params const params{
+      .device_id = 0x7F, .version = 2, .remote_muid = 0, .local_muid = midi2::ci::broadcast_muid};
   midi2::ci::discovery const discovery{.manufacturer = {0x12, 0x23, 0x34},
                                        .family = 0x1779,
                                        .model = 0x2B5D,
