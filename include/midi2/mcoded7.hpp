@@ -164,7 +164,7 @@ OutputIterator decoder::parse_byte(std::byte const value, OutputIterator out) {
     msbs_ = to_underlying(value);
   } else {
     // The MSB should not be set in mcoded7 data.
-    bad_ |= static_cast<std::uint8_t>(value >> 7U);
+    bad_ |= to_underlying(value >> 7U);
 
     // Assemble the output byte from ths input value and its most-significant
     // bit stored in msbs_.
