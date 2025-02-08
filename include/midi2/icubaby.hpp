@@ -1809,8 +1809,9 @@ private:
   /// \param value An input byte
   /// \returns A native-endian 16 bit value.
   [[nodiscard]] constexpr char16_t char16_from_big_endian_buffer(input_type const value) const noexcept {
-    return static_cast<char16_t>(static_cast<std::uint_least16_t>(static_cast<std::uint_least16_t>(buffer_[0]) << 8U) |
-                                 static_cast<std::uint_least16_t>(value));
+    return static_cast<char16_t>(
+        static_cast<std::uint_least16_t>(static_cast<std::uint_least16_t>(details::to_underlying(buffer_[0])) << 8U) |
+        static_cast<std::uint_least16_t>(value));
   }
   /// \brief Produces a native-endian 16-bit value from little endian encoded input by combining the first entry in the
   ///        buffer_ array with \p value.
@@ -1818,8 +1819,9 @@ private:
   /// \param value An input byte
   /// \returns A native-endian 16 bit value.
   [[nodiscard]] constexpr char16_t char16_from_little_endian_buffer(input_type const value) const noexcept {
-    return static_cast<char16_t>(static_cast<std::uint_least16_t>(static_cast<std::uint_least16_t>(value) << 8U) |
-                                 static_cast<std::uint_least16_t>(buffer_[0]));
+    return static_cast<char16_t>(
+        static_cast<std::uint_least16_t>(static_cast<std::uint_least16_t>(details::to_underlying(value)) << 8U) |
+        static_cast<std::uint_least16_t>(buffer_[0]));
   }
   /// \brief Produces a native-endian 32-bit value from big endian encoded input by combining the entries in the
   ///        buffer_ array with \p value.
@@ -1827,10 +1829,11 @@ private:
   /// \param value An input byte
   /// \returns A native-endian 32 bit value.
   [[nodiscard]] constexpr char32_t char32_from_big_endian_buffer(input_type const value) const noexcept {
-    return static_cast<char32_t>(static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(buffer_[0]) << 24U) |
-                                 static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(buffer_[1]) << 16U) |
-                                 static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(buffer_[2]) << 8U) |
-                                 static_cast<std::uint_least32_t>(value));
+    return static_cast<char32_t>(
+        static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(details::to_underlying(buffer_[0])) << 24U) |
+        static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(details::to_underlying(buffer_[1])) << 16U) |
+        static_cast<std::uint_least32_t>(static_cast<std::uint_least32_t>(details::to_underlying(buffer_[2])) << 8U) |
+        static_cast<std::uint_least32_t>(value));
   }
   /// \brief Produces a native-endian 32-bit value from little endian encoded input by combining the entries in the
   ///        buffer_ array with \p value.
