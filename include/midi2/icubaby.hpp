@@ -200,6 +200,20 @@ namespace icubaby {
 /// and should not be used in client code. They may change at any time!
 namespace details {
 
+/// Converts an enumeration value to its underlying type
+///
+/// \param e  The enumeration value to convert
+/// \returns The integer value of the underlying type of Enum, converted from \p e.
+template <typename Enum>
+ICUBABY_REQUIRES(std::is_enum_v<Enum>)
+[[nodiscard]] constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
+#if defined(__cpp_lib_to_underlying) && __cpp_lib_to_underlying > 202102L
+  return std::to_underlying(e);
+#else
+  return static_cast<std::underlying_type_t<Enum>>(e);
+#endif
+}
+
 /// \brief A compile-time list of types.
 ///
 /// An instance of type_list represents an element in a list. It is somewhat
@@ -1354,7 +1368,7 @@ public:
     case states::run_8:
       assert(std::holds_alternative<t8_type>(transcoder_variant_));
       if (auto* const utf8_input = std::get_if<t8_type>(&transcoder_variant_)) {
-        dest = (*utf8_input)(static_cast<char8>(value), dest);
+        dest = (*utf8_input)(details::to_underlying(value), dest);
       }
       break;
 
@@ -1422,7 +1436,7 @@ private:
   /// \anchor transcoder-byte_no
   /// \param index  The byte number within the BOM encoding. Must be in the range [0,3].
   /// \returns A value which can be bitwise ORed to represent a particular byte within a BOM encoding.
-  static constexpr std::byte byte_no(std::uint_least8_t index) noexcept {
+  [[nodiscard]] static constexpr std::byte byte_no(std::uint_least8_t index) noexcept {
     assert(index < 4U);
     return static_cast<std::byte>(index);
   }
@@ -1497,61 +1511,61 @@ private:
 
   enum class states : std::uint_least8_t {
     /// The FSM's initial state.
-    start = static_cast<std::uint_least8_t>(encoding_unknown | bom_mode | byte_no(0)),
+    start = details::to_underlying(encoding_unknown | bom_mode | byte_no(0)),
 
     /// The state if the second byte of a UTF-8 BOM was identified.
-    utf8_bom_byte1 = static_cast<std::uint_least8_t>(encoding_utf8 | big_endian | bom_mode | byte_no(1U)),
+    utf8_bom_byte1 = details::to_underlying(encoding_utf8 | big_endian | bom_mode | byte_no(1U)),
     /// The state if the third byte of a UTF-8 BOM was identified.
-    utf8_bom_byte2 = static_cast<std::uint_least8_t>(encoding_utf8 | big_endian | bom_mode | byte_no(2U)),
+    utf8_bom_byte2 = details::to_underlying(encoding_utf8 | big_endian | bom_mode | byte_no(2U)),
 
     /// The state if the second byte of a UTF-16 BOM was identified.
-    utf16_be_bom_byte1 = static_cast<std::uint_least8_t>(encoding_utf16 | big_endian | bom_mode | byte_no(1U)),
+    utf16_be_bom_byte1 = details::to_underlying(encoding_utf16 | big_endian | bom_mode | byte_no(1U)),
     /// The state if the third byte of a UTF-32 BE BOM was identified.
-    utf32_be_bom_byte2 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | bom_mode | byte_no(2U)),
+    utf32_be_bom_byte2 = details::to_underlying(encoding_utf32 | big_endian | bom_mode | byte_no(2U)),
     /// The state if the fourth byte of a UTF-32 BE BOM was identified.
-    utf32_be_bom_byte3 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | bom_mode | byte_no(3U)),
+    utf32_be_bom_byte3 = details::to_underlying(encoding_utf32 | big_endian | bom_mode | byte_no(3U)),
 
     /// The state if the second byte of a UTF-32 BE or UTF-16 BE BOM was identified.
-    utf32_or_16_be_bom_byte1 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | bom_mode | byte_no(1U)),
+    utf32_or_16_be_bom_byte1 = details::to_underlying(encoding_utf32 | big_endian | bom_mode | byte_no(1U)),
 
     /// The state if the second byte of a UTF-32 LE or UTF-16 LE BOM was identified.
-    utf32_or_16_le_bom_byte1 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | bom_mode | byte_no(1U)),
+    utf32_or_16_le_bom_byte1 = details::to_underlying(encoding_utf32 | little_endian | bom_mode | byte_no(1U)),
     /// The state when the state machine is checking for the third byte of a UTF-32 LE BOM or the start of a UTF-16 LE
     /// run.
-    utf32_or_16_le_bom_byte2 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | bom_mode | byte_no(2U)),
+    utf32_or_16_le_bom_byte2 = details::to_underlying(encoding_utf32 | little_endian | bom_mode | byte_no(2U)),
     /// The state when the state machine is checking for the third byte of a UTF-32 LE BOM or the start of a UTF-16 LE
     /// run.
-    utf32_le_bom_byte3 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | bom_mode | byte_no(3U)),
+    utf32_le_bom_byte3 = details::to_underlying(encoding_utf32 | little_endian | bom_mode | byte_no(3U)),
 
-    run_8 = static_cast<std::uint_least8_t>(encoding_utf8 | big_endian | run_mode | byte_no(0U)),
+    run_8 = details::to_underlying(encoding_utf8 | big_endian | run_mode | byte_no(0U)),
 
     /// The state when the state machine is handling the first byte of a UTF-16 BE code-unit.
-    run_16be_byte0 = static_cast<std::uint_least8_t>(encoding_utf16 | big_endian | run_mode | byte_no(0U)),
+    run_16be_byte0 = details::to_underlying(encoding_utf16 | big_endian | run_mode | byte_no(0U)),
     /// The state when the state machine is handling the second and final byte of a UTF-32 BE code-unit.
-    run_16be_byte1 = static_cast<std::uint_least8_t>(encoding_utf16 | big_endian | run_mode | byte_no(1U)),
+    run_16be_byte1 = details::to_underlying(encoding_utf16 | big_endian | run_mode | byte_no(1U)),
 
     /// The state when the state machine is handling the first byte of a UTF-16 LE code-unit.
-    run_16le_byte0 = static_cast<std::uint_least8_t>(encoding_utf16 | little_endian | run_mode | byte_no(0U)),
+    run_16le_byte0 = details::to_underlying(encoding_utf16 | little_endian | run_mode | byte_no(0U)),
     /// The state when the state machine is handling the second and final byte of a UTF-32 LE code-unit.
-    run_16le_byte1 = static_cast<std::uint_least8_t>(encoding_utf16 | little_endian | run_mode | byte_no(1U)),
+    run_16le_byte1 = details::to_underlying(encoding_utf16 | little_endian | run_mode | byte_no(1U)),
 
     /// The state when the state machine is handling the first byte of a UTF-32 BE code-unit.
-    run_32be_byte0 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | run_mode | byte_no(0U)),
+    run_32be_byte0 = details::to_underlying(encoding_utf32 | big_endian | run_mode | byte_no(0U)),
     /// The state when the state machine is handling the second byte of a UTF-32 BE code-unit.
-    run_32be_byte1 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | run_mode | byte_no(1U)),
+    run_32be_byte1 = details::to_underlying(encoding_utf32 | big_endian | run_mode | byte_no(1U)),
     /// The state when the state machine is handling the third byte of a UTF-32 BE code-unit.
-    run_32be_byte2 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | run_mode | byte_no(2U)),
+    run_32be_byte2 = details::to_underlying(encoding_utf32 | big_endian | run_mode | byte_no(2U)),
     /// The state when the state machine is handling the fourth and final byte of a UTF-32 BE code-unit.
-    run_32be_byte3 = static_cast<std::uint_least8_t>(encoding_utf32 | big_endian | run_mode | byte_no(3U)),
+    run_32be_byte3 = details::to_underlying(encoding_utf32 | big_endian | run_mode | byte_no(3U)),
 
     /// The state when the state machine is handling the first byte of a UTF-32 LE code-unit.
-    run_32le_byte0 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | run_mode | byte_no(0U)),
+    run_32le_byte0 = details::to_underlying(encoding_utf32 | little_endian | run_mode | byte_no(0U)),
     /// The state when the state machine is handling the second byte of a UTF-32 LE code-unit.
-    run_32le_byte1 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | run_mode | byte_no(1U)),
+    run_32le_byte1 = details::to_underlying(encoding_utf32 | little_endian | run_mode | byte_no(1U)),
     /// The state when the state machine is handling the third byte of a UTF-32 LE code-unit.
-    run_32le_byte2 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | run_mode | byte_no(2U)),
+    run_32le_byte2 = details::to_underlying(encoding_utf32 | little_endian | run_mode | byte_no(2U)),
     /// The state when the state machine is handling the fourth and final byte of a UTF-32 LE code-unit.
-    run_32le_byte3 = static_cast<std::uint_least8_t>(encoding_utf32 | little_endian | run_mode | byte_no(3U)),
+    run_32le_byte3 = details::to_underlying(encoding_utf32 | little_endian | run_mode | byte_no(3U)),
   };
 
   /// \brief Returns true if the argument represents a state where the FSM is consuming and producing code-units.
@@ -1575,7 +1589,7 @@ private:
   /// \param state  A valid state machine state.
   /// \returns The byte number referenced by \p state.
   [[nodiscard]] static constexpr std::uint_least8_t get_byte_no(states const state) noexcept {
-    return static_cast<std::uint_least8_t>(static_cast<std::byte>(state) & byte_no_mask);
+    return details::to_underlying(static_cast<std::byte>(state) & byte_no_mask);
   }
   /// \brief Extracts the byte number referenced the current state.
   ///
@@ -1874,12 +1888,10 @@ constexpr encoding transcoder<std::byte, ToEncoding>::selected_encoding() const 
     return encoding::unknown;
   }
 
-  switch (static_cast<std::uint_least8_t>(static_cast<std::byte>(state_) & encoding_mask)) {
-  case static_cast<std::uint_least8_t>(encoding_utf8): return encoding::utf8;
-  case static_cast<std::uint_least8_t>(encoding_utf16):
-    return this->is_little_endian() ? encoding::utf16le : encoding::utf16be;
-  case static_cast<std::uint_least8_t>(encoding_utf32):
-    return this->is_little_endian() ? encoding::utf32le : encoding::utf32be;
+  switch (details::to_underlying(static_cast<std::byte>(state_) & encoding_mask)) {
+  case details::to_underlying(encoding_utf8): return encoding::utf8;
+  case details::to_underlying(encoding_utf16): return this->is_little_endian() ? encoding::utf16le : encoding::utf16be;
+  case details::to_underlying(encoding_utf32): return this->is_little_endian() ? encoding::utf32le : encoding::utf32be;
   default: assert(false && "We must know the encoding when in run mode"); return encoding::unknown;
   }
 }
