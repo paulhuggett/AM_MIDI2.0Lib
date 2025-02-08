@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 
@@ -74,9 +75,11 @@ private:
         // Not a status byte or a system real-time message, so always emit. Don't update running status.
         output.push_back(s);
       } else {
-        if (!running_status_ || status != s) {
+        // If this doesn't match the current running status byte then emit it.
+        if (!status || *status != s) {
           output.push_back(s);
         }
+        // Update running status.
         status = s;
       }
     }
@@ -90,9 +93,8 @@ private:
       return (only_groups & (1U << in.group())) == 0U;
     }
 
-    bool running_status_ = false;
-    std::byte status = std::byte{0xFF};  // TODO: 0xFF is a valid status value.
-    std::uint16_t only_groups = 0;       ///< A bitmap indicating which groups should be included in the output
+    std::uint16_t only_groups = 0;    ///< A bitmap indicating which groups should be included in the output
+    std::optional<std::byte> status;  ///< Last status emitted.
     fifo<std::byte, 8> output;
   };
 

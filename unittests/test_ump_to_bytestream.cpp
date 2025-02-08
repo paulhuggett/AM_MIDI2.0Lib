@@ -59,8 +59,11 @@ TEST(UMPToBytestream, NoteOff) {
                     push_back);
 
   std::array const expected{
-      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
-      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel}, std::byte{note1}, std::byte{velocity1},
+      std::byte{to_underlying(midi2::status::note_off)} | std::byte{channel},
+      std::byte{note0},
+      std::byte{velocity0},
+      std::byte{note1},
+      std::byte{velocity1},
   };
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -112,8 +115,11 @@ TEST(UMPToBytestream, NoteOn) {
   midi2::ump::apply(midi2::ump::m1cvm::note_on{}.channel(channel).note(note1).velocity(velocity1), push_back);
 
   std::array const expected{
-      std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel}, std::byte{note0}, std::byte{velocity0},
-      std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel}, std::byte{note1}, std::byte{velocity1},
+      std::byte{to_underlying(midi2::status::note_on)} | std::byte{channel},
+      std::byte{note0},
+      std::byte{velocity0},
+      std::byte{note1},
+      std::byte{velocity1},
   };
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
@@ -124,11 +130,8 @@ TEST(UMPToBytestream, ControlChange) {
   constexpr auto controller = 17U;
   constexpr auto value = 0x71U;
 
-  midi2::ump::m1cvm::control_change message;
-  message.group(1);
-  message.channel(channel);
-  message.controller(controller);
-  message.value(value);
+  constexpr auto message =
+      midi2::ump::m1cvm::control_change{}.group(1).channel(channel).controller(controller).value(value);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
