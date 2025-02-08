@@ -1607,7 +1607,8 @@ private:
   /// \returns A state referencing the supplied byte number.
   [[nodiscard]] static constexpr states set_byte(states const state, std::uint_least8_t const byte_number) noexcept {
     assert(byte_number < 4 && "States must not try to address a byte number > 3");
-    return static_cast<states>((static_cast<std::byte>(state) & ~byte_no_mask) | static_cast<std::byte>(byte_number));
+    return static_cast<states>(
+        details::to_underlying((static_cast<std::byte>(state) & ~byte_no_mask) | static_cast<std::byte>(byte_number)));
   }
   /// \brief Returns a state which references the next byte number.
   ///
@@ -1627,7 +1628,7 @@ private:
   /// \returns The modified state.
   [[nodiscard]] static constexpr states set_run_mode(states const state) noexcept {
     assert((static_cast<std::byte>(state) & run_mask) == bom_mode && "Expected a BOM mode state");
-    return static_cast<states>((static_cast<std::byte>(state) & ~run_mask) | run_mode);
+    return static_cast<states>(details::to_underlying((static_cast<std::byte>(state) & ~run_mask) | run_mode));
   }
 
   /// \brief Returns a byte from the byte order marker table which corresponds to a specific state as denoted by
@@ -1639,7 +1640,7 @@ private:
   [[nodiscard]] static constexpr std::byte bom_value(std::byte const state_byte,
                                                      std::uint_least8_t const byte_number) noexcept {
     assert(((state_byte & (encoding_mask | endian_mask)) >> endian_shift) == (state_byte >> endian_shift));
-    auto const encoding_index = static_cast<std::size_t>(state_byte >> endian_shift);
+    auto const encoding_index = static_cast<std::size_t>(details::to_underlying(state_byte >> endian_shift));
     assert(encoding_index < details::boms.size() && "The index is too large for the BOMs array");
     if (encoding_index >= details::boms.size()) {
       return std::byte{0x00};
@@ -1730,8 +1731,9 @@ private:
     if (copy_buffer) {
       // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
       auto const first = std::begin(buffer_);
-      (void)std::for_each(first, first + this->get_byte_no() + 1,
-                          [&trans, &dest](std::byte value) { dest = trans(static_cast<char8>(value), dest); });
+      (void)std::for_each(first, first + this->get_byte_no() + 1, [&trans, &dest](std::byte value) {
+        dest = trans(static_cast<char8>(details::to_underlying(value)), dest);
+      });
     }
     state_ = states::run_8;
     return dest;
@@ -1748,8 +1750,8 @@ private:
     assert(std::holds_alternative<std::monostate>(transcoder_variant_) &&
            "The variant should hold monostate until the FSM is in run mode");
     (void)transcoder_variant_.template emplace<t16_type>();
-    state_ = static_cast<states>(encoding_utf16 | (static_cast<std::byte>(state_) & endian_mask) | run_mode |
-                                 transcoder::byte_no(0U));
+    state_ = static_cast<states>(details::to_underlying(
+        encoding_utf16 | (static_cast<std::byte>(state_) & endian_mask) | run_mode | transcoder::byte_no(0U)));
     return dest;
   }
 
