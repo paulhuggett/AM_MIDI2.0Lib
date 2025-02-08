@@ -95,7 +95,8 @@ public:
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());
-    message_[pos_++] = ump;
+    message_[pos_] = ump;
+    ++pos_;
     if (auto const mt = static_cast<ump::message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
       using enum ump::message_type;
       switch (mt) {
