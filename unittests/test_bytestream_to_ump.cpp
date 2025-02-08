@@ -347,8 +347,8 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
-  constexpr auto start = static_cast<u8>(to_underlying(midi2::status::sysex_start));
-  constexpr auto stop = static_cast<u8>(to_underlying(midi2::status::sysex_stop));
+  constexpr auto start = to_underlying(midi2::status::sysex_start);
+  constexpr auto stop = to_underlying(midi2::status::sysex_stop);
   std::array const input{
       static_cast<std::byte>(start),  // start sysex
       std::byte{0x0A},
