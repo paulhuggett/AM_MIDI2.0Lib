@@ -7,6 +7,7 @@ This is a general purpose Library which provides the building blocks, processing
 This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM_MIDI2.0Lib>. It has been heavily modified with a number of goals:
 
 - Using C++20 features
+- The library does not throw exceptions or allocate dynamic memory
 - Limiting use of magic numbers and bitwise operators to define data layout and instead using the C++ type system wherever possible
 - UMP conversion classes are now built on the library's `ump_dispatcher` class rather than duplicating code to extract UMP messages
 - Using templates to pass callables to enable cross-callback optimization
