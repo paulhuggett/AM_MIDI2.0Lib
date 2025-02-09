@@ -39,6 +39,8 @@ Note it is up to the application to:
 
 This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a memory footprint of around 1k.
 
+## Examples
+
 ### Example: Creating and Sending UMP Messages
 
 ```C++
