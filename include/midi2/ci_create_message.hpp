@@ -197,16 +197,16 @@ constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, 
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O write_header(O first, S const last, struct params const &params, ci_message const id) {
-  auto header = static_cast<packed::header>(params);
-  header.sub_id_2 = static_cast<std::byte>(id);
-  return details::safe_copy(first, last, header);
+constexpr O write_header(O first, S const last, struct header const &h, ci_message const id) {
+  auto hdr = static_cast<packed::header>(h);
+  hdr.sub_id_2 = static_cast<std::byte>(id);
+  return details::safe_copy(first, last, hdr);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
-constexpr O write_pe(O first, S const last, struct params const &params,
-                     property_exchange::property_exchange<Pet> const &pe, ci_message const id) {
-  first = details::write_header(first, last, params, id);
+constexpr O write_pe(O first, S const last, header const &hdr, property_exchange::property_exchange<Pet> const &pe,
+                     ci_message const id) {
+  first = details::write_header(first, last, hdr, id);
 
   using property_exchange::packed::property_exchange_pt1;
   using property_exchange::packed::property_exchange_pt2;
@@ -230,20 +230,20 @@ template <typename T> struct trivial_sentinel {
 };
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, T const &t) {
+constexpr O create_message(O first, S const last, header const &hdr, T const &t) {
   using v1_type = details::type_to_packed<T>::v1;
   using v2_type = details::type_to_packed<T>::v2;
 
-  if (params.version == 1) {
+  if (hdr.version == 1) {
     if constexpr (!std::is_same_v<v1_type, details::not_available>) {
-      first = details::write_header(first, last, params, details::type_to_packed<T>::id);
+      first = details::write_header(first, last, hdr, details::type_to_packed<T>::id);
       if constexpr (!std::is_same_v<v1_type, details::empty>) {
         first = details::safe_copy(first, last, static_cast<v1_type>(t));
       }
     }
     return first;
   }
-  first = details::write_header(first, last, params, details::type_to_packed<T>::id);
+  first = details::write_header(first, last, hdr, details::type_to_packed<T>::id);
   if constexpr (!std::is_same_v<v2_type, details::empty>) {
     first = details::safe_copy(first, last, static_cast<v2_type>(t));
   }
@@ -251,8 +251,8 @@ constexpr O create_message(O first, S const last, struct params const &params, T
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, endpoint_info_reply const &reply) {
-  first = details::write_header(first, last, params, details::type_to_packed<endpoint_info_reply>::id);
+constexpr O create_message(O first, S const last, header const &hdr, endpoint_info_reply const &reply) {
+  first = details::write_header(first, last, hdr, details::type_to_packed<endpoint_info_reply>::id);
   auto const v1 = static_cast<packed::endpoint_info_reply_v1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -260,8 +260,8 @@ constexpr O create_message(O first, S const last, struct params const &params, e
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, struct ack const &ack) {
-  first = details::write_header(first, last, params, details::type_to_packed<struct ack>::id);
+constexpr O create_message(O first, S const last, header const &hdr, struct ack const &ack) {
+  first = details::write_header(first, last, hdr, details::type_to_packed<struct ack>::id);
   auto const v1 = static_cast<packed::ack_v1>(ack);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -269,9 +269,9 @@ constexpr O create_message(O first, S const last, struct params const &params, s
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S last, struct params const &params, struct nak const &nak) {
-  first = details::write_header(first, last, params, details::type_to_packed<struct nak>::id);
-  if (params.version == 1) {
+constexpr O create_message(O first, S last, header const &hdr, struct nak const &nak) {
+  first = details::write_header(first, last, hdr, details::type_to_packed<struct nak>::id);
+  if (hdr.version == 1) {
     return first;
   }
   auto const v2 = static_cast<packed::nak_v2>(nak);
@@ -281,10 +281,10 @@ constexpr O create_message(O first, S last, struct params const &params, struct 
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params,
+constexpr O create_message(O first, S const last, header const &hdr,
                            profile_configuration::details_reply const &reply) {
   using profile_configuration::packed::details_reply_v1;
-  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::details_reply>::id);
+  first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::details_reply>::id);
   auto const v1 = static_cast<details_reply_v1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -292,12 +292,12 @@ constexpr O create_message(O first, S const last, struct params const &params,
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params,
+constexpr O create_message(O first, S const last, header const &hdr,
                            profile_configuration::inquiry_reply const &reply) {
   using profile_configuration::packed::inquiry_reply_v1_pt1;
   using profile_configuration::packed::inquiry_reply_v1_pt2;
 
-  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::inquiry_reply>::id);
+  first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::inquiry_reply>::id);
 
   auto const part1 = static_cast<inquiry_reply_v1_pt1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
@@ -312,10 +312,9 @@ constexpr O create_message(O first, S const last, struct params const &params,
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params,
-                           profile_configuration::specific_data const &sd) {
+constexpr O create_message(O first, S const last, header const &hdr, profile_configuration::specific_data const &sd) {
   using profile_configuration::packed::specific_data_v1;
-  first = details::write_header(first, last, params, details::type_to_packed<profile_configuration::specific_data>::id);
+  first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::specific_data>::id);
   auto const v1 = static_cast<specific_data_v1>(sd);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
@@ -323,34 +322,32 @@ constexpr O create_message(O first, S const last, struct params const &params,
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, property_exchange::get const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::get const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, property_exchange::get_reply const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::get_reply const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, property_exchange::set const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::set const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, property_exchange::set_reply const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::set_reply const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params,
-                           property_exchange::subscription const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::subscription const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params,
-                           property_exchange::subscription_reply const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::subscription_reply const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, struct params const &params, property_exchange::notify const &pe) {
-  return details::write_pe(first, last, params, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
+constexpr O create_message(O first, S const last, header const &hdr, property_exchange::notify const &pe) {
+  return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 
 }  // end namespace midi2::ci

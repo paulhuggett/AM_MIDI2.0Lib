@@ -102,8 +102,8 @@ static_assert(std::is_trivially_copyable_v<header>);
 
 constexpr auto broadcast_muid = std::uint32_t{0x0FFFFFFF};
 
-struct params {
-  constexpr bool operator==(params const &) const noexcept = default;
+struct header {
+  constexpr bool operator==(header const &) const noexcept = default;
   explicit constexpr operator packed::header() const noexcept;
 
   std::uint8_t device_id = 0xFF;
@@ -112,7 +112,7 @@ struct params {
   std::uint32_t local_muid = 0;
 };
 
-constexpr params::operator packed::header() const noexcept {
+constexpr header::operator packed::header() const noexcept {
   return packed::header{.sysex = s7_universal_nrt,
                         .source = static_cast<std::byte>(device_id),
                         .sub_id_1 = s7_midi_ci,
@@ -121,14 +121,6 @@ constexpr params::operator packed::header() const noexcept {
                         .source_muid = ci::to_le7(remote_muid),
                         .destination_muid = ci::to_le7(local_muid)};
 }
-
-struct midi_ci {
-  constexpr bool operator==(midi_ci const &) const noexcept = default;
-
-  std::uint8_t group = 0xFF;
-  ci_message type = static_cast<ci_message>(0x00);
-  struct params params;
-};
 
 //*     _ _                              *
 //*  __| (_)___ __ _____ _____ _ _ _  _  *

@@ -1,4 +1,4 @@
 add_subdirectory(ci_discovery)
+add_subdirectory(ci_dispatcher)
 add_subdirectory(dispatcher_function)
 add_subdirectory(midi1_to_ump)
-

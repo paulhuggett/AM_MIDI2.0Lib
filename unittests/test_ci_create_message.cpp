@@ -48,10 +48,10 @@ protected:
   };
 
   template <typename Content>
-  static std::vector<std::byte> make_message(struct midi2::ci::params const& params, Content const& content) {
+  static std::vector<std::byte> make_message(struct midi2::ci::header const& hdr, Content const& content) {
     std::vector<std::byte> message;
     auto out_it = std::back_inserter(message);
-    midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, params, content);
+    midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, hdr, content);
     return message;
   }
 };
@@ -83,17 +83,17 @@ TEST_F(CICreateMessage, DiscoveryV1) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 1,
-                                     .remote_muid = 0,
-                                     .local_muid = midi2::ci::broadcast_muid};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 1,
+                                  .remote_muid = 0,
+                                  .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
                                            .version = midi2::ci::from_array(version),
                                            .capability = midi2::to_underlying(capability),
                                            .max_sysex_size = from_le7(max_sysex_size)};
-  EXPECT_THAT(make_message(params, discovery), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, discovery), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, DiscoveryV2) {
@@ -125,10 +125,10 @@ TEST_F(CICreateMessage, DiscoveryV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 2,
-                                     .remote_muid = 0,
-                                     .local_muid = midi2::ci::broadcast_muid};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 2,
+                                  .remote_muid = 0,
+                                  .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
@@ -136,7 +136,7 @@ TEST_F(CICreateMessage, DiscoveryV2) {
                                            .capability = midi2::to_underlying(capability),
                                            .max_sysex_size = from_le7(max_sysex_size),
                                            .output_path_id = midi2::to_underlying(output_path_id)};
-  EXPECT_THAT(make_message(params, discovery), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, discovery), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, DiscoveryReplyV2) {
@@ -170,10 +170,10 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 2,
-                                     .remote_muid = 0,
-                                     .local_muid = midi2::ci::broadcast_muid};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 2,
+                                  .remote_muid = 0,
+                                  .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery_reply reply{.manufacturer = midi2::ci::from_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),
@@ -182,7 +182,7 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
                                              .max_sysex_size = from_le7(max_sysex_size),
                                              .output_path_id = midi2::to_underlying(output_path_id),
                                              .function_block = midi2::to_underlying(function_block)};
-  EXPECT_THAT(make_message(params, reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, EndpointInfo) {
@@ -203,12 +203,12 @@ TEST_F(CICreateMessage, EndpointInfo) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 1,
-                                     .remote_muid = from_le7(sender_muid_),
-                                     .local_muid = from_le7(receiver_muid)};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 1,
+                                  .remote_muid = from_le7(sender_muid_),
+                                  .local_muid = from_le7(receiver_muid)};
   constexpr midi2::ci::endpoint_info endpoint_info{.status = status};
-  EXPECT_THAT(make_message(params, endpoint_info), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, endpoint_info), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, EndpointInfoReply) {
@@ -238,14 +238,14 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 1,
-                                     .remote_muid = from_le7(sender_muid_),
-                                     .local_muid = from_le7(receiver_muid)};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 1,
+                                  .remote_muid = from_le7(sender_muid_),
+                                  .local_muid = from_le7(receiver_muid)};
 
   // Test create_message()
   midi2::ci::endpoint_info_reply const reply{.status = from_le7(status), .information = information};
-  EXPECT_THAT(make_message(params, reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, InvalidateMuid) {
@@ -266,12 +266,12 @@ TEST_F(CICreateMessage, InvalidateMuid) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{.device_id = midi2::to_underlying(device_id),
-                                     .version = 1,
-                                     .remote_muid = from_le7(sender_muid_),
-                                     .local_muid = from_le7(receiver_muid)};
+  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
+                                  .version = 1,
+                                  .remote_muid = from_le7(sender_muid_),
+                                  .local_muid = from_le7(receiver_muid)};
   constexpr midi2::ci::invalidate_muid invalidate_muid{.target_muid = from_le7(target_muid)};
-  EXPECT_THAT(make_message(params, invalidate_muid), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, invalidate_muid), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, Ack) {
@@ -306,7 +306,7 @@ TEST_F(CICreateMessage, Ack) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(device_id),
       .version = 1,
       .remote_muid = from_le7(sender_muid_),
@@ -319,7 +319,7 @@ TEST_F(CICreateMessage, Ack) {
       .details = ack_details,
       .message = std::span{text},
   };
-  EXPECT_THAT(make_message(params, ack), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, ack), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, NakV1) {
@@ -338,13 +338,13 @@ TEST_F(CICreateMessage, NakV1) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(device_id),
       .version = 1,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::nak{}), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, midi2::ci::nak{}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, NakV2) {
@@ -378,7 +378,7 @@ TEST_F(CICreateMessage, NakV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(device_id),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -392,7 +392,7 @@ TEST_F(CICreateMessage, NakV2) {
       .details = nak_details,
       .message = std::span{text},
   };
-  EXPECT_THAT(make_message(params, nak), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, nak), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileInquiry) {
@@ -411,13 +411,13 @@ TEST_F(CICreateMessage, ProfileInquiry) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry{}), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::inquiry{}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileInquiryReply) {
@@ -448,13 +448,13 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
               testing::ElementsAreArray(expected));
 }
 
@@ -476,7 +476,7 @@ TEST_F(CICreateMessage, ProfileAdded) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -484,7 +484,7 @@ TEST_F(CICreateMessage, ProfileAdded) {
   };
   constexpr midi2::ci::profile_configuration::added added{.pid = pid};
 
-  EXPECT_THAT(make_message(params, added), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, added), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileRemoved) {
@@ -505,7 +505,7 @@ TEST_F(CICreateMessage, ProfileRemoved) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -513,7 +513,7 @@ TEST_F(CICreateMessage, ProfileRemoved) {
   };
   constexpr midi2::ci::profile_configuration::removed removed{.pid = pid};
 
-  EXPECT_THAT(make_message(params, removed), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, removed), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileDetails) {
@@ -535,7 +535,7 @@ TEST_F(CICreateMessage, ProfileDetails) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -545,7 +545,7 @@ TEST_F(CICreateMessage, ProfileDetails) {
       .pid = pid,
       .target = 0x23,
   };
-  EXPECT_THAT(make_message(params, details), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, details), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileDetailsReply) {
@@ -572,7 +572,7 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -580,7 +580,7 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
   };
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_THAT(make_message(params, details_reply{pid, midi2::to_underlying(target), data}),
+  EXPECT_THAT(make_message(hdr, details_reply{pid, midi2::to_underlying(target), data}),
               testing::ElementsAreArray(expected));
 }
 
@@ -604,13 +604,13 @@ TEST_F(CICreateMessage, ProfileOn) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
               testing::ElementsAreArray(expected));
 }
 
@@ -633,13 +633,13 @@ TEST_F(CICreateMessage, ProfileOff) {
     reserved[0], reserved[1],
   };
   // clang-format on
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileEnabled) {
@@ -661,7 +661,7 @@ TEST_F(CICreateMessage, ProfileEnabled) {
     num_channels[0], num_channels[1], // Number of channels
   };
   // clang-format on
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -672,7 +672,7 @@ TEST_F(CICreateMessage, ProfileEnabled) {
       .num_channels = from_le7(num_channels),
   };
 
-  EXPECT_THAT(make_message(params, enabled), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, enabled), testing::ElementsAreArray(expected));
 }
 
 using namespace std::string_view_literals;
@@ -718,7 +718,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
   ASSERT_EQ(from_le7(data_size), 0) << "data size must be 0";
   out = std::ranges::copy(data_size, out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -734,7 +734,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
       .header = header,
       .data = {},
   };
-  EXPECT_THAT(make_message(params, get), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, get), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
@@ -779,7 +779,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   // Property Data
   std::ranges::copy(std::views::transform(data, as_byte), out);
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -795,7 +795,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
       .header = header,
       .data = data,
   };
-  EXPECT_THAT(make_message(params, get_reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, get_reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
@@ -841,7 +841,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -857,7 +857,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
       .header = header,
       .data = data,
   };
-  EXPECT_THAT(make_message(params, set), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, set), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
@@ -902,7 +902,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   ASSERT_EQ(from_le7(property_data_size), 0);
   out = std::ranges::copy(property_data_size, out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -918,7 +918,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
       .header = header,
       .data = {},
   };
-  EXPECT_THAT(make_message(params, set_reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, set_reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscription) {
@@ -961,7 +961,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -977,7 +977,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
       .header = header,
       .data = data,
   };
-  EXPECT_THAT(make_message(params, subscription), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, subscription), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
@@ -1020,7 +1020,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   out = std::ranges::copy(property_data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -1036,7 +1036,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
       .header = header,
       .data = data,
   };
-  EXPECT_THAT(make_message(params, subscription_reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, subscription_reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, PropertyExchangeNotify) {
@@ -1077,7 +1077,7 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -1093,7 +1093,7 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
       .header = header,
       .data = data,
   };
-  EXPECT_THAT(make_message(params, notify), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, notify), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
@@ -1111,13 +1111,13 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities{}), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, midi2::ci::process_inquiry::capabilities{}), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
@@ -1138,13 +1138,13 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::capabilities_reply{features}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::process_inquiry::capabilities_reply{features}),
               testing::ElementsAreArray(expected));
 }
 
@@ -1169,7 +1169,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -1195,7 +1195,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
       .registered_per_note_controller = 1,
       .assignable_per_note_controller = 1,
   };
-  EXPECT_THAT(make_message(params, report), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, report), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
@@ -1218,7 +1218,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
@@ -1243,7 +1243,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
       .registered_per_note_controller = 0,
       .assignable_per_note_controller = 1,
   };
-  EXPECT_THAT(make_message(params, reply), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
@@ -1261,13 +1261,13 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
   };
   // clang-format on
 
-  constexpr midi2::ci::params params{
+  constexpr midi2::ci::header hdr{
       .device_id = midi2::to_underlying(destination),
       .version = 2,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(params, midi2::ci::process_inquiry::midi_message_report_end{}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::process_inquiry::midi_message_report_end{}),
               testing::ElementsAreArray(expected));
 }
 
