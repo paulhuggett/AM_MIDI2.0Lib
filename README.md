@@ -7,6 +7,7 @@ This is a general purpose Library which provides the building blocks, processing
 This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM_MIDI2.0Lib>. It has been heavily modified with a number of goals:
 
 - Using C++20 features
+- The library does not throw exceptions or allocate dynamic memory
 - Limiting use of magic numbers and bitwise operators to define data layout and instead using the C++ type system wherever possible
 - UMP conversion classes are now built on the library's `ump_dispatcher` class rather than duplicating code to extract UMP messages
 - Using templates to pass callables to enable cross-callback optimization
@@ -37,6 +38,8 @@ Note it is up to the application to:
 - Handle logic and NAK sending and receiving.
 
 This means the overheads for a simple MIDI 2.0 device is down to a compiled size of around 10k (possibly less?), with a memory footprint of around 1k.
+
+## Examples
 
 ### Example: Creating and Sending UMP Messages
 
@@ -134,6 +137,47 @@ int main() {
   }
 }
 ```
+
+### Example: Create MIDI-CI Messages
+
+~~~cpp
+#include <cstddef>
+#include <format>
+#include <iostream>
+#include <iterator>
+#include <vector>
+
+#include "midi2/ci_create_message.hpp"
+#include "midi2/ci_types.hpp"
+#include "midi2/utils.hpp"
+
+namespace {
+
+std::vector<std::byte> discovery() {
+  constexpr midi2::ci::params params{
+      .device_id = 0x7F, .version = 2, .remote_muid = 0, .local_muid = midi2::ci::broadcast_muid};
+  constexpr midi2::ci::discovery discovery{.manufacturer = {0x12, 0x23, 0x34},
+                                           .family = 0x1779,
+                                           .model = 0x2B5D,
+                                           .version = {0x4E, 0x3C, 0x2A, 0x18},
+                                           .capability = 0x7F,
+                                           .max_sysex_size = 256,
+                                           .output_path_id = 0x71};
+  std::vector<std::byte> message;
+  auto const out_it = std::back_inserter(message);
+  midi2::ci::create_message(out_it, midi2::ci::trivial_sentinel<decltype(out_it)>{}, params, discovery);
+  return message;
+}
+
+}  // end anonymous namespace
+
+int main() {
+  for (auto const b : discovery()) {
+    std::cout << std::format("{:02x} ", midi2::to_underlying(b));
+  }
+  std::cout << '\n';
+}
+~~~
 
 ### Example: Process MIDI-CI Messages
 
