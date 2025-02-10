@@ -44,6 +44,8 @@ template <typename Context> struct function_config {
   midi2::ci::dispatcher_backend::process_inquiry_function<Context> process_inquiry;
 };
 
+template <typename Context> function_config(Context) -> function_config<Context>;
+
 template <typename T>
 concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
@@ -690,7 +692,13 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::processMIDICI
 
 template <typename Context>
 ci_dispatcher<function_config<Context>> make_function_dispatcher(Context context = Context{}) {
-  return midi2::ci::ci_dispatcher{function_config{std::move(context)}};
+  return midi2::ci::ci_dispatcher{function_config<Context>{
+      .context = std::move(context),
+      .management = dispatcher_backend::management_function<Context>{},
+      .profile = dispatcher_backend::profile_function<Context>{},
+      .property_exchange = dispatcher_backend::property_exchange_function<Context>{},
+      .process_inquiry = dispatcher_backend::process_inquiry_function<Context>{},
+  }};
 }
 
 }  // end namespace midi2::ci
