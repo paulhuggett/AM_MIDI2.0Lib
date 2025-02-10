@@ -76,97 +76,91 @@ public:
     }
 
     constexpr bool operator==(iterator_type<std::remove_const_t<T>> const &other) const noexcept {
-      return slot_ == other.slot_ && container_ == other.container_;
+      return std::make_pair(slot_, container_) == std::make_pair(other.slot_, other.container_);
     }
     constexpr bool operator==(iterator_type<T const> const &other) const noexcept {
-      return slot_ == other.slot_ && container_ == other.container_;
+      return std::make_pair(slot_, container_) == std::make_pair(other.slot_, other.container_);
     }
-    constexpr bool operator!=(iterator_type<std::remove_const_t<T>> const &other) const noexcept {
-      return !operator==(other);
-    }
-    constexpr bool operator!=(iterator_type<T const> const &other) const noexcept { return !operator==(other); }
-
     constexpr bool operator<=>(iterator_type<T const> const &other) const noexcept {
       return std::make_pair(slot_, container_) <=> std::make_pair(other.slot_, other.container_);
     }
-
     constexpr auto operator==(sentinel<T>) const noexcept { return slot_ == this->end_limit(); }
     constexpr auto operator!=(sentinel<T> other) const noexcept { return !operator==(other); }
 
     constexpr reference operator*() const noexcept { return *slot_->pointer(); }
     constexpr pointer operator->() const noexcept { return slot_->pointer(); }
 
-    constexpr iterator_type &operator--() {
+    constexpr iterator_type &operator--() noexcept {
       --slot_;
       this->move_backward_to_occupied();
       return *this;
     }
-    constexpr iterator_type &operator++() {
+    constexpr iterator_type &operator++() noexcept {
       ++slot_;
       this->move_forward_to_occupied();
       return *this;
     }
-    constexpr iterator_type operator++(int) {
+    constexpr iterator_type operator++(int) noexcept {
       auto const tmp = *this;
       ++*this;
       return tmp;
     }
-    constexpr iterator_type operator--(int) {
+    constexpr iterator_type operator--(int) noexcept {
       auto const tmp = *this;
       --*this;
       return tmp;
     }
 
-    constexpr iterator_type &operator+=(difference_type n) {
+    constexpr iterator_type &operator+=(difference_type n) noexcept {
       if (n < 0) {
         return decrement_n(-n);
       }
       return increment_n(n);
     }
-    constexpr iterator_type &operator-=(difference_type n) {
+    constexpr iterator_type &operator-=(difference_type n) noexcept {
       if (n < 0) {
         return increment_n(-n);
       }
       return decrement_n(n);
     }
 
-    friend iterator_type operator+(iterator_type it, difference_type n) {
+    friend iterator_type operator+(iterator_type it, difference_type n) noexcept {
       auto result = it;
       result += n;
       return result;
     }
-    friend iterator_type operator+(difference_type n, iterator_type it) { return it + n; }
-    friend iterator_type operator-(iterator_type it, difference_type n) {
+    friend iterator_type operator+(difference_type n, iterator_type it) noexcept { return it + n; }
+    friend iterator_type operator-(iterator_type it, difference_type n) noexcept {
       auto result = it;
       result -= n;
       return result;
     }
-    friend iterator_type operator-(difference_type n, iterator_type it) { return it - n; }
+    friend iterator_type operator-(difference_type n, iterator_type it) noexcept { return it - n; }
 
-    T *raw() { return slot_; }
+    T *raw() noexcept { return slot_; }
 
   private:
-    constexpr auto end_limit() { return container_->data() + container_->size(); }
-    constexpr void move_backward_to_occupied() {
+    constexpr auto end_limit() noexcept { return container_->data() + container_->size(); }
+    constexpr void move_backward_to_occupied() noexcept {
       auto const *const limit = container_->data();
       while (slot_ >= limit && slot_->state != state::occupied) {
         --slot_;
       }
     }
-    constexpr void move_forward_to_occupied() {
+    constexpr void move_forward_to_occupied() noexcept {
       auto const *const end = this->end_limit();
       while (slot_ < end && slot_->state != state::occupied) {
         ++slot_;
       }
     }
-    constexpr iterator_type &increment_n(difference_type n) {
+    constexpr iterator_type &increment_n(difference_type n) noexcept {
       assert(n >= 0);
       for (; n > 0; --n) {
         ++(*this);
       }
       return *this;
     }
-    constexpr iterator_type &decrement_n(difference_type n) {
+    constexpr iterator_type &decrement_n(difference_type n) noexcept {
       assert(n >= 0);
       for (; n > 0; --n) {
         --(*this);
@@ -243,52 +237,21 @@ public:
 private:
   enum class state : std::uint8_t { occupied, tombstone, unused };
   struct member {
-    member() = default;
-    member(member const &other) : state{other.state} {
-      if (state == state::occupied) {
-        new (storage) value_type(*other.pointer());
-      }
-    }
-    member(member &&other) noexcept : state{other.state} {
-      if (state == state::occupied) {
-        new (storage) value_type(std::move(*other.pointer()));
-      }
-    }
+    member() noexcept = default;
+    member(member const &other) noexcept(std::is_nothrow_copy_constructible_v<value_type>);
+    member(member &&other) noexcept(std::is_nothrow_move_constructible_v<value_type>);
     ~member() noexcept { this->destroy(); }
-    member &operator=(member const &other) {
-      if (this == &other) {
-        return *this;
-      }
-      // TODO: this violates a strong exception guarantee.
-      this->destroy();
-      if (other.state == state::occupied) {
-        new (pointer()) value_type(*other.pointer());
-      }
-      state = other.state;
-      return *this;
-    }
-    member &operator=(member &&other) noexcept {
-      if (this == &other) {
-        return *this;
-      }
-      // TODO: this violates a strong exception guarantee.
-      this->destroy();
-      if (other.state == state::occupied) {
-        new (pointer()) value_type(std::move(*other.pointer()));
-      }
-      state = other.state;
-      return *this;
-    }
-    void destroy() noexcept {
-      if (state == state::occupied) {
-        pointer()->~value_type();
-      }
-      state = state::unused;
-    }
+    member &operator=(member const &other) noexcept(std::is_nothrow_copy_constructible_v<value_type>);
+    member &operator=(member &&other) noexcept(std::is_nothrow_move_constructible_v<value_type>);
+
+    void destroy() noexcept;
+
     [[nodiscard]] constexpr value_type *pointer() noexcept { return std::bit_cast<value_type *>(&storage[0]); }
     [[nodiscard]] constexpr value_type const *pointer() const noexcept {
       return std::bit_cast<value_type const *>(&storage[0]);
     }
+    [[nodiscard]] constexpr value_type &reference() noexcept { return *this->pointer(); }
+    [[nodiscard]] constexpr value_type const &reference() const noexcept { return *this->pointer(); }
 
     enum state state = state::unused;
     alignas(value_type) std::byte storage[sizeof(value_type)]{};
@@ -300,6 +263,74 @@ private:
   template <typename Container> static auto *lookup_slot(Container &container, Key const &key);
   template <typename Container> static auto *find_insert_slot(Container &container, Key const &key);
 };
+
+// ctor
+// ~~~~
+template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
+iumap<Key, Mapped, Size, Hash, KeyEqual>::member::member(member const &other) noexcept(
+    std::is_nothrow_copy_constructible_v<value_type>)
+    : state{other.state} {
+  if (state == state::occupied) {
+    new (this->pointer()) value_type(*other.pointer());
+  }
+}
+template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
+iumap<Key, Mapped, Size, Hash, KeyEqual>::member::member(member &&other) noexcept(
+    std::is_nothrow_move_constructible_v<value_type>)
+    : state{other.state} {
+  if (state == state::occupied) {
+    new (this->pointer()) value_type(std::move(*other.pointer()));
+  }
+}
+
+// operator=
+// ~~~~~~~~~
+template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
+auto iumap<Key, Mapped, Size, Hash, KeyEqual>::member::operator=(member const &other) noexcept(
+    std::is_nothrow_copy_constructible_v<value_type>) -> member & {
+  if (this == &other) {
+    return *this;
+  }
+  if (this->state == state::occupied) {
+    this->destroy();
+  }
+  if (other.state == state::occupied) {
+    new (this->pointer()) value_type(other.reference());
+  }
+  state = other.state;
+  return *this;
+}
+
+template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
+auto iumap<Key, Mapped, Size, Hash, KeyEqual>::member::operator=(member &&other) noexcept(
+    std::is_nothrow_move_constructible_v<value_type>) -> member & {
+  if (this == &other) {
+    return *this;
+  }
+  if (this->state == state::occupied) {
+    this->destroy();
+  }
+  if (other.state == state::occupied) {
+    new (pointer()) value_type(std::move(other.reference()));
+  }
+  state = other.state;
+  return *this;
+}
+
+// destroy
+// ~~~~~~~
+template <typename Key, typename Mapped, std::size_t Size, typename Hash, typename KeyEqual>
+  requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
+void iumap<Key, Mapped, Size, Hash, KeyEqual>::member::destroy() noexcept {
+  if (state == state::occupied) {
+    pointer()->~value_type();
+  }
+  state = state::unused;
+}
 
 // clear
 // ~~~~~
@@ -325,10 +356,10 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::try_emplace(Key const &key, Args 
     // The map is full and the key was not found. Insertion failed.
     return std::make_pair(this->end(), false);
   }
-  auto const do_insert = slot->state == state::unused || slot->state == state::tombstone;
+  auto const do_insert = slot->state != state::occupied;
   if (do_insert) {
     // Not found. Add a new key/value pair.
-    new (slot->storage) value_type(key, std::forward<Args>(args)...);
+    new (slot->pointer()) value_type(key, std::forward<Args>(args)...);
     ++size_;
     if (slot->state == state::tombstone) {
       --tombstones_;
