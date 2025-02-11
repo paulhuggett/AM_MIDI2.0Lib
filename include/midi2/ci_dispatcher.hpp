@@ -75,7 +75,7 @@ private:
   std::uint8_t group_ = 0;
   consumer_fn consumer_ = &ci_dispatcher::header;
 
-  header header_;
+  struct header header_;
   std::array<std::byte, 512> buffer_{};
 
   void discard();
@@ -118,7 +118,8 @@ private:
 };
 
 template <ci_dispatcher_config Config> void ci_dispatcher<Config>::start(std::uint8_t group, std::byte device_id) {
-  header_ = (struct header){};
+  using header_type = struct header;
+  header_ = header_type{};
   header_.device_id = to_underlying(device_id);
 
   count_ = header_size;
