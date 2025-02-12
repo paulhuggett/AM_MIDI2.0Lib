@@ -31,16 +31,19 @@
 
 namespace {
 
+consteval std::byte operator""_b(unsigned long long arg) noexcept {
+  assert(arg < 256);
+  return static_cast<std::byte>(arg);
+}
+
 using midi2::ci::byte_array;
 using midi2::ci::from_le7;
 
 class CICreateMessage : public testing::Test {
 protected:
-  static constexpr auto broadcast_muid_ =
-      std::array{std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}};
-  static constexpr auto sender_muid_ = std::array{std::byte{0x7F}, std::byte{0x7E}, std::byte{0x7D}, std::byte{0x7C}};
-  static constexpr auto destination_muid_ =
-      std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
+  static constexpr auto broadcast_muid_ = std::array{0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b};
+  static constexpr auto sender_muid_ = std::array{0x7F_b, 0x7E_b, 0x7D_b, 0x7C_b};
+  static constexpr auto destination_muid_ = std::array{0x62_b, 0x16_b, 0x63_b, 0x26_b};
 
   template <typename Content>
   static std::vector<std::byte> make_message(struct midi2::ci::header const& hdr, Content const& content) {
@@ -51,23 +54,23 @@ protected:
 };
 
 TEST_F(CICreateMessage, DiscoveryV1) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
-  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
-  constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
-  constexpr auto version = std::array{std::byte{0x4E}, std::byte{0x3C}, std::byte{0x2A}, std::byte{0x18}};
-  constexpr auto capability = std::byte{0x7F};
-  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto manufacturer = std::array{0x12_b, 0x23_b, 0x34_b};
+  constexpr auto family = std::array{0x67_b, 0x79_b};
+  constexpr auto model = std::array{0x6B_b, 0x5D_b};
+  constexpr auto version = std::array{0x4E_b, 0x3C_b, 0x2A_b, 0x18_b};
+  constexpr auto capability = 0x7F_b;
+  constexpr auto max_sysex_size = std::array{0x76_b, 0x54_b, 0x32_b, 0x10_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x70}, // Universal System Exclusive Sub-ID#2: Discovery
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
-    std::byte{0}, std::byte{0}, std::byte{0}, std::byte{0}, // 4 bytes Source MUID (LSB first)
-    std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, // Destination MUID (LSB first) (to Broadcast MUID)
+    0x70_b, // Universal System Exclusive Sub-ID#2: Discovery
+    1_b, // 1 byte MIDI-CI Message Version/Format
+    0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
+    0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
     manufacturer[0], manufacturer[1], manufacturer[2], // 3 bytes Device Manufacturer (System Exclusive ID Number)
     family[0], family[1],  // 2 bytes Device Family (LSB first)
     model[0], model[1], // 2 bytes Device Family Model Number (LSB first)
@@ -91,24 +94,24 @@ TEST_F(CICreateMessage, DiscoveryV1) {
 }
 
 TEST_F(CICreateMessage, DiscoveryV2) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
-  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
-  constexpr auto model = std::array{std::byte{0x6B}, std::byte{0x5D}};
-  constexpr auto version = std::array{std::byte{0x4E}, std::byte{0x3C}, std::byte{0x2A}, std::byte{0x18}};
-  constexpr auto capability = std::byte{0x7F};
-  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
-  constexpr auto output_path_id = std::byte{0x71};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto manufacturer = std::array{0x12_b, 0x23_b, 0x34_b};
+  constexpr auto family = std::array{0x67_b, 0x79_b};
+  constexpr auto model = std::array{0x6B_b, 0x5D_b};
+  constexpr auto version = std::array{0x4E_b, 0x3C_b, 0x2A_b, 0x18_b};
+  constexpr auto capability = 0x7F_b;
+  constexpr auto max_sysex_size = std::array{0x76_b, 0x54_b, 0x32_b, 0x10_b};
+  constexpr auto output_path_id = 0x71_b;
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x70}, // Universal System Exclusive Sub-ID#2: Discovery
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    std::byte{0}, std::byte{0}, std::byte{0}, std::byte{0}, // 4 bytes Source MUID (LSB first)
-    std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, // Destination MUID (LSB first) (to Broadcast MUID)
+    0x70_b, // Universal System Exclusive Sub-ID#2: Discovery
+    2_b, // 1 byte MIDI-CI Message Version/Format
+    0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
+    0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
     manufacturer[0], manufacturer[1], manufacturer[2], // 3 bytes Device Manufacturer (System Exclusive ID Number)
     family[0], family[1],  // 2 bytes Device Family (LSB first)
     model[0], model[1], // 2 bytes Device Family Model Number (LSB first)
@@ -134,25 +137,25 @@ TEST_F(CICreateMessage, DiscoveryV2) {
 }
 
 TEST_F(CICreateMessage, DiscoveryReplyV2) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto manufacturer = std::array{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}};
-  constexpr auto family = std::array{std::byte{0x67}, std::byte{0x79}};
-  constexpr auto model = std::array{std::byte{0x5B}, std::byte{0x4D}};
-  constexpr auto version = std::array{std::byte{0x7E}, std::byte{0x6C}, std::byte{0x5A}, std::byte{0x48}};
-  constexpr auto capability = std::byte{0x7F};
-  constexpr auto max_sysex_size = std::array{std::byte{0x76}, std::byte{0x54}, std::byte{0x32}, std::byte{0x10}};
-  constexpr auto output_path_id = std::byte{0x71};
-  constexpr auto function_block = std::byte{0x32};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto manufacturer = std::array{0x12_b, 0x23_b, 0x34_b};
+  constexpr auto family = std::array{0x67_b, 0x79_b};
+  constexpr auto model = std::array{0x5B_b, 0x4D_b};
+  constexpr auto version = std::array{0x7E_b, 0x6C_b, 0x5A_b, 0x48_b};
+  constexpr auto capability = 0x7F_b;
+  constexpr auto max_sysex_size = std::array{0x76_b, 0x54_b, 0x32_b, 0x10_b};
+  constexpr auto output_path_id = 0x71_b;
+  constexpr auto function_block = 0x32_b;
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x71}, // Universal System Exclusive Sub-ID#2: Reply to Discovery
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
-    std::byte{0}, std::byte{0}, std::byte{0}, std::byte{0}, // 4 bytes Source MUID (LSB first)
-    std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, std::byte{0x7F}, // Destination MUID (LSB first) (to Broadcast MUID)
+    0x71_b, // Universal System Exclusive Sub-ID#2: Reply to Discovery
+    2_b, // 1 byte MIDI-CI Message Version/Format
+    0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
+    0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
     manufacturer[0], manufacturer[1], manufacturer[2], // 3 bytes Device Manufacturer (System Exclusive ID Number)
     family[0], family[1],  // 2 bytes Device Family (LSB first)
     model[0], model[1], // 2 bytes Device Family Model Number (LSB first)
@@ -180,17 +183,17 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
 }
 
 TEST_F(CICreateMessage, EndpointInfo) {
-  constexpr auto device_id = std::byte{0x7F};
+  constexpr auto device_id = 0x7F_b;
   constexpr auto status = std::uint8_t{0b0101010};
-  constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr std::array const receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x72}, // Universal System Exclusive Sub-ID#2: Endpoint Information
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    0x72_b, // Universal System Exclusive Sub-ID#2: Endpoint Information
+    1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     std::byte{status}, // Status
@@ -206,13 +209,13 @@ TEST_F(CICreateMessage, EndpointInfo) {
 }
 
 TEST_F(CICreateMessage, EndpointInfoReply) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto status = std::byte{0b0101010};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
-  constexpr auto length = std::array{std::byte{0x08}, std::byte{0x00}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto status = 0b0101010_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
+  constexpr auto length = std::array{0x08_b, 0x00_b};
   constexpr auto information = std::array{
-      std::byte{2},  std::byte{3},  std::byte{5},  std::byte{7},  // Information data
-      std::byte{11}, std::byte{13}, std::byte{17}, std::byte{19},
+      2_b,  3_b,  5_b,  7_b,  // Information data
+      11_b, 13_b, 17_b, 19_b,
   };
   ASSERT_EQ(from_le7(length), information.size());
 
@@ -221,8 +224,8 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x73}, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    0x73_b, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
+    1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     status, // Status
@@ -243,9 +246,9 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
 }
 
 TEST_F(CICreateMessage, InvalidateMuid) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr std::array const receiver_muid{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
-  constexpr std::array const target_muid{std::byte{0x21}, std::byte{0x43}, std::byte{0x75}, std::byte{0x71}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr std::array const receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
+  constexpr std::array const target_muid{0x21_b, 0x43_b, 0x75_b, 0x71_b};
 
   // clang-format off
   constexpr std::array expected{
@@ -253,7 +256,7 @@ TEST_F(CICreateMessage, InvalidateMuid) {
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
     midi2::s7_universal_nrt, // Universal System Exclusive Sub-ID#2: Invalidate MUID
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     target_muid[0], target_muid[1], target_muid[2], target_muid[3], // Target MUID (the MUID to invalidate) (LSB first)
@@ -269,15 +272,14 @@ TEST_F(CICreateMessage, InvalidateMuid) {
 }
 
 TEST_F(CICreateMessage, Ack) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
-  constexpr auto original_id = std::byte{0x34};
-  constexpr auto ack_status_code = std::byte{0x00};
-  constexpr auto ack_status_data = std::byte{0x7F};
-  constexpr auto ack_details =
-      std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
-  constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto original_id = 0x34_b;
+  constexpr auto ack_status_code = 0x00_b;
+  constexpr auto ack_status_data = 0x7F_b;
+  constexpr auto ack_details = std::array{0x01_b, 0x02_b, 0x03_b, 0x04_b, 0x05_b};
+  constexpr auto text_length = std::array{0x05_b, 0x00_b};
   static constexpr auto text =
       std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
   ASSERT_EQ(from_le7(text_length), text.size());
@@ -287,8 +289,8 @@ TEST_F(CICreateMessage, Ack) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x7D}, // Universal System Exclusive Sub-ID#2: MIDI-CI ACK
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    0x7D_b, // Universal System Exclusive Sub-ID#2: MIDI-CI ACK
+    1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     original_id, // Original transaction sub-ID#2 classification
@@ -317,16 +319,16 @@ TEST_F(CICreateMessage, Ack) {
 }
 
 TEST_F(CICreateMessage, NakV1) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
-    std::byte{1}, // 1 byte MIDI-CI Message Version/Format
+    0x7F_b, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
   };
@@ -342,15 +344,14 @@ TEST_F(CICreateMessage, NakV1) {
 }
 
 TEST_F(CICreateMessage, NakV2) {
-  constexpr auto device_id = std::byte{0x7F};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr auto device_id = 0x7F_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
-  constexpr auto original_id = std::byte{0x34};
-  constexpr auto nak_status_code = std::byte{0x00};
-  constexpr auto nak_status_data = std::byte{0x7F};
-  constexpr auto nak_details =
-      std::array{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}, std::byte{0x05}};
-  constexpr auto text_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto original_id = 0x34_b;
+  constexpr auto nak_status_code = 0x00_b;
+  constexpr auto nak_status_data = 0x7F_b;
+  constexpr auto nak_details = std::array{0x01_b, 0x02_b, 0x03_b, 0x04_b, 0x05_b};
+  constexpr auto text_length = std::array{0x05_b, 0x00_b};
   static constexpr auto text =
       std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
 
@@ -359,8 +360,8 @@ TEST_F(CICreateMessage, NakV2) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x7F}, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x7F_b, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
     original_id, // Originl transaciton sub-ID#2 classification
@@ -390,16 +391,16 @@ TEST_F(CICreateMessage, NakV2) {
 }
 
 TEST_F(CICreateMessage, ProfileInquiry) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x20}, // Universal System Exclusive Sub-ID#2: Profile Inquiry
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x20_b, // Universal System Exclusive Sub-ID#2: Profile Inquiry
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
   };
@@ -415,29 +416,29 @@ TEST_F(CICreateMessage, ProfileInquiry) {
 }
 
 TEST_F(CICreateMessage, ProfileInquiryReply) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   constexpr auto enabled = std::array<byte_array<5>, 2>{
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
-      byte_array<5>{std::byte{0x76}, std::byte{0x65}, std::byte{0x54}, std::byte{0x43}, std::byte{0x32}},
+      byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
+      byte_array<5>{0x76_b, 0x65_b, 0x54_b, 0x43_b, 0x32_b},
   };
   constexpr auto disabled = std::array<byte_array<5>, 1>{
-      byte_array<5>{std::byte{0x71}, std::byte{0x61}, std::byte{0x51}, std::byte{0x41}, std::byte{0x31}},
+      byte_array<5>{0x71_b, 0x61_b, 0x51_b, 0x41_b, 0x31_b},
   };
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x21}, // Universal System Exclusive Sub-ID#2: Profile Inquiry Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x21_b, // Universal System Exclusive Sub-ID#2: Profile Inquiry Reply
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
-    std::byte{2}, std::byte{0},
+    2_b, 0_b,
     enabled[0][0], enabled[0][1], enabled[0][2], enabled[0][3], enabled[0][4],
     enabled[1][0], enabled[1][1], enabled[1][2], enabled[1][3], enabled[1][4],
-    std::byte{1}, std::byte{0},
+    1_b, 0_b,
     disabled[0][0], disabled[0][1], disabled[0][2], disabled[0][3], disabled[0][4],
   };
   // clang-format on
@@ -453,17 +454,16 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
 }
 
 TEST_F(CICreateMessage, ProfileAdded) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x26}, // Universal System Exclusive Sub-ID#2: Profile Added Report
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x26_b, // Universal System Exclusive Sub-ID#2: Profile Added Report
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being added
@@ -482,17 +482,16 @@ TEST_F(CICreateMessage, ProfileAdded) {
 }
 
 TEST_F(CICreateMessage, ProfileRemoved) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x27}, // Universal System Exclusive Sub-ID#2: Profile Removed Report
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x27_b, // Universal System Exclusive Sub-ID#2: Profile Removed Report
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile being removed
@@ -511,21 +510,20 @@ TEST_F(CICreateMessage, ProfileRemoved) {
 }
 
 TEST_F(CICreateMessage, ProfileDetails) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x28}, // Universal System Exclusive Sub-ID#2: Profile Details Inquiry
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x28_b, // Universal System Exclusive Sub-ID#2: Profile Details Inquiry
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
-    std::byte{0x23}, // Inquiry target
+    0x23_b, // Inquiry target
   };
   // clang-format on
 
@@ -543,11 +541,10 @@ TEST_F(CICreateMessage, ProfileDetails) {
 }
 
 TEST_F(CICreateMessage, ProfileDetailsReply) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
-  constexpr auto target = std::byte{0x23};
-  constexpr auto data_length = std::array{std::byte{0x05}, std::byte{0x00}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto target = 0x23_b;
+  constexpr auto data_length = std::array{0x05_b, 0x00_b};
   constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
 
   // clang-format off
@@ -555,8 +552,8 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x29}, // Universal System Exclusive Sub-ID#2: Profile Details Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x29_b, // Universal System Exclusive Sub-ID#2: Profile Details Reply
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
@@ -579,18 +576,17 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
 }
 
 TEST_F(CICreateMessage, ProfileOn) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
-  constexpr auto channels = std::array{std::byte{0x23}, std::byte{0x00}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto channels = std::array{0x23_b, 0x00_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x22}, // Universal System Exclusive Sub-ID#2: Set Profile On
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x22_b, // Universal System Exclusive Sub-ID#2: Set Profile On
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
@@ -609,18 +605,17 @@ TEST_F(CICreateMessage, ProfileOn) {
 }
 
 TEST_F(CICreateMessage, ProfileOff) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
-  constexpr auto reserved = std::array{std::byte{0x00}, std::byte{0x00}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto reserved = std::array{0x00_b, 0x00_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x23}, // Universal System Exclusive Sub-ID#2: Set Profile Off
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x23_b, // Universal System Exclusive Sub-ID#2: Set Profile Off
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
@@ -637,18 +632,17 @@ TEST_F(CICreateMessage, ProfileOff) {
 }
 
 TEST_F(CICreateMessage, ProfileEnabled) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto pid =
-      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
-  constexpr auto num_channels = std::array{std::byte{0x22}, std::byte{0x11}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto num_channels = std::array{0x22_b, 0x11_b};
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x24}, // Universal System Exclusive Sub-ID#2: Profile Enabled Report
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x24_b, // Universal System Exclusive Sub-ID#2: Profile Enabled Report
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
@@ -672,15 +666,15 @@ TEST_F(CICreateMessage, ProfileEnabled) {
 using namespace std::string_view_literals;
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
-  constexpr auto destination = std::byte{0x0F};
+  constexpr auto destination = 0x0F_b;
 
-  constexpr auto request = std::byte{1};
+  constexpr auto request = 1_b;
 
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
 
-  constexpr auto header_size = std::array{std::byte{25}, std::byte{0}};
-  constexpr auto data_size = std::array{std::byte{0}, std::byte{0}};
+  constexpr auto header_size = std::array{25_b, 0_b};
+  constexpr auto data_size = std::array{0_b, 0_b};
 
   constexpr auto header = R"({"resource":"DeviceInfo"})"sv;
 
@@ -689,8 +683,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x34}, // Universal System Exclusive Sub-ID#2: Inquiry: Get Property Data
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x34_b, // Universal System Exclusive Sub-ID#2: Inquiry: Get Property Data
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
     request,
@@ -732,15 +726,15 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
-  constexpr auto destination = std::byte{0x0F};
+  constexpr auto destination = 0x0F_b;
 
-  constexpr auto request = std::byte{1};
+  constexpr auto request = 1_b;
 
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
 
-  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
-  constexpr auto data_size = std::array{std::byte{61}, std::byte{0}};
+  constexpr auto header_size = std::array{14_b, 0_b};
+  constexpr auto data_size = std::array{61_b, 0_b};
   constexpr auto header = R"({"status":200})"sv;
   constexpr auto data = R"({"manufacturerId":[125,0,0],"manufacturer":"Educational Use"})"sv;
 
@@ -749,8 +743,8 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x35}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x35_b, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -793,15 +787,15 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
-  constexpr auto destination = std::byte{0x0F};
+  constexpr auto destination = 0x0F_b;
 
-  constexpr auto request = std::byte{1};
+  constexpr auto request = 1_b;
 
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
 
-  constexpr auto header_size = std::array{std::byte{61}, std::byte{0}};
-  constexpr auto data_size = std::array{std::byte{16}, std::byte{0}};
+  constexpr auto header_size = std::array{61_b, 0_b};
+  constexpr auto data_size = std::array{16_b, 0_b};
 
   constexpr auto header = R"({"resource":"X-ProgramEdit","resId":"abcd","setPartial":true})"sv;
   constexpr auto data = R"({"/lfoSpeed":10})"sv;
@@ -811,8 +805,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x36}, // Universal System Exclusive Sub-ID#2: Inquiry: Set Property Data
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x36_b, // Universal System Exclusive Sub-ID#2: Inquiry: Set Property Data
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -855,14 +849,14 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
-  constexpr auto destination = std::byte{0x0F};
+  constexpr auto destination = 0x0F_b;
 
-  constexpr auto request = std::byte{1};
+  constexpr auto request = 1_b;
 
-  constexpr auto header_size = std::array{std::byte{14}, std::byte{0}};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+  constexpr auto header_size = std::array{14_b, 0_b};
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
+  constexpr auto property_data_size = std::array{0_b, 0_b};
 
   constexpr auto header = R"({"status":200})"sv;
 
@@ -871,8 +865,8 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x37}, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Set Property Data
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x37_b, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Set Property Data
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -916,12 +910,12 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscription) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto request = std::byte{1};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto header_size = std::array{std::byte{46}, std::byte{0}};
-  constexpr auto data_size = std::array{std::byte{12}, std::byte{0}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto request = 1_b;
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
+  constexpr auto header_size = std::array{46_b, 0_b};
+  constexpr auto data_size = std::array{12_b, 0_b};
 
   constexpr auto header = R"({"command":"full","subscribeId":"sub32847623"})"sv;
   constexpr auto data = "multichannel"sv;
@@ -931,8 +925,8 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x38}, // Universal System Exclusive Sub-ID#2: Subscription
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x38_b, // Universal System Exclusive Sub-ID#2: Subscription
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -975,22 +969,22 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto request = std::byte{1};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto request = 1_b;
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":200,"subscribeId":"sub138047"})"sv;
   constexpr auto data = ""sv;
   constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.length()));
-  constexpr auto property_data_size = std::array{std::byte{0}, std::byte{0}};
+  constexpr auto property_data_size = std::array{0_b, 0_b};
 
   // clang-format off
   std::vector<std::byte> expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x39}, // Universal System Exclusive Sub-ID#2: Subscription Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x39_b, // Universal System Exclusive Sub-ID#2: Subscription Reply
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -1034,10 +1028,10 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
 }
 
 TEST_F(CICreateMessage, PropertyExchangeNotify) {
-  constexpr auto destination = std::byte{0x0F};
-  constexpr auto request = std::byte{1};
-  constexpr auto total_chunks = std::array{std::byte{1}, std::byte{0}};
-  constexpr auto chunk_number = std::array{std::byte{1}, std::byte{0}};
+  constexpr auto destination = 0x0F_b;
+  constexpr auto request = 1_b;
+  constexpr auto total_chunks = std::array{1_b, 0_b};
+  constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":144})"sv;
   constexpr auto data = "data"sv;
   constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.size()));
@@ -1048,8 +1042,8 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x3F}, // Universal System Exclusive Sub-ID#2: Notify
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x3F_b, // Universal System Exclusive Sub-ID#2: Notify
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -1091,15 +1085,15 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
-  constexpr auto destination = std::byte{0x7F};
+  constexpr auto destination = 0x7F_b;
 
   // clang-format off
   constexpr std::array expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x40}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x40_b, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
   };
@@ -1115,16 +1109,16 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
-  constexpr auto destination = std::byte{0x7F};
-  constexpr auto features = std::byte{0b0101010};
+  constexpr auto destination = 0x7F_b;
+  constexpr auto features = 0b0101010_b;
 
   // clang-format off
   constexpr std::array expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x41}, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x41_b, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
@@ -1143,23 +1137,23 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
-  constexpr auto destination = std::byte{0x01};
+  constexpr auto destination = 0x01_b;
 
   // clang-format off
   constexpr std::array expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x42}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x42_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
-    std::byte{0x7F}, // message data control
-    std::byte{0b00000111}, // requested system messages
-    std::byte{0x00}, // reserved
-    std::byte{0b00111111}, // requested channel controller messages
-    std::byte{0b00011111}, // requested note data messages
+    0x7F_b, // message data control
+    0b00000111_b, // requested system messages
+    0x00_b, // reserved
+    0b00111111_b, // requested channel controller messages
+    0b00011111_b, // requested note data messages
   };
   // clang-format on
 
@@ -1193,22 +1187,22 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
-  constexpr auto destination = std::byte{0x01};
+  constexpr auto destination = 0x01_b;
 
   // clang-format off
   constexpr std::array expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x43}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report Reply
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x43_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report Reply
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
 
-    std::byte{0b00000101}, // requested system messages
-    std::byte{0x00}, // reserved
-    std::byte{0b00101010}, // requested channel controller messages
-    std::byte{0b00010010}, // requested note data messages
+    0b00000101_b, // requested system messages
+    0x00_b, // reserved
+    0b00101010_b, // requested channel controller messages
+    0b00010010_b, // requested note data messages
   };
   // clang-format on
 
@@ -1241,15 +1235,15 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
 }
 
 TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
-  constexpr auto destination = std::byte{0x01};
+  constexpr auto destination = 0x01_b;
 
   // clang-format off
   constexpr std::array expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    std::byte{0x44}, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report End
-    std::byte{2}, // 1 byte MIDI-CI Message Version/Format
+    0x44_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report End
+    2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
   };
