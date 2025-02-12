@@ -30,6 +30,7 @@ namespace midi2::ci {
 template <typename T>
 concept ci_dispatcher_config = requires(T v) {
   { v.context };
+  { v.system } -> dispatcher_backend::system<decltype(v.context)>;
   { v.management } -> dispatcher_backend::management<decltype(v.context)>;
   { v.profile } -> dispatcher_backend::profile<decltype(v.context)>;
   { v.property_exchange } -> dispatcher_backend::property_exchange<decltype(v.context)>;
@@ -37,7 +38,10 @@ concept ci_dispatcher_config = requires(T v) {
 };
 
 template <typename Context> struct function_config {
+  constexpr explicit function_config(Context c = Context{}) : context{std::move(c)} {}
+
   [[no_unique_address]] Context context;
+  midi2::ci::dispatcher_backend::system_function<Context> system;
   midi2::ci::dispatcher_backend::management_function<Context> management;
   midi2::ci::dispatcher_backend::profile_function<Context> profile;
   midi2::ci::dispatcher_backend::property_exchange_function<Context> property_exchange;
@@ -234,9 +238,9 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::header() {
     consumer_ = &ci_dispatcher::discard;
     count_ = 0;
 
-    config_.management.unknown_midici(config_.context, header_);
+    config_.system.unknown_midici(config_.context, header_);
   } else if (header_.local_muid != broadcast_muid &&
-             !config_.management.check_muid(config_.context, group_, header_.local_muid)) {
+             !config_.system.check_muid(config_.context, group_, header_.local_muid)) {
     // The message wasn't intended for us.
     consumer_ = &ci_dispatcher::discard;
     count_ = 0;
@@ -670,7 +674,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::discard() {
 template <ci_dispatcher_config Config> void ci_dispatcher<Config>::overflow() {
   count_ = 0;
   pos_ = 0;
-  config_.management.buffer_overflow(config_.context);
+  config_.system.buffer_overflow(config_.context);
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -693,13 +697,7 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::processMIDICI
 
 template <typename Context>
 ci_dispatcher<function_config<Context>> make_function_dispatcher(Context context = Context{}) {
-  return midi2::ci::ci_dispatcher{function_config<Context>{
-      .context = std::move(context),
-      .management = dispatcher_backend::management_function<Context>{},
-      .profile = dispatcher_backend::profile_function<Context>{},
-      .property_exchange = dispatcher_backend::property_exchange_function<Context>{},
-      .process_inquiry = dispatcher_backend::process_inquiry_function<Context>{},
-  }};
+  return midi2::ci::ci_dispatcher{function_config<Context>{std::move(context)}};
 }
 
 }  // end namespace midi2::ci

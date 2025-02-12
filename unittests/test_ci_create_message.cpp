@@ -31,7 +31,7 @@
 
 namespace {
 
-using midi2::ci::byte_array_5;
+using midi2::ci::byte_array;
 using midi2::ci::from_le7;
 
 class CICreateMessage : public testing::Test {
@@ -42,16 +42,10 @@ protected:
   static constexpr auto destination_muid_ =
       std::array{std::byte{0x62}, std::byte{0x16}, std::byte{0x63}, std::byte{0x26}};
 
-  template <typename T> struct trivial_sentinel {
-    constexpr bool operator==(T) const { return false; }
-    friend constexpr bool operator==(T, trivial_sentinel) { return false; }
-  };
-
   template <typename Content>
   static std::vector<std::byte> make_message(struct midi2::ci::header const& hdr, Content const& content) {
     std::vector<std::byte> message;
-    auto out_it = std::back_inserter(message);
-    midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, hdr, content);
+    midi2::ci::create_message(std::back_inserter(message), midi2::ci::trivial_sentinel{}, hdr, content);
     return message;
   }
 };
@@ -424,12 +418,12 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto receiver_muid = std::array{std::byte{0x12}, std::byte{0x34}, std::byte{0x5E}, std::byte{0x0F}};
 
-  constexpr auto enabled = std::array<byte_array_5, 2>{
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
-      byte_array_5{std::byte{0x76}, std::byte{0x65}, std::byte{0x54}, std::byte{0x43}, std::byte{0x32}},
+  constexpr auto enabled = std::array<byte_array<5>, 2>{
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}},
+      byte_array<5>{std::byte{0x76}, std::byte{0x65}, std::byte{0x54}, std::byte{0x43}, std::byte{0x32}},
   };
-  constexpr auto disabled = std::array<byte_array_5, 1>{
-      byte_array_5{std::byte{0x71}, std::byte{0x61}, std::byte{0x51}, std::byte{0x41}, std::byte{0x31}},
+  constexpr auto disabled = std::array<byte_array<5>, 1>{
+      byte_array<5>{std::byte{0x71}, std::byte{0x61}, std::byte{0x51}, std::byte{0x41}, std::byte{0x31}},
   };
   // clang-format off
   constexpr std::array expected{
@@ -461,7 +455,7 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
 TEST_F(CICreateMessage, ProfileAdded) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
   // clang-format off
   constexpr std::array expected{
@@ -490,7 +484,7 @@ TEST_F(CICreateMessage, ProfileAdded) {
 TEST_F(CICreateMessage, ProfileRemoved) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
   // clang-format off
   constexpr std::array expected{
@@ -519,7 +513,7 @@ TEST_F(CICreateMessage, ProfileRemoved) {
 TEST_F(CICreateMessage, ProfileDetails) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
 
   // clang-format off
   constexpr std::array expected{
@@ -551,7 +545,7 @@ TEST_F(CICreateMessage, ProfileDetails) {
 TEST_F(CICreateMessage, ProfileDetailsReply) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto target = std::byte{0x23};
   constexpr auto data_length = std::array{std::byte{0x05}, std::byte{0x00}};
   constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
@@ -587,7 +581,7 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
 TEST_F(CICreateMessage, ProfileOn) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto channels = std::array{std::byte{0x23}, std::byte{0x00}};
 
   // clang-format off
@@ -617,7 +611,7 @@ TEST_F(CICreateMessage, ProfileOn) {
 TEST_F(CICreateMessage, ProfileOff) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto reserved = std::array{std::byte{0x00}, std::byte{0x00}};
 
   // clang-format off
@@ -645,7 +639,7 @@ TEST_F(CICreateMessage, ProfileOff) {
 TEST_F(CICreateMessage, ProfileEnabled) {
   constexpr auto destination = std::byte{0x0F};
   constexpr auto pid =
-      byte_array_5{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
+      byte_array<5>{std::byte{0x12}, std::byte{0x23}, std::byte{0x34}, std::byte{0x45}, std::byte{0x56}};
   constexpr auto num_channels = std::array{std::byte{0x22}, std::byte{0x11}};
 
   // clang-format off

@@ -32,11 +32,6 @@
 
 namespace {
 
-template <typename T> struct trivial_sentinel {
-  constexpr bool operator==(T) const { return false; }
-  friend constexpr bool operator==(T, trivial_sentinel) { return false; }
-};
-
 std::ostream &write_bytes(std::ostream &os, std::span<std::uint8_t const> const &arr) {
   os << '[';
   auto const *separator = "";
@@ -128,7 +123,7 @@ using testing::IsEmpty;
 using testing::Return;
 using testing::StrictMock;
 
-using midi2::ci::byte_array_5;
+using midi2::ci::byte_array;
 using midi2::ci::from_le7;
 using midi2::ci::header;
 
@@ -149,12 +144,15 @@ struct context_type {
   constexpr bool operator==(context_type const &) const noexcept = default;
 };
 
-class mock_management_callbacks : public midi2::ci::dispatcher_backend::management_pure<context_type> {
+class mock_system_callbacks : public midi2::ci::dispatcher_backend::system_pure<context_type> {
 public:
   MOCK_METHOD(bool, check_muid, (context_type, std::uint8_t group, std::uint32_t muid), (override));
   MOCK_METHOD(void, buffer_overflow, (context_type), (override));
   MOCK_METHOD(void, unknown_midici, (context_type, header const &), (override));
+};
 
+class mock_management_callbacks : public midi2::ci::dispatcher_backend::management_pure<context_type> {
+public:
   MOCK_METHOD(void, discovery, (context_type, header const &, midi2::ci::discovery const &), (override));
   MOCK_METHOD(void, discovery_reply, (context_type, header const &, midi2::ci::discovery_reply const &), (override));
   MOCK_METHOD(void, endpoint_info, (context_type, header const &, midi2::ci::endpoint_info const &), (override));
@@ -229,6 +227,7 @@ public:
 protected:
   struct mocked_config {
     [[no_unique_address]] context_type context;
+    StrictMock<mock_system_callbacks> system;
     StrictMock<mock_management_callbacks> management;
     StrictMock<mock_profile_callbacks> profile;
     StrictMock<mock_property_exchange_callbacks> property_exchange;
@@ -242,8 +241,7 @@ protected:
 
   template <typename Content> static std::vector<std::byte> make_message(header const &hdr, Content const &content) {
     std::vector<std::byte> message;
-    auto out_it = std::back_inserter(message);
-    midi2::ci::create_message(out_it, trivial_sentinel<decltype(out_it)>{}, hdr, content);
+    midi2::ci::create_message(std::back_inserter(message), midi2::ci::trivial_sentinel{}, hdr, content);
     message.push_back(0_b);  // a stray extra byte
     return message;
   }
@@ -323,8 +321,7 @@ TEST_F(CIDispatcher, EndpointInfo) {
                        .local_muid = from_le7(receiver_muid)};
   constexpr midi2::ci::endpoint_info endpoint_info{.status = status};
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
-      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, endpoint_info(config_.context, hdr, endpoint_info)).Times(1);
 
   this->dispatch_ci(group, hdr, endpoint_info);
@@ -340,7 +337,7 @@ TEST_F(CIDispatcher, EndpointInfoReply) {
 
   constexpr header hdr{.device_id = 0x7F_u8, .version = 1, .remote_muid = sender_muid_, .local_muid = receiver_muid};
   constexpr midi2::ci::endpoint_info_reply reply{.status = from_le7(status), .information = information};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, endpoint_info_reply(config_.context, hdr, reply)).Times(1);
 
   this->dispatch_ci(group, hdr, reply);
@@ -357,8 +354,7 @@ TEST_F(CIDispatcher, InvalidateMuid) {
                        .remote_muid = sender_muid_,
                        .local_muid = from_le7(receiver_muid)};
   constexpr midi2::ci::invalidate_muid invalidate_muid{.target_muid = from_le7(target_muid)};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
-      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, invalidate_muid(config_.context, hdr, invalidate_muid)).Times(1);
 
   this->dispatch_ci(group, hdr, invalidate_muid);
@@ -380,7 +376,7 @@ TEST_F(CIDispatcher, Ack) {
                                .status_data = ack_status_data,
                                .details = ack_details,
                                .message = text};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, ack(config_.context, hdr,
                                       AllOf(Field("original_id", &midi2::ci::ack::original_id, Eq(original_id)),
                                             Field("status_code", &midi2::ci::ack::status_code, Eq(ack_status_code)),
@@ -407,8 +403,8 @@ TEST_F(CIDispatcher, AckMessageTooLong) {
                            .details = std::array{0x01_b, 0x02_b, 0x03_b, 0x04_b, 0x05_b},
                            .message = text};
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
-  EXPECT_CALL(config_.management, buffer_overflow(config_.context)).Times(1);
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, buffer_overflow(config_.context)).Times(1);
 
   this->dispatch_ci(group, hdr, ack);
 }
@@ -424,12 +420,12 @@ TEST_F(CIDispatcher, NakV1) {
                        .local_muid = receiver_muid};
   midi2::ci::nak const nak;
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, nak(config_.context, hdr,
                                       AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(0)),
                                             Field("status_code", &midi2::ci::nak::status_code, Eq(0)),
                                             Field("status_data", &midi2::ci::nak::status_data, Eq(0)),
-                                            Field("details", &midi2::ci::nak::details, Eq(byte_array_5{})),
+                                            Field("details", &midi2::ci::nak::details, Eq(byte_array<5>{})),
                                             Field("message", &midi2::ci::nak::message, IsEmpty()))))
       .Times(1);
 
@@ -456,8 +452,7 @@ TEST_F(CIDispatcher, NakV2) {
                                .status_data = nak_status_data,
                                .details = nak_details,
                                .message = text};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, from_le7(receiver_muid)))
-      .WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, from_le7(receiver_muid))).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.management, nak(config_.context, hdr,
                                       AllOf(Field("original_id", &midi2::ci::nak::original_id, Eq(original_id)),
                                             Field("status_code", &midi2::ci::nak::status_code, Eq(nak_status_code)),
@@ -474,7 +469,7 @@ TEST_F(CIDispatcher, ProfileInquiry) {
   constexpr auto receiver_muid = from_le7(std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b});
   constexpr auto hdr =
       header{.device_id = 0x0F_u8, .version = 2, .remote_muid = sender_muid_, .local_muid = receiver_muid};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.profile, inquiry(config_.context, hdr)).Times(1);
 
   this->dispatch_ci(group, hdr, midi2::ci::profile_configuration::inquiry{});
@@ -484,16 +479,16 @@ TEST_F(CIDispatcher, ProfileInquiryReply) {
   constexpr auto group = 0x01_u8;
   constexpr auto receiver_muid = from_le7(std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b});
 
-  constexpr auto enabled = std::array<byte_array_5, 2>{
-      byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
-      byte_array_5{0x76_b, 0x65_b, 0x54_b, 0x43_b, 0x32_b},
+  constexpr auto enabled = std::array<byte_array<5>, 2>{
+      byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
+      byte_array<5>{0x76_b, 0x65_b, 0x54_b, 0x43_b, 0x32_b},
   };
-  constexpr auto disabled = std::array<byte_array_5, 1>{
-      byte_array_5{0x71_b, 0x61_b, 0x51_b, 0x41_b, 0x31_b},
+  constexpr auto disabled = std::array<byte_array<5>, 1>{
+      byte_array<5>{0x71_b, 0x61_b, 0x51_b, 0x41_b, 0x31_b},
   };
 
   constexpr header hdr{.device_id = 0x0F_u8, .version = 2, .remote_muid = sender_muid_, .local_muid = receiver_muid};
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, receiver_muid)).WillRepeatedly(Return(true));
   using midi2::ci::profile_configuration::inquiry_reply;
   EXPECT_CALL(config_.profile,
               inquiry_reply(config_.context, hdr,
@@ -507,7 +502,7 @@ TEST_F(CIDispatcher, ProfileInquiryReply) {
 TEST_F(CIDispatcher, ProfileAdded) {
   constexpr header hdr{
       .device_id = 0x0F_u8, .version = 2, .remote_muid = sender_muid_, .local_muid = from_le7(broadcast_muid)};
-  constexpr midi2::ci::profile_configuration::added added{.pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
+  constexpr midi2::ci::profile_configuration::added added{.pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
   EXPECT_CALL(config_.profile, added(config_.context, hdr, added)).Times(1);
 
   this->dispatch_ci(0x01_u8, hdr, added);
@@ -516,8 +511,8 @@ TEST_F(CIDispatcher, ProfileAdded) {
 TEST_F(CIDispatcher, ProfileRemoved) {
   constexpr header hdr{
       .device_id = 0x0F_u8, .version = 2, .remote_muid = sender_muid_, .local_muid = from_le7(broadcast_muid)};
-  constexpr midi2::ci::profile_configuration::removed removed{.pid =
-                                                                  byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
+  constexpr midi2::ci::profile_configuration::removed removed{
+      .pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
   EXPECT_CALL(config_.profile, removed(config_.context, hdr, removed)).Times(1);
 
   this->dispatch_ci(0x01_u8, hdr, removed);
@@ -528,9 +523,9 @@ TEST_F(CIDispatcher, ProfileDetails) {
   constexpr header hdr{
       .device_id = 0x0F_u8, .version = 2, .remote_muid = sender_muid_, .local_muid = destination_muid_};
   constexpr midi2::ci::profile_configuration::details details{
-      .pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}, .target = 0x23};
+      .pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}, .target = 0x23};
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.profile, details(config_.context, hdr, details)).Times(1);
 
   this->dispatch_ci(group, hdr, details);
@@ -538,7 +533,7 @@ TEST_F(CIDispatcher, ProfileDetails) {
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, ProfileDetailsReply) {
   constexpr auto group = 0x01_u8;
-  constexpr auto pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
   constexpr auto target = 0x23_u8;
   constexpr auto data = std::array{'H'_b, 'e'_b, 'l'_b, 'l'_b, 'o'_b};
 
@@ -550,7 +545,7 @@ TEST_F(CIDispatcher, ProfileDetailsReply) {
   };
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.profile, details_reply(config_.context, hdr,
                                              AllOf(Field("pid", &details_reply::pid, Eq(pid)),
                                                    Field("target", &details_reply::target, Eq(target)),
@@ -570,11 +565,11 @@ TEST_F(CIDispatcher, ProfileOn) {
       .local_muid = destination_muid_,
   };
   constexpr midi2::ci::profile_configuration::on on{
-      .pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
+      .pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
       .num_channels = std::uint16_t{23},
   };
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.profile, on(config_.context, hdr, on)).Times(1);
 
   this->dispatch_ci(group, hdr, on);
@@ -589,9 +584,9 @@ TEST_F(CIDispatcher, ProfileOff) {
       .remote_muid = sender_muid_,
       .local_muid = destination_muid_,
   };
-  constexpr midi2::ci::profile_configuration::off off{.pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
+  constexpr midi2::ci::profile_configuration::off off{.pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b}};
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.profile, off(config_.context, hdr, off)).Times(1);
 
   this->dispatch_ci(group, hdr, off);
@@ -605,7 +600,7 @@ TEST_F(CIDispatcher, ProfileEnabled) {
       .local_muid = from_le7(broadcast_muid),
   };
   constexpr midi2::ci::profile_configuration::enabled enabled{
-      .pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
+      .pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
       .num_channels = 0x1122,
   };
 
@@ -622,7 +617,7 @@ TEST_F(CIDispatcher, ProfileDisabled) {
       .local_muid = from_le7(broadcast_muid),
   };
   constexpr midi2::ci::profile_configuration::disabled disabled{
-      .pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
+      .pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
       .num_channels = 0x123,
   };
   EXPECT_CALL(config_.profile, disabled(config_.context, hdr, disabled)).Times(1);
@@ -632,7 +627,7 @@ TEST_F(CIDispatcher, ProfileDisabled) {
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, ProfileSpecificData) {
   constexpr auto group = 0x01_u8;
-  constexpr auto pid = byte_array_5{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
+  constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
   constexpr auto data = std::array{'H'_b, 'e'_b, 'l'_b, 'l'_b, 'o'_b};
 
   // clang-format on
@@ -664,7 +659,7 @@ TEST_F(CIDispatcher, PropertyExchangeCapabilities) {
       .major_version = 3,
       .minor_version = 4,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange, capabilities(config_.context, hdr, caps)).Times(1);
 
   this->dispatch_ci(group, hdr, caps);
@@ -685,7 +680,7 @@ TEST_F(CIDispatcher, PropertyExchangeCapabilitiesReply) {
       .major_version = 3,
       .minor_version = 4,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange, capabilities_reply(config_.context, hdr, caps)).Times(1);
 
   this->dispatch_ci(group, hdr, caps);
@@ -707,7 +702,7 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyData) {
       .header = R"({"status":200})"sv,
       .data = {},
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange, get(config_.context, hdr, g));
 
   this->dispatch_ci(group, hdr, g);
@@ -730,7 +725,7 @@ TEST_F(CIDispatcher, PropertyExchangeGetPropertyDataReply) {
       .header = R"({"status":200})"sv,
       .data = R"([{"resource":"DeviceInfo"},{"resource":"ChannelList"},{"resource":"CMList"}])"sv,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
               get_reply(config_.context, hdr,
                         AllOf(Field("chunk", &get_reply::chunk, Eq(gr.chunk)),
@@ -757,7 +752,7 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyData) {
       .header = R"({"resource":"X-ProgramEdit","resId":"abcd"})"sv,
       .data = R"({"name":"Violin 2","lfoSpeed":10,"lfoWaveform":"sine"})"sv,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
               set(config_.context, hdr,
                   AllOf(Field("chunk", &set::chunk, Eq(spd.chunk)), Field("request", &set::request, Eq(spd.request)),
@@ -783,7 +778,7 @@ TEST_F(CIDispatcher, PropertyExchangeSetPropertyDataReply) {
       .header = R"({"status":200})"sv,
       .data = {},
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
               set_reply(config_.context, hdr,
                         AllOf(Field("chunk", &set_reply::chunk, Eq(spd_reply.chunk)),
@@ -811,7 +806,7 @@ TEST_F(CIDispatcher, PropertyExchangeSubscription) {
       .header = header,
       .data = data,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
               subscription(config_.context, hdr,
                            AllOf(Field("chunk", &subscription::chunk, Eq(sub.chunk)),
@@ -838,7 +833,7 @@ TEST_F(CIDispatcher, PropertyExchangeSubscriptionReply) {
       .header = header,
       .data = data,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange,
               subscription_reply(config_.context, hdr,
                                  AllOf(Field("chunk", &subscription_reply::chunk, Eq(sub_reply.chunk)),
@@ -865,7 +860,7 @@ TEST_F(CIDispatcher, PropertyExchangeNotify) {
       .header = header,
       .data = data,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.property_exchange, notify(config_.context, hdr,
                                                 AllOf(Field("chunk", &notify::chunk, Eq(note.chunk)),
                                                       Field("request", &notify::request, Eq(note.request)),
@@ -884,7 +879,7 @@ TEST_F(CIDispatcher, ProcessInquiryCapabilities) {
       .remote_muid = sender_muid_,
       .local_muid = destination_muid_,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.process_inquiry, capabilities(config_.context, hdr)).Times(1);
 
   this->dispatch_ci(group, hdr, midi2::ci::process_inquiry::capabilities{});
@@ -903,7 +898,7 @@ TEST_F(CIDispatcher, ProcessInquiryCapabilitiesReply) {
   };
   constexpr midi2::ci::process_inquiry::capabilities_reply reply{.features = features};
 
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.process_inquiry, capabilities_reply(config_.context, hdr, reply)).Times(1);
 
   this->dispatch_ci(group, hdr, reply);
@@ -938,7 +933,7 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReport) {
       .registered_per_note_controller = 0,
       .assignable_per_note_controller = 1,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.process_inquiry, midi_message_report(config_.context, hdr, report)).Times(1);
 
   this->dispatch_ci(group, hdr, report);
@@ -972,7 +967,7 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportReply) {
       .registered_per_note_controller = 0,
       .assignable_per_note_controller = 1,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.process_inquiry, midi_message_report_reply(config_.context, hdr, reply)).Times(1);
 
   this->dispatch_ci(group, hdr, reply);
@@ -986,7 +981,7 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportEnd) {
       .remote_muid = sender_muid_,
       .local_muid = destination_muid_,
   };
-  EXPECT_CALL(config_.management, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
+  EXPECT_CALL(config_.system, check_muid(config_.context, group, destination_muid_)).WillRepeatedly(Return(true));
   EXPECT_CALL(config_.process_inquiry, midi_message_report_end(config_.context, hdr)).Times(1);
 
   this->dispatch_ci(group, hdr, midi2::ci::process_inquiry::midi_message_report_end{});
@@ -1000,7 +995,7 @@ void NeverCrashes(std::vector<std::byte> const &message) {
   std::ranges::transform(message, std::back_inserter(message2), [](std::byte v) { return v & 0x7F_b; });
   struct empty {};
   auto dispatcher = midi2::ci::make_function_dispatcher<empty>();
-  dispatcher.config().management.on_check_muid([](empty, std::uint8_t, std::uint32_t) { return true; });
+  dispatcher.config().system.on_check_muid([](empty, std::uint8_t, std::uint32_t) { return true; });
   std::ranges::for_each(message2, std::bind_front(&decltype(dispatcher)::processMIDICI, &dispatcher));
 }
 

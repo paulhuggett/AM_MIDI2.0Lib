@@ -18,7 +18,7 @@
 
 namespace {
 
-std::vector<std::byte> discovery() {
+auto discovery() {
   constexpr midi2::ci::header hdr{
       .device_id = 0x7F, .version = 2, .remote_muid = 0, .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = {0x12, 0x23, 0x34},
@@ -29,8 +29,7 @@ std::vector<std::byte> discovery() {
                                            .max_sysex_size = 256,
                                            .output_path_id = 0x71};
   std::vector<std::byte> message;
-  auto const out_it = std::back_inserter(message);
-  midi2::ci::create_message(out_it, midi2::ci::trivial_sentinel<decltype(out_it)>{}, hdr, discovery);
+  midi2::ci::create_message(std::back_inserter(message), midi2::ci::trivial_sentinel{}, hdr, discovery);
   return message;
 }
 
@@ -38,7 +37,7 @@ std::vector<std::byte> discovery() {
 
 int main() {
   for (auto const b : discovery()) {
-    std::cout << std::format("{:02x} ", midi2::to_underlying(b));
+    std::cout << std::format("{:02X} ", midi2::to_underlying(b));
   }
   std::cout << '\n';
 }

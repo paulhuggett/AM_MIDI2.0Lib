@@ -203,6 +203,15 @@ constexpr O write_header(O first, S const last, struct header const &h, ci_messa
   return details::safe_copy(first, last, hdr);
 }
 
+template <typename ExternalType, typename InternalType, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
+constexpr O write_header_body(O first, S const last, header const &hdr, InternalType const &t) {
+  first = write_header(first, last, hdr, details::type_to_packed<InternalType>::id);
+  if constexpr (!std::is_same_v<ExternalType, details::empty>) {
+    first = safe_copy(first, last, static_cast<ExternalType>(t));
+  }
+  return first;
+}
+
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
 constexpr O write_pe(O first, S const last, header const &hdr, property_exchange::property_exchange<Pet> const &pe,
                      ci_message const id) {
@@ -224,30 +233,23 @@ constexpr O write_pe(O first, S const last, header const &hdr, property_exchange
 
 }  // end namespace details
 
-template <typename T> struct trivial_sentinel {
-  constexpr bool operator==(T) const noexcept { return false; }
-  friend constexpr bool operator==(T, trivial_sentinel) noexcept { return false; }
+struct trivial_sentinel {
+  /// Trivial sentinels are never equal to an object of a different type.
+  template <typename T> friend constexpr bool operator==(trivial_sentinel, T) noexcept { return false; }
+  /// Trivial sentinels always compare equal.
+  friend constexpr bool operator==(trivial_sentinel, trivial_sentinel) noexcept { return true; }
 };
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, header const &hdr, T const &t) {
-  using v1_type = details::type_to_packed<T>::v1;
-  using v2_type = details::type_to_packed<T>::v2;
-
   if (hdr.version == 1) {
+    using v1_type = details::type_to_packed<T>::v1;
     if constexpr (!std::is_same_v<v1_type, details::not_available>) {
-      first = details::write_header(first, last, hdr, details::type_to_packed<T>::id);
-      if constexpr (!std::is_same_v<v1_type, details::empty>) {
-        first = details::safe_copy(first, last, static_cast<v1_type>(t));
-      }
+      first = details::write_header_body<v1_type>(first, last, hdr, t);
     }
     return first;
   }
-  first = details::write_header(first, last, hdr, details::type_to_packed<T>::id);
-  if constexpr (!std::is_same_v<v2_type, details::empty>) {
-    first = details::safe_copy(first, last, static_cast<v2_type>(t));
-  }
-  return first;
+  return details::write_header_body<typename details::type_to_packed<T>::v2>(first, last, hdr, t);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>

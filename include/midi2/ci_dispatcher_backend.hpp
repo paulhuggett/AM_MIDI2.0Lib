@@ -17,11 +17,14 @@ namespace midi2::ci::dispatcher_backend {
 
 // clang-format off
 template <typename T, typename Context>
-concept management = requires(T v, Context context) {
+concept system = requires(T v, Context context) {
   { v.check_muid(context, std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
   { v.unknown_midici(context, header{}) } -> std::same_as<void>;
   { v.buffer_overflow(context) } -> std::same_as<void>;
+};
 
+template <typename T, typename Context>
+concept management = requires(T v, Context context) {
   { v.discovery(context, header{}, ci::discovery{}) } -> std::same_as<void>;
   { v.discovery_reply(context, header{}, ci::discovery_reply{}) } -> std::same_as<void>;
   { v.endpoint_info(context, header{}, ci::endpoint_info{}) } -> std::same_as<void>;
@@ -72,11 +75,12 @@ concept process_inquiry = requires(T v, Context context) {
 // clang-format on
 
 // clang-format off
-template <typename Context> struct management_null {
+template <typename Context> struct system_null {
   constexpr static bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
   constexpr static void unknown_midici(Context, header const &) { /* do nothing */ }
   constexpr static void buffer_overflow(Context) { /* do nothing */ }
-
+};
+template <typename Context> struct management_null {
   constexpr static void discovery(Context, header const &, ci::discovery const &) { /* do nothing */ }
   constexpr static void discovery_reply(Context, header const &, ci::discovery_reply const &) { /* do nothing */ }
   constexpr static void endpoint_info(Context, header const &, ci::endpoint_info const &) { /* do nothing*/ }
@@ -120,11 +124,25 @@ template <typename Context> struct process_inquiry_null {
 };
 // clang-format on
 
+static_assert(system<system_null<int>, int>);
 static_assert(management<management_null<int>, int>);
 static_assert(profile<profile_null<int>, int>);
 static_assert(property_exchange<property_exchange_null<int>, int>);
 static_assert(process_inquiry<process_inquiry_null<int>, int>);
 
+template <typename Context> struct system_pure {
+  constexpr system_pure() noexcept = default;
+  constexpr system_pure(system_pure const &) = default;
+  constexpr system_pure(system_pure &&) noexcept = default;
+  virtual ~system_pure() noexcept = default;
+
+  constexpr system_pure &operator=(system_pure const &) noexcept = default;
+  constexpr system_pure &operator=(system_pure &&) noexcept = default;
+
+  virtual bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) = 0;
+  virtual void unknown_midici(Context, header const &) = 0;
+  virtual void buffer_overflow(Context) = 0;
+};
 template <typename Context> struct management_pure {
   constexpr management_pure() noexcept = default;
   constexpr management_pure(management_pure const &) = default;
@@ -133,10 +151,6 @@ template <typename Context> struct management_pure {
 
   constexpr management_pure &operator=(management_pure const &) noexcept = default;
   constexpr management_pure &operator=(management_pure &&) noexcept = default;
-
-  virtual bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) = 0;
-  virtual void unknown_midici(Context, header const &) = 0;
-  virtual void buffer_overflow(Context) = 0;
 
   virtual void discovery(Context, header const &, ci::discovery const &) = 0;
   virtual void discovery_reply(Context, header const &, ci::discovery_reply const &) = 0;
@@ -259,12 +273,39 @@ template <typename Context> struct process_inquiry_base : process_inquiry_pure<C
 };
 // clang-format on
 
-template <typename Context> class management_function {
+template <typename Context> class system_function {
 public:
   using check_muid_fn = std::function<bool(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/)>;
   using unknown_fn = std::function<void(Context, header const &)>;
   using buffer_overflow_fn = std::function<void(Context)>;
 
+  constexpr system_function &on_check_muid(check_muid_fn check_muid) {
+    check_muid_ = std::move(check_muid);
+    return *this;
+  }
+  constexpr system_function &on_unknown(unknown_fn unknown) {
+    unknown_ = std::move(unknown);
+    return *this;
+  }
+  constexpr system_function &on_buffer_overflow(buffer_overflow_fn overflow) {
+    overflow_ = std::move(overflow);
+    return *this;
+  }
+
+  bool check_muid(Context context, std::uint8_t group, std::uint32_t muid) const {
+    return check_muid_ ? check_muid_(std::move(context), group, muid) : false;
+  }
+  void unknown_midici(Context context, header const &ci) const { call(unknown_, std::move(context), ci); }
+  void buffer_overflow(Context context) const { call(overflow_, std::move(context)); }
+
+private:
+  check_muid_fn check_muid_;
+  unknown_fn unknown_;
+  buffer_overflow_fn overflow_;
+};
+
+template <typename Context> class management_function {
+public:
   using discovery_fn = std::function<void(Context, header const &, ci::discovery const &)>;
   using discovery_reply_fn = std::function<void(Context, header const &, ci::discovery_reply const &)>;
   using endpoint_info_fn = std::function<void(Context, header const &, ci::endpoint_info const &)>;
@@ -272,19 +313,6 @@ public:
   using invalidate_muid_fn = std::function<void(Context, header const &, ci::invalidate_muid const &)>;
   using ack_fn = std::function<void(Context, header const &, ci::ack const &)>;
   using nak_fn = std::function<void(Context, header const &, ci::nak const &)>;
-
-  constexpr management_function &on_check_muid(check_muid_fn check_muid) {
-    check_muid_ = std::move(check_muid);
-    return *this;
-  }
-  constexpr management_function &on_unknown(unknown_fn unknown) {
-    unknown_ = std::move(unknown);
-    return *this;
-  }
-  constexpr management_function &on_buffer_overflow(buffer_overflow_fn overflow) {
-    overflow_ = std::move(overflow);
-    return *this;
-  }
 
   constexpr management_function &on_discovery(discovery_fn discovery) {
     discovery_ = std::move(discovery);
@@ -315,12 +343,6 @@ public:
     return *this;
   }
 
-  bool check_muid(Context context, std::uint8_t group, std::uint32_t muid) const {
-    return check_muid_ ? check_muid_(std::move(context), group, muid) : false;
-  }
-  void unknown_midici(Context context, header const &ci) const { call(unknown_, std::move(context), ci); }
-  void buffer_overflow(Context context) const { call(overflow_, std::move(context)); }
-
   void discovery(Context context, header const &ci, ci::discovery const &d) const {
     call(discovery_, std::move(context), ci, d);
   }
@@ -340,10 +362,6 @@ public:
   void nak(Context context, header const &ci, ci::nak const &n) const { call(nak_, std::move(context), ci, n); }
 
 private:
-  check_muid_fn check_muid_;
-  unknown_fn unknown_;
-  buffer_overflow_fn overflow_;
-
   discovery_fn discovery_;
   discovery_reply_fn discovery_reply_;
   endpoint_info_fn endpoint_info_;
