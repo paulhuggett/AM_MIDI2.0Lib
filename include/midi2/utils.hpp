@@ -28,7 +28,10 @@ namespace midi2 {
 #endif
 }
 
-/// Converts an enumeration value to its underlying type
+/// Converts an enumeration value to its underlying type.
+///
+/// This is a wrapper for the C++23 std::to_underlying() function. If the standard library
+/// has an implementation of the function it will be used.
 ///
 /// \param e  The enumeration value to convert
 /// \returns The integer value of the underlying type of Enum, converted from \p e.
@@ -125,88 +128,6 @@ enum class control : std::uint8_t {
   /// When a device receives the Reset All Controllers message, it should reset the
   /// condition of all its controllers what it considers an ideal initial state.
   reset_all_controllers = 0x79,
-};
-
-enum class ci_message : std::uint8_t {
-  protocol_negotiation = 0x10,
-  protocol_negotiation_reply = 0x11,
-  protocol_set = 0x12,
-  protocol_test = 0x13,
-  protocol_test_responder = 0x14,
-  protocol_confirm = 0x15,
-
-  profile_inquiry = 0x20,
-  profile_inquiry_reply = 0x21,
-  profile_set_on = 0x22,
-  profile_set_off = 0x23,
-  profile_enabled = 0x24,
-  profile_disabled = 0x25,
-  profile_added = 0x26,
-  profile_removed = 0x27,
-  profile_details = 0x28,
-  profile_details_reply = 0x29,
-  profile_specific_data = 0x2F,
-
-  pe_capability = 0x30,
-  pe_capability_reply = 0x31,
-  pe_get = 0x34,
-  pe_get_reply = 0x35,
-  pe_set = 0x36,
-  pe_set_reply = 0x37,
-  pe_sub = 0x38,
-  pe_sub_reply = 0x39,
-  pe_notify = 0x3F,
-
-  pi_capability = 0x40,
-  pi_capability_reply = 0x41,
-  pi_mm_report = 0x42,
-  pi_mm_report_reply = 0x43,
-  pi_mm_report_end = 0x44,
-
-  discovery = 0x70,
-  discovery_reply = 0x71,
-  endpoint_info = 0x72,
-  endpoint_info_reply = 0x73,
-  ack = 0x7D,
-  invalidate_muid = 0x7E,
-  nak = 0x7F,
-};
-
-enum class pe_status {
-  ok = 200,
-  accepted = 202,
-  resource_unavailable = 341,
-  bad_data = 342,
-  too_many_reqs = 343,
-  bad_req = 400,
-  req_unauthorized = 403,
-  resource_unsupported = 404,
-  resource_not_allowed = 405,
-  payload_too_large = 413,
-  unsupported_media_type = 415,
-  invalid_data_version = 445,
-  internal_device_error = 500,
-};
-
-enum class pe_command : std::uint8_t {
-  start = 1,
-  end = 2,
-  partial = 3,
-  full = 4,
-  notify = 5,
-};
-
-enum class pe_action : std::uint8_t {
-  copy = 1,
-  move = 2,
-  del = 3,
-  create_dir = 4,
-};
-
-enum class pe_encoding : std::uint8_t {
-  ascii = 1,
-  mcoded7 = 2,
-  mcoded7zlib = 3,
 };
 
 enum : std::uint32_t {

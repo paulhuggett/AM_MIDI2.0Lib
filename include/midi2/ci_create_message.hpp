@@ -28,143 +28,143 @@ template <typename T> struct type_to_packed {};
 struct empty {};
 struct not_available {};
 template <> struct type_to_packed<discovery> {
-  static constexpr auto id = ci_message::discovery;
+  static constexpr auto id = message::discovery;
   using v1 = packed::discovery_v1;
   using v2 = packed::discovery_v2;
 };
 template <> struct type_to_packed<discovery_reply> {
-  static constexpr auto id = ci_message::discovery_reply;
+  static constexpr auto id = message::discovery_reply;
   using v1 = packed::discovery_reply_v1;
   using v2 = packed::discovery_reply_v2;
 };
 template <> struct type_to_packed<endpoint_info> {
-  static constexpr auto id = ci_message::endpoint_info;
+  static constexpr auto id = message::endpoint_info;
   using v1 = packed::endpoint_info_v1;
   using v2 = packed::endpoint_info_v1;
 };
 template <> struct type_to_packed<endpoint_info_reply> {
-  static constexpr auto id = ci_message::endpoint_info_reply;
+  static constexpr auto id = message::endpoint_info_reply;
 };
 template <> struct type_to_packed<invalidate_muid> {
-  static constexpr auto id = ci_message::invalidate_muid;
+  static constexpr auto id = message::invalidate_muid;
   using v1 = packed::invalidate_muid_v1;
   using v2 = packed::invalidate_muid_v1;
 };
 template <> struct type_to_packed<ack> {
-  static constexpr auto id = ci_message::ack;
+  static constexpr auto id = message::ack;
 };
 template <> struct type_to_packed<nak> {
-  static constexpr auto id = ci_message::nak;
+  static constexpr auto id = message::nak;
   using v1 = empty;
   using v2 = packed::nak_v2;
 };
 template <> struct type_to_packed<profile_configuration::added> {
-  static constexpr auto id = ci_message::profile_added;
+  static constexpr auto id = message::profile_added;
   using v1 = profile_configuration::packed::added_v1;
   using v2 = profile_configuration::packed::added_v1;
 };
 template <> struct type_to_packed<profile_configuration::removed> {
-  static constexpr auto id = ci_message::profile_removed;
+  static constexpr auto id = message::profile_removed;
   using v1 = profile_configuration::packed::removed_v1;
   using v2 = profile_configuration::packed::removed_v1;
 };
 template <> struct type_to_packed<profile_configuration::details> {
-  static constexpr auto id = ci_message::profile_details;
+  static constexpr auto id = message::profile_details;
   using v1 = profile_configuration::packed::details_v1;
   using v2 = profile_configuration::packed::details_v1;
 };
 template <> struct type_to_packed<profile_configuration::details_reply> {
-  static constexpr auto id = ci_message::profile_details_reply;
+  static constexpr auto id = message::profile_details_reply;
   using v1 = profile_configuration::packed::details_reply_v1;
   using v2 = profile_configuration::packed::details_reply_v1;
 };
 template <> struct type_to_packed<profile_configuration::inquiry> {
-  static constexpr auto id = ci_message::profile_inquiry;
+  static constexpr auto id = message::profile_inquiry;
   using v1 = empty;
   using v2 = empty;
 };
 template <> struct type_to_packed<profile_configuration::inquiry_reply> {
-  static constexpr auto id = ci_message::profile_inquiry_reply;
+  static constexpr auto id = message::profile_inquiry_reply;
 };
 template <> struct type_to_packed<profile_configuration::on> {
-  static constexpr auto id = ci_message::profile_set_on;
+  static constexpr auto id = message::profile_set_on;
   using v1 = profile_configuration::packed::on_v1;
   using v2 = profile_configuration::packed::on_v2;
 };
 template <> struct type_to_packed<profile_configuration::off> {
-  static constexpr auto id = ci_message::profile_set_off;
+  static constexpr auto id = message::profile_set_off;
   using v1 = profile_configuration::packed::off_v1;
   using v2 = profile_configuration::packed::off_v2;
 };
 template <> struct type_to_packed<profile_configuration::enabled> {
-  static constexpr auto id = ci_message::profile_enabled;
+  static constexpr auto id = message::profile_enabled;
   using v1 = profile_configuration::packed::enabled_v1;
   using v2 = profile_configuration::packed::enabled_v2;
 };
 template <> struct type_to_packed<profile_configuration::disabled> {
-  static constexpr auto id = ci_message::profile_disabled;
+  static constexpr auto id = message::profile_disabled;
   using v1 = profile_configuration::packed::disabled_v1;
   using v2 = profile_configuration::packed::disabled_v2;
 };
 template <> struct type_to_packed<profile_configuration::specific_data> {
-  static constexpr auto id = ci_message::profile_specific_data;
+  static constexpr auto id = message::profile_specific_data;
   using v1 = profile_configuration::packed::specific_data_v1;
   using v2 = profile_configuration::packed::specific_data_v1;
 };
 template <> struct type_to_packed<property_exchange::capabilities> {
-  static constexpr auto id = ci_message::pe_capability;
+  static constexpr auto id = message::pe_capability;
   using v1 = property_exchange::packed::capabilities_v1;
   using v2 = property_exchange::packed::capabilities_v2;
 };
 template <> struct type_to_packed<property_exchange::capabilities_reply> {
-  static constexpr auto id = ci_message::pe_capability_reply;
+  static constexpr auto id = message::pe_capability_reply;
   using v1 = property_exchange::packed::capabilities_reply_v1;
   using v2 = property_exchange::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<property_exchange::get> {
-  static constexpr auto id = ci_message::pe_get;
+  static constexpr auto id = message::pe_get;
 };
 template <> struct type_to_packed<property_exchange::get_reply> {
-  static constexpr auto id = ci_message::pe_get_reply;
+  static constexpr auto id = message::pe_get_reply;
 };
 template <> struct type_to_packed<property_exchange::set> {
-  static constexpr auto id = ci_message::pe_set;
+  static constexpr auto id = message::pe_set;
 };
 template <> struct type_to_packed<property_exchange::set_reply> {
-  static constexpr auto id = ci_message::pe_set_reply;
+  static constexpr auto id = message::pe_set_reply;
 };
 template <> struct type_to_packed<property_exchange::subscription> {
-  static constexpr auto id = ci_message::pe_sub;
+  static constexpr auto id = message::pe_sub;
 };
 template <> struct type_to_packed<property_exchange::subscription_reply> {
-  static constexpr auto id = ci_message::pe_sub_reply;
+  static constexpr auto id = message::pe_sub_reply;
 };
 template <> struct type_to_packed<property_exchange::notify> {
-  static constexpr auto id = ci_message::pe_notify;
+  static constexpr auto id = message::pe_notify;
 };
 
 template <> struct type_to_packed<process_inquiry::capabilities> {
-  static constexpr auto id = ci_message::pi_capability;
+  static constexpr auto id = message::pi_capability;
   using v1 = empty;
   using v2 = empty;
 };
 template <> struct type_to_packed<process_inquiry::capabilities_reply> {
-  static constexpr auto id = ci_message::pi_capability_reply;
+  static constexpr auto id = message::pi_capability_reply;
   using v1 = not_available;
   using v2 = process_inquiry::packed::capabilities_reply_v2;
 };
 template <> struct type_to_packed<process_inquiry::midi_message_report> {
-  static constexpr auto id = ci_message::pi_mm_report;
+  static constexpr auto id = message::pi_mm_report;
   using v1 = not_available;
   using v2 = process_inquiry::packed::midi_message_report_v2;
 };
 template <> struct type_to_packed<process_inquiry::midi_message_report_reply> {
-  static constexpr auto id = ci_message::pi_mm_report_reply;
+  static constexpr auto id = message::pi_mm_report_reply;
   using v1 = not_available;
   using v2 = process_inquiry::packed::midi_message_report_reply_v2;
 };
 template <> struct type_to_packed<process_inquiry::midi_message_report_end> {
-  static constexpr auto id = ci_message::pi_mm_report_end;
+  static constexpr auto id = message::pi_mm_report_end;
   using v1 = not_available;
   using v2 = empty;
 };
@@ -197,7 +197,7 @@ constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, 
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O write_header(O first, S const last, struct header const &h, ci_message const id) {
+constexpr O write_header(O first, S const last, struct header const &h, message const id) {
   auto hdr = static_cast<packed::header>(h);
   hdr.sub_id_2 = static_cast<std::byte>(id);
   return details::safe_copy(first, last, hdr);
@@ -214,7 +214,7 @@ constexpr O write_header_body(O first, S const last, header const &hdr, Internal
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
 constexpr O write_pe(O first, S const last, header const &hdr, property_exchange::property_exchange<Pet> const &pe,
-                     ci_message const id) {
+                     message const id) {
   first = details::write_header(first, last, hdr, id);
 
   using property_exchange::packed::property_exchange_pt1;

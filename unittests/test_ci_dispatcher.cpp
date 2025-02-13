@@ -124,8 +124,9 @@ using testing::Return;
 using testing::StrictMock;
 
 using midi2::ci::byte_array;
-using midi2::ci::from_le7;
 using midi2::ci::header;
+using midi2::ci::details::from_byte_array;
+using midi2::ci::details::from_le7;
 
 consteval std::byte operator""_b(unsigned long long arg) noexcept {
   assert(arg < 256);
@@ -274,7 +275,7 @@ TEST_F(CIDispatcher, DiscoveryV2) {
   constexpr midi2::ci::discovery discovery{.manufacturer = std::array{0x12_u8, 0x23_u8, 0x34_u8},
                                            .family = from_le7(std::array{0x67_b, 0x79_b}),
                                            .model = from_le7(std::array{0x6B_b, 0x5D_b}),
-                                           .version = midi2::ci::from_array(std::array{0x4E_b, 0x3C_b, 0x2A_b, 0x18_b}),
+                                           .version = from_byte_array(std::array{0x4E_b, 0x3C_b, 0x2A_b, 0x18_b}),
                                            .capability = 0x7F_u8,
                                            .max_sysex_size = from_le7(std::array{0x76_b, 0x54_b, 0x32_b, 0x10_b}),
                                            .output_path_id = 0x71_u8};
@@ -297,10 +298,10 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
                        .version = 2,
                        .remote_muid = 0,
                        .local_muid = midi2::ci::broadcast_muid};
-  constexpr midi2::ci::discovery_reply reply{.manufacturer = midi2::ci::from_array(manufacturer),
+  constexpr midi2::ci::discovery_reply reply{.manufacturer = from_byte_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),
-                                             .version = midi2::ci::from_array(version),
+                                             .version = from_byte_array(version),
                                              .capability = midi2::to_underlying(capability),
                                              .max_sysex_size = from_le7(max_sysex_size),
                                              .output_path_id = midi2::to_underlying(output_path_id),

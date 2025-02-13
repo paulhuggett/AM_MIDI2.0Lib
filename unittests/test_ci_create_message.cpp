@@ -37,7 +37,9 @@ consteval std::byte operator""_b(unsigned long long arg) noexcept {
 }
 
 using midi2::ci::byte_array;
-using midi2::ci::from_le7;
+using midi2::ci::details::from_byte_array;
+using midi2::ci::details::from_le7;
+using midi2::ci::details::to_le7;
 
 class CICreateMessage : public testing::Test {
 protected:
@@ -67,7 +69,7 @@ TEST_F(CICreateMessage, DiscoveryV1) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x70_b, // Universal System Exclusive Sub-ID#2: Discovery
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::discovery)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
     0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
@@ -84,10 +86,10 @@ TEST_F(CICreateMessage, DiscoveryV1) {
                                   .version = 1,
                                   .remote_muid = 0,
                                   .local_muid = midi2::ci::broadcast_muid};
-  constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
+  constexpr midi2::ci::discovery discovery{.manufacturer = from_byte_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
-                                           .version = midi2::ci::from_array(version),
+                                           .version = from_byte_array(version),
                                            .capability = midi2::to_underlying(capability),
                                            .max_sysex_size = from_le7(max_sysex_size)};
   EXPECT_THAT(make_message(hdr, discovery), testing::ElementsAreArray(expected));
@@ -108,7 +110,7 @@ TEST_F(CICreateMessage, DiscoveryV2) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x70_b, // Universal System Exclusive Sub-ID#2: Discovery
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::discovery)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
     0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
@@ -126,10 +128,10 @@ TEST_F(CICreateMessage, DiscoveryV2) {
                                   .version = 2,
                                   .remote_muid = 0,
                                   .local_muid = midi2::ci::broadcast_muid};
-  constexpr midi2::ci::discovery discovery{.manufacturer = midi2::ci::from_array(manufacturer),
+  constexpr midi2::ci::discovery discovery{.manufacturer = from_byte_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
-                                           .version = midi2::ci::from_array(version),
+                                           .version = from_byte_array(version),
                                            .capability = midi2::to_underlying(capability),
                                            .max_sysex_size = from_le7(max_sysex_size),
                                            .output_path_id = midi2::to_underlying(output_path_id)};
@@ -152,7 +154,7 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x71_b, // Universal System Exclusive Sub-ID#2: Reply to Discovery
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::discovery_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     0_b, 0_b, 0_b, 0_b, // 4 bytes Source MUID (LSB first)
     0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b, // Destination MUID (LSB first) (to Broadcast MUID)
@@ -171,10 +173,10 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
                                   .version = 2,
                                   .remote_muid = 0,
                                   .local_muid = midi2::ci::broadcast_muid};
-  constexpr midi2::ci::discovery_reply reply{.manufacturer = midi2::ci::from_array(manufacturer),
+  constexpr midi2::ci::discovery_reply reply{.manufacturer = from_byte_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),
-                                             .version = midi2::ci::from_array(version),
+                                             .version = from_byte_array(version),
                                              .capability = midi2::to_underlying(capability),
                                              .max_sysex_size = from_le7(max_sysex_size),
                                              .output_path_id = midi2::to_underlying(output_path_id),
@@ -192,7 +194,7 @@ TEST_F(CICreateMessage, EndpointInfo) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x72_b, // Universal System Exclusive Sub-ID#2: Endpoint Information
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint_info)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -224,7 +226,7 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x73_b, // Universal System Exclusive Sub-ID#2: Reply to Endpoint Information
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint_info_reply)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -255,7 +257,7 @@ TEST_F(CICreateMessage, InvalidateMuid) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    midi2::s7_universal_nrt, // Universal System Exclusive Sub-ID#2: Invalidate MUID
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::invalidate_muid)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -289,7 +291,7 @@ TEST_F(CICreateMessage, Ack) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x7D_b, // Universal System Exclusive Sub-ID#2: MIDI-CI ACK
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::ack)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -327,7 +329,7 @@ TEST_F(CICreateMessage, NakV1) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x7F_b, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::nak)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -360,7 +362,7 @@ TEST_F(CICreateMessage, NakV2) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x7F_b, // Universal System Exclusive Sub-ID#2: MIDI-CI NAK
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::nak)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -399,7 +401,7 @@ TEST_F(CICreateMessage, ProfileInquiry) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x20_b, // Universal System Exclusive Sub-ID#2: Profile Inquiry
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_inquiry)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -431,7 +433,7 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x21_b, // Universal System Exclusive Sub-ID#2: Profile Inquiry Reply
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_inquiry_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -462,7 +464,7 @@ TEST_F(CICreateMessage, ProfileAdded) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x26_b, // Universal System Exclusive Sub-ID#2: Profile Added Report
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_added)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
@@ -490,7 +492,7 @@ TEST_F(CICreateMessage, ProfileRemoved) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x27_b, // Universal System Exclusive Sub-ID#2: Profile Removed Report
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_removed)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
@@ -518,7 +520,7 @@ TEST_F(CICreateMessage, ProfileDetails) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x28_b, // Universal System Exclusive Sub-ID#2: Profile Details Inquiry
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_details)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -552,7 +554,7 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x29_b, // Universal System Exclusive Sub-ID#2: Profile Details Reply
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_details_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -585,7 +587,7 @@ TEST_F(CICreateMessage, ProfileOn) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x22_b, // Universal System Exclusive Sub-ID#2: Set Profile On
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_set_on)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -614,7 +616,7 @@ TEST_F(CICreateMessage, ProfileOff) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x23_b, // Universal System Exclusive Sub-ID#2: Set Profile Off
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_set_off)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -641,7 +643,7 @@ TEST_F(CICreateMessage, ProfileEnabled) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x24_b, // Universal System Exclusive Sub-ID#2: Profile Enabled Report
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::profile_enabled)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     broadcast_muid_[0], broadcast_muid_[1], broadcast_muid_[2], broadcast_muid_[3], // Destination MUID (LSB first)
@@ -683,7 +685,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x34_b, // Universal System Exclusive Sub-ID#2: Inquiry: Get Property Data
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_get)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -743,7 +745,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x35_b, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Get Property Data
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_get_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -805,7 +807,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x36_b, // Universal System Exclusive Sub-ID#2: Inquiry: Set Property Data
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_set)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -865,7 +867,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x37_b, // Universal System Exclusive Sub-ID#2: Inquiry: Reply to Set Property Data
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_set_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -925,7 +927,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x38_b, // Universal System Exclusive Sub-ID#2: Subscription
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_sub)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -975,7 +977,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":200,"subscribeId":"sub138047"})"sv;
   constexpr auto data = ""sv;
-  constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.length()));
+  constexpr auto header_size = to_le7(static_cast<std::uint16_t>(header.length()));
   constexpr auto property_data_size = std::array{0_b, 0_b};
 
   // clang-format off
@@ -983,7 +985,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x39_b, // Universal System Exclusive Sub-ID#2: Subscription Reply
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_sub_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1034,15 +1036,15 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":144})"sv;
   constexpr auto data = "data"sv;
-  constexpr auto header_size = midi2::ci::to_le7(static_cast<std::uint16_t>(header.size()));
-  constexpr auto data_size = midi2::ci::to_le7(static_cast<std::uint16_t>(data.size()));
+  constexpr auto header_size = to_le7(static_cast<std::uint16_t>(header.size()));
+  constexpr auto data_size = to_le7(static_cast<std::uint16_t>(data.size()));
 
   // clang-format off
   std::vector<std::byte> expected {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x3F_b, // Universal System Exclusive Sub-ID#2: Notify
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pe_notify)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1092,7 +1094,7 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x40_b, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pi_capability)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1117,7 +1119,7 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x41_b, // Universal System Exclusive Sub-ID#2: Inquiry: Process Inquiry Capabilities Reply
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pi_capability_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1144,7 +1146,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x42_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pi_mm_report)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1194,7 +1196,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x43_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report Reply
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pi_mm_report_reply)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)
@@ -1242,7 +1244,7 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     destination, // Destination
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    0x44_b, // Universal System Exclusive Sub-ID#2: Inquiry: MIDI Message Report End
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::pi_mm_report_end)),
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     destination_muid_[0], destination_muid_[1], destination_muid_[2], destination_muid_[3], // Destination MUID (LSB first)

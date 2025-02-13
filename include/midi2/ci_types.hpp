@@ -23,7 +23,91 @@
 
 namespace midi2::ci {
 
+enum class message : std::uint8_t {
+  protocol_negotiation = 0x10,
+  protocol_negotiation_reply = 0x11,
+  protocol_set = 0x12,
+  protocol_test = 0x13,
+  protocol_test_responder = 0x14,
+  protocol_confirm = 0x15,
+
+  profile_inquiry = 0x20,
+  profile_inquiry_reply = 0x21,
+  profile_set_on = 0x22,
+  profile_set_off = 0x23,
+  profile_enabled = 0x24,
+  profile_disabled = 0x25,
+  profile_added = 0x26,
+  profile_removed = 0x27,
+  profile_details = 0x28,
+  profile_details_reply = 0x29,
+  profile_specific_data = 0x2F,
+
+  pe_capability = 0x30,
+  pe_capability_reply = 0x31,
+  pe_get = 0x34,
+  pe_get_reply = 0x35,
+  pe_set = 0x36,
+  pe_set_reply = 0x37,
+  pe_sub = 0x38,
+  pe_sub_reply = 0x39,
+  pe_notify = 0x3F,
+
+  pi_capability = 0x40,
+  pi_capability_reply = 0x41,
+  pi_mm_report = 0x42,
+  pi_mm_report_reply = 0x43,
+  pi_mm_report_end = 0x44,
+
+  discovery = 0x70,
+  discovery_reply = 0x71,
+  endpoint_info = 0x72,
+  endpoint_info_reply = 0x73,
+  ack = 0x7D,
+  invalidate_muid = 0x7E,
+  nak = 0x7F,
+};
+
+enum class pe_status {
+  ok = 200,
+  accepted = 202,
+  resource_unavailable = 341,
+  bad_data = 342,
+  too_many_reqs = 343,
+  bad_req = 400,
+  req_unauthorized = 403,
+  resource_unsupported = 404,
+  resource_not_allowed = 405,
+  payload_too_large = 413,
+  unsupported_media_type = 415,
+  invalid_data_version = 445,
+  internal_device_error = 500,
+};
+
+enum class pe_command : std::uint8_t {
+  start = 1,
+  end = 2,
+  partial = 3,
+  full = 4,
+  notify = 5,
+};
+
+enum class pe_action : std::uint8_t {
+  copy = 1,
+  move = 2,
+  del = 3,
+  create_dir = 4,
+};
+
+enum class pe_encoding : std::uint8_t {
+  ascii = 1,
+  mcoded7 = 2,
+  mcoded7zlib = 3,
+};
+
 template <std::size_t Size> using byte_array = std::array<std::byte, Size>;
+
+namespace details {
 
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
@@ -58,18 +142,22 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
 }
 
 template <std::size_t Size>
-[[nodiscard]] constexpr std::array<std::uint8_t, Size> from_array(std::array<std::byte, Size> const &other) noexcept {
+[[nodiscard]] constexpr std::array<std::uint8_t, Size> from_byte_array(
+    std::array<std::byte, Size> const &other) noexcept {
   std::array<std::uint8_t, Size> result{};
   std::ranges::transform(other, std::begin(result), [](std::byte const v) { return to_underlying(v); });
   return result;
 }
 
 template <std::size_t Size>
-[[nodiscard]] constexpr std::array<std::byte, Size> to_array(std::array<std::uint8_t, Size> const &other) noexcept {
+[[nodiscard]] constexpr std::array<std::byte, Size> to_byte_array(
+    std::array<std::uint8_t, Size> const &other) noexcept {
   std::array<std::byte, Size> result{};
   std::ranges::transform(other, std::begin(result), [](std::uint8_t const v) { return std::byte{v}; });
   return result;
 }
+
+}  // end namespace details
 
 namespace packed {
 
@@ -82,6 +170,7 @@ struct header {
   /// - 7F: To/from Function Block
   std::byte source;
   std::byte sub_id_1;  ///< 0x0D
+  /// The MIDI-CI message. Will be one of the values from the midi2::ci::message enum.
   std::byte sub_id_2;
   /// MIDI-CI Message Version/Format
   std::byte version;
@@ -133,8 +222,8 @@ constexpr header::operator packed::header() const noexcept {
                         .sub_id_1 = s7_midi_ci,
                         .sub_id_2 = std::byte{0},  // message type
                         .version = static_cast<std::byte>(version),
-                        .source_muid = ci::to_le7(remote_muid),
-                        .destination_muid = ci::to_le7(local_muid)};
+                        .source_muid = ci::details::to_le7(remote_muid),
+                        .destination_muid = ci::details::to_le7(local_muid)};
 }
 
 //*     _ _                              *
@@ -194,28 +283,28 @@ struct discovery {
 };
 
 constexpr discovery discovery::make(packed::discovery_v1 const &v1, std::uint8_t output_path_id) noexcept {
-  return discovery{.manufacturer = from_array(v1.manufacturer),
-                   .family = from_le7(v1.family),
-                   .model = from_le7(v1.model),
-                   .version = from_array(v1.version),
-                   .capability = from_le7(v1.capability),
-                   .max_sysex_size = from_le7(v1.max_sysex_size),
+  return discovery{.manufacturer = details::from_byte_array(v1.manufacturer),
+                   .family = details::from_le7(v1.family),
+                   .model = details::from_le7(v1.model),
+                   .version = details::from_byte_array(v1.version),
+                   .capability = details::from_le7(v1.capability),
+                   .max_sysex_size = details::from_le7(v1.max_sysex_size),
                    .output_path_id = output_path_id};
 }
 constexpr discovery discovery::make(packed::discovery_v2 const &v2) noexcept {
-  return make(v2.v1, from_le7(v2.output_path_id));
+  return make(v2.v1, details::from_le7(v2.output_path_id));
 }
 
 constexpr discovery::operator packed::discovery_v1() const noexcept {
-  return {.manufacturer = to_array(manufacturer),
-          .family = to_le7(family),
-          .model = to_le7(model),
-          .version = to_array(version),
+  return {.manufacturer = details::to_byte_array(manufacturer),
+          .family = details::to_le7(family),
+          .model = details::to_le7(model),
+          .version = details::to_byte_array(version),
           .capability = static_cast<std::byte>(capability),
-          .max_sysex_size = to_le7(max_sysex_size)};
+          .max_sysex_size = details::to_le7(max_sysex_size)};
 }
 constexpr discovery::operator packed::discovery_v2() const noexcept {
-  return {.v1 = static_cast<packed::discovery_v1>(*this), .output_path_id = to_le7(output_path_id)};
+  return {.v1 = static_cast<packed::discovery_v1>(*this), .output_path_id = details::to_le7(output_path_id)};
 }
 
 //*     _ _                                            _       *
@@ -279,26 +368,26 @@ struct discovery_reply {
 };
 constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const &v1, std::uint8_t output_path_id,
                                                 std::uint8_t function_block) noexcept {
-  return {.manufacturer = from_array(v1.manufacturer),
-          .family = from_le7(v1.family),
-          .model = from_le7(v1.model),
-          .version = from_array(v1.version),
-          .capability = from_le7(v1.capability),
-          .max_sysex_size = from_le7(v1.max_sysex_size),
+  return {.manufacturer = details::from_byte_array(v1.manufacturer),
+          .family = details::from_le7(v1.family),
+          .model = details::from_le7(v1.model),
+          .version = details::from_byte_array(v1.version),
+          .capability = details::from_le7(v1.capability),
+          .max_sysex_size = details::from_le7(v1.max_sysex_size),
           .output_path_id = output_path_id,
           .function_block = function_block};
 }
 constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v2 const &v2) noexcept {
-  return make(v2.v1, from_le7(v2.output_path_id), from_le7(v2.function_block));
+  return make(v2.v1, details::from_le7(v2.output_path_id), details::from_le7(v2.function_block));
 }
 
 constexpr discovery_reply::operator packed::discovery_reply_v1() const noexcept {
-  return packed::discovery_reply_v1{.manufacturer = to_array(manufacturer),
-                                    .family = to_le7(family),
-                                    .model = to_le7(model),
-                                    .version = to_array(version),
+  return packed::discovery_reply_v1{.manufacturer = details::to_byte_array(manufacturer),
+                                    .family = details::to_le7(family),
+                                    .model = details::to_le7(model),
+                                    .version = details::to_byte_array(version),
                                     .capability = static_cast<std::byte>(capability),
-                                    .max_sysex_size = to_le7(max_sysex_size)};
+                                    .max_sysex_size = details::to_le7(max_sysex_size)};
 }
 constexpr discovery_reply::operator packed::discovery_reply_v2() const noexcept {
   return {.v1 = static_cast<packed::discovery_reply_v1>(*this),
@@ -373,12 +462,13 @@ struct endpoint_info_reply {
 };
 
 constexpr endpoint_info_reply endpoint_info_reply::make(packed::endpoint_info_reply_v1 const &other) noexcept {
-  return {.status = from_le7(other.status), .information{std::begin(other.data), from_le7(other.data_length)}};
+  return {.status = details::from_le7(other.status),
+          .information{std::begin(other.data), details::from_le7(other.data_length)}};
 }
 
 constexpr endpoint_info_reply::operator packed::endpoint_info_reply_v1() const noexcept {
-  return {.status = to_le7(status),
-          .data_length = to_le7(static_cast<std::uint16_t>(information.size())),
+  return {.status = details::to_le7(status),
+          .data_length = details::to_le7(static_cast<std::uint16_t>(information.size())),
           .data = {std::byte{0}}};
 }
 
@@ -408,11 +498,11 @@ struct invalidate_muid {
 };
 
 constexpr invalidate_muid invalidate_muid::make(packed::invalidate_muid_v1 const &other) noexcept {
-  return {.target_muid = from_le7(other.target_muid)};
+  return {.target_muid = details::from_le7(other.target_muid)};
 }
 
 constexpr invalidate_muid::operator packed::invalidate_muid_v1() const noexcept {
-  return {.target_muid = to_le7(target_muid)};
+  return {.target_muid = details::to_le7(target_muid)};
 }
 
 //*          _    *
@@ -454,19 +544,19 @@ struct ack {
 };
 
 constexpr ack ack::make(packed::ack_v1 const &other) noexcept {
-  return {.original_id = from_le7(other.original_id),
-          .status_code = from_le7(other.status_code),
-          .status_data = from_le7(other.status_data),
+  return {.original_id = details::from_le7(other.original_id),
+          .status_code = details::from_le7(other.status_code),
+          .status_data = details::from_le7(other.status_data),
           .details = other.details,
-          .message = std::span<std::byte const>{std::begin(other.message), from_le7(other.message_length)}};
+          .message = std::span<std::byte const>{std::begin(other.message), details::from_le7(other.message_length)}};
 }
 
 constexpr ack::operator packed::ack_v1() const noexcept {
-  return {.original_id = to_le7(original_id),
-          .status_code = to_le7(status_code),
-          .status_data = to_le7(status_data),
+  return {.original_id = details::to_le7(original_id),
+          .status_code = details::to_le7(status_code),
+          .status_data = details::to_le7(status_data),
           .details = details,
-          .message_length = to_le7(static_cast<std::uint16_t>(message.size())),
+          .message_length = details::to_le7(static_cast<std::uint16_t>(message.size())),
           .message{std::byte{0}}};
 }
 
@@ -528,18 +618,18 @@ constexpr nak nak::make(packed::nak_v2 const &other) noexcept {
              .status_code = to_underlying(other.status_code),
              .status_data = to_underlying(other.status_data),
              .details = other.details,
-             .message = std::span<std::byte const>{std::begin(other.message), from_le7(other.message_length)}};
+             .message = std::span<std::byte const>{std::begin(other.message), details::from_le7(other.message_length)}};
 }
 
 constexpr nak::operator packed::nak_v1() const noexcept {
   return {};
 }
 constexpr nak::operator packed::nak_v2() const noexcept {
-  return {.original_id = to_le7(original_id),
-          .status_code = to_le7(status_code),
-          .status_data = to_le7(status_data),
+  return {.original_id = details::to_le7(original_id),
+          .status_code = details::to_le7(status_code),
+          .status_data = details::to_le7(status_data),
           .details = details,
-          .message_length = to_le7(static_cast<std::uint16_t>(message.size())),
+          .message_length = details::to_le7(static_cast<std::uint16_t>(message.size())),
           .message = {std::byte{0}}};
 }
 
@@ -605,16 +695,16 @@ struct inquiry_reply {
 constexpr inquiry_reply inquiry_reply::make(packed::inquiry_reply_v1_pt1 const &v1_pt1,
                                             packed::inquiry_reply_v1_pt2 const &v1_pt2) noexcept {
   return {
-      .enabled = std::span<byte_array<5> const>{std::begin(v1_pt1.ids), from_le7(v1_pt1.num_enabled)},
-      .disabled = std::span<byte_array<5> const>{std::begin(v1_pt2.ids), from_le7(v1_pt2.num_disabled)},
+      .enabled = std::span<byte_array<5> const>{std::begin(v1_pt1.ids), details::from_le7(v1_pt1.num_enabled)},
+      .disabled = std::span<byte_array<5> const>{std::begin(v1_pt2.ids), details::from_le7(v1_pt2.num_disabled)},
   };
 }
 
 constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt1() const noexcept {
-  return {.num_enabled = to_le7(static_cast<std::uint16_t>(enabled.size())), .ids = {byte_array<5>{}}};
+  return {.num_enabled = details::to_le7(static_cast<std::uint16_t>(enabled.size())), .ids = {byte_array<5>{}}};
 }
 constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt2() const noexcept {
-  return {.num_disabled = to_le7(static_cast<std::uint16_t>(disabled.size())), .ids = {byte_array<5>{}}};
+  return {.num_disabled = details::to_le7(static_cast<std::uint16_t>(disabled.size())), .ids = {byte_array<5>{}}};
 }
 
 //*                __ _ _               _    _        _  *
@@ -690,7 +780,9 @@ struct details {
   [[nodiscard]] static constexpr details make(packed::details_v1 const &other) noexcept {
     return {.pid = other.pid, .target = to_underlying(other.target)};
   }
-  explicit constexpr operator packed::details_v1() const noexcept { return {.pid = pid, .target = to_le7(target)}; }
+  explicit constexpr operator packed::details_v1() const noexcept {
+    return {.pid = pid, .target = ci::details::to_le7(target)};
+  }
   constexpr bool operator==(details const &) const noexcept = default;
 
   byte_array<5> pid{};
@@ -731,14 +823,15 @@ struct details_reply {
 constexpr details_reply details_reply::make(packed::details_reply_v1 const &other) noexcept {
   return {.pid = other.pid,
           .target = to_underlying(other.target),
-          .data = std::span<std::byte const>{std::begin(other.data), from_le7(other.data_length)}};
+          .data = std::span<std::byte const>{std::begin(other.data), ci::details::from_le7(other.data_length)}};
 }
 
 constexpr details_reply::operator packed::details_reply_v1() const noexcept {
   return {
       .pid = pid,
       .target = static_cast<std::byte>(target),
-      .data_length = to_le7(static_cast<std::uint16_t>(data.size_bytes())),  ///< Inquiry target data length (LSB first)
+      .data_length = ci::details::to_le7(
+          static_cast<std::uint16_t>(data.size_bytes())),  ///< Inquiry target data length (LSB first)
       .data = {std::byte{0}},
   };
 }
@@ -788,13 +881,13 @@ constexpr on on::make(packed::on_v1 const &other, std::uint16_t num_channels) no
   return {.pid = other.pid, .num_channels = num_channels};
 }
 constexpr on on::make(packed::on_v2 const &other) noexcept {
-  return make(other.v1, from_le7(other.num_channels));
+  return make(other.v1, ci::details::from_le7(other.num_channels));
 }
 constexpr on::operator packed::on_v1() const noexcept {
   return {.pid = pid};
 }
 constexpr on::operator packed::on_v2() const noexcept {
-  return packed::on_v2{.v1 = static_cast<packed::on_v1>(*this), .num_channels = to_le7(num_channels)};
+  return packed::on_v2{.v1 = static_cast<packed::on_v1>(*this), .num_channels = ci::details::to_le7(num_channels)};
 }
 
 //*                __ _ _            __  __  *
@@ -894,7 +987,7 @@ constexpr enabled enabled::make(packed::enabled_v1 const &other, std::uint16_t n
   return {.pid = other.pid, .num_channels = num_channels};
 }
 constexpr enabled enabled::make(packed::enabled_v2 const &other) noexcept {
-  return make(other.v1, from_le7(other.num_channels));
+  return make(other.v1, ci::details::from_le7(other.num_channels));
 }
 constexpr enabled::operator packed::enabled_v1() const noexcept {
   return {.pid = pid};
@@ -902,7 +995,7 @@ constexpr enabled::operator packed::enabled_v1() const noexcept {
 constexpr enabled::operator packed::enabled_v2() const noexcept {
   return {
       .v1 = static_cast<packed::enabled_v1>(*this),
-      .num_channels = to_le7(num_channels),
+      .num_channels = ci::details::to_le7(num_channels),
   };
 }
 
@@ -951,13 +1044,13 @@ constexpr disabled disabled::make(packed::disabled_v1 const &other) noexcept {
   return {.pid = other.pid};
 }
 constexpr disabled disabled::make(packed::disabled_v2 const &other) noexcept {
-  return {.pid = other.v1.pid, .num_channels = from_le7(other.num_channels)};
+  return {.pid = other.v1.pid, .num_channels = ci::details::from_le7(other.num_channels)};
 }
 constexpr disabled::operator packed::disabled_v1() const noexcept {
   return {.pid = pid};
 }
 constexpr disabled::operator packed::disabled_v2() const noexcept {
-  return {.v1 = static_cast<packed::disabled_v1>(*this), .num_channels = to_le7(num_channels)};
+  return {.v1 = static_cast<packed::disabled_v1>(*this), .num_channels = ci::details::to_le7(num_channels)};
 }
 
 //*                __ _ _                       _  __ _         _      _         *
@@ -995,13 +1088,13 @@ struct specific_data {
 constexpr specific_data specific_data::make(packed::specific_data_v1 const &other) noexcept {
   return {
       .pid = other.pid,
-      .data = std::span<std::byte const>{std::begin(other.data), from_le7(other.data_length)},
+      .data = std::span<std::byte const>{std::begin(other.data), ci::details::from_le7(other.data_length)},
   };
 }
 constexpr specific_data::operator packed::specific_data_v1() const noexcept {
   return {
       .pid = pid,
-      .data_length = to_le7(static_cast<std::uint16_t>(data.size_bytes())),
+      .data_length = ci::details::to_le7(static_cast<std::uint16_t>(data.size_bytes())),
       .data = {std::byte{0}},
   };
 }
@@ -1190,15 +1283,15 @@ public:
   explicit constexpr operator packed::property_exchange_pt1() const noexcept {
     return {
         .request_id = static_cast<std::byte>(request),
-        .header_length = to_le7(static_cast<std::uint16_t>(header.size())),
+        .header_length = details::to_le7(static_cast<std::uint16_t>(header.size())),
         .header = {std::byte{0}},
     };
   }
   explicit constexpr operator packed::property_exchange_pt2() const noexcept {
     return {
-        .number_of_chunks = to_le7(chunk.number_of_chunks),
-        .chunk_number = to_le7(chunk.chunk_number),
-        .data_length = to_le7(static_cast<std::uint16_t>(data.size())),
+        .number_of_chunks = details::to_le7(chunk.number_of_chunks),
+        .chunk_number = details::to_le7(chunk.chunk_number),
+        .data_length = details::to_le7(static_cast<std::uint16_t>(data.size())),
         .data = {std::byte{0}},
     };
   }
