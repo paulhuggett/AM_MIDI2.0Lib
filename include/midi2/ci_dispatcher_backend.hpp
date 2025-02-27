@@ -18,7 +18,7 @@ namespace midi2::ci::dispatcher_backend {
 // clang-format off
 template <typename T, typename Context>
 concept system = requires(T v, Context context) {
-  { v.check_muid(context, std::uint8_t{} /*group*/, std::uint32_t{} /*muid*/) } -> std::convertible_to<bool>;
+  { v.check_muid(context, std::uint8_t{} /*group*/, muid{}) } -> std::convertible_to<bool>;
   { v.unknown_midici(context, header{}) } -> std::same_as<void>;
   { v.buffer_overflow(context) } -> std::same_as<void>;
 };
@@ -27,8 +27,8 @@ template <typename T, typename Context>
 concept management = requires(T v, Context context) {
   { v.discovery(context, header{}, ci::discovery{}) } -> std::same_as<void>;
   { v.discovery_reply(context, header{}, ci::discovery_reply{}) } -> std::same_as<void>;
-  { v.endpoint_info(context, header{}, ci::endpoint_info{}) } -> std::same_as<void>;
-  { v.endpoint_info_reply(context, header{}, ci::endpoint_info_reply{}) } -> std::same_as<void>;
+  { v.endpoint(context, header{}, ci::endpoint{}) } -> std::same_as<void>;
+  { v.endpoint_reply(context, header{}, ci::endpoint_reply{}) } -> std::same_as<void>;
   { v.invalidate_muid(context, header{}, ci::invalidate_muid{}) } -> std::same_as<void>;
   { v.ack(context, header{}, ci::ack{}) } -> std::same_as<void>;
   { v.nak(context, header{}, ci::nak{}) } -> std::same_as<void>;
@@ -76,15 +76,15 @@ concept process_inquiry = requires(T v, Context context) {
 
 // clang-format off
 template <typename Context> struct system_null {
-  constexpr static bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) { return false; }
+  constexpr static bool check_muid(Context, std::uint8_t /*group*/, muid) { return false; }
   constexpr static void unknown_midici(Context, header const &) { /* do nothing */ }
   constexpr static void buffer_overflow(Context) { /* do nothing */ }
 };
 template <typename Context> struct management_null {
   constexpr static void discovery(Context, header const &, ci::discovery const &) { /* do nothing */ }
   constexpr static void discovery_reply(Context, header const &, ci::discovery_reply const &) { /* do nothing */ }
-  constexpr static void endpoint_info(Context, header const &, ci::endpoint_info const &) { /* do nothing*/ }
-  constexpr static void endpoint_info_reply(Context, header const &, ci::endpoint_info_reply const &) { /* do nothing */ }
+  constexpr static void endpoint(Context, header const &, ci::endpoint const &) { /* do nothing*/ }
+  constexpr static void endpoint_reply(Context, header const &, ci::endpoint_reply const &) { /* do nothing */ }
   constexpr static void invalidate_muid(Context, header const &, ci::invalidate_muid const &) { /* do nothing */ }
   constexpr static void ack(Context, header const &, ci::ack const &) { /* do nothing */ }
   constexpr static void nak(Context, header const &, ci::nak const &) { /* do nothing */ }
@@ -139,7 +139,7 @@ template <typename Context> struct system_pure {
   constexpr system_pure &operator=(system_pure const &) noexcept = default;
   constexpr system_pure &operator=(system_pure &&) noexcept = default;
 
-  virtual bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) = 0;
+  virtual bool check_muid(Context, std::uint8_t /*group*/, muid) = 0;
   virtual void unknown_midici(Context, header const &) = 0;
   virtual void buffer_overflow(Context) = 0;
 };
@@ -154,8 +154,8 @@ template <typename Context> struct management_pure {
 
   virtual void discovery(Context, header const &, ci::discovery const &) = 0;
   virtual void discovery_reply(Context, header const &, ci::discovery_reply const &) = 0;
-  virtual void endpoint_info(Context, header const &, ci::endpoint_info const &) = 0;
-  virtual void endpoint_info_reply(Context, header const &, ci::endpoint_info_reply const &) = 0;
+  virtual void endpoint(Context, header const &, ci::endpoint const &) = 0;
+  virtual void endpoint_reply(Context, header const &, ci::endpoint_reply const &) = 0;
   virtual void invalidate_muid(Context, header const &, ci::invalidate_muid const &) = 0;
   virtual void ack(Context, header const &, ci::ack const &) = 0;
   virtual void nak(Context, header const &, ci::nak const &) = 0;
@@ -232,8 +232,8 @@ template <typename Context> struct management_base : management_pure<Context> {
 
   void discovery(Context, header const &, ci::discovery const &) override { /* do nothing */ }
   void discovery_reply(Context, header const &, ci::discovery_reply const &) override { /* do nothing */ }
-  void endpoint_info(Context, header const &, ci::endpoint_info const &) override { /* do nothing*/ }
-  void endpoint_info_reply(Context, header const &, ci::endpoint_info_reply const &) override { /* do nothing */ }
+  void endpoint(Context, header const &, ci::endpoint const &) override { /* do nothing*/ }
+  void endpoint_reply(Context, header const &, ci::endpoint_reply const &) override { /* do nothing */ }
   void invalidate_muid(Context, header const &, ci::invalidate_muid const &) override { /* do nothing */ }
   void ack(Context, header const &, ci::ack const &) override { /* do nothing */ }
   void nak(Context, header const &, ci::nak const &) override { /* do nothing */ }
@@ -275,7 +275,7 @@ template <typename Context> struct process_inquiry_base : process_inquiry_pure<C
 
 template <typename Context> class system_function {
 public:
-  using check_muid_fn = std::function<bool(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/)>;
+  using check_muid_fn = std::function<bool(Context, std::uint8_t /*group*/, muid)>;
   using unknown_fn = std::function<void(Context, header const &)>;
   using buffer_overflow_fn = std::function<void(Context)>;
 
@@ -292,8 +292,8 @@ public:
     return *this;
   }
 
-  bool check_muid(Context context, std::uint8_t group, std::uint32_t muid) const {
-    return check_muid_ ? check_muid_(std::move(context), group, muid) : false;
+  bool check_muid(Context context, std::uint8_t group, muid m) const {
+    return check_muid_ ? check_muid_(std::move(context), group, m) : false;
   }
   void unknown_midici(Context context, header const &ci) const { call(unknown_, std::move(context), ci); }
   void buffer_overflow(Context context) const { call(overflow_, std::move(context)); }
@@ -308,8 +308,8 @@ template <typename Context> class management_function {
 public:
   using discovery_fn = std::function<void(Context, header const &, ci::discovery const &)>;
   using discovery_reply_fn = std::function<void(Context, header const &, ci::discovery_reply const &)>;
-  using endpoint_info_fn = std::function<void(Context, header const &, ci::endpoint_info const &)>;
-  using endpoint_info_reply_fn = std::function<void(Context, header const &, ci::endpoint_info_reply const &)>;
+  using endpoint_fn = std::function<void(Context, header const &, ci::endpoint const &)>;
+  using endpoint_reply_fn = std::function<void(Context, header const &, ci::endpoint_reply const &)>;
   using invalidate_muid_fn = std::function<void(Context, header const &, ci::invalidate_muid const &)>;
   using ack_fn = std::function<void(Context, header const &, ci::ack const &)>;
   using nak_fn = std::function<void(Context, header const &, ci::nak const &)>;
@@ -322,12 +322,12 @@ public:
     discovery_reply_ = std::move(discovery_reply);
     return *this;
   }
-  constexpr management_function &on_endpoint_info(endpoint_info_fn endpoint_info) {
-    endpoint_info_ = std::move(endpoint_info);
+  constexpr management_function &on_endpoint(endpoint_fn endpoint) {
+    endpoint_ = std::move(endpoint);
     return *this;
   }
-  constexpr management_function &on_endpoint_info_reply(endpoint_info_reply_fn endpoint_info_reply) {
-    endpoint_info_reply_ = std::move(endpoint_info_reply);
+  constexpr management_function &on_endpoint_reply(endpoint_reply_fn endpoint_reply) {
+    endpoint_reply_ = std::move(endpoint_reply);
     return *this;
   }
   constexpr management_function &on_invalidate_muid(invalidate_muid_fn invalidate_muid) {
@@ -349,11 +349,11 @@ public:
   void discovery_reply(Context context, header const &ci, ci::discovery_reply const &dr) const {
     call(discovery_reply_, std::move(context), ci, dr);
   }
-  void endpoint_info(Context context, header const &ci, ci::endpoint_info const &epi) const {
-    call(endpoint_info_, std::move(context), ci, epi);
+  void endpoint(Context context, header const &ci, ci::endpoint const &epi) const {
+    call(endpoint_, std::move(context), ci, epi);
   }
-  void endpoint_info_reply(Context context, header const &ci, ci::endpoint_info_reply const &epir) const {
-    call(endpoint_info_reply_, std::move(context), ci, epir);
+  void endpoint_reply(Context context, header const &ci, ci::endpoint_reply const &epir) const {
+    call(endpoint_reply_, std::move(context), ci, epir);
   }
   void invalidate_muid(Context context, header const &ci, ci::invalidate_muid const &im) const {
     call(invalidate_muid_, std::move(context), ci, im);
@@ -364,8 +364,8 @@ public:
 private:
   discovery_fn discovery_;
   discovery_reply_fn discovery_reply_;
-  endpoint_info_fn endpoint_info_;
-  endpoint_info_reply_fn endpoint_info_reply_;
+  endpoint_fn endpoint_;
+  endpoint_reply_fn endpoint_reply_;
   invalidate_muid_fn invalidate_muid_;
   ack_fn ack_;
   nak_fn nak_;

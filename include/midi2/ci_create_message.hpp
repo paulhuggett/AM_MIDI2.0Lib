@@ -37,13 +37,13 @@ template <> struct type_to_packed<discovery_reply> {
   using v1 = packed::discovery_reply_v1;
   using v2 = packed::discovery_reply_v2;
 };
-template <> struct type_to_packed<endpoint_info> {
-  static constexpr auto id = message::endpoint_info;
-  using v1 = packed::endpoint_info_v1;
-  using v2 = packed::endpoint_info_v1;
+template <> struct type_to_packed<endpoint> {
+  static constexpr auto id = message::endpoint;
+  using v1 = packed::endpoint_v1;
+  using v2 = packed::endpoint_v1;
 };
-template <> struct type_to_packed<endpoint_info_reply> {
-  static constexpr auto id = message::endpoint_info_reply;
+template <> struct type_to_packed<endpoint_reply> {
+  static constexpr auto id = message::endpoint_reply;
 };
 template <> struct type_to_packed<invalidate_muid> {
   static constexpr auto id = message::invalidate_muid;
@@ -242,7 +242,7 @@ struct trivial_sentinel {
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, header const &hdr, T const &t) {
-  if (hdr.version == 1) {
+  if (hdr.version == b7{1U}) {
     using v1_type = details::type_to_packed<T>::v1;
     if constexpr (!std::is_same_v<v1_type, details::not_available>) {
       first = details::write_header_body<v1_type>(first, last, hdr, t);
@@ -253,12 +253,12 @@ constexpr O create_message(O first, S const last, header const &hdr, T const &t)
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, endpoint_info_reply const &reply) {
-  first = details::write_header(first, last, hdr, details::type_to_packed<endpoint_info_reply>::id);
-  auto const v1 = static_cast<packed::endpoint_info_reply_v1>(reply);
+constexpr O create_message(O first, S const last, header const &hdr, endpoint_reply const &reply) {
+  first = details::write_header(first, last, hdr, details::type_to_packed<endpoint_reply>::id);
+  auto const v1 = static_cast<packed::endpoint_reply_v1>(reply);
   static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
   return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
-                                         offsetof(packed::endpoint_info_reply_v1, data), reply.information);
+                                         offsetof(packed::endpoint_reply_v1, data), reply.information);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -273,7 +273,7 @@ constexpr O create_message(O first, S const last, header const &hdr, struct ack 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S last, header const &hdr, struct nak const &nak) {
   first = details::write_header(first, last, hdr, details::type_to_packed<struct nak>::id);
-  if (hdr.version == 1) {
+  if (hdr.version == b7{1U}) {
     return first;
   }
   auto const v2 = static_cast<packed::nak_v2>(nak);

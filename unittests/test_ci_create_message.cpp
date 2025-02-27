@@ -40,6 +40,7 @@ using midi2::ci::byte_array;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
 using midi2::ci::details::to_le7;
+using namespace midi2::ci::literals;
 
 class CICreateMessage : public testing::Test {
 protected:
@@ -82,17 +83,18 @@ TEST_F(CICreateMessage, DiscoveryV1) {
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 1,
-                                  .remote_muid = 0,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 1_b7,
+                                  .remote_muid = midi2::ci::muid{0U},
                                   .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = from_byte_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
                                            .version = from_byte_array(version),
-                                           .capability = midi2::to_underlying(capability),
+                                           .capability = from_le7(capability),
                                            .max_sysex_size = from_le7(max_sysex_size)};
-  EXPECT_THAT(make_message(hdr, discovery), testing::ElementsAreArray(expected));
+  auto const message = make_message(hdr, discovery);
+  EXPECT_THAT(message, testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, DiscoveryV2) {
@@ -124,17 +126,17 @@ TEST_F(CICreateMessage, DiscoveryV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 2,
-                                  .remote_muid = 0,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 2_b7,
+                                  .remote_muid = midi2::ci::muid{0U},
                                   .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery discovery{.manufacturer = from_byte_array(manufacturer),
                                            .family = from_le7(family),
                                            .model = from_le7(model),
                                            .version = from_byte_array(version),
-                                           .capability = midi2::to_underlying(capability),
+                                           .capability = from_le7(capability),
                                            .max_sysex_size = from_le7(max_sysex_size),
-                                           .output_path_id = midi2::to_underlying(output_path_id)};
+                                           .output_path_id = from_le7(output_path_id)};
   EXPECT_THAT(make_message(hdr, discovery), testing::ElementsAreArray(expected));
 }
 
@@ -169,24 +171,24 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 2,
-                                  .remote_muid = 0,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 2_b7,
+                                  .remote_muid = midi2::ci::muid{0U},
                                   .local_muid = midi2::ci::broadcast_muid};
   constexpr midi2::ci::discovery_reply reply{.manufacturer = from_byte_array(manufacturer),
                                              .family = from_le7(family),
                                              .model = from_le7(model),
                                              .version = from_byte_array(version),
-                                             .capability = midi2::to_underlying(capability),
+                                             .capability = from_le7(capability),
                                              .max_sysex_size = from_le7(max_sysex_size),
-                                             .output_path_id = midi2::to_underlying(output_path_id),
-                                             .function_block = midi2::to_underlying(function_block)};
+                                             .output_path_id = from_le7(output_path_id),
+                                             .function_block = from_le7(function_block)};
   EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
 
-TEST_F(CICreateMessage, EndpointInfo) {
+TEST_F(CICreateMessage, Endpoint) {
   constexpr auto device_id = 0x7F_b;
-  constexpr auto status = std::uint8_t{0b0101010};
+  constexpr auto status = std::byte{0b0101010};
   constexpr std::array const receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   // clang-format off
@@ -194,23 +196,23 @@ TEST_F(CICreateMessage, EndpointInfo) {
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to MIDI Port
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint_info)),
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
-    std::byte{status}, // Status
+    status, // Status
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 1,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 1_b7,
                                   .remote_muid = from_le7(sender_muid_),
                                   .local_muid = from_le7(receiver_muid)};
-  constexpr midi2::ci::endpoint_info endpoint_info{.status = status};
-  EXPECT_THAT(make_message(hdr, endpoint_info), testing::ElementsAreArray(expected));
+  constexpr midi2::ci::endpoint endpoint{.status = from_le7(status)};
+  EXPECT_THAT(make_message(hdr, endpoint), testing::ElementsAreArray(expected));
 }
 
-TEST_F(CICreateMessage, EndpointInfoReply) {
+TEST_F(CICreateMessage, EndpointReply) {
   constexpr auto device_id = 0x7F_b;
   constexpr auto status = 0b0101010_b;
   constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
@@ -219,14 +221,14 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
       2_b,  3_b,  5_b,  7_b,  // Information data
       11_b, 13_b, 17_b, 19_b,
   };
-  ASSERT_EQ(from_le7(length), information.size());
+  ASSERT_EQ(from_le7(length).get(), information.size());
 
   // clang-format off
   constexpr std::array expected{
     midi2::s7_universal_nrt, // Universal System Exclusive
     device_id, // Device ID: 0x7F = to Function Block
     midi2::s7_midi_ci, // Universal System Exclusive Sub-ID#1: MIDI-CI
-    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint_info_reply)),
+    static_cast<std::byte>(midi2::to_underlying(midi2::ci::message::endpoint_reply)),
     1_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
@@ -237,13 +239,14 @@ TEST_F(CICreateMessage, EndpointInfoReply) {
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 1,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 1_b7,
                                   .remote_muid = from_le7(sender_muid_),
                                   .local_muid = from_le7(receiver_muid)};
-
-  // Test create_message()
-  midi2::ci::endpoint_info_reply const reply{.status = from_le7(status), .information = information};
+  std::vector<midi2::ci::b7> reply_information;
+  std::ranges::transform(information, std::back_inserter(reply_information),
+                         [](std::byte const v) { return from_le7(v); });
+  midi2::ci::endpoint_reply const reply{.status = from_le7(status), .information = reply_information};
   EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
 
@@ -265,8 +268,8 @@ TEST_F(CICreateMessage, InvalidateMuid) {
   };
   // clang-format on
 
-  constexpr midi2::ci::header hdr{.device_id = midi2::to_underlying(device_id),
-                                  .version = 1,
+  constexpr midi2::ci::header hdr{.device_id = from_le7(device_id),
+                                  .version = 1_b7,
                                   .remote_muid = from_le7(sender_muid_),
                                   .local_muid = from_le7(receiver_muid)};
   constexpr midi2::ci::invalidate_muid invalidate_muid{.target_muid = from_le7(target_muid)};
@@ -282,9 +285,8 @@ TEST_F(CICreateMessage, Ack) {
   constexpr auto ack_status_data = 0x7F_b;
   constexpr auto ack_details = std::array{0x01_b, 0x02_b, 0x03_b, 0x04_b, 0x05_b};
   constexpr auto text_length = std::array{0x05_b, 0x00_b};
-  static constexpr auto text =
-      std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
-  ASSERT_EQ(from_le7(text_length), text.size());
+  static constexpr auto text = std::array{'H'_b7, 'e'_b7, 'l'_b7, 'l'_b7, 'o'_b7};
+  ASSERT_EQ(from_le7(text_length).get(), text.size());
 
   // clang-format off
   constexpr std::array expected{
@@ -300,21 +302,21 @@ TEST_F(CICreateMessage, Ack) {
     ack_status_data, // ACK Status Data
     ack_details[0], ack_details[1], ack_details[2], ack_details[3], ack_details[4],
     text_length[0], text_length[1],
-    text[0], text[1], text[2], text[3], text[4],
+    std::byte{text[0].get()}, std::byte{text[1].get()}, std::byte{text[2].get()}, std::byte{text[3].get()}, std::byte{text[4].get()},
   };
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(device_id),
-      .version = 1,
+      .device_id = from_le7(device_id),
+      .version = 1_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
   constexpr midi2::ci::ack ack{
-      .original_id = midi2::to_underlying(original_id),
-      .status_code = midi2::to_underlying(ack_status_code),
-      .status_data = midi2::to_underlying(ack_status_data),
-      .details = ack_details,
+      .original_id = from_le7(original_id),
+      .status_code = from_le7(ack_status_code),
+      .status_data = from_le7(ack_status_data),
+      .details = from_le7(ack_details),
       .message = std::span{text},
   };
   EXPECT_THAT(make_message(hdr, ack), testing::ElementsAreArray(expected));
@@ -337,8 +339,8 @@ TEST_F(CICreateMessage, NakV1) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(device_id),
-      .version = 1,
+      .device_id = from_le7(device_id),
+      .version = 1_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
@@ -354,8 +356,7 @@ TEST_F(CICreateMessage, NakV2) {
   constexpr auto nak_status_data = 0x7F_b;
   constexpr auto nak_details = std::array{0x01_b, 0x02_b, 0x03_b, 0x04_b, 0x05_b};
   constexpr auto text_length = std::array{0x05_b, 0x00_b};
-  static constexpr auto text =
-      std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
+  static constexpr auto text = std::array{'H'_b7, 'e'_b7, 'l'_b7, 'l'_b7, 'o'_b7};
 
   // clang-format off
   constexpr std::array expected{
@@ -371,22 +372,22 @@ TEST_F(CICreateMessage, NakV2) {
     nak_status_data, // NAK Status Data
     nak_details[0], nak_details[1], nak_details[2], nak_details[3], nak_details[4],
     text_length[0], text_length[1],
-    text[0], text[1], text[2], text[3], text[4],
+    std::byte{text[0].get()}, std::byte{text[1].get()}, std::byte{text[2].get()}, std::byte{text[3].get()}, std::byte{text[4].get()},
   };
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(device_id),
-      .version = 2,
+      .device_id = from_le7(device_id),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
   // Test create_message()
   constexpr midi2::ci::nak nak{
-      .original_id = midi2::to_underlying(original_id),
-      .status_code = midi2::to_underlying(nak_status_code),
-      .status_data = midi2::to_underlying(nak_status_data),
-      .details = nak_details,
+      .original_id = from_le7(original_id),
+      .status_code = from_le7(nak_status_code),
+      .status_data = from_le7(nak_status_data),
+      .details = from_le7(nak_details),
       .message = std::span{text},
   };
   EXPECT_THAT(make_message(hdr, nak), testing::ElementsAreArray(expected));
@@ -409,8 +410,8 @@ TEST_F(CICreateMessage, ProfileInquiry) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
@@ -418,14 +419,15 @@ TEST_F(CICreateMessage, ProfileInquiry) {
 }
 
 TEST_F(CICreateMessage, ProfileInquiryReply) {
+  using midi2::ci::profile_configuration::profile;
+
   constexpr auto destination = 0x0F_b;
   constexpr auto receiver_muid = std::array{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
-
-  constexpr auto enabled = std::array<byte_array<5>, 2>{
+  static constexpr auto enabled = std::array{
       byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b},
       byte_array<5>{0x76_b, 0x65_b, 0x54_b, 0x43_b, 0x32_b},
   };
-  constexpr auto disabled = std::array<byte_array<5>, 1>{
+  static constexpr auto disabled = std::array<byte_array<5>, 2>{
       byte_array<5>{0x71_b, 0x61_b, 0x51_b, 0x41_b, 0x31_b},
   };
   // clang-format off
@@ -437,21 +439,26 @@ TEST_F(CICreateMessage, ProfileInquiryReply) {
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
-    2_b, 0_b,
+    2_b, 0_b, // 2 enabled profiles
     enabled[0][0], enabled[0][1], enabled[0][2], enabled[0][3], enabled[0][4],
     enabled[1][0], enabled[1][1], enabled[1][2], enabled[1][3], enabled[1][4],
-    1_b, 0_b,
+    1_b, 0_b, // 1 disabled profile
     disabled[0][0], disabled[0][1], disabled[0][2], disabled[0][3], disabled[0][4],
   };
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(receiver_muid),
   };
-  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::inquiry_reply{enabled, disabled}),
+
+  static constexpr std::array enabled2{profile{from_le7(enabled[0])}, profile{from_le7(enabled[1])}};
+  static constexpr std::array<profile, 1> disabled2{profile{from_le7(disabled[0])}};
+  auto e = std::span<profile const>{enabled2};
+  auto d = std::span<profile const>{disabled2};
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::inquiry_reply{.enabled = e, .disabled = d}),
               testing::ElementsAreArray(expected));
 }
 
@@ -473,12 +480,12 @@ TEST_F(CICreateMessage, ProfileAdded) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(broadcast_muid_),
   };
-  constexpr midi2::ci::profile_configuration::added added{.pid = pid};
+  constexpr midi2::ci::profile_configuration::added added{.pid = from_le7(pid)};
 
   EXPECT_THAT(make_message(hdr, added), testing::ElementsAreArray(expected));
 }
@@ -501,12 +508,12 @@ TEST_F(CICreateMessage, ProfileRemoved) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(broadcast_muid_),
   };
-  constexpr midi2::ci::profile_configuration::removed removed{.pid = pid};
+  constexpr midi2::ci::profile_configuration::removed removed{.pid = from_le7(pid)};
 
   EXPECT_THAT(make_message(hdr, removed), testing::ElementsAreArray(expected));
 }
@@ -530,14 +537,14 @@ TEST_F(CICreateMessage, ProfileDetails) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
   constexpr midi2::ci::profile_configuration::details details{
-      .pid = pid,
-      .target = 0x23,
+      .pid = from_le7(pid),
+      .target = 0x23_b7,
   };
   EXPECT_THAT(make_message(hdr, details), testing::ElementsAreArray(expected));
 }
@@ -547,7 +554,7 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
   constexpr auto pid = byte_array<5>{0x12_b, 0x23_b, 0x34_b, 0x45_b, 0x56_b};
   constexpr auto target = 0x23_b;
   constexpr auto data_length = std::array{0x05_b, 0x00_b};
-  constexpr auto data = std::array{std::byte{'H'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'}, std::byte{'o'}};
+  constexpr auto data = std::array{'H'_b7, 'e'_b7, 'l'_b7, 'l'_b7, 'o'_b7};
 
   // clang-format off
   constexpr std::array expected{
@@ -561,19 +568,19 @@ TEST_F(CICreateMessage, ProfileDetailsReply) {
     pid[0], pid[1], pid[2], pid[3], pid[4], // Profile ID of profile
     target, // Inquiry target
     data_length[0], data_length[1], // Inquiry target data length (LSB first)
-    data[0], data[1], data[2], data[3], data[4],
+    std::byte{data[0].get()}, std::byte{data[1].get()}, std::byte{data[2].get()}, std::byte{data[3].get()}, std::byte{data[4].get()},
   };
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
   using midi2::ci::profile_configuration::details_reply;
 
-  EXPECT_THAT(make_message(hdr, details_reply{pid, midi2::to_underlying(target), data}),
+  EXPECT_THAT(make_message(hdr, details_reply{from_le7(pid), from_le7(target), data}),
               testing::ElementsAreArray(expected));
 }
 
@@ -597,12 +604,12 @@ TEST_F(CICreateMessage, ProfileOn) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::on{pid, from_le7(channels)}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::on{from_le7(pid), from_le7(channels)}),
               testing::ElementsAreArray(expected));
 }
 
@@ -625,12 +632,13 @@ TEST_F(CICreateMessage, ProfileOff) {
   };
   // clang-format on
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::off{pid}), testing::ElementsAreArray(expected));
+  EXPECT_THAT(make_message(hdr, midi2::ci::profile_configuration::off{from_le7(pid)}),
+              testing::ElementsAreArray(expected));
 }
 
 TEST_F(CICreateMessage, ProfileEnabled) {
@@ -652,13 +660,13 @@ TEST_F(CICreateMessage, ProfileEnabled) {
   };
   // clang-format on
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(broadcast_muid_),
   };
   constexpr midi2::ci::profile_configuration::enabled enabled{
-      .pid = pid,
+      .pid = from_le7(pid),
       .num_channels = from_le7(num_channels),
   };
 
@@ -695,22 +703,22 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
 
   auto const as_byte = [](char const c) { return static_cast<std::byte>(c); };
   // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   // Header Body
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U) << "the CI spec mandates that total_chunks==1";
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U) << "the CI spec mandates that total_chunks==1";
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U) << "the CI spec mandates that chunk_number==1";
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U) << "the CI spec mandates that chunk_number==1";
   out = std::ranges::copy(chunk_number, out).out;
   // Property Length
-  ASSERT_EQ(from_le7(data_size), 0) << "data size must be 0";
+  ASSERT_EQ(from_le7(data_size).get(), 0) << "data size must be 0";
   out = std::ranges::copy(data_size, out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -720,7 +728,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = {},
   };
@@ -756,7 +764,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
 
   auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   // Header Body
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
@@ -764,14 +772,14 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   out = std::ranges::copy(total_chunks, out).out;
   out = std::ranges::copy(chunk_number, out).out;
   // Property Length
-  ASSERT_EQ(from_le7(data_size), data.length());
+  ASSERT_EQ(from_le7(data_size).get(), data.length());
   out = std::ranges::copy(data_size, out).out;
   // Property Data
   std::ranges::copy(std::views::transform(data, as_byte), out);
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -781,7 +789,7 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = data,
   };
@@ -818,22 +826,22 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
 
   auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header Size/Body
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U);
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Property Data Size/Body
-  ASSERT_EQ(from_le7(data_size), data.length());
+  ASSERT_EQ(from_le7(data_size).get(), data.length());
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -843,7 +851,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = data,
   };
@@ -879,22 +887,22 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
 
   // Header Size
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   // Header Body
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U);
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Property Length
-  ASSERT_EQ(from_le7(property_data_size), 0);
+  ASSERT_EQ(from_le7(property_data_size).get(), 0);
   out = std::ranges::copy(property_data_size, out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -904,7 +912,7 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = {},
   };
@@ -938,22 +946,22 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
 
   auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header length/body
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U);
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Data length/body
-  ASSERT_EQ(from_le7(data_size), data.length());
+  ASSERT_EQ(from_le7(data_size).get(), data.length());
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -963,7 +971,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = data,
   };
@@ -977,7 +985,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":200,"subscribeId":"sub138047"})"sv;
   constexpr auto data = ""sv;
-  constexpr auto header_size = to_le7(static_cast<std::uint16_t>(header.length()));
+  constexpr auto header_size = to_le7(static_cast<midi2::ci::b14>(header.length()));
   constexpr auto property_data_size = std::array{0_b, 0_b};
 
   // clang-format off
@@ -997,22 +1005,22 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
 
   // Header size/body
-  ASSERT_EQ(from_le7(header_size), header.length());
+  ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U);
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Data length/body
-  ASSERT_EQ(from_le7(property_data_size), data.length());
+  ASSERT_EQ(from_le7(property_data_size).get(), data.length());
   out = std::ranges::copy(property_data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -1022,7 +1030,7 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = data,
   };
@@ -1036,8 +1044,8 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   constexpr auto chunk_number = std::array{1_b, 0_b};
   constexpr auto header = R"({"status":144})"sv;
   constexpr auto data = "data"sv;
-  constexpr auto header_size = to_le7(static_cast<std::uint16_t>(header.size()));
-  constexpr auto data_size = to_le7(static_cast<std::uint16_t>(data.size()));
+  constexpr auto header_size = to_le7(static_cast<midi2::ci::b14>(header.size()));
+  constexpr auto data_size = to_le7(static_cast<midi2::ci::b14>(data.size()));
 
   // clang-format off
   std::vector<std::byte> expected {
@@ -1059,17 +1067,17 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
   out = std::ranges::copy(std::views::transform(header, as_byte), out).out;
   // Total/current chunk numbers
-  ASSERT_EQ(from_le7(total_chunks), 1U);
+  ASSERT_EQ(from_le7(total_chunks).get(), 1U);
   out = std::ranges::copy(total_chunks, out).out;
-  ASSERT_EQ(from_le7(chunk_number), 1U);
+  ASSERT_EQ(from_le7(chunk_number).get(), 1U);
   out = std::ranges::copy(chunk_number, out).out;
   // Data length/body
   out = std::ranges::copy(data_size, out).out;
   out = std::ranges::copy(std::views::transform(data, as_byte), out).out;
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -1079,7 +1087,7 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
               .number_of_chunks = from_le7(total_chunks),
               .chunk_number = from_le7(chunk_number),
           },
-      .request = midi2::to_underlying(request),
+      .request = from_le7(request),
       .header = header,
       .data = data,
   };
@@ -1102,8 +1110,8 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilities) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -1129,12 +1137,12 @@ TEST_F(CICreateMessage, ProcessInquiryCapabilitiesReply) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
-  EXPECT_THAT(make_message(hdr, midi2::ci::process_inquiry::capabilities_reply{features}),
+  EXPECT_THAT(make_message(hdr, midi2::ci::process_inquiry::capabilities_reply{from_le7(features)}),
               testing::ElementsAreArray(expected));
 }
 
@@ -1160,8 +1168,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReport) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -1209,8 +1217,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportReply) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };
@@ -1252,8 +1260,8 @@ TEST_F(CICreateMessage, ProcessInquiryMidiMessageReportEnd) {
   // clang-format on
 
   constexpr midi2::ci::header hdr{
-      .device_id = midi2::to_underlying(destination),
-      .version = 2,
+      .device_id = from_le7(destination),
+      .version = 2_b7,
       .remote_muid = from_le7(sender_muid_),
       .local_muid = from_le7(destination_muid_),
   };

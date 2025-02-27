@@ -25,13 +25,13 @@ jobs:
           - name: macOS-14/Xcode/Debug
             build_type: Debug
             generator: Xcode
-            os: macos-14
+            os: macos-15
             package: TGZ
 
           - name: macOS-14/Xcode/Release
             build_type: Release
             generator: Xcode
-            os: macos-14
+            os: macos-15
             package: TGZ
 
           # Ubuntu builds

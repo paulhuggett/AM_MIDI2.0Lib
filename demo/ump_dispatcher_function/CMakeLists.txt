@@ -1,0 +1,4 @@
+add_executable(demo_ump_dispatcher_function ump_dispatcher_function.cpp)
+target_link_libraries(demo_ump_dispatcher_function PRIVATE midi2)
+setup_target(demo_ump_dispatcher_function)
+add_test(NAME demo-ump-dispatcher-function COMMAND demo_ump_dispatcher_function)

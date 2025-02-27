@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <type_traits>
 
 #include "midi2/ump_types.hpp"
 #include "midi2/utils.hpp"

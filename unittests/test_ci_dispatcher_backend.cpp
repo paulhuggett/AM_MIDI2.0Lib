@@ -54,23 +54,23 @@ TEST_F(CIDispatcherBackendManagement, DiscoveryReply) {
 }
 // NOLINTNEXTLINE
 TEST_F(CIDispatcherBackendManagement, EndpointInfo) {
-  StrictMock<MockFunction<decltype(be_)::endpoint_info_fn>> fn;
+  StrictMock<MockFunction<decltype(be_)::endpoint_fn>> fn;
   midi2::ci::header const hdr{};
-  midi2::ci::endpoint_info const ei{};
-  be_.endpoint_info(context_, hdr, ei);
-  be_.on_endpoint_info(fn.AsStdFunction());
+  midi2::ci::endpoint const ei{};
+  be_.endpoint(context_, hdr, ei);
+  be_.on_endpoint(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, hdr, ei)).Times(1);
-  be_.endpoint_info(context_, hdr, ei);
+  be_.endpoint(context_, hdr, ei);
 }
 // NOLINTNEXTLINE
 TEST_F(CIDispatcherBackendManagement, EndpointInfoReply) {
-  StrictMock<MockFunction<decltype(be_)::endpoint_info_reply_fn>> fn;
+  StrictMock<MockFunction<decltype(be_)::endpoint_reply_fn>> fn;
   midi2::ci::header const hdr{};
-  midi2::ci::endpoint_info_reply const ei{};
-  be_.endpoint_info_reply(context_, hdr, ei);
-  be_.on_endpoint_info_reply(fn.AsStdFunction());
+  midi2::ci::endpoint_reply const ei{};
+  be_.endpoint_reply(context_, hdr, ei);
+  be_.on_endpoint_reply(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, hdr, ei)).Times(1);
-  be_.endpoint_info_reply(context_, hdr, ei);
+  be_.endpoint_reply(context_, hdr, ei);
 }
 // NOLINTNEXTLINE
 TEST_F(CIDispatcherBackendManagement, InvalidateMUID) {
