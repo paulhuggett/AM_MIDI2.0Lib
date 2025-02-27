@@ -1225,7 +1225,11 @@ struct capabilities {
 };
 
 constexpr capabilities capabilities::make(packed::capabilities_v1 const &other) noexcept {
-  return {.num_simultaneous = b7{to_underlying(other.num_simultaneous)}};
+  return {
+      .num_simultaneous = b7{to_underlying(other.num_simultaneous)},
+      .major_version = b7{},
+      .minor_version = b7{},
+  };
 }
 constexpr capabilities capabilities::make(packed::capabilities_v2 const &other) noexcept {
   return {
@@ -1289,6 +1293,8 @@ struct capabilities_reply {
 constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v1 const &other) noexcept {
   return {
       .num_simultaneous = b7{to_underlying(other.num_simultaneous)},
+      .major_version = b7{},
+      .minor_version = b7{},
   };
 }
 constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v2 const &other) noexcept {

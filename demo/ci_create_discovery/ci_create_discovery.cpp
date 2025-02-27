@@ -26,13 +26,16 @@ int main() {
   constexpr std::size_t buffer_size = 256;
   constexpr midi2::ci::header header{
       .device_id = 0_b7, .version = 2_b7, .remote_muid = my_muid, .local_muid = midi2::ci::broadcast_muid};
-  constexpr midi2::ci::discovery_reply discovery{.manufacturer = {0x12_b7, 0x23_b7, 0x34_b7},
-                                                 .family = 0x1779_b14,
-                                                 .model = 0x2B5D_b14,
-                                                 .version = {0x01_b7, 0x00_b7, 0x00_b7, 0x00_b7},
-                                                 .capability = 0x7F_b7,
-                                                 .max_sysex_size = midi2::ci::b28{buffer_size},
-                                                 .output_path_id = 0_b7};
+  constexpr midi2::ci::discovery_reply discovery{
+      .manufacturer = {0x12_b7, 0x23_b7, 0x34_b7},
+      .family = 0x1779_b14,
+      .model = 0x2B5D_b14,
+      .version = {0x01_b7, 0x00_b7, 0x00_b7, 0x00_b7},
+      .capability = 0x7F_b7,
+      .max_sysex_size = midi2::ci::b28{buffer_size},
+      .output_path_id = 0_b7,
+      .function_block = 0_b7,
+  };
   std::array<std::byte, buffer_size> message{};
   // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
   auto const first = std::begin(message);
