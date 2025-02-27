@@ -1121,7 +1121,7 @@ struct disabled {
 };
 
 constexpr disabled disabled::make(packed::disabled_v1 const &other) noexcept {
-  return {.pid = other.pid};
+  return {.pid = other.pid, .num_channels = b14{}};
 }
 constexpr disabled disabled::make(packed::disabled_v2 const &other) noexcept {
   return {.pid = other.v1.pid, .num_channels = ci::details::from_le7(other.num_channels)};
