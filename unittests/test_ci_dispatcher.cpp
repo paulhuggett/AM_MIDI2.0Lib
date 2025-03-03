@@ -253,7 +253,8 @@ TEST_F(CIDispatcher, DiscoveryV1) {
                                            .model = midi2::ci::b14{(1U << (7 * 2)) - 2U},
                                            .version = std::array{0x7F_b7, 0x3C_b7, 0x2A_b7, 0x18_b7},
                                            .capability = 0x7F_b7,
-                                           .max_sysex_size = midi2::ci::b28{(1U << (7 * 4)) - 1U}};
+                                           .max_sysex_size = midi2::ci::b28{(1U << (7 * 4)) - 1U},
+                                           .output_path_id = 0_b7};
   EXPECT_CALL(config_.management, discovery(config_.context, hdr, discovery)).Times(1);
   this->dispatch_ci(0xFF_u8, hdr, discovery);
 }
