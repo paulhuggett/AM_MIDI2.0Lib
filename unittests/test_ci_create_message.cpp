@@ -92,7 +92,8 @@ TEST_F(CICreateMessage, DiscoveryV1) {
                                            .model = from_le7(model),
                                            .version = from_byte_array(version),
                                            .capability = from_le7(capability),
-                                           .max_sysex_size = from_le7(max_sysex_size)};
+                                           .max_sysex_size = from_le7(max_sysex_size),
+                                           .output_path_id = 0_b7};
   auto const message = make_message(hdr, discovery);
   EXPECT_THAT(message, testing::ElementsAreArray(expected));
 }
