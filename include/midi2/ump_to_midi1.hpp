@@ -22,18 +22,32 @@
 
 namespace midi2 {
 
+/// \brief Converts MIDI 2.0 UMP (Universal MIDI Packet) messages to MIDI 1.0 UMP.
+///
+/// This class provides functionality to convert UMP messages to MIDI 1.0 messages.
+/// It maintains a context that includes a cache for per-note controllers and a FIFO
+/// for output messages.
 class ump_to_midi1 {
 public:
+  /// \brief The type of input UMP message.
   using input_type = std::uint32_t;
+  /// \brief The type of output MIDI 1.0 message.
   using output_type = std::uint32_t;
 
-  /// Checks if the output is empty
+  /// \brief Checks if the output is empty
+  /// \return True if the output FIFO is empty, false otherwise.
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+
+  /// \brief Pops the front message from the output FIFO.
+  /// \return The first message in the output FIFO.
+  /// \note This method asserts that the output FIFO is not empty.
   [[nodiscard]] constexpr output_type pop() {
     assert(!empty());
     return context_.output.pop_front();
   }
 
+  /// \brief Pushes an input UMP message for processing.
+  /// \param ump The input UMP message.
   void push(input_type const ump) { p_.process_ump(ump); }
 
 private:
@@ -47,11 +61,16 @@ private:
       });
     }
 
+    /// \brief Represents a key for the per-note controller cache.
     struct pn_cache_key {
       constexpr bool operator==(pn_cache_key const &) const noexcept = default;
 
+      /// The group number
       std::uint8_t group : 4 = 0;
+      /// The channel number
       std::uint8_t channel : 4 = 0;
+      /// true if the controller is RPN (Registered Parameter Number), false if it represents an NRPN (Non-Registered
+      /// Parameter Number).
       bool is_rpn = false;
     };
 
@@ -123,16 +142,43 @@ private:
       }
       static constexpr void sysex7_end(context_type *const ctxt, ump::data64::sysex7_end const &in) { ctxt->push(in); }
     };
-    // m2cvm messages are translated to m1cvm messages.
+
+    /// \brief Translated MIDI 2.0 Channel Voice Messages (m2cvm) and translates them to m1cvm messages.
     class m2cvm {
     public:
+      /// \brief Translates a MIDI 2.0 note off message to a MIDI 1.0 note off message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 note off message.
       static void note_off(context_type *ctxt, ump::m2cvm::note_off const &in);
-      static void note_on(context_type *ctxt, ump::m2cvm::note_on const &in);
-      static void poly_pressure(context_type *ctxt, ump::m2cvm::poly_pressure const &in);
-      static void program_change(context_type *ctxt, ump::m2cvm::program_change const &in);
-      static void channel_pressure(context_type *ctxt, ump::m2cvm::channel_pressure const &);
 
+      /// \brief Translates a MIDI 2.0 note on message to a MIDI 1.0 note on message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 note on message.
+      static void note_on(context_type *ctxt, ump::m2cvm::note_on const &in);
+
+      /// \brief Translates a MIDI 2.0 poly pressure message to a MIDI 1.0 poly pressure message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 poly pressure message.
+      static void poly_pressure(context_type *ctxt, ump::m2cvm::poly_pressure const &in);
+
+      /// \brief Translates a MIDI 2.0 program change message to a MIDI 1.0 program change message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 program change message.
+      static void program_change(context_type *ctxt, ump::m2cvm::program_change const &in);
+
+      /// \brief Translates a MIDI 2.0 channel pressure message to a MIDI 1.0 channel pressure message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 channel pressure message.
+      static void channel_pressure(context_type *ctxt, ump::m2cvm::channel_pressure const &in);
+
+      /// \brief Translates a MIDI 2.0 RPN controller message to a MIDI 1.0 controller message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 RPN controller message.
       static void rpn_controller(context_type *ctxt, ump::m2cvm::rpn_controller const &in);
+
+      /// \brief Translates a MIDI 2.0 NRPN controller message to a MIDI 1.0 controller message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 NRPN controller message.
       static void nrpn_controller(context_type *ctxt, ump::m2cvm::nrpn_controller const &in);
 
       static constexpr void rpn_per_note_controller(context_type const *,
@@ -154,14 +200,27 @@ private:
       static constexpr void per_note_management(context_type const *, ump::m2cvm::per_note_management const &) {
         // do nothing: cannot be translated to MIDI 1
       }
-      static void control_change(context_type *ctxt, ump::m2cvm::control_change const &);
-      static void pitch_bend(context_type *ctxt, ump::m2cvm::pitch_bend const &);
+
+      /// \brief Translates a MIDI 2.0 control change message to a MIDI 1.0 control change message.
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input MIDI 2.0 control change message.
+      static void control_change(context_type *ctxt, ump::m2cvm::control_change const &in);
+
+      /// @brief Translates a MIDI 2.0 pitch bend message to a MIDI 1.0 pitch bend message.
+      /// @param ctxt The context for the conversion process.
+      /// @param in The input MIDI 2.0 pitch bend message.
+      static void pitch_bend(context_type *ctxt, ump::m2cvm::pitch_bend const &in);
 
       static constexpr void per_note_pitch_bend(context_type const *, ump::m2cvm::per_note_pitch_bend const &) {
         // do nothing: cannot be translated to MIDI 1
       }
 
     private:
+      /// \brief Handles per-note controller messages.
+      /// \param ctxt The context for the conversion process.
+      /// \param key The key for the per-note controller cache.
+      /// \param controller_number The controller number.
+      /// \param value The value of the controller.
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
                              std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
     };
