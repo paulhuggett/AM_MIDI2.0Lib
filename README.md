@@ -181,51 +181,74 @@ int main() {
 
 ### Example: Process MIDI-CI Messages
 
-> THIS EXAMPLE IS OBSOLETE
+MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing MIDI-CI Messages.
 
-MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing most MIDI-CI Messages.
+~~~cpp
+#include "midi2/ci_dispatcher.hpp"
 
-```C++
+#include <array>
+#include <cstdlib>
+#include <format>
+#include <iostream>
+#include <type_traits>
 
-#include "midiCIProcessor.h"
-midi2Processor midiCIProcess;
-uint32_t localMUID;
-uint8_t sysexId[3] = {0x00 , 0x02, 0x22};
-uint8_t famId[2] = {0x7F, 0x00};
-uint8_t modelId[2] = {0x7F, 0x00};
-uint8_t ver[4];
-unint8_t sysexBuffer[512];
+using namespace midi2::ci::literals;
 
-bool checkMUID(uint8_t group, uint32_t muid){
-	return (localMUID==muid);
+namespace {
+// Display the header fields
+void print_header(std::ostream &os, midi2::ci::header const &h) {
+  os << std::format("device-id=0x{:X}\nversion=0x{:X}\n", h.device_id, h.version)
+     << std::format("remote-MUID=0x{:X}\nlocal-MUID=0x{:X}\n\n", h.remote_muid, h.local_muid);
+}
+// Display the discovery data fields
+void print_discovery(std::ostream &os, midi2::ci::discovery const &d) {
+  os << std::format("manufacturer={}\nfamily=0x{:X}\nmodel=0x{:X}\n", d.manufacturer, d.family, d.model)
+     << std::format("version={}\ncapability=0x{:X}\n", d.version, d.capability)
+     << std::format("max-sysex-size=0x{:X}\noutput-path-id=0x{:X}\n", d.max_sysex_size, d.output_path_id);
 }
 
-void recvDiscovery(uint8_t group, struct MIDICI ciDetails, uint8_t* remotemanuId, uint8_t* remotefamId, uint8_t* remotemodelId, uint8_t *remoteverId, uint8_t remoteciSupport, uint16_t remotemaxSysex){
-	Serial.print("->Discovery: remoteMuid ");Serial.println(ciDetails.remoteMUID);
-    uint16_t sBuffLen = sendDiscoveryReply(sysexBuffer, localMUID, ciDetails.remoteMUID, sysexId, famId, modelId, ver, 0b11100, 512);
-    sendSysExOutOfDevice(sysexBuffer, sBuffLen);
+// We must pass a “context” to the dispatcher, which will be forwarded to 
+// each of the dispatcher's callbacks. The context lets message handlers share
+// state but we don’t need that here, so a struct with no members will suffice.
+struct context {};
+
+dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
+  // Create a CI dispatcher instance using std::function<> for 
+  // all of its handler functions.
+  auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>();
+  auto &config = dispatcher.config();
+
+  // Register a handler for checking whether a message is addressed 
+  // to this receiver.
+  config.system.on_check_muid(
+      [my_muid](context, std::uint8_t /*group*/, midi2::ci::muid const m) { return m == my_muid; });
+
+  // Register a handler for Discovery messages.
+  config.management.on_discovery([](context, midi2::ci::header const &h, midi2::ci::discovery const &d) {
+    print_header(std::cout, h);
+    print_discovery(std::cout, d);
+    // Send a reply to this message...
+  });
+  return dispatcher;
 }
+}  // end anonymous namespace
 
-void setup()
-{
-  localMUID = random(0xFFFFEFF);
+int main() {
+  // Use a proper random number!
+  constexpr auto my_muid = midi2::ci::muid{0x01234567U};
+  constexpr auto my_group = std::uint8_t{0};
+  constexpr auto device_id = 0_b7;
+  auto dispatcher = setup_ci_dispatcher(my_muid);
 
-  midiCIProcess.setRecvDiscovery(recvDiscovery);
-  midiCIProcess.setCheckMUID(checkMUID);
-
-  uint16_t sBuffLen = sendDiscoveryRequest(sysexBuffer,1, sysexId, famId, modelId, ver,12, 512);
-  sendSysExOutOfDevice(sysexBuffer, sBuffLen);
-}
-
-void loop()
-{
-...
-  while(uint8_t sysexByte = getNextSysexByte()){
-    midiCIProcess.processUMP(sysexByte);
+  // A system exclusive message containing a CI discovery request.
+  constexpr std::array message{0x7E, 0x7F, 0x0D, 0x70, 0x02, 0x00, 0x00, 0x00, 0x00, 0x7F,
+                               0x7F, 0x7F, 0x7F, 0x12, 0x23, 0x34, 0x79, 0x2E, 0x5D, 0x56,
+                               0x01, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x02, 0x00, 0x00, 0x00};
+  dispatcher.start(my_group, device_id);
+  for (auto const b : message) {
+    dispatcher.processMIDICI(static_cast<std::byte>(b));
   }
-...
+  dispatcher.finish();
 }
-
-```
-
+~~~
 ---
