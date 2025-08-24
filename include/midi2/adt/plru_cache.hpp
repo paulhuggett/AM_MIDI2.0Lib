@@ -134,13 +134,14 @@ private:
   class tag_and_valid {
   public:
     constexpr tag_and_valid() noexcept = default;
-    constexpr explicit tag_and_valid(Key key) noexcept : v_{1 | static_cast<decltype(v_)>(key >> (SetBits - 1))} {}
+    constexpr explicit tag_and_valid(Key key) noexcept : v_{static_cast<tv_type>(1 | (key >> (SetBits - 1)))} {}
     friend constexpr bool operator==(tag_and_valid const &, tag_and_valid const &) noexcept = default;
     [[nodiscard]] constexpr auto valid() const noexcept { return static_cast<bool>(v_ & 1); }
 
   private:
     static constexpr auto KeyBits = sizeof(Key) * CHAR_BIT;
-    uinteger<KeyBits - SetBits + 1>::type v_ = 0;
+    using tv_type = uinteger<KeyBits - SetBits + 1>::type;
+    tv_type v_ = 0;
   };
 
   std::array<aligned_storage<MappedType>, Ways> ways_;

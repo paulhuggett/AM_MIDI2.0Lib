@@ -15,8 +15,8 @@
 #include <tuple>
 #include <utility>
 
-#include "midi2/adt/cache.hpp"
 #include "midi2/adt/fifo.hpp"
+#include "midi2/adt/plru_cache.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
 #include "midi2/ump/ump_types.hpp"
 
@@ -75,7 +75,7 @@ private:
     };
 
     // value is 14 bit MIDI 1 controller number (bank/index).
-    cache<pn_cache_key, std::pair<std::uint8_t, std::uint8_t>, 16> pn_cache;
+    plru_cache<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, 4, 4> pn_cache;
     fifo<std::uint32_t, 4> output;
   };
   friend struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key>;
@@ -223,6 +223,10 @@ private:
       /// \param value The value of the controller.
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
                              std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
+
+      static void send_controller_number(ump::m1cvm::control_change &cc, context_type *const ctxt,
+                                         context_type::pn_cache_key const &key,
+                                         std::pair<std::uint8_t, std::uint8_t> const &controller_number);
     };
     context_type *context = nullptr;
     [[no_unique_address]] ump::dispatcher_backend::utility_null<decltype(context)> utility{};
