@@ -134,7 +134,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
   using enum control;
-  assert(sizeof(key) <= sizeof(std::uint16_t));
+  static_assert(sizeof(key) <= sizeof(std::uint16_t));
   auto &cached_value = ctxt->pn_cache.access(std::bit_cast<std::uint16_t>(key), [&]() {
     // The key was not in the cache.
     m2cvm::send_controller_number(cc, ctxt, key, controller_number);

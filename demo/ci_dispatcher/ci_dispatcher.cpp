@@ -6,7 +6,7 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/ci_dispatcher.hpp"
+#include "midi2/ci/ci_dispatcher.hpp"
 
 #include <array>
 #include <cstdlib>

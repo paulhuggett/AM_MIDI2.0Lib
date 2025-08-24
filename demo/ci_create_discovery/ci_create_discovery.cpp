@@ -15,8 +15,8 @@
 #include <ranges>
 #include <vector>
 
-#include "midi2/ci_create_message.hpp"
-#include "midi2/ci_types.hpp"
+#include "midi2/ci/ci_create_message.hpp"
+#include "midi2/ci/ci_types.hpp"
 #include "midi2/utils.hpp"
 
 using namespace midi2::ci::literals;
