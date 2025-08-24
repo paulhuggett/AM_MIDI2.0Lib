@@ -23,29 +23,47 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(setup_target)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MIDI2_HEADERS
+set(adt_headers
   "${INCLUDE_DIR}/midi2/adt/bitfield.hpp"
   "${INCLUDE_DIR}/midi2/adt/cache.hpp"
   "${INCLUDE_DIR}/midi2/adt/fifo.hpp"
   "${INCLUDE_DIR}/midi2/adt/iumap.hpp"
   "${INCLUDE_DIR}/midi2/adt/lru_list.hpp"
-  "${INCLUDE_DIR}/midi2/bytestream_to_ump.hpp"
-  "${INCLUDE_DIR}/midi2/ci7text.hpp"
-  "${INCLUDE_DIR}/midi2/ci_create_message.hpp"
-  "${INCLUDE_DIR}/midi2/ci_dispatcher.hpp"
-  "${INCLUDE_DIR}/midi2/ci_dispatcher_backend.hpp"
-  "${INCLUDE_DIR}/midi2/ci_types.hpp"
+  "${INCLUDE_DIR}/midi2/adt/plru_cache.hpp"
+)
+set(bytestream_headers
+  "${INCLUDE_DIR}/midi2/bytestream/bytestream_to_ump.hpp"
+  "${INCLUDE_DIR}/midi2/bytestream/usbm1_to_bytestream.hpp"
+)
+set(ci_headers
+  "${INCLUDE_DIR}/midi2/ci/ci7text.hpp"
+  "${INCLUDE_DIR}/midi2/ci/ci_create_message.hpp"
+  "${INCLUDE_DIR}/midi2/ci/ci_dispatcher.hpp"
+  "${INCLUDE_DIR}/midi2/ci/ci_dispatcher_backend.hpp"
+  "${INCLUDE_DIR}/midi2/ci/ci_types.hpp"
+)
+set(ump_headers
+  "${INCLUDE_DIR}/midi2/ump/ump_dispatcher.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_dispatcher_backend.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_to_bytestream.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_to_midi1.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_to_midi2.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_types.hpp"
+)
+
+set(MIDI2_HEADERS
+  ${adt_headers}
+  ${bytestream_headers}
+  ${ci_headers}
+  ${ump_headers}
   "${INCLUDE_DIR}/midi2/icubaby.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
-  "${INCLUDE_DIR}/midi2/ump_dispatcher.hpp"
-  "${INCLUDE_DIR}/midi2/ump_dispatcher_backend.hpp"
-  "${INCLUDE_DIR}/midi2/ump_to_bytestream.hpp"
-  "${INCLUDE_DIR}/midi2/ump_to_midi1.hpp"
-  "${INCLUDE_DIR}/midi2/ump_to_midi2.hpp"
-  "${INCLUDE_DIR}/midi2/ump_types.hpp"
-  "${INCLUDE_DIR}/midi2/usbm1_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
+source_group(adt FILES ${adt_headers})
+source_group(bytestream FILES ${bytestream_headers})
+source_group(ci FILES ${ci_headers})
+source_group(ump FILES ${ump_headers})
 
 add_library(midi2 ${MIDI2_HEADERS}
   src/bytestream_to_ump.cpp
@@ -114,7 +132,7 @@ foreach(target gtest gmock gmock_main gtest_main)
     target_compile_options(${target} PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-deprecated-declarations -Wno-covered-switch-default>
       )
-      target_compile_features(${target} PUBLIC cxx_std_20)
+      target_compile_features(${target} PUBLIC cxx_std_23)
     target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
   endif()
 endforeach()

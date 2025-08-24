@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/ci7text.hpp"
+#include "midi2/ci/ci7text.hpp"
 #include "midi2/utils.hpp"
 
 // Standard library

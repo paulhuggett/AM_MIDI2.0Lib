@@ -6,12 +6,12 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/ump_to_midi2.hpp"
+#include "midi2/ump/ump_to_midi2.hpp"
 
 #include <cassert>
 #include <cstdint>
 
-#include "midi2/ump_types.hpp"
+#include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2 {

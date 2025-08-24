@@ -19,6 +19,7 @@ add_executable (m2unittests
   test_iumap.cpp
   test_lru.cpp
   test_mcoded7.cpp
+  test_plru_cache.cpp
   test_scale.cpp
   test_ump_bytestream_round_trip.cpp
   test_ump_dispatcher.cpp

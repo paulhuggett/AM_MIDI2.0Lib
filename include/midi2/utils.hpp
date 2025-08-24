@@ -9,6 +9,7 @@
 #ifndef MIDI2_UTILS_HPP
 #define MIDI2_UTILS_HPP
 
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -51,8 +52,12 @@ template <typename Enum>
 /// \param n An integer value to check whether it is a power of two.
 /// \returns True if the input value is a power of 2.
 template <std::unsigned_integral T> [[nodiscard]] constexpr bool is_power_of_two(T const n) noexcept {
+#if defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L
+  return std::has_single_bit(n);
+#else
   // If a number n is a power of 2 then bitwise & of n and n-1 will be zero.
   return n > 0U && !(n & (n - 1U));
+#endif
 }
 
 template <typename Function, typename... Args> void call(Function const &function, Args &&...args) {

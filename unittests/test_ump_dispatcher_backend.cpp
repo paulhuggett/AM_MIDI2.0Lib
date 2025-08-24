@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
-#include "midi2/ump_dispatcher_backend.hpp"
+#include "midi2/ump/ump_dispatcher_backend.hpp"
 
 // Standard library
 #include <array>

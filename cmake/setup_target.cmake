@@ -138,7 +138,7 @@ function (setup_target target)
     $<$<CXX_COMPILER_ID:MSVC>:${msvc_definitions}>
   )
 
-  target_compile_features (${target} PUBLIC cxx_std_20)
+  target_compile_features (${target} PUBLIC cxx_std_23)
   target_link_options (${target} PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:IntelLLVM>>:${clang_options}>
     $<$<CXX_COMPILER_ID:GNU>:${gcc_options}>

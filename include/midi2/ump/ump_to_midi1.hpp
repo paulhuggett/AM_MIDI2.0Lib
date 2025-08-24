@@ -17,8 +17,8 @@
 
 #include "midi2/adt/cache.hpp"
 #include "midi2/adt/fifo.hpp"
-#include "midi2/ump_dispatcher.hpp"
-#include "midi2/ump_types.hpp"
+#include "midi2/ump/ump_dispatcher.hpp"
+#include "midi2/ump/ump_types.hpp"
 
 namespace midi2 {
 

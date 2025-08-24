@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/ump_to_midi1.hpp"
+#include "midi2/ump/ump_to_midi1.hpp"
 
 // Standard Library
 #include <algorithm>

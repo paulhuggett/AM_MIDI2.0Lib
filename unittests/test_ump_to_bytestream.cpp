@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/ump_to_bytestream.hpp"
+#include "midi2/ump/ump_to_bytestream.hpp"
 
 // Standard library
 #include <array>

@@ -7,8 +7,8 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT includes
-#include "midi2/bytestream_to_ump.hpp"
-#include "midi2/ump_to_bytestream.hpp"
+#include "midi2/bytestream/bytestream_to_ump.hpp"
+#include "midi2/ump/ump_to_bytestream.hpp"
 
 // Standard Library
 #include <algorithm>

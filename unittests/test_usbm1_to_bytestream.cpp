@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/usbm1_to_bytestream.hpp"
+#include "midi2/bytestream/usbm1_to_bytestream.hpp"
 
 // Standard library
 #include <array>

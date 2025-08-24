@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
-#include "midi2/ci_dispatcher_backend.hpp"
+#include "midi2/ci/ci_dispatcher_backend.hpp"
 
 // Standard library
 #include <array>

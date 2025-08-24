@@ -6,13 +6,13 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/bytestream_to_ump.hpp"
+#include "midi2/bytestream/bytestream_to_ump.hpp"
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 
-#include "midi2/ump_types.hpp"
+#include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace {

@@ -11,7 +11,7 @@
 
 #include <functional>
 
-#include "midi2/ci_types.hpp"
+#include "midi2/ci/ci_types.hpp"
 
 namespace midi2::ci::dispatcher_backend {
 
