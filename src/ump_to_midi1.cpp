@@ -70,13 +70,13 @@ void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ct
     ctxt->push(ump::m1cvm::control_change{}
                    .group(group)
                    .channel(channel)
-                   .controller(to_underlying(control::bank_select))
+                   .controller(std::to_underlying(control::bank_select))
                    .value(in.bank_msb()));
 
     ctxt->push(ump::m1cvm::control_change{}
                    .group(group)
                    .channel(channel)
-                   .controller(to_underlying(control::bank_select_lsb))
+                   .controller(std::to_underlying(control::bank_select_lsb))
                    .value(in.bank_lsb()));
   }
   ctxt->push(ump::m1cvm::program_change{}.group(group).channel(channel).program(in.program()));
@@ -111,50 +111,40 @@ void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const c
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::send_controller_number(
-    ump::m1cvm::control_change &cc, context_type *const ctxt, context_type::pn_cache_key const &key,
+    context_type *const ctxt, context_type::pn_cache_key const &key,
     std::pair<std::uint8_t, std::uint8_t> const &controller_number) {
+  auto cc = ump::m1cvm::control_change{}.group(key.group).channel(key.channel);
   using enum control;
   // Controller number MSB
-  cc.controller(to_underlying(key.is_rpn ? rpn_msb : nrpn_msb));  // 0x65/0x63
-  cc.value(controller_number.first);
-  ctxt->push(cc);
+  ctxt->push(cc.controller(std::to_underlying(key.is_rpn ? rpn_msb : nrpn_msb)).value(controller_number.first));
   // Controller number LSB
-  cc.controller(to_underlying(key.is_rpn ? rpn_lsb : nrpn_lsb));  // 0x64/0x62
-  cc.value(controller_number.second);
-  ctxt->push(cc);
+  ctxt->push(cc.controller(std::to_underlying(key.is_rpn ? rpn_lsb : nrpn_lsb)).value(controller_number.second));
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
                                                       std::pair<std::uint8_t, std::uint8_t> const &controller_number,
                                                       std::uint32_t const value) {
-  ump::m1cvm::control_change cc;
-  cc.group(key.group).channel(key.channel);
-
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
   using enum control;
-  static_assert(sizeof(key) <= sizeof(std::uint16_t));
-  auto &cached_value = ctxt->pn_cache.access(std::bit_cast<std::uint16_t>(key), [&]() {
+  static_assert(sizeof(key) <= sizeof(context_type::pn_cache_type::key_type));
+  auto &cached_value = ctxt->pn_cache.access(std::bit_cast<context_type::pn_cache_type::key_type>(key), [&]() {
     // The key was not in the cache.
-    m2cvm::send_controller_number(cc, ctxt, key, controller_number);
+    m2cvm::send_controller_number(ctxt, key, controller_number);
     return controller_number;
   });
   if (cached_value != controller_number) {
     // The cached value does not match the expected value. Update it.
-    m2cvm::send_controller_number(cc, ctxt, key, controller_number);
+    m2cvm::send_controller_number(ctxt, key, controller_number);
     cached_value = controller_number;
   }
 
+  // Data Entry MSB/LSB
   auto const scaled_value = mcm_scale<32, 14>(value);
-  // Data Entry MSB
-  cc.controller(to_underlying(data_entry_msb));  // 0x6
-  cc.value(static_cast<std::uint8_t>((scaled_value >> 7) & 0x7F));
-  ctxt->push(cc);
-  // Data Entry LSB
-  cc.controller(to_underlying(data_entry_lsb));  // 0x26
-  cc.value(static_cast<std::uint8_t>(scaled_value & 0x7F));
-  ctxt->push(cc);
+  auto cc = ump::m1cvm::control_change{}.group(key.group).channel(key.channel);
+  ctxt->push(cc.controller(std::to_underlying(data_entry_msb)).value(hi7(scaled_value)));
+  ctxt->push(cc.controller(std::to_underlying(data_entry_lsb)).value(lo7(scaled_value)));
 }
 
 // control change
@@ -175,12 +165,11 @@ void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ct
 // ~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, ump::m2cvm::pitch_bend const &in) {
   auto const scaled_value = in.value() >> (32 - 14);
-  auto const out = ump::m1cvm::pitch_bend{}
-                       .group(in.group())
-                       .channel(in.channel())
-                       .lsb_data(scaled_value & 0x7F)
-                       .msb_data((scaled_value >> 7) & 0x7F);
-  ctxt->push(out);
+  ctxt->push(ump::m1cvm::pitch_bend{}
+                 .group(in.group())
+                 .channel(in.channel())
+                 .lsb_data(lo7(scaled_value))
+                 .msb_data(hi7(scaled_value)));
 }
 
 }  // end namespace midi2

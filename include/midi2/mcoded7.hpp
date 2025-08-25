@@ -119,7 +119,7 @@ private:
   /// The value of 'pos_' when the MSB byte is next.
   static constexpr auto msbs_byte_pos_ = 7U;
 
-  std::uint8_t msbs_ = 0U;  ///< The most significant bigs of the current group of bytes.
+  std::uint8_t msbs_ = 0U;  ///< The most significant bits of the current group of bytes.
   ///< Position within the current group of bytes (starting at 7 and counting
   ///< down).
   std::uint8_t pos_ : 3 = 0;

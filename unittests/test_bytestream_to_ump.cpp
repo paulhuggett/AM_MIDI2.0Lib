@@ -65,8 +65,8 @@ template <std::size_t Size> auto convert(midi2::bytestream_to_ump bs2ump, std::a
 constexpr std::uint32_t ump_cvm(midi2::status s) {
   static_assert(std::is_same_v<std::underlying_type_t<midi2::status>, std::uint8_t>,
                 "status type must be a std::uint8_t");
-  assert((to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum  must be 0");
-  return std::uint32_t{to_underlying(s)} >> 4;
+  assert((std::to_underlying(s) & 0x0F) == 0 && "Bottom 4 bits of a channel voice message status enum  must be 0");
+  return std::uint32_t{std::to_underlying(s)} >> 4;
 }
 
 constexpr auto ump_note_on = ump_cvm(midi2::status::note_on);
@@ -118,12 +118,12 @@ TEST(BytestreamToUMP, Midi1ChannelPressure) {
   constexpr auto pressure = std::byte{57};  // 7 bits
 
   // A MIDI 1 bytestream channel pressure message.
-  std::array const input{std::byte{midi2::to_underlying(midi2::status::channel_pressure)} | channel, pressure};
+  std::array const input{midi2::to_byte(midi2::status::channel_pressure) | channel, pressure};
 
   // Build an equivalent UMP message.
   std::vector<std::uint32_t> expected;
   midi2::ump::apply(
-      midi2::ump::m1cvm::channel_pressure().channel(midi2::to_underlying(channel)).data(midi2::to_underlying(pressure)),
+      midi2::ump::m1cvm::channel_pressure().channel(std::to_underlying(channel)).data(std::to_underlying(pressure)),
       [&expected](auto const v) {
         expected.push_back(v.word());
         return false;
@@ -142,7 +142,7 @@ TEST(BytestreamToUMP, PitchBend) {
   constexpr auto channel = std::byte{3};
   std::array const input{static_cast<std::byte>(midi2::status::pitch_bend) | channel, bend_lsb, bend_msb};
 
-  constexpr auto message_type = static_cast<std::uint32_t>(midi2::to_underlying(midi2::ump::message_type::m1cvm));
+  constexpr auto message_type = static_cast<std::uint32_t>(std::to_underlying(midi2::ump::message_type::m1cvm));
   constexpr auto group = std::uint32_t{0};
 
   std::array const expected{std::uint32_t{
@@ -168,7 +168,8 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
 
   constexpr auto group = std::uint32_t{0};
   std::array const expected{
-      std::uint32_t{(1U << 28) | (group << 24) | (std::uint32_t{to_underlying(midi2::status::sequence_start)} << 16)},
+      std::uint32_t{(1U << 28) | (group << 24) |
+                    (std::uint32_t{std::to_underlying(midi2::status::sequence_start)} << 16)},
       std::uint32_t{(2U << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) | (ump_note_on << 20) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::to_integer<std::uint32_t>(velocity)}};
 
@@ -202,8 +203,8 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
                          static_cast<std::byte>(midi2::status::program_change) | channel, program};
 
   constexpr auto message_type =
-      static_cast<std::uint32_t>(midi2::to_underlying(midi2::ump::message_type::m1cvm));  // 4 bits
-  constexpr auto group = std::uint32_t{0x00};                                             // 4 bits
+      static_cast<std::uint32_t>(std::to_underlying(midi2::ump::message_type::m1cvm));  // 4 bits
+  constexpr auto group = std::uint32_t{0x00};                                           // 4 bits
 
   std::array const expected{
       // MSB (Coarse) Bank Select
@@ -234,8 +235,8 @@ TEST(BytestreamToUMP, ProgramChangeTwoBytes) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SysEx) {
   using b8 = std::byte;
-  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
-  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
+  constexpr auto start = static_cast<b8>(std::to_underlying(midi2::status::sysex_start));
+  constexpr auto stop = static_cast<b8>(std::to_underlying(midi2::status::sysex_stop));
   std::array const input{start,    b8{0x7E}, b8{0x7F}, b8{0x0D}, b8{0x70}, b8{0x02}, b8{0x4B}, b8{0x60},
                          b8{0x7A}, b8{0x73}, b8{0x7F}, b8{0x7F}, b8{0x7F}, b8{0x7F}, b8{0x7D}, b8{0x00},
                          b8{0x00}, b8{0x00}, b8{0x00}, b8{0x01}, b8{0x00}, b8{0x00}, b8{0x00}, b8{0x03},
@@ -253,7 +254,7 @@ TEST(BytestreamToUMP, SysEx) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, LonelySysExEnd) {
   using b8 = std::byte;
-  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
+  constexpr auto stop = static_cast<b8>(std::to_underlying(midi2::status::sysex_stop));
   std::array const input{stop};
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
@@ -262,7 +263,7 @@ TEST(BytestreamToUMP, LonelySysExEnd) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SysExEndFollowedByDataBytes) {
   using b8 = std::byte;
-  constexpr auto stop = static_cast<b8>(to_underlying(midi2::status::sysex_stop));
+  constexpr auto stop = static_cast<b8>(std::to_underlying(midi2::status::sysex_stop));
   std::array const input{stop, b8{1}, b8{2}, stop};
   auto const actual = convert(midi2::bytestream_to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
@@ -272,8 +273,8 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   using b8 = std::byte;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
-  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
-  constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
+  constexpr auto start = static_cast<b8>(std::to_underlying(midi2::status::sysex_start));
+  constexpr auto note_off = static_cast<b8>(std::to_underlying(midi2::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
   std::array const input{start,           b8{1}, b8{2}, b8{3}, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel},
                          b8{note_number}, b8{0}};
@@ -312,8 +313,8 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   using sysex7_in_1 = midi2::ump::data64::sysex7_in_1;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{1};
-  constexpr auto start = static_cast<b8>(to_underlying(midi2::status::sysex_start));
-  constexpr auto note_off = static_cast<b8>(to_underlying(midi2::status::note_off));
+  constexpr auto start = static_cast<b8>(std::to_underlying(midi2::status::sysex_start));
+  constexpr auto note_off = static_cast<b8>(std::to_underlying(midi2::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
   std::array const input{
       start, b8{1}, b8{2}, b8{3}, start, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel}, b8{note_number}, b8{0}};
@@ -347,8 +348,8 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, MultipleSysExMessages) {
   using u8 = std::uint8_t;
-  constexpr auto start = to_underlying(midi2::status::sysex_start);
-  constexpr auto stop = to_underlying(midi2::status::sysex_stop);
+  constexpr auto start = std::to_underlying(midi2::status::sysex_start);
+  constexpr auto stop = std::to_underlying(midi2::status::sysex_stop);
   std::array const input{
       static_cast<std::byte>(start),  // start sysex
       std::byte{0x0A},

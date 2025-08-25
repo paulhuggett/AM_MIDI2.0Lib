@@ -20,13 +20,12 @@
 #include <cassert>
 #include <climits>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <new>
 #include <numeric>
 
 namespace midi2 {
-
-namespace details {
 
 /// \brief Yields the smallest unsigned integral type with at least \p N bits.
 template <std::size_t N>
@@ -57,6 +56,8 @@ template <> struct uinteger<64> {
   /// Smallest unsigned integer type with width of at least 64 bits.
   using type = std::uint_least64_t;
 };
+
+namespace details {
 
 template <typename T> struct aligned_storage {
   [[nodiscard]] constexpr T &value() noexcept { return *std::bit_cast<T *>(&v[0]); }
@@ -157,6 +158,8 @@ private:
 ///
 /// The total number of cache entries is given by Sets * Ways.
 ///
+/// \tparam Key  The key type
+/// \tparam T  The value type
 /// \tparam Sets  The number of entries that share the same lookup key fragment or hash bucket
 ///   index. All entries in a set compete to be stored in that group.
 /// \tparam Ways  The number of slots within a set that can hold a single entry. The number of

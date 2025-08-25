@@ -248,7 +248,7 @@ TEST_F(UMPDispatcherUtility, DeltaClockstamp) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherUtility, BadMessage) {
   constexpr std::uint32_t message =
-      (midi2::to_underlying(midi2::ump::message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
+      (std::to_underlying(midi2::ump::message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
   dispatcher_.process_ump(message);
 }
@@ -329,7 +329,7 @@ TEST_F(UMPDispatcherSystem, Reset) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherSystem, BadStatus) {
   constexpr std::uint32_t message =
-      (std::uint32_t{midi2::to_underlying(midi2::ump::message_type::system)} << 28) | (std::uint32_t{0xF} << 20);
+      (std::uint32_t{std::to_underlying(midi2::ump::message_type::system)} << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
   dispatcher_.process_ump(message);
 }
@@ -845,7 +845,7 @@ TEST_F(UMPDispatcherFlexData, SetKeySignature) {
                                .channel(3)
                                .status_bank(0)
                                .sharps_flats(0b100)  // (-8)
-                               .tonic_note(midi2::to_underlying(midi2::ump::flex_data::note::e));
+                               .tonic_note(std::to_underlying(midi2::ump::flex_data::note::e));
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
   this->apply(message);
 }
@@ -858,8 +858,8 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
                                .channel(3)
                                .status_bank(0x00)
                                .tonic_sharps_flats(0x1)
-                               .chord_tonic(midi2::to_underlying(midi2::ump::flex_data::note::e))
-                               .chord_type(midi2::to_underlying(midi2::ump::flex_data::chord_type::augmented))
+                               .chord_tonic(std::to_underlying(midi2::ump::flex_data::note::e))
+                               .chord_type(std::to_underlying(midi2::ump::flex_data::chord_type::augmented))
                                .alter_1_type(1)
                                .alter_1_degree(5)
                                .alter_2_type(2)
@@ -869,8 +869,8 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
                                .alter_4_type(4)
                                .alter_4_degree(8)
                                .bass_sharps_flats(0xE)
-                               .bass_note(midi2::to_underlying(midi2::ump::flex_data::note::unknown))
-                               .bass_chord_type(midi2::to_underlying(midi2::ump::flex_data::chord_type::diminished))
+                               .bass_note(std::to_underlying(midi2::ump::flex_data::note::unknown))
+                               .bass_chord_type(std::to_underlying(midi2::ump::flex_data::chord_type::diminished))
                                .bass_alter_1_type(1)
                                .bass_alter_1_degree(3)
                                .bass_alter_2_type(2)
@@ -913,7 +913,7 @@ TEST(UMPDispatcherFuzz, Empty) {
 
 template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::message_size<MessageType>::value) {
-    message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{midi2::to_underlying(MessageType)} << 24);
+    message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{std::to_underlying(MessageType)} << 24);
     midi2::ump::ump_dispatcher p;
     for (auto const w : message) {
       p.process_ump(w);

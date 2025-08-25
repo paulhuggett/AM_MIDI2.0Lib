@@ -145,19 +145,19 @@ private:
     private:
       static void push(context_type *const ctxt, unsigned const group, status const s) {
         if (!ctxt->filter_message(group)) {
-          ctxt->push_back(std::byte{to_underlying(s)});
+          ctxt->push_back(to_byte(s));
         }
       }
       static void push(context_type *const ctxt, unsigned const group, status const s, std::byte const b1) {
         if (!ctxt->filter_message(group)) {
-          ctxt->push_back(std::byte{to_underlying(s)});
+          ctxt->push_back(to_byte(s));
           ctxt->push_back(b1);
         }
       }
       static void push(context_type *const ctxt, unsigned const group, status const s, std::byte const b1,
                        std::byte const b2) {
         if (!ctxt->filter_message(group)) {
-          ctxt->push_back(std::byte{to_underlying(s)});
+          ctxt->push_back(to_byte(s));
           ctxt->push_back(b1);
           ctxt->push_back(b2);
         }
@@ -170,7 +170,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::note_off>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::note_off)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::note_off) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
@@ -179,7 +179,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::note_on>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::note_on)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::note_on) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
@@ -188,7 +188,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::poly_pressure>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::poly_pressure)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::poly_pressure) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.pressure()});
       }
@@ -197,7 +197,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::cc>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::cc)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::cc) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.controller()});
         ctxt->push_back(std::byte{in.value()});
       }
@@ -206,7 +206,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::program_change>() == 2);
-        ctxt->push_back(std::byte{to_underlying(status::program_change)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::program_change) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.program()});
       }
       static void channel_pressure(context_type *const ctxt, ump::m1cvm::channel_pressure const &in) {
@@ -214,7 +214,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::channel_pressure>() == 2);
-        ctxt->push_back(std::byte{to_underlying(status::channel_pressure)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::channel_pressure) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.data()});
       }
       static void pitch_bend(context_type *const ctxt, ump::m1cvm::pitch_bend const &in) {
@@ -222,7 +222,7 @@ private:
           return;
         }
         static_assert(bytestream_message_size<status::pitch_bend>() == 3);
-        ctxt->push_back(std::byte{to_underlying(status::pitch_bend)} | std::byte{in.channel()});
+        ctxt->push_back(to_byte(status::pitch_bend) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.lsb_data()});
         ctxt->push_back(std::byte{in.msb_data()});
       }
@@ -265,8 +265,8 @@ private:
       }
 
     private:
-      static constexpr auto sysex_start = std::byte{to_underlying(status::sysex_start)};
-      static constexpr auto sysex_stop = std::byte{to_underlying(status::sysex_stop)};
+      static constexpr auto sysex_start = to_byte(status::sysex_start);
+      static constexpr auto sysex_stop = to_byte(status::sysex_stop);
 
       template <typename T> static void write_sysex_bytes(context_type *const ctxt, T const &in) {
         auto const number_of_bytes = in.number_of_bytes();

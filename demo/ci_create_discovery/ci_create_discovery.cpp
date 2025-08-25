@@ -48,7 +48,7 @@ int main() {
     return EXIT_FAILURE;
   }
   for (auto const b : std::ranges::subrange(first, pos)) {
-    std::cout << std::format("{:02X} ", midi2::to_underlying(b));
+    std::cout << std::format("{:02X} ", std::to_underlying(b));
   }
   std::cout << '\n';
   return EXIT_SUCCESS;

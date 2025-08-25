@@ -17,6 +17,7 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 #include "midi2/utils.hpp"
 
@@ -242,8 +243,8 @@ protected:
   template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
     requires std::is_enum_v<StatusType>
   constexpr void init(StatusType const status) noexcept {
-    this->set<MtField>(to_underlying(status_to_message_type_v<StatusType>));
-    this->set<StatusField>(to_underlying(status));
+    this->set<MtField>(std::to_underlying(status_to_message_type_v<StatusType>));
+    this->set<StatusField>(std::to_underlying(status));
   }
 
 private:
@@ -1062,7 +1063,7 @@ public:
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
-  constexpr auto &controller(control const c) noexcept { return this->controller(to_underlying(c)); }
+  constexpr auto &controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
@@ -1849,7 +1850,7 @@ public:
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word1, value)
 
-  constexpr auto &controller(control const c) noexcept { return this->controller(to_underlying(c)); }
+  constexpr auto &controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
@@ -3295,7 +3296,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->set<mt>(to_underlying(ump::message_type::flex_data)); }
+    constexpr word0() noexcept { this->set<mt>(std::to_underlying(ump::message_type::flex_data)); }
 
     using mt = details::bitfield<28, 4>;  // 0x0D
     using group = details::bitfield<24, 4>;

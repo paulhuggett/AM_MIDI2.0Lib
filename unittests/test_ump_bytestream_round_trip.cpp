@@ -74,8 +74,8 @@ void UMPByteStreamRoundTrip(byte_vector const& b1) {
   // of sysex.
   if (auto const end = std::end(b1); std::find_if(std::begin(b1), end, [](std::byte const b) {
                                        using enum midi2::status;
-                                       return b == std::byte{to_underlying(midi2::status::sysex_start)} ||
-                                              b == std::byte{to_underlying(midi2::status::sysex_stop)};
+                                       return b == midi2::to_byte(midi2::status::sysex_start) ||
+                                              b == midi2::to_byte(midi2::status::sysex_stop);
                                      }) != end) {
     return;
   }

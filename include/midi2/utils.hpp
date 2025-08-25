@@ -29,21 +29,14 @@ namespace midi2 {
 #endif
 }
 
-/// Converts an enumeration value to its underlying type.
-///
-/// This is a wrapper for the C++23 std::to_underlying() function. If the standard library
-/// has an implementation of the function it will be used.
+/// Converts a suitable enumeration to std::byte.
 ///
 /// \param e  The enumeration value to convert
-/// \returns The integer value of the underlying type of Enum, converted from \p e.
+/// \returns The value of the enum \p e, converted to std::byte.
 template <typename Enum>
-  requires std::is_enum_v<Enum>
-[[nodiscard]] constexpr std::underlying_type_t<Enum> to_underlying(Enum const e) noexcept {
-#if defined(__cpp_lib_to_underlying) && __cpp_lib_to_underlying > 202102L
-  return std::to_underlying(e);
-#else
-  return static_cast<std::underlying_type_t<Enum>>(e);
-#endif
+  requires(std::is_enum_v<Enum> && sizeof(std::underlying_type_t<Enum>) == sizeof(std::byte))
+[[nodiscard]] constexpr std::byte to_byte(Enum const e) noexcept {
+  return std::byte{std::to_underlying(e)};
 }
 
 /// Returns true if the argument is a power of two and false otherwise.
@@ -178,6 +171,13 @@ template <unsigned SourceBits, unsigned DestBits>
     }
     return static_cast<small_type<DestBits>>(bit_shifted_value);
   }
+}
+
+constexpr std::uint8_t lo7(std::unsigned_integral auto v) noexcept {
+  return v & 0x7F;
+}
+constexpr std::uint8_t hi7(std::unsigned_integral auto v) noexcept {
+  return (v >> 7) & 0x7F;
 }
 
 }  // end namespace midi2

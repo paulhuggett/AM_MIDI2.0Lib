@@ -63,19 +63,21 @@ private:
 
     /// \brief Represents a key for the per-note controller cache.
     struct pn_cache_key {
+      static constexpr auto significant_bits = 9;
       constexpr bool operator==(pn_cache_key const &) const noexcept = default;
-
       /// The group number
       std::uint8_t group : 4 = 0;
       /// The channel number
       std::uint8_t channel : 4 = 0;
       /// true if the controller is RPN (Registered Parameter Number), false if it represents an NRPN (Non-Registered
       /// Parameter Number).
-      bool is_rpn = false;
+      std::uint8_t is_rpn : 1 = false;
     };
 
     // value is 14 bit MIDI 1 controller number (bank/index).
-    plru_cache<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, 4, 4> pn_cache;
+    using pn_cache_type =
+        plru_cache<uinteger<pn_cache_key::significant_bits>::type, std::pair<std::uint8_t, std::uint8_t>, 4, 4>;
+    pn_cache_type pn_cache;
     fifo<std::uint32_t, 4> output;
   };
   friend struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key>;
@@ -224,8 +226,7 @@ private:
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
                              std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
 
-      static void send_controller_number(ump::m1cvm::control_change &cc, context_type *const ctxt,
-                                         context_type::pn_cache_key const &key,
+      static void send_controller_number(context_type *const ctxt, context_type::pn_cache_key const &key,
                                          std::pair<std::uint8_t, std::uint8_t> const &controller_number);
     };
     context_type *context = nullptr;

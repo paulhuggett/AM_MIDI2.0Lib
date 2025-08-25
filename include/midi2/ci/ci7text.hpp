@@ -138,7 +138,7 @@ public:
     case state::hex2:
     case state::hex3:
       if (this->hex_char(code_unit)) {
-        state_ = static_cast<state>(to_underlying(state_) + 1);
+        state_ = static_cast<state>(std::to_underlying(state_) + 1);
       } else {
         state_ = state::normal;
         hex_ = 0;
