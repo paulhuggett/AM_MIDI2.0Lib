@@ -25,6 +25,10 @@
 #include <new>
 #include <numeric>
 
+#if __ARM_NEON
+#include <arm_neon.h>
+#endif  // __ARM_NEON
+
 namespace midi2 {
 
 /// \brief Yields the smallest unsigned integral type with at least \p N bits.
@@ -99,18 +103,120 @@ private:
   std::bitset<Ways - 1U> bits_{};
 };
 
-template <unsigned SetBits, typename Key, typename MappedType, std::size_t Ways> class cache_set {
+/// Used to store keys in the cache.
+/// We don't store the key directly in this struct: some of the bits are  determined by the key's set so don't need to
+/// be recorded here. We do need to record whether a key entry is occupied, so there's a bit used for that.
+template <std::unsigned_integral Key, unsigned SetBits> class tagged_key {
+  static constexpr auto KeyBits = sizeof(Key) * CHAR_BIT;
+
+public:
+  constexpr tagged_key() noexcept = default;
+  constexpr explicit tagged_key(Key key) noexcept : v_{static_cast<value_type>(1 | (key >> (SetBits - 1)))} {}
+  friend constexpr bool operator==(tagged_key const &, tagged_key const &) noexcept = default;
+  [[nodiscard]] constexpr auto valid() const noexcept { return static_cast<bool>(v_ & 1); }
+
+  using value_type = uinteger<KeyBits - SetBits + 1>::type;
+
+  constexpr value_type &get() noexcept { return v_; }
+  constexpr value_type const &get() const noexcept { return v_; }
+
+private:
+  value_type v_ = 0;
+};
+
+template <std::unsigned_integral Key, unsigned SetBits, unsigned Ways> struct match_finder {
+  using tagged_key_type = tagged_key<Key, SetBits>;
+
+  /// \return The lane index [0..Ways) if a match if found, or Ways if no match
+  static constexpr std::size_t find(tagged_key_type const tk,
+                                    std::array<tagged_key_type, Ways> const &values) noexcept {
+    auto index = std::size_t{0};
+    for (; index < Ways; ++index) {
+      if (values[index] == tk) {
+        break;
+      }
+    }
+    return index;
+  }
+};
+
+#if __ARM_NEON
+template <std::unsigned_integral Key, unsigned SetBits>
+  requires(std::is_same_v<typename tagged_key<Key, SetBits>::value_type, std::uint16_t>)
+struct match_finder<Key, SetBits, 4> {
+  using tagged_key_type = tagged_key<Key, SetBits>;
+
+  static constexpr std::size_t find(tagged_key_type const new_tag,
+                                    std::array<tagged_key_type, 4> const &values) noexcept {
+    uint16x4_t const a = vdup_n_u16(new_tag.get());
+    uint16x4_t const b = vld1_u16(std::bit_cast<std::uint16_t const *>(values.data()));
+
+    uint16x4_t const cmp = vceq_u16(a, b);  // Compare lanes: 0xFFFF if equal
+    std::uint64_t const packed = vget_lane_u64(vreinterpret_u64_u16(cmp), 0);
+    std::uint64_t const nz_or = packed | (static_cast<std::uint64_t>(packed == 0) << 63);
+    return (static_cast<std::size_t>(static_cast<unsigned>(std::countr_zero(nz_or)) + 1U)) >> 3;
+  }
+};
+
+template <std::unsigned_integral Key, unsigned SetBits>
+  requires(std::is_same_v<typename tagged_key<Key, SetBits>::value_type, std::uint16_t>)
+struct match_finder<Key, SetBits, 8> {
+  using tagged_key_type = tagged_key<Key, SetBits>;
+
+  static constexpr std::size_t find(tagged_key_type const new_tag,
+                                    std::array<tagged_key_type, 8> const &values) noexcept {
+    uint16x8_t const a = vdupq_n_u16(new_tag.get());
+    uint16x8_t const b = vld1q_u16(std::bit_cast<std::uint16_t const *>(values.data()));
+
+    uint16x8_t const cmp = vceqq_u16(a, b);   // Compare lanes: 0xFFFF if equal
+    uint8x8_t const narrow = vmovn_u16(cmp);  // Narrow to 8-bit: 0xFF if equal, 0x00 if not
+    std::uint64_t const packed =
+        vget_lane_u64(vreinterpret_u64_u8(narrow), 0);  // Treat 8 lanes as a single 64-bit scalar
+
+    // Extract the matching lane by counting trailing groups of 8 bits. If packed is zero, no lane matched.
+    // For nonzero packed: ctz = 8*i (i = matching lane).
+    // For zero packed:    ctz = 63  -> (ctz+1)>>3 = 8  (no match).
+    std::uint64_t const nz_or = packed | (static_cast<std::uint64_t>(packed == 0) << 63);
+    return (static_cast<std::size_t>(static_cast<unsigned>(std::countr_zero(nz_or)) + 1U)) >> 3;
+  }
+};
+
+template <std::unsigned_integral Key, unsigned SetBits>
+  requires(std::is_same_v<typename tagged_key<Key, SetBits>::value_type, std::uint32_t>)
+struct match_finder<Key, SetBits, 4> {
+  using tagged_key_type = tagged_key<Key, SetBits>;
+
+  static constexpr std::size_t find(tagged_key_type const new_tag,
+                                    std::array<tagged_key_type, 4> const &values) noexcept {
+    uint32x4_t const a = vdupq_n_u32(new_tag.get());
+    uint32x4_t const b = vld1q_u32(std::bit_cast<std::uint32_t const *>(values.data()));
+
+    uint32x4_t const cmp = vceqq_u32(a, b);    // Compare lanes: 0xFFFF if equal
+    uint16x4_t const narrow = vmovn_u32(cmp);  // Narrow to 8-bit: 0xFF if equal, 0x00 if not
+    std::uint64_t const packed =
+        vget_lane_u64(vreinterpret_u64_u16(narrow), 0);  // Treat 4b lanes as a single 64-bit scalar
+
+    // Extract the matching lane by counting trailing groups of 8 bits. If packed is zero, no lane matched.
+    // For nonzero packed: ctz = 8*i (i = matching lane).
+    // For zero packed:    ctz = 63  -> (ctz+1)>>3 = 8  (no match).
+    std::uint64_t const nz_or = packed | (static_cast<std::uint64_t>(packed == 0) << 63);
+    return (static_cast<unsigned>(std::countr_zero(nz_or)) + 1U) / 16U;
+  }
+};
+
+#endif  // __ARM_NEON
+
+template <std::unsigned_integral Key, typename MappedType, unsigned SetBits, std::size_t Ways> class cache_set {
+  using tagged_key_type = tagged_key<Key, SetBits>;
+
 public:
   template <typename MissFn>
     requires(std::is_invocable_r_v<MappedType, MissFn>)
   MappedType &access(Key key, MissFn miss) {
-    auto const new_tag = tag_and_valid{key};
-    // Linear search. The "Ways" argument should be small enough that tags_ fits within a cache line or two.
-    for (auto ctr = std::size_t{0}; ctr < Ways; ++ctr) {
-      if (values_[ctr] == new_tag) {
-        plru_.touch(ctr);
-        return ways_[ctr].value();
-      }
+    auto const new_tag = tagged_key_type{key};
+    if (auto const index = find_matching(new_tag); index < Ways) {
+      plru_.touch(index);
+      return ways_[index].value();
     }
 
     // Find the array member that is to be re-used by traversing the tree.
@@ -127,26 +233,18 @@ public:
     return *result;
   }
 
-  constexpr auto size() const noexcept {
-    return static_cast<std::size_t>(std::ranges::count_if(values_, [](tag_and_valid const &v) { return v.valid(); }));
+  constexpr std::size_t size() const noexcept {
+    return static_cast<std::size_t>(
+        std::ranges::count_if(values_, [](tagged_key<Key, SetBits> const &v) { return v.valid(); }));
   }
 
 private:
-  class tag_and_valid {
-  public:
-    constexpr tag_and_valid() noexcept = default;
-    constexpr explicit tag_and_valid(Key key) noexcept : v_{static_cast<tv_type>(1 | (key >> (SetBits - 1)))} {}
-    friend constexpr bool operator==(tag_and_valid const &, tag_and_valid const &) noexcept = default;
-    [[nodiscard]] constexpr auto valid() const noexcept { return static_cast<bool>(v_ & 1); }
+  constexpr std::size_t find_matching(tagged_key_type tk) const noexcept {
+    return match_finder<Key, SetBits, Ways>::find(tk, values_);
+  }
 
-  private:
-    static constexpr auto KeyBits = sizeof(Key) * CHAR_BIT;
-    using tv_type = uinteger<KeyBits - SetBits + 1>::type;
-    tv_type v_ = 0;
-  };
-
+  std::array<tagged_key<Key, SetBits>, Ways> values_{};
   std::array<aligned_storage<MappedType>, Ways> ways_;
-  std::array<tag_and_valid, Ways> values_{};
   tree<Ways> plru_{};
 };
 
@@ -158,8 +256,8 @@ private:
 ///
 /// The total number of cache entries is given by Sets * Ways.
 ///
-/// \tparam Key  The key type
-/// \tparam T  The value type
+/// \tparam Key  The key type.
+/// \tparam T  The value type.
 /// \tparam Sets  The number of entries that share the same lookup key fragment or hash bucket
 ///   index. All entries in a set compete to be stored in that group.
 /// \tparam Ways  The number of slots within a set that can hold a single entry. The number of
@@ -186,9 +284,9 @@ public:
   /// \returns The cached value.
   template <typename MissFn>
     requires(std::is_invocable_r_v<T, MissFn>)
-  mapped_type &access(key_type key, MissFn miss) {
+  mapped_type &access(key_type key, MissFn &&miss) {
     assert(plru_cache::set(key) < Sets);
-    return sets_[plru_cache::set(key)].access(key, miss);
+    return sets_[plru_cache::set(key)].access(key, std::forward<MissFn>(miss));
   }
   /// \returns The maximum possible number of elements that can be held by the cache.
   [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Sets * Ways; }
@@ -202,8 +300,8 @@ public:
   [[nodiscard]] static constexpr std::size_t way(key_type key) noexcept { return (key >> set_bits_) & (Ways - 1U); }
 
 private:
-  static constexpr std::size_t set_bits_ = std::bit_width(Sets - 1U);
-  using ways_type = details::cache_set<set_bits_, key_type, mapped_type, ways>;
+  static constexpr unsigned set_bits_ = std::bit_width(Sets - 1U);
+  using ways_type = details::cache_set<key_type, mapped_type, set_bits_, ways>;
   std::array<ways_type, Sets> sets_{};
 };
 

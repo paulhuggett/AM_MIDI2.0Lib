@@ -63,20 +63,27 @@ private:
 
     /// \brief Represents a key for the per-note controller cache.
     struct pn_cache_key {
-      static constexpr auto significant_bits = 9;
+      /// \param group The group number
+      /// \param channel  The channel number
+      /// \param is_rpn  True if the controller is RPN (Registered Parameter Number), false if it represents an NRPN (Non-Registered
+      ///   Parameter Number).
+      constexpr pn_cache_key(std::uint8_t group, std::uint8_t channel, bool is_rpn) noexcept
+          : v_{static_cast<std::uint16_t>(group | (channel << 4) | (is_rpn << 8))} {
+        assert(group < 0x10 && channel < 0x10);
+      }
       constexpr bool operator==(pn_cache_key const &) const noexcept = default;
-      /// The group number
-      std::uint8_t group : 4 = 0;
-      /// The channel number
-      std::uint8_t channel : 4 = 0;
-      /// true if the controller is RPN (Registered Parameter Number), false if it represents an NRPN (Non-Registered
-      /// Parameter Number).
-      std::uint8_t is_rpn : 1 = false;
+      explicit operator std::uint16_t() const noexcept { return v_; }
+
+      constexpr std::uint8_t group() const noexcept { return v_ & 0x000F; }
+      constexpr std::uint8_t channel() const noexcept { return (v_ >> 4) & 0x000F; }
+      constexpr bool is_rpn() const noexcept { return (v_ >> 8) & 0x0001; }
+
+    private:
+      std::uint16_t v_ = 0;
     };
 
     // value is 14 bit MIDI 1 controller number (bank/index).
-    using pn_cache_type =
-        plru_cache<uinteger<pn_cache_key::significant_bits>::type, std::pair<std::uint8_t, std::uint8_t>, 4, 4>;
+    using pn_cache_type = plru_cache<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, 4, 8>;
     pn_cache_type pn_cache;
     fifo<std::uint32_t, 4> output;
   };
@@ -244,12 +251,5 @@ private:
 };
 
 }  // end namespace midi2
-
-template <> struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key> {
-  std::size_t operator()(midi2::ump_to_midi1::context_type::pn_cache_key const &key) const noexcept {
-    return std::hash<unsigned>{}(static_cast<unsigned>(key.group << 5) | static_cast<unsigned>(key.channel << 1) |
-                                 static_cast<unsigned>(key.is_rpn));
-  }
-};
 
 #endif  // MIDI2_UMPTOMIDI1_HPP

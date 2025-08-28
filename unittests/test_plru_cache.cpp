@@ -89,6 +89,99 @@ TEST(PlruCache, Fill) {
   EXPECT_EQ(cache.size(), 8);
 }
 
+class PlruCacheParam : public testing::TestWithParam<unsigned> {};
+
+TEST_P(PlruCacheParam, Key4x4Uint16) {
+  // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
+  plru_cache<std::uint16_t, std::string, 4, 4> cache;
+  std::string const value = "str";
+  MockFunction<std::string()> mock_function;
+
+  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).RetiresOnSaturation();
+
+  auto const key = static_cast<std::uint16_t>(GetParam());
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 1U);
+
+  // A second call with the same key doesn't create a new member.
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 1U);
+}
+
+TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
+  // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
+  plru_cache<std::uint16_t, std::string, 4, 4> cache;
+  std::string const value = "str";
+  MockFunction<std::string()> mock_function;
+
+  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).WillOnce(Return(value)).RetiresOnSaturation();
+
+  auto const key = static_cast<std::uint16_t>(GetParam());
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key + 1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+
+  // A second call with the same key doesn't create a new member.
+  EXPECT_EQ(cache.access(key + 1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+}
+
+TEST_P(PlruCacheParam, Key2x8Uint16TwoValues) {
+  // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
+  plru_cache<std::uint16_t, std::string, 2, 8> cache;
+  std::string const value = "str";
+  MockFunction<std::string()> mock_function;
+
+  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).WillOnce(Return(value)).RetiresOnSaturation();
+
+  auto const key = static_cast<std::uint16_t>(GetParam());
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+
+  // A second call with the same key doesn't create a new member.
+  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+}
+
+TEST_P(PlruCacheParam, Key4x4Uint32TwoValues) {
+  // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
+  plru_cache<std::uint32_t, std::string, 4, 4> cache;
+  std::string const value = "str";
+  MockFunction<std::string()> mock_function;
+
+  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).WillOnce(Return(value)).RetiresOnSaturation();
+
+  auto const key = GetParam();
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+
+  // A second call with the same key doesn't create a new member.
+  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 2U);
+}
+INSTANTIATE_TEST_SUITE_P(PlruCacheParam, PlruCacheParam, testing::Range(/*begin=*/0U, /*end=*/32U, /*step=*/4U));
+
+TEST(PlruCache, Key2x8Uint16) {
+  // Check for the NEON SIMD with 8 ways and a tagged key-type of uint16_t.
+  plru_cache<std::uint16_t, std::string, 2, 8> cache;
+  std::string const value = "str";
+  MockFunction<std::string()> mock_function;
+
+  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).RetiresOnSaturation();
+
+  EXPECT_EQ(cache.access(3U, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 1U);
+
+  // A second call with the same key doesn't create a new member.
+  EXPECT_EQ(cache.access(3U, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(std::size(cache), 1U);
+}
+
 class counted {
 public:
   counted() : ctr_{++count_} { actions.emplace_back(action::ctor, ctr_); }

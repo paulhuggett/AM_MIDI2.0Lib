@@ -131,203 +131,140 @@ concept flex_data = requires(T v, Context context) {
 };
 // clang-format on
 
+// clang-format off
 template <typename Context> struct utility_null {
   // 7.2.1 NOOP
-  constexpr static void noop(Context) { /* do nothing */
-  }
+  constexpr static void noop(Context) { /* do nothing */ }
   // 7.2.2.1 JR Clock Message
-  constexpr static void jr_clock(Context, ump::utility::jr_clock const &) { /* do nothing */
-  }
+  constexpr static void jr_clock(Context, ump::utility::jr_clock const &) { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
-  constexpr static void jr_timestamp(Context, ump::utility::jr_timestamp const &) { /* do nothing */
-  }
+  constexpr static void jr_timestamp(Context, ump::utility::jr_timestamp const &) { /* do nothing */ }
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  constexpr static void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) { /* do nothing */
-  }
+  constexpr static void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) { /* do nothing */ }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  constexpr static void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) { /* do nothing */
-  }
+  constexpr static void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) { /* do nothing */ }
 
-  constexpr static void unknown(Context, std::span<std::uint32_t>) { /* do nothing */
-  }
+  constexpr static void unknown(Context, std::span<std::uint32_t>) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(utility<utility_null<int>, int>, "utility_null must implement the utility concept");
 
+// clang-format off
 template <typename Context> struct system_null {
   // 7.6 System Common and System Real Time Messages
-  constexpr static void midi_time_code(Context, ump::system::midi_time_code const &) { /* do nothing */
-  }
-  constexpr static void song_position_pointer(Context, ump::system::song_position_pointer const &) { /* do nothing */
-  }
-  constexpr static void song_select(Context, ump::system::song_select const &) { /* do nothing */
-  }
-  constexpr static void tune_request(Context, ump::system::tune_request const &) { /* do nothing */
-  }
-  constexpr static void timing_clock(Context, ump::system::timing_clock const &) { /* do nothing */
-  }
-  constexpr static void seq_start(Context, ump::system::sequence_start const &) { /* do nothing */
-  }
-  constexpr static void seq_continue(Context, ump::system::sequence_continue const &) { /* do nothing */
-  }
-  constexpr static void seq_stop(Context, ump::system::sequence_stop const &) { /* do nothing */
-  }
-  constexpr static void active_sensing(Context, ump::system::active_sensing const &) { /* do nothing */
-  }
-  constexpr static void reset(Context, ump::system::reset const &) { /* do nothing */
-  }
+  constexpr static void midi_time_code(Context, ump::system::midi_time_code const &) { /* do nothing */ }
+  constexpr static void song_position_pointer(Context, ump::system::song_position_pointer const &) { /* do nothing */ }
+  constexpr static void song_select(Context, ump::system::song_select const &) { /* do nothing */ }
+  constexpr static void tune_request(Context, ump::system::tune_request const &) { /* do nothing */ }
+  constexpr static void timing_clock(Context, ump::system::timing_clock const &) { /* do nothing */ }
+  constexpr static void seq_start(Context, ump::system::sequence_start const &) { /* do nothing */ }
+  constexpr static void seq_continue(Context, ump::system::sequence_continue const &) { /* do nothing */ }
+  constexpr static void seq_stop(Context, ump::system::sequence_stop const &) { /* do nothing */ }
+  constexpr static void active_sensing(Context, ump::system::active_sensing const &) { /* do nothing */ }
+  constexpr static void reset(Context, ump::system::reset const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(system<system_null<int>, int>, "system_null must implement the system concept");
 
+// clang-format off
 template <typename Context> struct m1cvm_null {
-  constexpr static void note_off(Context, ump::m1cvm::note_off const &) { /* do nothing */
-  }
-  constexpr static void note_on(Context, ump::m1cvm::note_on const &) { /* do nothing */
-  }
-  constexpr static void poly_pressure(Context, ump::m1cvm::poly_pressure const &) { /* do nothing */
-  }
-  constexpr static void control_change(Context, ump::m1cvm::control_change const &) { /* do nothing */
-  }
-  constexpr static void program_change(Context, ump::m1cvm::program_change const &) { /* do nothing */
-  }
-  constexpr static void channel_pressure(Context, ump::m1cvm::channel_pressure const &) { /* do nothing */
-  }
-  constexpr static void pitch_bend(Context, ump::m1cvm::pitch_bend const &) { /* do nothing */
-  }
+  constexpr static void note_off(Context, ump::m1cvm::note_off const &) { /* do nothing */ }
+  constexpr static void note_on(Context, ump::m1cvm::note_on const &) { /* do nothing */ }
+  constexpr static void poly_pressure(Context, ump::m1cvm::poly_pressure const &) { /* do nothing */ }
+  constexpr static void control_change(Context, ump::m1cvm::control_change const &) { /* do nothing */ }
+  constexpr static void program_change(Context, ump::m1cvm::program_change const &) { /* do nothing */ }
+  constexpr static void channel_pressure(Context, ump::m1cvm::channel_pressure const &) { /* do nothing */ }
+  constexpr static void pitch_bend(Context, ump::m1cvm::pitch_bend const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(m1cvm<m1cvm_null<int>, int>, "m1cvm_null must implement the m1cvm concept");
 
+// clang-format off
 template <typename Context> struct data64_null {
-  constexpr static void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) { /* do nothing */
-  }
-  constexpr static void sysex7_start(Context, ump::data64::sysex7_start const &) { /* do nothing */
-  }
-  constexpr static void sysex7_continue(Context, ump::data64::sysex7_continue const &) { /* do nothing */
-  }
-  constexpr static void sysex7_end(Context, ump::data64::sysex7_end const &) { /* do nothing */
-  }
+  constexpr static void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) { /* do nothing */ }
+  constexpr static void sysex7_start(Context, ump::data64::sysex7_start const &) { /* do nothing */ }
+  constexpr static void sysex7_continue(Context, ump::data64::sysex7_continue const &) { /* do nothing */ }
+  constexpr static void sysex7_end(Context, ump::data64::sysex7_end const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(data64<data64_null<int>, int>, "data64_null must implement the data64 concept");
 
+// clang-format off
 template <typename Context> struct m2cvm_null {
-  constexpr static void note_off(Context, ump::m2cvm::note_off const &) { /* do nothing */
-  }
-  constexpr static void note_on(Context, ump::m2cvm::note_on const &) { /* do nothing */
-  }
-  constexpr static void poly_pressure(Context, ump::m2cvm::poly_pressure const &) { /* do nothing */
-  }
-  constexpr static void program_change(Context, ump::m2cvm::program_change const &) { /* do nothing */
-  }
-  constexpr static void channel_pressure(Context, ump::m2cvm::channel_pressure const &) { /* do nothing */
-  }
-
+  constexpr static void note_off(Context, ump::m2cvm::note_off const &) { /* do nothing */ }
+  constexpr static void note_on(Context, ump::m2cvm::note_on const &) { /* do nothing */ }
+  constexpr static void poly_pressure(Context, ump::m2cvm::poly_pressure const &) { /* do nothing */ }
+  constexpr static void program_change(Context, ump::m2cvm::program_change const &) { /* do nothing */ }
+  constexpr static void channel_pressure(Context, ump::m2cvm::channel_pressure const &) { /* do nothing */ }
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
-  constexpr static void rpn_per_note_controller(Context, ump::m2cvm::rpn_per_note_controller const &) { /* do nothing */
-  }
+  constexpr static void rpn_per_note_controller(Context, ump::m2cvm::rpn_per_note_controller const &) { /* do nothing */ }
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
-  constexpr static void nrpn_per_note_controller(Context,
-                                                 ump::m2cvm::nrpn_per_note_controller const &) { /* do nothing */
-  }
+  constexpr static void nrpn_per_note_controller(Context, ump::m2cvm::nrpn_per_note_controller const &) { /* do nothing */ }
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
-  constexpr static void rpn_controller(Context, ump::m2cvm::rpn_controller const &) { /* do nothing */
-  }
+  constexpr static void rpn_controller(Context, ump::m2cvm::rpn_controller const &) { /* do nothing */ }
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
-  constexpr static void nrpn_controller(Context, ump::m2cvm::nrpn_controller const &) { /* do nothing */
-  }
+  constexpr static void nrpn_controller(Context, ump::m2cvm::nrpn_controller const &) { /* do nothing */ }
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
-  constexpr static void rpn_relative_controller(Context, ump::m2cvm::rpn_relative_controller const &) { /* do nothing */
-  }
+  constexpr static void rpn_relative_controller(Context, ump::m2cvm::rpn_relative_controller const &) { /* do nothing */ }
   // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
-  constexpr static void nrpn_relative_controller(Context,
-                                                 ump::m2cvm::nrpn_relative_controller const &) { /* do nothing */
-  }
-
-  constexpr static void per_note_management(Context, ump::m2cvm::per_note_management const &) { /* do nothing */
-  }
-  constexpr static void control_change(Context, ump::m2cvm::control_change const &) { /* do nothing */
-  }
-  constexpr static void pitch_bend(Context, ump::m2cvm::pitch_bend const &) { /* do nothing */
-  }
-  constexpr static void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) { /* do nothing */
-  }
+  constexpr static void nrpn_relative_controller(Context, ump::m2cvm::nrpn_relative_controller const &) { /* do nothing */ }
+  constexpr static void per_note_management(Context, ump::m2cvm::per_note_management const &) { /* do nothing */ }
+  constexpr static void control_change(Context, ump::m2cvm::control_change const &) { /* do nothing */ }
+  constexpr static void pitch_bend(Context, ump::m2cvm::pitch_bend const &) { /* do nothing */ }
+  constexpr static void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(m2cvm<m2cvm_null<int>, int>, "m2cvm_null must implement the m2cvm concept");
 
+// clang-format off
 template <typename Context> struct data128_null {
-  constexpr static void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) { /* do nothing */
-  }
-  constexpr static void sysex8_start(Context, ump::data128::sysex8_start const &) { /* do nothing */
-  }
-  constexpr static void sysex8_continue(Context, ump::data128::sysex8_continue const &) { /* do nothing */
-  }
-  constexpr static void sysex8_end(Context, ump::data128::sysex8_end const &) { /* do nothing */
-  }
-  constexpr static void mds_header(Context, ump::data128::mds_header const &) { /* do nothing */
-  }
-  constexpr static void mds_payload(Context, ump::data128::mds_payload const &) { /* do nothing */
-  }
+  constexpr static void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) { /* do nothing */ }
+  constexpr static void sysex8_start(Context, ump::data128::sysex8_start const &) { /* do nothing */ }
+  constexpr static void sysex8_continue(Context, ump::data128::sysex8_continue const &) { /* do nothing */ }
+  constexpr static void sysex8_end(Context, ump::data128::sysex8_end const &) { /* do nothing */ }
+  constexpr static void mds_header(Context, ump::data128::mds_header const &) { /* do nothing */ }
+  constexpr static void mds_payload(Context, ump::data128::mds_payload const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(data128<data128_null<int>, int>, "data128_null must implement the data128 concept");
 
+// clang-format off
 template <typename Context> struct stream_null {
-  constexpr static void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) { /* do nothing */
-  }
-  constexpr static void endpoint_info_notification(Context,
-                                                   ump::stream::endpoint_info_notification const &) { /* do nothing */
-  }
-  constexpr static void device_identity_notification(
-      Context, ump::stream::device_identity_notification const &) { /* do nothing */
-  }
-  constexpr static void endpoint_name_notification(Context,
-                                                   ump::stream::endpoint_name_notification const &) { /* do nothing */
-  }
-  constexpr static void product_instance_id_notification(
-      Context, ump::stream::product_instance_id_notification const &) { /* do nothing */
-  }
-  constexpr static void jr_configuration_request(Context,
-                                                 ump::stream::jr_configuration_request const &) { /* do nothing */
-  }
-  constexpr static void jr_configuration_notification(
-      Context, ump::stream::jr_configuration_notification const &) { /* do nothing */
-  }
+  constexpr static void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) { /* do nothing */ }
+  constexpr static void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) { /* do nothing */ }
+  constexpr static void device_identity_notification(Context, ump::stream::device_identity_notification const &) { /* do nothing */ }
+  constexpr static void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) { /* do nothing */ }
+  constexpr static void product_instance_id_notification(Context, ump::stream::product_instance_id_notification const &) { /* do nothing */ }
+  constexpr static void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) { /* do nothing */ }
+  constexpr static void jr_configuration_notification(Context, ump::stream::jr_configuration_notification const &) { /* do nothing */ }
 
-  constexpr static void function_block_discovery(Context,
-                                                 ump::stream::function_block_discovery const &) { /* do nothing */
-  }
-  constexpr static void function_block_info_notification(
-      Context, ump::stream::function_block_info_notification const &) { /* do nothing */
-  }
-  constexpr static void function_block_name_notification(
-      Context, ump::stream::function_block_name_notification const &) { /* do nothing */
-  }
+  constexpr static void function_block_discovery(Context, ump::stream::function_block_discovery const &) { /* do nothing */ }
+  constexpr static void function_block_info_notification(Context, ump::stream::function_block_info_notification const &) { /* do nothing */ }
+  constexpr static void function_block_name_notification(Context, ump::stream::function_block_name_notification const &) { /* do nothing */ }
 
-  constexpr static void start_of_clip(Context, ump::stream::start_of_clip const &) { /* do nothing */
-  }
-  constexpr static void end_of_clip(Context, ump::stream::end_of_clip const &) { /* do nothing */
-  }
+  constexpr static void start_of_clip(Context, ump::stream::start_of_clip const &) { /* do nothing */ }
+  constexpr static void end_of_clip(Context, ump::stream::end_of_clip const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(stream<stream_null<int>, int>, "stream_null must implement the stream concept");
 
+// clang-format off
 template <typename Context> struct flex_data_null {
-  constexpr static void set_tempo(Context, ump::flex_data::set_tempo const &) { /* do nothing */
-  }
-  constexpr static void set_time_signature(Context, ump::flex_data::set_time_signature const &) { /* do nothing */
-  }
-  constexpr static void set_metronome(Context, ump::flex_data::set_metronome const &) { /* do nothing */
-  }
-  constexpr static void set_key_signature(Context, ump::flex_data::set_key_signature const &) { /* do nothing */
-  }
-  constexpr static void set_chord_name(Context, ump::flex_data::set_chord_name const &) { /* do nothing */
-  }
-  constexpr static void text(Context, ump::flex_data::text_common const &) { /* do nothing */
-  }
+  constexpr static void set_tempo(Context, ump::flex_data::set_tempo const &) { /* do nothing */ }
+  constexpr static void set_time_signature(Context, ump::flex_data::set_time_signature const &) { /* do nothing */ }
+  constexpr static void set_metronome(Context, ump::flex_data::set_metronome const &) { /* do nothing */ }
+  constexpr static void set_key_signature(Context, ump::flex_data::set_key_signature const &) { /* do nothing */ }
+  constexpr static void set_chord_name(Context, ump::flex_data::set_chord_name const &) { /* do nothing */ }
+  constexpr static void text(Context, ump::flex_data::text_common const &) { /* do nothing */ }
 };
+// clang-format on
 
 static_assert(flex_data<flex_data_null<int>, int>, "flex_data_null must implement the flex_data concept");
 
@@ -518,176 +455,107 @@ template <typename Context> struct flex_data_pure {
 
 static_assert(flex_data<flex_data_pure<int>, int>, "flex_data_pure must implement the flex_data concept");
 
+// clang-format off
 template <typename Context> struct utility_base : public utility_pure<Context> {
   // 7.2.1 NOOP
-  void noop(Context) override { /* do nothing */
-  }
+  void noop(Context) override { /* do nothing */ }
   // 7.2.2.1 JR Clock Message
-  void jr_clock(Context, ump::utility::jr_clock const &) override { /* do nothing */
-  }
+  void jr_clock(Context, ump::utility::jr_clock const &) override { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
-  void jr_timestamp(Context, ump::utility::jr_timestamp const &) override { /* do nothing */
-  }
+  void jr_timestamp(Context, ump::utility::jr_timestamp const &) override { /* do nothing */ }
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
-  void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) override { /* do nothing */
-  }
+  void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) override { /* do nothing */ }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) override { /* do nothing */
-  }
+  void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) override { /* do nothing */ }
 
-  void unknown(Context, std::span<std::uint32_t>) override { /* do nothing */
-  }
+  void unknown(Context, std::span<std::uint32_t>) override { /* do nothing */ }
 };
 template <typename Context> struct system_base : public system_pure<Context> {
   // 7.6 System Common and System Real Time Messages
-  void midi_time_code(Context, ump::system::midi_time_code const &) override { /* do nothing */
-  }
-  void song_position_pointer(Context, ump::system::song_position_pointer const &) override { /* do nothing */
-  }
-  void song_select(Context, ump::system::song_select const &) override { /* do nothing */
-  }
-  void tune_request(Context, ump::system::tune_request const &) override { /* do nothing */
-  }
-  void timing_clock(Context, ump::system::timing_clock const &) override { /* do nothing */
-  }
-  void seq_start(Context, ump::system::sequence_start const &) override { /* do nothing */
-  }
-  void seq_continue(Context, ump::system::sequence_continue const &) override { /* do nothing */
-  }
-  void seq_stop(Context, ump::system::sequence_stop const &) override { /* do nothing */
-  }
-  void active_sensing(Context, ump::system::active_sensing const &) override { /* do nothing */
-  }
-  void reset(Context, ump::system::reset const &) override { /* do nothing */
-  }
+  void midi_time_code(Context, ump::system::midi_time_code const &) override { /* do nothing */ }
+  void song_position_pointer(Context, ump::system::song_position_pointer const &) override { /* do nothing */ }
+  void song_select(Context, ump::system::song_select const &) override { /* do nothing */ }
+  void tune_request(Context, ump::system::tune_request const &) override { /* do nothing */ }
+  void timing_clock(Context, ump::system::timing_clock const &) override { /* do nothing */ }
+  void seq_start(Context, ump::system::sequence_start const &) override { /* do nothing */ }
+  void seq_continue(Context, ump::system::sequence_continue const &) override { /* do nothing */ }
+  void seq_stop(Context, ump::system::sequence_stop const &) override { /* do nothing */ }
+  void active_sensing(Context, ump::system::active_sensing const &) override { /* do nothing */ }
+  void reset(Context, ump::system::reset const &) override { /* do nothing */ }
 };
 template <typename Context> struct m1cvm_base : public m1cvm_pure<Context> {
-  void note_off(Context, ump::m1cvm::note_off const &) override { /* do nothing */
-  }
-  void note_on(Context, ump::m1cvm::note_on const &) override { /* do nothing */
-  }
-  void poly_pressure(Context, ump::m1cvm::poly_pressure const &) override { /* do nothing */
-  }
-  void control_change(Context, ump::m1cvm::control_change const &) override { /* do nothing */
-  }
-  void program_change(Context, ump::m1cvm::program_change const &) override { /* do nothing */
-  }
-  void channel_pressure(Context, ump::m1cvm::channel_pressure const &) override { /* do nothing */
-  }
-  void pitch_bend(Context, ump::m1cvm::pitch_bend const &) override { /* do nothing */
-  }
+  void note_off(Context, ump::m1cvm::note_off const &) override { /* do nothing */ }
+  void note_on(Context, ump::m1cvm::note_on const &) override { /* do nothing */ }
+  void poly_pressure(Context, ump::m1cvm::poly_pressure const &) override { /* do nothing */ }
+  void control_change(Context, ump::m1cvm::control_change const &) override { /* do nothing */ }
+  void program_change(Context, ump::m1cvm::program_change const &) override { /* do nothing */ }
+  void channel_pressure(Context, ump::m1cvm::channel_pressure const &) override { /* do nothing */ }
+  void pitch_bend(Context, ump::m1cvm::pitch_bend const &) override { /* do nothing */ }
 };
 template <typename Context> struct data64_base : public data64_pure<Context> {
-  void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) override { /* do nothing */
-  }
-  void sysex7_start(Context, ump::data64::sysex7_start const &) override { /* do nothing */
-  }
-  void sysex7_continue(Context, ump::data64::sysex7_continue const &) override { /* do nothing */
-  }
-  void sysex7_end(Context, ump::data64::sysex7_end const &) override { /* do nothing */
-  }
+  void sysex7_in_1(Context, ump::data64::sysex7_in_1 const &) override { /* do nothing */ }
+  void sysex7_start(Context, ump::data64::sysex7_start const &) override { /* do nothing */ }
+  void sysex7_continue(Context, ump::data64::sysex7_continue const &) override { /* do nothing */ }
+  void sysex7_end(Context, ump::data64::sysex7_end const &) override { /* do nothing */ }
 };
 template <typename Context> struct m2cvm_base : public m2cvm_pure<Context> {
-  void note_off(Context, ump::m2cvm::note_off const &) override { /* do nothing */
-  }
-  void note_on(Context, ump::m2cvm::note_on const &) override { /* do nothing */
-  }
-  void poly_pressure(Context, ump::m2cvm::poly_pressure const &) override { /* do nothing */
-  }
-  void program_change(Context, ump::m2cvm::program_change const &) override { /* do nothing */
-  }
-  void channel_pressure(Context, ump::m2cvm::channel_pressure const &) override { /* do nothing */
-  }
+  void note_off(Context, ump::m2cvm::note_off const &) override { /* do nothing */ }
+  void note_on(Context, ump::m2cvm::note_on const &) override { /* do nothing */ }
+  void poly_pressure(Context, ump::m2cvm::poly_pressure const &) override { /* do nothing */ }
+  void program_change(Context, ump::m2cvm::program_change const &) override { /* do nothing */ }
+  void channel_pressure(Context, ump::m2cvm::channel_pressure const &) override { /* do nothing */ }
 
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
-  void rpn_per_note_controller(Context, ump::m2cvm::rpn_per_note_controller const &) override { /* do nothing */
-  }
+  void rpn_per_note_controller(Context, ump::m2cvm::rpn_per_note_controller const &) override { /* do nothing */ }
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
-  void nrpn_per_note_controller(Context, ump::m2cvm::nrpn_per_note_controller const &) override { /* do nothing */
-  }
+  void nrpn_per_note_controller(Context, ump::m2cvm::nrpn_per_note_controller const &) override { /* do nothing */ }
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
-  void rpn_controller(Context, ump::m2cvm::rpn_controller const &) override { /* do nothing */
-  }
+  void rpn_controller(Context, ump::m2cvm::rpn_controller const &) override { /* do nothing */ }
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
-  void nrpn_controller(Context, ump::m2cvm::nrpn_controller const &) override { /* do nothing */
-  }
+  void nrpn_controller(Context, ump::m2cvm::nrpn_controller const &) override { /* do nothing */ }
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
-  void rpn_relative_controller(Context, ump::m2cvm::rpn_relative_controller const &) override { /* do nothing */
-  }
+  void rpn_relative_controller(Context, ump::m2cvm::rpn_relative_controller const &) override { /* do nothing */ }
   // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
-  void nrpn_relative_controller(Context, ump::m2cvm::nrpn_relative_controller const &) override { /* do nothing */
-  }
+  void nrpn_relative_controller(Context, ump::m2cvm::nrpn_relative_controller const &) override { /* do nothing */ }
 
-  void per_note_management(Context, ump::m2cvm::per_note_management const &) override { /* do nothing */
-  }
-  void control_change(Context, ump::m2cvm::control_change const &) override { /* do nothing */
-  }
-  void pitch_bend(Context, ump::m2cvm::pitch_bend const &) override { /* do nothing */
-  }
-  void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) override { /* do nothing */
-  }
+  void per_note_management(Context, ump::m2cvm::per_note_management const &) override { /* do nothing */ }
+  void control_change(Context, ump::m2cvm::control_change const &) override { /* do nothing */ }
+  void pitch_bend(Context, ump::m2cvm::pitch_bend const &) override { /* do nothing */ }
+  void per_note_pitch_bend(Context, ump::m2cvm::per_note_pitch_bend const &) override { /* do nothing */ }
 };
 template <typename Context> struct data128_base : public data128_pure<Context> {
-  void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) override { /* do nothing */
-  }
-  void sysex8_start(Context, ump::data128::sysex8_start const &) override { /* do nothing */
-  }
-  void sysex8_continue(Context, ump::data128::sysex8_continue const &) override { /* do nothing */
-  }
-  void sysex8_end(Context, ump::data128::sysex8_end const &) override { /* do nothing */
-  }
-  void mds_header(Context, ump::data128::mds_header const &) override { /* do nothing */
-  }
-  void mds_payload(Context, ump::data128::mds_payload const &) override { /* do nothing */
-  }
+  void sysex8_in_1(Context, ump::data128::sysex8_in_1 const &) override { /* do nothing */ }
+  void sysex8_start(Context, ump::data128::sysex8_start const &) override { /* do nothing */ }
+  void sysex8_continue(Context, ump::data128::sysex8_continue const &) override { /* do nothing */ }
+  void sysex8_end(Context, ump::data128::sysex8_end const &) override { /* do nothing */ }
+  void mds_header(Context, ump::data128::mds_header const &) override { /* do nothing */ }
+  void mds_payload(Context, ump::data128::mds_payload const &) override { /* do nothing */ }
 };
 template <typename Context> struct stream_base : public stream_pure<Context> {
-  void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) override { /* do nothing */
-  }
-  void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) override { /* do nothing */
-  }
-  void device_identity_notification(Context,
-                                    ump::stream::device_identity_notification const &) override { /* do nothing */
-  }
-  void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) override { /* do nothing */
-  }
-  void product_instance_id_notification(
-      Context, ump::stream::product_instance_id_notification const &) override { /* do nothing */
-  }
-  void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) override { /* do nothing */
-  }
-  void jr_configuration_notification(Context,
-                                     ump::stream::jr_configuration_notification const &) override { /* do nothing */
-  }
+  void endpoint_discovery(Context, ump::stream::endpoint_discovery const &) override { /* do nothing */ }
+  void endpoint_info_notification(Context, ump::stream::endpoint_info_notification const &) override { /* do nothing */ }
+  void device_identity_notification(Context, ump::stream::device_identity_notification const &) override { /* do nothing */ }
+  void endpoint_name_notification(Context, ump::stream::endpoint_name_notification const &) override { /* do nothing */ }
+  void product_instance_id_notification(Context, ump::stream::product_instance_id_notification const &) override { /* do nothing */ }
+  void jr_configuration_request(Context, ump::stream::jr_configuration_request const &) override { /* do nothing */ }
+  void jr_configuration_notification(Context, ump::stream::jr_configuration_notification const &) override { /* do nothing */ }
 
-  void function_block_discovery(Context, ump::stream::function_block_discovery const &) override { /* do nothing */
-  }
-  void function_block_info_notification(
-      Context, ump::stream::function_block_info_notification const &) override { /* do nothing */
-  }
-  void function_block_name_notification(
-      Context, ump::stream::function_block_name_notification const &) override { /* do nothing */
-  }
+  void function_block_discovery(Context, ump::stream::function_block_discovery const &) override { /* do nothing */ }
+  void function_block_info_notification(Context, ump::stream::function_block_info_notification const &) override { /* do nothing */ }
+  void function_block_name_notification(Context, ump::stream::function_block_name_notification const &) override { /* do nothing */ }
 
-  void start_of_clip(Context, ump::stream::start_of_clip const &) override { /* do nothing */
-  }
-  void end_of_clip(Context, ump::stream::end_of_clip const &) override { /* do nothing */
-  }
+  void start_of_clip(Context, ump::stream::start_of_clip const &) override { /* do nothing */ }
+  void end_of_clip(Context, ump::stream::end_of_clip const &) override { /* do nothing */ }
 };
 template <typename Context> struct flex_data_base : public flex_data_pure<Context> {
-  void set_tempo(Context, ump::flex_data::set_tempo const &) override { /* do nothing */
-  }
-  void set_time_signature(Context, ump::flex_data::set_time_signature const &) override { /* do nothing */
-  }
-  void set_metronome(Context, ump::flex_data::set_metronome const &) override { /* do nothing */
-  }
-  void set_key_signature(Context, ump::flex_data::set_key_signature const &) override { /* do nothing */
-  }
-  void set_chord_name(Context, ump::flex_data::set_chord_name const &) override { /* do nothing */
-  }
-  void text(Context, ump::flex_data::text_common const &) override { /* do nothing */
-  }
+  void set_tempo(Context, ump::flex_data::set_tempo const &) override { /* do nothing */ }
+  void set_time_signature(Context, ump::flex_data::set_time_signature const &) override { /* do nothing */ }
+  void set_metronome(Context, ump::flex_data::set_metronome const &) override { /* do nothing */ }
+  void set_key_signature(Context, ump::flex_data::set_key_signature const &) override { /* do nothing */ }
+  void set_chord_name(Context, ump::flex_data::set_chord_name const &) override { /* do nothing */ }
+  void text(Context, ump::flex_data::text_common const &) override { /* do nothing */ }
 };
+// clang-format on
 
 template <typename Context> class utility_function {
 public:

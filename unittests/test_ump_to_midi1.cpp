@@ -198,22 +198,23 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
   constexpr auto value1 = std::uint32_t{0x87654321};
 
   std::vector<std::uint32_t> input;
-
-  // This test modifies the same RPN controller twice in succession. We
-  // expect that the MIDI-1 messages to set the RPN value are sent just
-  // once.
-  auto const input_append = [&input](auto const v) {
-    input.push_back(v.word());
-    return false;
-  };
-  midi2::ump::apply(
-      midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel).bank(bank).index(index).value(value0),
-      input_append);
-  midi2::ump::apply(
-      midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel).bank(bank).index(index).value(value1),
-      input_append);
-
+  input.reserve(4);
+  {
+    // This test modifies the same RPN controller twice in succession. We
+    // expect that the MIDI-1 messages to set the RPN value are sent just
+    // once.
+    auto const input_append = [&input](auto const v) {
+      input.push_back(v.word());
+      return false;
+    };
+    constexpr auto rpnc = []() constexpr {
+      return midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel).bank(bank).index(index);
+    };
+    midi2::ump::apply(rpnc().value(value0), input_append);
+    midi2::ump::apply(rpnc().value(value1), input_append);
+  }
   std::vector<std::uint32_t> expected;
+  expected.reserve(6);
   {
     auto const expected_append = [&expected](auto const v) {
       expected.push_back(v.word());
@@ -222,13 +223,13 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
     constexpr auto value0_14 = midi2::mcm_scale<32, 14>(value0);
     constexpr auto value1_14 = midi2::mcm_scale<32, 14>(value1);
     using enum midi2::control;
-    auto cc = midi2::ump::m1cvm::control_change{}.group(group).channel(channel);
-    midi2::ump::apply(cc.controller(rpn_msb).value(bank), expected_append);
-    midi2::ump::apply(cc.controller(rpn_lsb).value(index), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(value0_14)), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(value0_14)), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(value1_14)), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(value1_14)), expected_append);
+    constexpr auto cc = []() constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+    midi2::ump::apply(cc().controller(rpn_msb).value(bank), expected_append);
+    midi2::ump::apply(cc().controller(rpn_lsb).value(index), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(value0_14)), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(value0_14)), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(value1_14)), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(value1_14)), expected_append);
   }
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
 }
@@ -238,6 +239,7 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
   constexpr auto bank = std::uint8_t{60};
+  // The controller values we'll be sending.
   constexpr std::array const values{std::uint32_t{0x12345678}, std::uint32_t{0x87654321}, std::uint32_t{0xCAFEBABE}};
 
   std::vector<std::uint32_t> input;
@@ -249,12 +251,12 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
       input.push_back(v.word());
       return false;
     };
-    auto rpnc = midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel);
-    midi2::ump::apply(rpnc.bank(bank).index(17).value(values[0]), input_append);
-    midi2::ump::apply(rpnc.bank(bank).index(17).value(values[1]), input_append);
-    midi2::ump::apply(rpnc.bank(bank).index(18).value(values[1]), input_append);
-    midi2::ump::apply(rpnc.bank(bank).index(18).value(values[0]), input_append);
-    midi2::ump::apply(rpnc.bank(bank).index(17).value(values[2]), input_append);
+    constexpr auto rpnc = []() constexpr { return midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel); };
+    midi2::ump::apply(rpnc().bank(bank).index(17).value(values[0]), input_append);
+    midi2::ump::apply(rpnc().bank(bank).index(17).value(values[1]), input_append);
+    midi2::ump::apply(rpnc().bank(bank).index(18).value(values[1]), input_append);
+    midi2::ump::apply(rpnc().bank(bank).index(18).value(values[0]), input_append);
+    midi2::ump::apply(rpnc().bank(bank).index(17).value(values[2]), input_append);
   }
 
   std::vector<std::uint32_t> expected;
@@ -270,25 +272,25 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
 
     using enum midi2::control;
     using midi2::hi7, midi2::lo7;
-    auto cc = midi2::ump::m1cvm::control_change{}.group(group).channel(channel);
-    midi2::ump::apply(cc.controller(rpn_msb).value(bank), expected_append);
-    midi2::ump::apply(cc.controller(rpn_lsb).value(17), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(values14[0])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(values14[0])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(values14[1])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(values14[1])), expected_append);
+    constexpr auto cc = []() constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+    midi2::ump::apply(cc().controller(rpn_msb).value(bank), expected_append);
+    midi2::ump::apply(cc().controller(rpn_lsb).value(17), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(values14[0])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(values14[0])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(values14[1])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(values14[1])), expected_append);
 
-    midi2::ump::apply(cc.controller(rpn_msb).value(bank), expected_append);
-    midi2::ump::apply(cc.controller(rpn_lsb).value(18), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(values14[1])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(values14[1])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(values14[0])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(values14[0])), expected_append);
+    midi2::ump::apply(cc().controller(rpn_msb).value(bank), expected_append);
+    midi2::ump::apply(cc().controller(rpn_lsb).value(18), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(values14[1])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(values14[1])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(values14[0])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(values14[0])), expected_append);
 
-    midi2::ump::apply(cc.controller(rpn_msb).value(bank), expected_append);
-    midi2::ump::apply(cc.controller(rpn_lsb).value(17), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_msb).value(hi7(values14[2])), expected_append);
-    midi2::ump::apply(cc.controller(data_entry_lsb).value(lo7(values14[2])), expected_append);
+    midi2::ump::apply(cc().controller(rpn_msb).value(bank), expected_append);
+    midi2::ump::apply(cc().controller(rpn_lsb).value(17), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_msb).value(hi7(values14[2])), expected_append);
+    midi2::ump::apply(cc().controller(data_entry_lsb).value(lo7(values14[2])), expected_append);
   }
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
 }
@@ -319,11 +321,11 @@ TEST(UMPToMIDI1, M2NRPNController) {
       expected.push_back(v.word());
       return false;
     };
-    auto cc = control_change{}.group(group).channel(channel);
-    midi2::ump::apply(cc.controller(midi2::control::nrpn_msb).value(bank), expected_append);
-    midi2::ump::apply(cc.controller(midi2::control::nrpn_lsb).value(index), expected_append);
-    midi2::ump::apply(cc.controller(midi2::control::data_entry_msb).value(hi7(val14)), expected_append);
-    midi2::ump::apply(cc.controller(midi2::control::data_entry_lsb).value(lo7(val14)), expected_append);
+    constexpr auto cc = []() constexpr { return control_change{}.group(group).channel(channel); };
+    midi2::ump::apply(cc().controller(midi2::control::nrpn_msb).value(bank), expected_append);
+    midi2::ump::apply(cc().controller(midi2::control::nrpn_lsb).value(index), expected_append);
+    midi2::ump::apply(cc().controller(midi2::control::data_entry_msb).value(hi7(val14)), expected_append);
+    midi2::ump::apply(cc().controller(midi2::control::data_entry_lsb).value(lo7(val14)), expected_append);
   }
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
