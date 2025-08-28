@@ -55,8 +55,11 @@ function (setup_target target)
   )
   # Some clang warning switches are not available in all versions of the compiler.
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang$")
-    check_cxx_compiler_flag (-Wno-unsafe-buffer-usage CLANG_W_UNSAFE_BUFFER_USAGE)
-    list (APPEND clang_warning_options $<$<BOOL:${CLANG_W_UNSAFE_BUFFER_USAGE}>:-Wno-unsafe-buffer-usage>)
+    check_cxx_compiler_flag(-Wno-unsafe-buffer-usage CLANG_W_UNSAFE_BUFFER_USAGE)
+    list(APPEND clang_warning_options $<$<BOOL:${CLANG_W_UNSAFE_BUFFER_USAGE}>:-Wno-unsafe-buffer-usage>)
+
+    check_cxx_compiler_flag(-Wno-missing-include-dirs CLANG_W_MISSING_INCLUDE_DIRS)
+    list(APPEND clang_warning_options $<$<BOOL:${CLANG_W_MISSING_INCLUDE_DIRS}>:-Wno-missing-include-dirs>)
   endif ()
 
   set (gcc_warning_options
