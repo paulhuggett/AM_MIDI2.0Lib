@@ -28,8 +28,9 @@ int main() {
     // The context enables message handlers to efficiently share state but we don't need that in this simple example so
     // a struct with no members will suffice.
     struct context {};
-    // Create the dispatcher with default-initialized context.
-    auto dispatcher = midi2::ump::make_ump_function_dispatcher<context>();
+    // Create the dispatcher with default-initialized context. Here we're using the pre-made "std::function<>" backend
+    // for convenience. Production code would probably use a custom dispatcher back-end for maximum efficiency.
+    auto dispatcher = midi2::ump::make_ump_function_dispatcher(context{});
     // Ask the dispatcher for its configuration object and install handlers for MIDI2 note on/off channel voice
     // messages.
     dispatcher.config()
