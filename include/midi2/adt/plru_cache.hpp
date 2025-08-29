@@ -25,9 +25,6 @@
 #include <new>
 #include <numeric>
 
-#ifndef __ARM_NEON
-#define __ARM_NEON 0
-#endif  // __ARM_NEON
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
