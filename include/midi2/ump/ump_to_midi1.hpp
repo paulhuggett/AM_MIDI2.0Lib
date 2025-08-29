@@ -72,11 +72,11 @@ private:
         assert(group < 0x10 && channel < 0x10);
       }
       constexpr bool operator==(pn_cache_key const &) const noexcept = default;
-      explicit operator std::uint16_t() const noexcept { return v_; }
+      [[nodiscard]] explicit operator std::uint16_t() const noexcept { return v_; }
 
-      constexpr std::uint8_t group() const noexcept { return v_ & 0x000F; }
-      constexpr std::uint8_t channel() const noexcept { return (v_ >> 4) & 0x000F; }
-      constexpr bool is_rpn() const noexcept { return (v_ >> 8) & 0x0001; }
+      [[nodiscard]] constexpr std::uint8_t group() const noexcept { return v_ & 0x000F; }
+      [[nodiscard]] constexpr std::uint8_t channel() const noexcept { return (v_ >> 4) & 0x000F; }
+      [[nodiscard]] constexpr bool is_rpn() const noexcept { return (v_ >> 8) & 0x0001; }
 
     private:
       std::uint16_t v_ = 0;
@@ -233,7 +233,7 @@ private:
       static void pn_message(context_type *ctxt, context_type::pn_cache_key const &key,
                              std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
 
-      static void send_controller_number(context_type *const ctxt, context_type::pn_cache_key const &key,
+      static void send_controller_number(context_type *ctxt, context_type::pn_cache_key const &key,
                                          std::pair<std::uint8_t, std::uint8_t> const &controller_number);
     };
     context_type *context = nullptr;
