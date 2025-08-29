@@ -104,18 +104,17 @@ private:
 };
 
 /// Used to store keys in the cache.
-/// We don't store the key directly in this struct: some of the bits are  determined by the key's set so don't need to
+///
+/// We don't store the key directly in this struct: some of the bits are determined by the key's set so don't need to
 /// be recorded here. We do need to record whether a key entry is occupied, so there's a bit used for that.
 template <std::unsigned_integral Key, unsigned SetBits> class tagged_key {
-  static constexpr auto KeyBits = sizeof(Key) * CHAR_BIT;
-
 public:
+  using value_type = uinteger<sizeof(Key) * CHAR_BIT - SetBits + 1>::type;
+
   constexpr tagged_key() noexcept = default;
   constexpr explicit tagged_key(Key key) noexcept : v_{static_cast<value_type>(1 | (key >> (SetBits - 1)))} {}
   friend constexpr bool operator==(tagged_key const &, tagged_key const &) noexcept = default;
   [[nodiscard]] constexpr auto valid() const noexcept { return static_cast<bool>(v_ & 1); }
-
-  using value_type = uinteger<KeyBits - SetBits + 1>::type;
 
   constexpr value_type &get() noexcept { return v_; }
   constexpr value_type const &get() const noexcept { return v_; }
@@ -213,8 +212,9 @@ public:
   template <typename MissFn>
     requires(std::is_invocable_r_v<MappedType, MissFn>)
   MappedType &access(Key key, MissFn miss) {
-    auto const new_tag = tagged_key_type{key};
-    if (auto const index = find_matching(new_tag); index < Ways) {
+    auto const tag = tagged_key_type{key};
+    if (auto const index = find_matching(tag); index < Ways) {
+      assert(values_[index].valid());
       plru_.touch(index);
       return ways_[index].value();
     }
@@ -228,22 +228,27 @@ public:
 
     // The key was not found: call miss() to populate it.
     auto *const result = new (&ways_[victim].v[0]) MappedType{miss()};
-    values_[victim] = std::move(new_tag);
+    values_[victim] = std::move(tag);
     plru_.touch(victim);
     return *result;
   }
 
+  constexpr bool contains(Key key) const noexcept { return find_matching(tagged_key_type{key}) < Ways; }
+
   constexpr std::size_t size() const noexcept {
-    return static_cast<std::size_t>(
-        std::ranges::count_if(values_, [](tagged_key<Key, SetBits> const &v) { return v.valid(); }));
+    return static_cast<std::size_t>(std::ranges::count_if(values_, [](tagged_key_type const &v) { return v.valid(); }));
   }
 
 private:
+  /// Search the values_ array for the key specified by \p tk.
+  ///
+  /// \param tk The key for which the function will search
+  /// \returns  The index of the located key if present otherwise \p Ways.
   constexpr std::size_t find_matching(tagged_key_type tk) const noexcept {
     return match_finder<Key, SetBits, Ways>::find(tk, values_);
   }
 
-  std::array<tagged_key<Key, SetBits>, Ways> values_{};
+  std::array<tagged_key_type, Ways> values_{};
   std::array<aligned_storage<MappedType>, Ways> ways_;
   tree<Ways> plru_{};
 };
@@ -288,6 +293,15 @@ public:
     assert(plru_cache::set(key) < Sets);
     return sets_[plru_cache::set(key)].access(key, std::forward<MissFn>(miss));
   }
+
+  // Checks if there is an element with a key that compares equivalent to \p key
+  ///
+  /// \return true if there is such an element, otherwise false.
+  bool contains(key_type key) const noexcept {
+    assert(plru_cache::set(key) < Sets);
+    return sets_[plru_cache::set(key)].contains(key);
+  }
+
   /// \returns The maximum possible number of elements that can be held by the cache.
   [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Sets * Ways; }
   /// \returns The number of elements held by the cache.
