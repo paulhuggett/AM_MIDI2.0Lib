@@ -62,6 +62,12 @@ struct default_config {
   [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex;
 };
 
+/// A configuration type for the ump_dispatcher which uses std::function<> for all of the available callbacks.
+/// This is probably the simplest possible configuration type to use, but may not always be the most time and
+/// space efficient. Use judiciously!
+///
+/// \tparam Context  The type of the context object. This is passed to all of the callbacks to enable sharing
+///   of context.
 template <typename Context> struct function_config {
   explicit function_config(Context c) : context{c} {}
 
@@ -460,8 +466,8 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_m
 }
 
 template <typename Context>
-ump_dispatcher<function_config<Context>> make_ump_function_dispatcher(Context context = Context{}) {
-  return ump_dispatcher{function_config{context}};
+ump_dispatcher<function_config<Context>> make_ump_function_dispatcher(Context &&context = Context{}) {
+  return ump_dispatcher{function_config{std::forward<Context>(context)}};
 }
 
 }  // end namespace midi2::ump
