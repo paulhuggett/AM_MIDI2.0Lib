@@ -249,7 +249,7 @@ private:
   }
 
   std::array<tagged_key_type, Ways> values_{};
-  std::array<aligned_storage<MappedType>, Ways> ways_;
+  std::array<aligned_storage<MappedType>, Ways> ways_{};
   tree<Ways> plru_{};
 };
 
