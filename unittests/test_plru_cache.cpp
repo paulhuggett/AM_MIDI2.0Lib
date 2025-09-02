@@ -24,6 +24,7 @@ using midi2::plru_cache;
 using testing::ElementsAre;
 using testing::MockFunction;
 using testing::Return;
+using testing::UnorderedElementsAre;
 
 namespace {
 
@@ -50,6 +51,22 @@ TEST(PlruCache, InitialAccess) {
     EXPECT_EQ(actual2, value);
     EXPECT_EQ(std::size(cache), 1U);
   }
+}
+
+TEST(PlruCache, Dirty) {
+  plru_cache<unsigned, std::string, 4, 2> cache;
+  MockFunction<std::string()> miss;
+  MockFunction<bool(std::string const&)> valid;
+
+  EXPECT_CALL(miss, Call()).WillOnce(Return("first")).WillOnce(Return("second")).RetiresOnSaturation();
+  EXPECT_CALL(valid, Call("first")).WillOnce(Return(true)).WillOnce(Return(false)).RetiresOnSaturation();
+
+  // Key is not in the cache: miss() is called
+  EXPECT_EQ(cache.access(3U, miss.AsStdFunction(), valid.AsStdFunction()), "first");
+  // Key is in the cache: valid() called and returns true
+  EXPECT_EQ(cache.access(3U, miss.AsStdFunction(), valid.AsStdFunction()), "first");
+  // Key is in the cache: valid() called and returns false so miss() is called a second time
+  EXPECT_EQ(cache.access(3U, miss.AsStdFunction(), valid.AsStdFunction()), "second");
 }
 
 TEST(PlruCache, Fill) {
@@ -181,10 +198,17 @@ TEST(PlruCache, Key2x8Uint16) {
 
   EXPECT_EQ(cache.access(3U, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 1U);
+  EXPECT_EQ(std::distance(cache.begin(), cache.end()), 1);
 
   // A second call with the same key doesn't create a new member.
   EXPECT_EQ(cache.access(3U, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 1U);
+}
+
+TEST(PlruCache, BeginEnd) {
+  plru_cache<std::uint16_t, std::string, 2, 8> cache;
+  EXPECT_EQ(cache.begin(), cache.end());
+  EXPECT_EQ(std::begin(cache), std::end(cache));
 }
 
 template <unsigned Sets, unsigned Ways> void NeverCrashes(std::vector<std::uint16_t> const& keys) {
@@ -210,39 +234,11 @@ TEST(PlruCacheFuzz, Empty2x8) {
   NeverCrashes<2, 8>({1, 2, 3, 4, 5, 4, 3, 2, 1});
 }
 
-class counted {
-public:
-  enum class action { ctor, dtor };
-  using container = std::vector<std::tuple<action, unsigned>>;
-
-  explicit counted(container* const actions, unsigned ctr) : actions_{actions}, ctr_{ctr} {
-    actions->emplace_back(action::ctor, ctr_);
-  }
-  counted(counted const&) = delete;
-  counted(counted&&) noexcept = delete;
-  ~counted() noexcept {
-    try {
-      actions_->emplace_back(action::dtor, ctr_);
-    } catch (...) {
-      // Just ignore any exceptions
-    }
-  }
-
-  counted& operator=(counted const&) = delete;
-  counted& operator=(counted&&) noexcept = delete;
-
-private:
-  container* const actions_;
-  unsigned ctr_ = 0;
-};
-
 TEST(PlruCache, OverFill) {
-  plru_cache<unsigned, counted, 4, 2> cache;
+  plru_cache<unsigned, unsigned, 4, 2> cache;
 
-  counted::container actions;
-  using tup = decltype(actions)::value_type;
   auto count = 0U;
-  auto miss = [&]() { return counted{&actions, ++count}; };
+  auto miss = [&count]() { return ++count; };
 
   cache.access(1, miss);
   cache.access(2, miss);
@@ -252,43 +248,53 @@ TEST(PlruCache, OverFill) {
   cache.access(6, miss);
   cache.access(7, miss);
   cache.access(8, miss);
-  using enum counted::action;
-  EXPECT_THAT(actions, ElementsAre(tup{ctor, 1U}, tup{ctor, 2U}, tup{ctor, 3U}, tup{ctor, 4U}, tup{ctor, 5U},
-                                   tup{ctor, 6U}, tup{ctor, 7U}, tup{ctor, 8U}));
+
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(4U, 4U), std::make_pair(5U, 5U), std::make_pair(6U, 6U),
+                                          std::make_pair(7U, 7U), std::make_pair(8U, 8U)));
   // Accesses of items in the cache. These should now be most-recently used.
   cache.access(1, miss);
   cache.access(2, miss);
   cache.access(3, miss);
-  EXPECT_EQ(actions.size(), 8U) << "Expected no new actions to have happened";
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(4U, 4U), std::make_pair(5U, 5U), std::make_pair(6U, 6U),
+                                          std::make_pair(7U, 7U), std::make_pair(8U, 8U)));
 
-  // Reset the actions.
-  actions.clear();
   // Accessing a new element will cause an eviction.
   cache.access(9, miss);
-  // Check what we threw out and what was added.
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 5U}, tup{ctor, 9U}));
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(4U, 4U), std::make_pair(6U, 6U), std::make_pair(7U, 7U),
+                                          std::make_pair(8U, 8U), std::make_pair(9U, 9U)));
 
-  actions.clear();
   cache.access(10, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 6U}, tup{ctor, 10U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(4U, 4U), std::make_pair(7U, 7U), std::make_pair(8U, 8U),
+                                          std::make_pair(9U, 9U), std::make_pair(10U, 10U)));
   cache.access(11, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 7U}, tup{ctor, 11U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(4U, 4U), std::make_pair(8U, 8U), std::make_pair(9U, 9U),
+                                          std::make_pair(10U, 10U), std::make_pair(11U, 11U)));
   cache.access(12, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 4U}, tup{ctor, 12U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(8U, 8U), std::make_pair(9U, 9U), std::make_pair(10U, 10U),
+                                          std::make_pair(11U, 11U), std::make_pair(12U, 12U)));
+  cache.access(1, miss);
   cache.access(13, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 1U}, tup{ctor, 13U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(2U, 2U), std::make_pair(3U, 3U),
+                                          std::make_pair(8U, 8U), std::make_pair(10U, 10U), std::make_pair(11U, 11U),
+                                          std::make_pair(12U, 12U), std::make_pair(13U, 13U)));
   cache.access(14, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 2U}, tup{ctor, 14U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(3U, 3U), std::make_pair(8U, 8U),
+                                          std::make_pair(10U, 10U), std::make_pair(11U, 11U), std::make_pair(12U, 12U),
+                                          std::make_pair(13U, 13U), std::make_pair(14U, 14U)));
   cache.access(15, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 3U}, tup{ctor, 15U}));
-  actions.clear();
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(8U, 8U), std::make_pair(10U, 10U),
+                                          std::make_pair(11U, 11U), std::make_pair(12U, 12U), std::make_pair(13U, 13U),
+                                          std::make_pair(14U, 14U), std::make_pair(15U, 15U)));
   cache.access(16, miss);
-  EXPECT_THAT(actions, ElementsAre(tup{dtor, 8U}, tup{ctor, 16U}));
+  EXPECT_THAT(cache, UnorderedElementsAre(std::make_pair(1U, 1U), std::make_pair(10U, 10U), std::make_pair(11U, 11U),
+                                          std::make_pair(12U, 12U), std::make_pair(13U, 13U), std::make_pair(14U, 14U),
+                                          std::make_pair(15U, 15U), std::make_pair(16U, 16U)));
 }
 
 }  // end anonymous namespace

@@ -83,7 +83,8 @@ private:
     };
 
     // value is 14 bit MIDI 1 controller number (bank/index).
-    using pn_cache_type = plru_cache<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, 4, 8>;
+    using pn_cache_value = std::pair<std::uint8_t, std::uint8_t>;
+    using pn_cache_type = plru_cache<std::uint16_t, pn_cache_value, 4, 8>;
     pn_cache_type pn_cache;
     fifo<std::uint32_t, 4> output;
   };
@@ -234,7 +235,7 @@ private:
                              std::pair<std::uint8_t, std::uint8_t> const &controller_number, std::uint32_t value);
 
       static void send_controller_number(context_type *ctxt, context_type::pn_cache_key const &key,
-                                         std::pair<std::uint8_t, std::uint8_t> const &controller_number);
+                                         context_type::pn_cache_value const &controller_number);
     };
     context_type *context = nullptr;
     [[no_unique_address]] ump::dispatcher_backend::utility_null<decltype(context)> utility{};

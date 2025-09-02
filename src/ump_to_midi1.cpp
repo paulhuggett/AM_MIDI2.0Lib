@@ -118,23 +118,24 @@ void ump_to_midi1::to_midi1_config::m2cvm::send_controller_number(
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
-                                                      std::pair<std::uint8_t, std::uint8_t> const &controller_number,
+                                                      context_type::pn_cache_value const &controller_number,
                                                       std::uint32_t const value) {
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
   // parameter.
   using enum control;
   static_assert(sizeof(key) <= sizeof(context_type::pn_cache_type::key_type));
-  auto &cached_value = ctxt->pn_cache.access(static_cast<std::uint16_t>(key), [&]() {
-    // The key was not in the cache.
-    m2cvm::send_controller_number(ctxt, key, controller_number);
-    return controller_number;
-  });
-  if (cached_value != controller_number) {
-    // The cached value does not match the expected value. Update it.
-    m2cvm::send_controller_number(ctxt, key, controller_number);
-    cached_value = controller_number;
-  }
+  ctxt->pn_cache.access(
+      static_cast<std::uint16_t>(key),
+      [&]() {
+        // The key was not in the cache or the associated value needs to be updated.
+        m2cvm::send_controller_number(ctxt, key, controller_number);
+        return controller_number;
+      },
+      [&](context_type::pn_cache_value const &in_cache) {
+        // We've got the key in the cache. Does the cached value match the desired?
+        return in_cache == controller_number;
+      });
 
   // Data Entry MSB/LSB
   auto const scaled_value = mcm_scale<32, 14>(value);
