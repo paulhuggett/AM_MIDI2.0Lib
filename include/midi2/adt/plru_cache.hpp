@@ -250,7 +250,7 @@ public:
   }
   constexpr Key key(std::size_t const index) const noexcept {
     assert(index < keys_.size());
-    return (keys_[index].get() & ~0x01) << (SetBits - 1);  // this not the entire key!
+    return (keys_[index].get() & ~0x01U) << (SetBits - 1);  // this not the entire key!
   }
   constexpr MappedType const &value(std::size_t const index) const noexcept {
     assert(index < values_.size());
