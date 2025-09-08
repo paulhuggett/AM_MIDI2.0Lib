@@ -18,13 +18,16 @@
 #include "midi2/adt/fifo.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
 #include "midi2/ump/ump_types.hpp"
+#include "midi2/ump/ump_utils.hpp"
 #include "midi2/utils.hpp"
 
-namespace midi2 {
+namespace midi2::ump {
 
 class ump_to_midi2 {
 public:
+  /// \brief The type of input UMP message.
   using input_type = std::uint32_t;
+  /// \brief The type of output MIDI 2.0 message.
   using output_type = std::uint32_t;
 
   explicit constexpr ump_to_midi2(std::uint8_t const group) noexcept {
@@ -32,12 +35,20 @@ public:
     context_.group = group;
   }
 
+  /// \brief Checks if the output is empty
+  /// \return True if the output FIFO is empty, false otherwise.
   [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+
+  /// \brief Pops the front message from the output FIFO.
+  /// \return The first message in the output FIFO.
+  /// \note This method asserts that the output FIFO is not empty.
   [[nodiscard]] constexpr output_type pop() {
     assert(!context_.output.empty());
     return context_.output.pop_front();
   }
 
+  /// \brief Pushes an input UMP message for processing.
+  /// \param ump The input UMP message.
   void push(input_type const ump) { p_.process_ump(ump); }
 
 private:
@@ -110,7 +121,7 @@ private:
     template <typename T, std::size_t Row, std::size_t Col> using array2d = std::array<std::array<T, Col>, Row>;
     array2d<bank, 16, 16> bank{};
     array2d<parameter_number, 16, 16> parameter_number{};
-    fifo<std::uint32_t, 4> output;
+    adt::fifo<std::uint32_t, 4> output;
   };
 
   struct to_midi2_config {
@@ -308,6 +319,6 @@ private:
   ump::ump_dispatcher<to_midi2_config> p_{to_midi2_config{.context = &context_}};
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::ump
 
 #endif  // MIDI2_UMP_TO_MIDI2_HPP

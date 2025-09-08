@@ -19,7 +19,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "midi2/utils.hpp"
+#include "midi2/adt/uinteger.hpp"
+#include "midi2/ump/ump_utils.hpp"
 
 namespace midi2::ump {
 
@@ -149,13 +150,14 @@ concept bitfield_type = requires(T) {
 /// \p T.
 ///
 /// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::ump namespace.
-/// \tparam Function  A function which is capable of accepting each of the types held by the tuple-like type
-///   \p T. Since the types are not normally compatible, this is usually a template function. Returns a value which
-///   can be cast to bool.
+/// \tparam Function  A function which is capable of accepting each of the types held by the
+///   tuple-like type \p T. Since the types are not normally compatible, this is usually a template
+///   function. Returns a value which can be cast to bool.
 /// \tparam Index  The index at which processing should start.
 /// \param message   An instance of one of the UMP message types.
 /// \param function  The function to be called for each member of the UMP message type.
-/// \returns  The result of the calling \p function which was converted to boolean true, or the last result received.
+/// \returns  The result of the calling \p function which was converted to boolean true, or the
+///   last result received.
 template <typename T, typename Function, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> &&
            std::is_constructible_v<bool, std::invoke_result_t<Function, std::tuple_element_t<Index, T>>>)
@@ -171,6 +173,7 @@ constexpr auto apply(T const &message, Function function) {
   }
 }
 
+/// \brief Private implementation details of the UMP types and functions
 namespace details {
 
 template <typename T>
@@ -232,7 +235,8 @@ public:
     return *this;
   }
 
-  template <bitfield_type BitRange> [[nodiscard]] constexpr small_type<BitRange::bits::value> get() const noexcept {
+  template <bitfield_type BitRange>
+  [[nodiscard]] constexpr adt::uinteger_t<BitRange::bits::value> get() const noexcept {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
     constexpr auto mask = max_value<value_type, bits>();
@@ -276,10 +280,10 @@ private:
   constexpr auto field() const noexcept {                               \
     return std::get<word>(words_).template get<typename word::field>(); \
   }
-#define UMP_SETTER(word, field)                                                  \
-  constexpr auto &field(small_type<word::field::bits::value> const v) noexcept { \
-    std::get<word>(words_).template set<typename word::field>(v);                \
-    return *this;                                                                \
+#define UMP_SETTER(word, field)                                                       \
+  constexpr auto &field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
+    std::get<word>(words_).template set<typename word::field>(v);                     \
+    return *this;                                                                     \
   }
 #define UMP_GETTER_SETTER(word, field) \
   UMP_GETTER(word, field)              \
@@ -290,28 +294,27 @@ private:
 /// 1. An specialization of std::tuple_size<>
 /// 2. An specialization of std::tuple_element<>
 /// 3. A static assertion that the tuple size for the class matches that of the group as a whole
-#define UMP_TUPLE(group, message)                                                                                  \
-  template <>                                                                                                      \
-  struct std::tuple_size<midi2::ump::group::message> /* NOLINT(cert-dcl58-cpp]*/                                   \
-      : std::integral_constant<std::size_t, std::tuple_size_v<decltype(midi2::ump::group::message::words_)>> {};   \
-                                                                                                                   \
-  template <std::size_t I> struct std::tuple_element<I, midi2::ump::group::message> { /* NOLINT(cert-dcl58-cpp] */ \
-    using type = std::tuple_element_t<I, decltype(midi2::ump::group::message::words_)>;                            \
-  };                                                                                                               \
-  static_assert(std::tuple_size_v<midi2::ump::group::message> ==                                                   \
-                midi2::message_size<midi2::ump::message_type::group>::value);
+#define UMP_TUPLE(group, message)                                                                                    \
+  template <>                                                                                                        \
+  struct std::tuple_size<::midi2::ump::group::message> /* NOLINT(cert-dcl58-cpp] */                                  \
+      : std::integral_constant<std::size_t, std::tuple_size_v<decltype(::midi2::ump::group::message::words_)>> {};   \
+  template <std::size_t I> struct std::tuple_element<I, ::midi2::ump::group::message> { /* NOLINT(cert-dcl58-cpp] */ \
+    using type = std::tuple_element_t<I, decltype(::midi2::ump::group::message::words_)>;                            \
+  };                                                                                                                 \
+  static_assert(std::tuple_size_v<::midi2::ump::group::message> ==                                                   \
+                ::midi2::ump::message_size<::midi2::ump::message_type::group>::value);
 
-namespace midi2 {
-template <ump::message_type> struct message_size;  // not defined
-}  // end namespace midi2
+namespace midi2::ump {
+template <message_type> struct message_size;  // not defined
+}  // end namespace midi2::ump
 //*       _   _ _ _ _         *
 //*  _  _| |_(_) (_) |_ _  _  *
 //* | || |  _| | | |  _| || | *
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
-namespace midi2 {
-template <> struct message_size<ump::message_type::utility> : std::integral_constant<unsigned, 1> {};
-}  // end namespace midi2
+namespace midi2::ump {
+template <> struct message_size<message_type::utility> : std::integral_constant<unsigned, 1> {};
+}  // end namespace midi2::ump
 
 namespace midi2::ump::utility {
 
@@ -507,7 +510,7 @@ UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for
 //*     |__/                   *
 // 7.6 System Common and System Real Time Messages
 
-template <> struct midi2::message_size<midi2::ump::message_type::system> : std::integral_constant<unsigned, 1> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::system> : std::integral_constant<unsigned, 1> {};
 
 namespace midi2::ump::system {
 
@@ -889,7 +892,7 @@ UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for reset
 // F.1.3 Mess Type 0x2: MIDI 1.0 Channel Voice Messages
 // Table 28 4-Byte UMP Formats for Message Type 0x2: MIDI 1.0 Channel Voice
 // Messages
-template <> struct midi2::message_size<midi2::ump::message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
 
 namespace midi2::ump::m1cvm {
 
@@ -1063,7 +1066,7 @@ public:
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
-  constexpr auto &controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
+  constexpr auto &controller(midi2::ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
@@ -1200,7 +1203,7 @@ UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/p
 //* \__,_\__,_|\__\__,_\___/ |_|  *
 //*                               *
 
-template <> struct midi2::message_size<midi2::ump::message_type::data64> : std::integral_constant<unsigned, 2> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::data64> : std::integral_constant<unsigned, 2> {};
 
 namespace midi2::ump::data64::details {
 
@@ -1291,13 +1294,13 @@ using sysex7_end = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::s
 }  // namespace midi2::ump::data64
 
 static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_in_1> ==
-              midi2::message_size<midi2::ump::message_type::data64>::value);
+              midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_start> ==
-              midi2::message_size<midi2::ump::message_type::data64>::value);
+              midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_continue> ==
-              midi2::message_size<midi2::ump::message_type::data64>::value);
+              midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
-              midi2::message_size<midi2::ump::message_type::data64>::value);
+              midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 
 //*        ___               *
 //*  _ __ |_  )____ ___ __   *
@@ -1307,7 +1310,7 @@ static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
 // F.2.2 Message Type 0x4: MIDI 2.0 Channel Voice Messages
 // Table 30 8-Byte UMP Formats for Message Type 0x4: MIDI 2.0 Channel Voice Messages
 
-template <> struct midi2::message_size<midi2::ump::message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
 
 namespace midi2::ump::m2cvm {
 
@@ -2053,7 +2056,7 @@ UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element fo
 //* | || | '  \| '_ \ (_-<  _| '_/ -_) _` | '  \  *
 //*  \_,_|_|_|_| .__/ /__/\__|_| \___\__,_|_|_|_| *
 //*            |_|                                *
-template <> struct midi2::message_size<midi2::ump::message_type::stream> : std::integral_constant<unsigned, 4> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::stream> : std::integral_constant<unsigned, 4> {};
 
 namespace midi2::ump::stream {
 
@@ -2867,7 +2870,8 @@ UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for strea
 //* |_| |_\___/_\_\ \__,_\__,_|\__\__,_| *
 //*                                      *
 
-template <> struct midi2::message_size<midi2::ump::message_type::flex_data> : std::integral_constant<unsigned, 4> {};
+template <>
+struct midi2::ump::message_size<midi2::ump::message_type::flex_data> : std::integral_constant<unsigned, 4> {};
 
 namespace midi2::ump::flex_data {
 
@@ -3354,7 +3358,7 @@ UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for fl
 //* \__,_\__,_|\__\__,_| |_/___\___/ *
 //*                                  *
 
-template <> struct midi2::message_size<midi2::ump::message_type::data128> : std::integral_constant<unsigned, 4> {};
+template <> struct midi2::ump::message_size<midi2::ump::message_type::data128> : std::integral_constant<unsigned, 4> {};
 
 namespace midi2::ump::data128 {
 
@@ -3601,21 +3605,21 @@ private:
 UMP_TUPLE(data128, mds_payload)  // Define tuple_size and tuple_element for data128/mds_payload
 
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved32_06> : std::integral_constant<unsigned, 1> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved32_07> : std::integral_constant<unsigned, 1> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved64_08> : std::integral_constant<unsigned, 2> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved64_09> : std::integral_constant<unsigned, 2> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved64_0a> : std::integral_constant<unsigned, 2> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved64_0a> : std::integral_constant<unsigned, 2> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved96_0b> : std::integral_constant<unsigned, 3> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved96_0b> : std::integral_constant<unsigned, 3> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved96_0c> : std::integral_constant<unsigned, 3> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved96_0c> : std::integral_constant<unsigned, 3> {};
 template <>
-struct midi2::message_size<midi2::ump::message_type::reserved128_0e> : std::integral_constant<unsigned, 4> {};
+struct midi2::ump::message_size<midi2::ump::message_type::reserved128_0e> : std::integral_constant<unsigned, 4> {};
 
 #undef UMP_GETTER
 #undef UMP_SETTER

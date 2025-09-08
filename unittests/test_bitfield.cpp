@@ -18,7 +18,7 @@
 // Google Test
 #include <gtest/gtest.h>
 
-using midi2::bitfield;
+using midi2::adt::bitfield;
 
 namespace {
 

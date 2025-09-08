@@ -19,7 +19,7 @@
 #include <fuzztest/fuzztest.h>
 #endif
 
-using midi2::plru_cache;
+using midi2::adt::plru_cache;
 
 using testing::ElementsAre;
 using testing::MockFunction;

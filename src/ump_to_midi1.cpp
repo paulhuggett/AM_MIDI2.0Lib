@@ -13,9 +13,10 @@
 #include <utility>
 
 #include "midi2/ump/ump_types.hpp"
+#include "midi2/ump/ump_utils.hpp"
 #include "midi2/utils.hpp"
 
-namespace midi2 {
+namespace midi2::ump {
 
 // note off
 // ~~~~~~~~
@@ -160,7 +161,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ct
 // pitch bend
 // ~~~~~~~~~~
 void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, ump::m2cvm::pitch_bend const &in) {
-  auto const scaled_value = in.value() >> (32 - 14);
+  auto const scaled_value = mcm_scale<32, 14>(in.value());
   ctxt->push(ump::m1cvm::pitch_bend{}
                  .group(in.group())
                  .channel(in.channel())
@@ -168,4 +169,4 @@ void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, 
                  .msb_data(hi7(scaled_value)));
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::ump

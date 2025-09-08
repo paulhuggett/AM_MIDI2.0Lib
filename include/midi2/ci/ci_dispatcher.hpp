@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ci_dispatcher.hpp
+/// \brief  The dispatcher for MIDI Capability Inquiry messages
+
 #ifndef MIDI2_CI_DISPATCHER_HPP
 #define MIDI2_CI_DISPATCHER_HPP
 

@@ -20,13 +20,16 @@
 #include <type_traits>
 
 #include "midi2/adt/bitfield.hpp"
+#include "midi2/adt/uinteger.hpp"
+#include "midi2/bytestream/bytestream_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2::ci {
 
 namespace details {
 
-template <unsigned Bits, std::unsigned_integral Underlying>
+/// Represents an unsigned integer with a specific number of bits
+template <unsigned Bits, std::unsigned_integral Underlying = midi2::adt::uinteger_t<Bits>>
   requires((1ULL << Bits) < std::numeric_limits<Underlying>::max())
 class bn {
 public:
@@ -62,9 +65,9 @@ private:
 
 }  // end namespace details
 
-using b7 = details::bn<7, std::uint8_t>;
-using b14 = details::bn<14, std::uint16_t>;
-using b28 = details::bn<28, std::uint32_t>;
+using b7 = details::bn<7>;
+using b14 = details::bn<14>;
+using b28 = details::bn<28>;
 
 namespace literals {
 consteval b7 operator""_b7(char const arg) noexcept {
@@ -191,15 +194,17 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 [[nodiscard]] constexpr b28 from_le7(byte_array<4> const &v) noexcept {
   assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
-  return b28{(static_cast<std::uint32_t>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
-             (static_cast<std::uint32_t>(to_underlying(v[1] & mask7b)) << (7 * 1)) |
-             (static_cast<std::uint32_t>(to_underlying(v[2] & mask7b)) << (7 * 2)) |
-             (static_cast<std::uint32_t>(to_underlying(v[3] & mask7b)) << (7 * 3))};
+  using ut = b28::underlying_type;
+  return b28{(static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
+             (static_cast<ut>(to_underlying(v[1] & mask7b)) << (7 * 1)) |
+             (static_cast<ut>(to_underlying(v[2] & mask7b)) << (7 * 2)) |
+             (static_cast<ut>(to_underlying(v[3] & mask7b)) << (7 * 3))};
 }
 [[nodiscard]] constexpr b14 from_le7(byte_array<2> const &v) noexcept {
   assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
-  return b14{static_cast<std::uint16_t>((static_cast<std::uint16_t>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
-                                        (static_cast<std::uint16_t>(to_underlying(v[1] & mask7b)) << (7 * 1)))};
+  using ut = b14::underlying_type;
+  return b14{static_cast<ut>((static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
+                             (static_cast<ut>(to_underlying(v[1] & mask7b)) << (7 * 1)))};
 }
 [[nodiscard]] constexpr b7 from_le7(std::byte const v) noexcept {
   return b7{to_underlying(v)};
@@ -298,9 +303,9 @@ struct header {
 };
 
 constexpr header::operator packed::header() const noexcept {
-  return packed::header{.sysex = s7_universal_nrt,
+  return packed::header{.sysex = bytestream::s7_universal_nrt,
                         .source = static_cast<std::byte>(device_id.get()),
-                        .sub_id_1 = s7_midi_ci,
+                        .sub_id_1 = bytestream::s7_midi_ci,
                         .sub_id_2 = std::byte{0},  // message type
                         .version = static_cast<std::byte>(version.get()),
                         .source_muid = ci::details::to_le7(remote_muid),
@@ -1453,27 +1458,27 @@ namespace packed {
 
 struct midi_message_report_v2 {
   union system_message {
-    bitfield<std::uint8_t, 3, 5> reserved0;
-    bitfield<std::uint8_t, 2, 1> song_select;
-    bitfield<std::uint8_t, 1, 1> song_position;
-    bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+    adt::bitfield<std::uint8_t, 3, 5> reserved0;
+    adt::bitfield<std::uint8_t, 2, 1> song_select;
+    adt::bitfield<std::uint8_t, 1, 1> song_position;
+    adt::bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
   };
   union channel_controller {
-    bitfield<std::uint8_t, 6, 2> reserved0;
-    bitfield<std::uint8_t, 5, 1> channel_pressure;
-    bitfield<std::uint8_t, 4, 1> program_change;
-    bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
-    bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
-    bitfield<std::uint8_t, 1, 1> control_change;
-    bitfield<std::uint8_t, 0, 1> pitchbend;
+    adt::bitfield<std::uint8_t, 6, 2> reserved0;
+    adt::bitfield<std::uint8_t, 5, 1> channel_pressure;
+    adt::bitfield<std::uint8_t, 4, 1> program_change;
+    adt::bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
+    adt::bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
+    adt::bitfield<std::uint8_t, 1, 1> control_change;
+    adt::bitfield<std::uint8_t, 0, 1> pitchbend;
   };
   union note_data_messages {
-    bitfield<std::uint8_t, 5, 3> reserved0;
-    bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
-    bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
-    bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
-    bitfield<std::uint8_t, 1, 1> poly_pressure;
-    bitfield<std::uint8_t, 0, 1> notes;
+    adt::bitfield<std::uint8_t, 5, 3> reserved0;
+    adt::bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
+    adt::bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
+    adt::bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
+    adt::bitfield<std::uint8_t, 1, 1> poly_pressure;
+    adt::bitfield<std::uint8_t, 0, 1> notes;
   };
 
   std::byte message_data_control;
@@ -1578,27 +1583,27 @@ namespace packed {
 
 struct midi_message_report_reply_v2 {
   union system_message {
-    bitfield<std::uint8_t, 3, 5> reserved0;
-    bitfield<std::uint8_t, 2, 1> song_select;
-    bitfield<std::uint8_t, 1, 1> song_position;
-    bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+    adt::bitfield<std::uint8_t, 3, 5> reserved0;
+    adt::bitfield<std::uint8_t, 2, 1> song_select;
+    adt::bitfield<std::uint8_t, 1, 1> song_position;
+    adt::bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
   };
   union channel_controller {
-    bitfield<std::uint8_t, 6, 2> reserved0;
-    bitfield<std::uint8_t, 5, 1> channel_pressure;
-    bitfield<std::uint8_t, 4, 1> program_change;
-    bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
-    bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
-    bitfield<std::uint8_t, 1, 1> control_change;
-    bitfield<std::uint8_t, 0, 1> pitchbend;
+    adt::bitfield<std::uint8_t, 6, 2> reserved0;
+    adt::bitfield<std::uint8_t, 5, 1> channel_pressure;
+    adt::bitfield<std::uint8_t, 4, 1> program_change;
+    adt::bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
+    adt::bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
+    adt::bitfield<std::uint8_t, 1, 1> control_change;
+    adt::bitfield<std::uint8_t, 0, 1> pitchbend;
   };
   union note_data_messages {
-    bitfield<std::uint8_t, 5, 3> reserved0;
-    bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
-    bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
-    bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
-    bitfield<std::uint8_t, 1, 1> poly_pressure;
-    bitfield<std::uint8_t, 0, 1> notes;
+    adt::bitfield<std::uint8_t, 5, 3> reserved0;
+    adt::bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
+    adt::bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
+    adt::bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
+    adt::bitfield<std::uint8_t, 1, 1> poly_pressure;
+    adt::bitfield<std::uint8_t, 0, 1> notes;
   };
 
   union system_message system_message;

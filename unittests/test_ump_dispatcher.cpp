@@ -912,7 +912,7 @@ TEST(UMPDispatcherFuzz, Empty) {
 }
 
 template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
-  if (message.size() == midi2::message_size<MessageType>::value) {
+  if (message.size() == midi2::ump::message_size<MessageType>::value) {
     message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{std::to_underlying(MessageType)} << 24);
     midi2::ump::ump_dispatcher p;
     for (auto const w : message) {

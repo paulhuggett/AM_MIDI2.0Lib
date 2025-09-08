@@ -12,7 +12,7 @@
 
 #include "midi2/adt/fifo.hpp"
 
-namespace midi2 {
+namespace midi2::bytestream {
 
 class usbm1_to_bytestream {
 public:
@@ -45,7 +45,7 @@ public:
 
 private:
   std::uint8_t cable_;
-  fifo<std::byte, 4> output_;
+  adt::fifo<std::byte, 4> output_;
 
   [[nodiscard]] static constexpr std::uint8_t cable(std::uint32_t const p) noexcept { return (p >> 28) & 0x0F; }
   [[nodiscard]] static constexpr std::uint8_t get_cin(std::uint32_t const p) noexcept { return (p >> 24) & 0x0F; }
@@ -83,4 +83,4 @@ private:
   }
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::bytestream

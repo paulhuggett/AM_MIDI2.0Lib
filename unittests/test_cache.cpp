@@ -19,7 +19,7 @@ namespace {
 
 // NOLINTNEXTLINE
 TEST(Cache, Fill) {
-  midi2::cache<int, int, 4> c;
+  midi2::adt::cache<int, int, 4> c;
   EXPECT_FALSE(c.set(1, 10));
   EXPECT_FALSE(c.set(2, 20));
   EXPECT_FALSE(c.set(3, 30));
@@ -28,7 +28,7 @@ TEST(Cache, Fill) {
 
 // NOLINTNEXTLINE
 TEST(Cache, Find) {
-  midi2::cache<int, int, 4> c;
+  midi2::adt::cache<int, int, 4> c;
   c.set(1, 10);
   c.set(2, 20);
   c.set(3, 30);
@@ -43,7 +43,7 @@ TEST(Cache, Find) {
 
 // NOLINTNEXTLINE
 TEST(Cache, FindEvicted) {
-  midi2::cache<int, int, 4> c;
+  midi2::adt::cache<int, int, 4> c;
   c.set(1, 10);
   c.set(2, 20);
   c.set(3, 30);

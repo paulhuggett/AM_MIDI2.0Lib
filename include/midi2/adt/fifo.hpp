@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file fifo.hpp
+/// \brief  Provides an efficient in-place FIFO/circular buffer.
+
 #ifndef MIDI2_FIFO_HPP
 #define MIDI2_FIFO_HPP
 
@@ -18,11 +21,11 @@
 
 #include "midi2/utils.hpp"
 
-namespace midi2 {
+namespace midi2::adt {
 
 /// \returns  The number of bits required for value.
 // NOLINTNEXTLINE(misc-no-recursion)
-template <std::unsigned_integral T> consteval unsigned bits_required(T const value) {
+template <std::unsigned_integral T> consteval unsigned bits_required(T const value) noexcept {
   return value == 0U ? 0U : 1U + bits_required(static_cast<T>(value >> 1U));
 }
 
@@ -70,26 +73,28 @@ public:
   /// \brief Checks whether the container is empty.
   /// The FIFO is empty when both indices are equal.
   /// \returns True if the container is empty, false otherwise.
-  [[nodiscard]] constexpr bool empty() const { return write_index_ == read_index_; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return write_index_ == read_index_; }
   /// \brief Checks whether the container is full.
   /// The FIFO is full then when both indices are equal but the "wrap" fields
   /// different.
   /// \returns True if the container is full, false otherwise.
-  [[nodiscard]] constexpr bool full() const { return (write_index_ & mask_) == (read_index_ & mask_) && wrapped(); }
+  [[nodiscard]] constexpr bool full() const noexcept {
+    return (write_index_ & mask_) == (read_index_ & mask_) && wrapped();
+  }
   /// \brief Returns the number of elements.
-  [[nodiscard]] constexpr std::size_t size() const {
+  [[nodiscard]] constexpr std::size_t size() const noexcept {
     auto const w = (write_index_ & mask_) + (wrapped() ? Elements : 0U);
     auto const r = read_index_ & mask_;
     assert(w >= r);
     return w - r;
   }
   /// \brief Returns the maximum possible number of elements.
-  [[nodiscard]] constexpr std::size_t max_size() const { return Elements; }
+  [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Elements; }
 
 private:
   std::array<ElementType, Elements> arr_{};
 
-  [[nodiscard]] constexpr bool wrapped() const { return (write_index_ & ~mask_) != (read_index_ & ~mask_); }
+  [[nodiscard]] constexpr bool wrapped() const noexcept { return (write_index_ & ~mask_) != (read_index_ & ~mask_); }
 
   // The number of bits required to represent the maximum index in the arr_
   // container.
@@ -102,6 +107,6 @@ private:
   bitfield_type read_index_ : bits_ + 1 = 0;
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_FIFO_HPP

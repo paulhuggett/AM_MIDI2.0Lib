@@ -14,7 +14,7 @@
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
-namespace midi2 {
+namespace midi2::ump {
 
 // note off
 // ~~~~~~~~
@@ -161,4 +161,4 @@ void ump_to_midi2::to_midi2_config::m1cvm::pitch_bend(ump_to_midi2::context *con
                  .value(mcm_scale<lsb_bits + msb_bits, m2v>(m1value)));
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::ump

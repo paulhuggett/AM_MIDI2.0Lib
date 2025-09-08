@@ -20,7 +20,7 @@
 #include "iumap.hpp"
 #include "lru_list.hpp"
 
-namespace midi2 {
+namespace midi2::adt {
 
 template <typename Key, typename Mapped, std::size_t Size> class cache {
 public:
@@ -86,6 +86,6 @@ bool cache<Key, Mapped, Size>::set(key_type const &k, mapped_type const &v) {
   return false;
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_CACHE_HPP

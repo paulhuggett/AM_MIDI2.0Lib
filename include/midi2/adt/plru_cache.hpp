@@ -6,9 +6,11 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-/// Implements a "Tree-PLRU" (Pseudo Least-recently Used) unordered associative container. It is
-/// intended as a small cache for objects which are relatively cheap to store and relatively expensive
-/// to create. The container's keys must be unsigned integral types.
+/// \file plru_cache.hpp
+/// \brief Implements a "Tree-PLRU" (Pseudo Least-recently Used) unordered associative container.
+///
+/// It is intended as a small cache for objects which are relatively cheap to store and relatively
+/// expensive to create. The container's keys must be unsigned integral types.
 
 #ifndef MIDI2_PLRU_CACHE_HPP
 #define MIDI2_PLRU_CACHE_HPP
@@ -30,38 +32,11 @@
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 
-namespace midi2 {
+#include "midi2/adt/uinteger.hpp"
 
-/// \brief Yields the smallest unsigned integral type with at least \p N bits.
-template <std::size_t N>
-  requires(N <= 64)
-struct uinteger {
-  /// The type of an unsigned integral with at least \p N bits.
-  using type = typename uinteger<N + 1>::type;
-};
-/// \brief A helper type for convenient use of uinteger<N>::type.
-template <std::size_t N> using uinteger_t = typename uinteger<N>::type;
-/// \brief Yields an unsigned integral type of 8 bits or more.
-template <> struct uinteger<8> {
-  /// Smallest unsigned integer type with width of at least 8 bits.
-  using type = std::uint_least8_t;
-};
-/// \brief Yields an unsigned integral type of 16 bits or more.
-template <> struct uinteger<16> {
-  /// Smallest unsigned integer type with width of at least 16 bits.
-  using type = std::uint_least16_t;
-};
-/// \brief Yields an unsigned integral type of 32 bits or more.
-template <> struct uinteger<32> {
-  /// Smallest unsigned integer type with width of at least 32 bits.
-  using type = std::uint_least32_t;
-};
-/// \brief Yields an unsigned integral type of 64 bits or more.
-template <> struct uinteger<64> {
-  /// Smallest unsigned integer type with width of at least 64 bits.
-  using type = std::uint_least64_t;
-};
+namespace midi2::adt {
 
+/// \brief Private implementation details of the plru_cache type
 namespace details {
 
 template <typename T> struct aligned_storage {
@@ -277,9 +252,10 @@ private:
 
 }  // end namespace details
 
-/// A "Tree-PLRU" (Pseudo Least-recently Used) unordered associative container. It is
-/// intended as a small cache for objects which are relatively cheap to store and relatively
-/// expensive to create. The container's keys must be unsigned integral types.
+/// \brief A "Tree-PLRU" (Pseudo Least-recently Used) unordered associative container.
+///
+/// It is intended as a small cache for objects which are relatively cheap to store and
+/// relatively expensive to create. The container's keys must be unsigned integral types.
 ///
 /// The total number of cache entries is given by Sets * Ways.
 ///
@@ -473,6 +449,6 @@ private:
   }
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_PLRU_CACHE_HPP

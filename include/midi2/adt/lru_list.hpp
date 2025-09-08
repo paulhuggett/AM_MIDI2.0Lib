@@ -20,7 +20,7 @@
 #include <ostream>
 #endif
 
-namespace midi2 {
+namespace midi2::adt {
 
 template <typename ValueType, std::size_t Size>
   requires(Size > 1)
@@ -199,6 +199,6 @@ void lru_list<ValueType, Size>::dump(std::ostream &os) const {
 }
 #endif
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_LRU_LIST_HPP

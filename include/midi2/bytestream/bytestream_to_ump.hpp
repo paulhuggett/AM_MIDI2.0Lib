@@ -18,7 +18,7 @@
 #include "midi2/adt/fifo.hpp"
 #include "midi2/ump/ump_types.hpp"
 
-namespace midi2 {
+namespace midi2::bytestream {
 
 class bytestream_to_ump {
 public:
@@ -58,7 +58,7 @@ private:
     void reset() { std::ranges::fill(bytes, std::byte{0}); }
   };
   sysex7 sysex7_;
-  fifo<std::uint32_t, 4> output_{};
+  adt::fifo<std::uint32_t, 4> output_{};
 
   void to_ump(std::byte b0, std::byte b1, std::byte b2);
 
@@ -66,6 +66,6 @@ private:
   void sysex_data_byte(std::byte midi1_byte);
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::bytestream
 
 #endif  // MIDI2_BYTESTREAM_TO_UMP_HPP

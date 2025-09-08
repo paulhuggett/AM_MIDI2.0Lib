@@ -24,6 +24,23 @@
 include (CheckCXXCompilerFlag)
 include (CheckLinkerFlag)
 
+# flag if available
+# ~~~~~~~~~~~~~~~~~
+# If the compiler accepts the command-line flag given by the
+# 'flag' parameter, 'result' is set to flag otherwise to an
+# empty string.
+function(flag_if_available flag result)
+  string(MAKE_C_IDENTIFIER "MIDI2_HAS_${flag}" flag_var)
+  check_cxx_compiler_flag(${flag} ${flag_var})
+  if (${flag_var})
+    set(${result} ${flag})
+  else()
+    unset(${result})
+  endif()
+  return(PROPAGATE ${result})
+endfunction()
+
+
 function (setup_target target)
   cmake_parse_arguments (
     arg # prefix
@@ -40,27 +57,33 @@ function (setup_target target)
   set (clang_warning_options
     -Weverything
     -Wno-c++14-extensions
-    -Wno-c++20-compat
     -Wno-c++98-compat
     -Wno-c++98-compat-pedantic
     -Wno-c99-extensions
-    -Wno-covered-switch-default
-    -Wno-ctad-maybe-unsupported
     -Wno-documentation-unknown-command
     -Wno-packed
     -Wno-padded
     -Wno-switch-default
-    -Wno-switch-enum
     -Wno-undef
     -Wno-weak-vtables
   )
   # Some clang warning switches are not available in all versions of the compiler.
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang$")
-    check_cxx_compiler_flag(-Wno-unsafe-buffer-usage CLANG_W_UNSAFE_BUFFER_USAGE)
-    list(APPEND clang_warning_options $<$<BOOL:${CLANG_W_UNSAFE_BUFFER_USAGE}>:-Wno-unsafe-buffer-usage>)
-
-    check_cxx_compiler_flag(-Wno-missing-include-dirs CLANG_W_MISSING_INCLUDE_DIRS)
-    list(APPEND clang_warning_options $<$<BOOL:${CLANG_W_MISSING_INCLUDE_DIRS}>:-Wno-missing-include-dirs>)
+    # Set flags that are not available in all versions of clang.
+    set(extra_flags
+      -Wno-c++20-compat
+      -Wno-c++2a-compat
+      -Wno-covered-switch-default
+      -Wno-ctad-maybe-unsupported
+      -Wno-missing-include-dirs
+      -Wno-poison-system-directories
+      -Wno-unsafe-buffer-usage
+      -Wno-switch-enum
+    )
+    foreach(flag IN LISTS extra_flags)
+      flag_if_available(${flag} new_flag)
+      list(APPEND clang_warning_options ${new_flag})
+    endforeach()
   endif ()
 
   set (gcc_warning_options

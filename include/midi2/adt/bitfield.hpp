@@ -10,17 +10,18 @@
 #define MIDI2_BITFIELD_HPP
 
 #include <cassert>
+#include <climits>
 #include <concepts>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
 
-namespace midi2 {
+namespace midi2::adt {
 
 ///\returns The maximum value that can be held in \p Bits bits of type \p T.
 template <std::unsigned_integral T, unsigned Bits>
-  requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
-constexpr T max_value() noexcept {
+  requires(Bits <= sizeof(T) * CHAR_BIT && Bits <= 64U)
+[[nodiscard]] consteval T max_value() noexcept {
   if constexpr (Bits == 8U) {
     return std::numeric_limits<std::uint8_t>::max();
   } else if constexpr (Bits == 16U) {
@@ -97,6 +98,6 @@ private:
   value_type value_;
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_BITFIELD_HPP

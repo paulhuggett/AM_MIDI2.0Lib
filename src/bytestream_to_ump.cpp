@@ -13,14 +13,15 @@
 #include <cstdint>
 #include <utility>
 
+#include "midi2/bytestream/bytestream_types.hpp"
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
 namespace {
 
-/// \returns True if the supplied byte represents a MIDI 1.0 status code which is follow by one data byte.
+/// \returns True if the supplied byte represents a MIDI 1.0 status code which is followed by one data byte.
 [[nodiscard]] constexpr bool is_one_byte_message(std::byte const midi1_byte) {
-  using enum midi2::status;
+  using enum midi2::bytestream::status;
   auto const value = std::to_underlying(midi1_byte);
   auto const top_nibble = std::to_underlying(midi1_byte & std::byte{0xF0});
   return top_nibble == std::to_underlying(program_change) || top_nibble == std::to_underlying(channel_pressure) ||
@@ -29,7 +30,7 @@ namespace {
 
 }  // end anonymous namespace
 
-namespace midi2 {
+namespace midi2::bytestream {
 
 void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
   assert((b0 & std::byte{0x80}) != std::byte{0} && "Top bit of b0 must be set");
@@ -126,4 +127,4 @@ void bytestream_to_ump::push(std::byte const midi1_byte) {
   }
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::bytestream

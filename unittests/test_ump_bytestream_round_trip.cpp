@@ -8,7 +8,7 @@
 
 // DUT includes
 #include "midi2/bytestream/bytestream_to_ump.hpp"
-#include "midi2/ump/ump_to_bytestream.hpp"
+#include "midi2/bytestream/ump_to_bytestream.hpp"
 
 // Standard Library
 #include <algorithm>
@@ -31,7 +31,7 @@ using byte_vector = std::vector<std::byte>;
 using ump_vector = std::vector<std::uint32_t>;
 
 ump_vector bytesToUMP(byte_vector const& in) {
-  midi2::bytestream_to_ump bs2ump;
+  midi2::bytestream::bytestream_to_ump bs2ump;
   ump_vector out;
   for (auto const v : in) {
     bs2ump.push(v);
@@ -43,7 +43,7 @@ ump_vector bytesToUMP(byte_vector const& in) {
 }
 
 byte_vector umpToBytes(ump_vector const& in) {
-  midi2::ump_to_bytestream ump2bs;
+  midi2::bytestream::ump_to_bytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
     ump2bs.push(v);
@@ -73,9 +73,8 @@ void UMPByteStreamRoundTrip(byte_vector const& b1) {
   // fail. For the time being just filter out any buffers with even a hint
   // of sysex.
   if (auto const end = std::end(b1); std::find_if(std::begin(b1), end, [](std::byte const b) {
-                                       using enum midi2::status;
-                                       return b == midi2::to_byte(midi2::status::sysex_start) ||
-                                              b == midi2::to_byte(midi2::status::sysex_stop);
+                                       using enum midi2::bytestream::status;
+                                       return b == midi2::to_byte(sysex_start) || b == midi2::to_byte(sysex_stop);
                                      }) != end) {
     return;
   }

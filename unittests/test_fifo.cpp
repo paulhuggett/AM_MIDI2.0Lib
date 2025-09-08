@@ -32,7 +32,7 @@ TEST(IsPowerOfTwo, IsPowerOfTwo) {
   EXPECT_FALSE(is_power_of_two(65537U));
 }
 TEST(BitsRequired, BitsRequired) {
-  using midi2::bits_required;
+  using midi2::adt::bits_required;
   EXPECT_EQ(bits_required(0U), 0U);
   EXPECT_EQ(bits_required(1U), 1U);
   EXPECT_EQ(bits_required(2U), 2U);
@@ -54,7 +54,7 @@ std::vector<unsigned> toVector(std::queue<unsigned> q) {
   }
   return result;
 }
-template <std::uint32_t Elements> std::vector<unsigned> toVector(midi2::fifo<unsigned, Elements> q) {
+template <std::uint32_t Elements> std::vector<unsigned> toVector(midi2::adt::fifo<unsigned, Elements> q) {
   std::vector<unsigned> result;
   result.reserve(q.size());
   while (!q.empty()) {
@@ -78,7 +78,7 @@ using TestTypes = ::testing::Types<std::integral_constant<unsigned, 2>,   // 2 b
 TYPED_TEST_SUITE(Fifo, TestTypes);
 
 TYPED_TEST(Fifo, InitialState) {
-  midi2::fifo<unsigned, TypeParam::value> fifo;
+  midi2::adt::fifo<unsigned, TypeParam::value> fifo;
   EXPECT_TRUE(fifo.empty());
   EXPECT_FALSE(fifo.full());
   EXPECT_EQ(fifo.size(), 0U);
@@ -87,7 +87,7 @@ TYPED_TEST(Fifo, InitialState) {
 
 TYPED_TEST(Fifo, Push) {
   static constexpr auto elements = TypeParam::value;
-  midi2::fifo<unsigned, elements> fifo;
+  midi2::adt::fifo<unsigned, elements> fifo;
   auto ctr = 1U;
   // Push elements until there is space for only one more.
   for (; ctr < elements; ++ctr) {
@@ -110,7 +110,7 @@ TYPED_TEST(Fifo, Push) {
 
 TYPED_TEST(Fifo, Pop) {
   static constexpr auto elements = TypeParam::value;
-  midi2::fifo<unsigned, elements> fifo;
+  midi2::adt::fifo<unsigned, elements> fifo;
   // Push elements onto the container to fill it.
   for (auto ctr = 0U; ctr < elements; ++ctr) {
     fifo.push_back(ctr);
@@ -135,7 +135,7 @@ TYPED_TEST(Fifo, PushTwoPopOne) {
   // The motivation is that, for 'elements' greater than two, we will cause
   // the FIFO's internal container to wrap and fully exercise the full/empty
   // conditions.
-  midi2::fifo<unsigned, elements> fifo;
+  midi2::adt::fifo<unsigned, elements> fifo;
   std::queue<unsigned> queue;
   // A monotonically increasing value for pushing into the containers.
   auto value = 0U;
@@ -163,7 +163,7 @@ TYPED_TEST(Fifo, PushUntilFullPopOne) {
   // This test is much like the PushTwoPopOne version except that this time we
   // push until the FIFO reports that it is full before popping all but one
   // element.
-  midi2::fifo<unsigned, elements> fifo;
+  midi2::adt::fifo<unsigned, elements> fifo;
   std::queue<unsigned> queue;
   // A monotonically increasing value for pushing into the containers.
   auto value = 0U;

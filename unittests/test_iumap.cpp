@@ -27,7 +27,7 @@ using namespace std::string_literals;
 namespace {
 
 TEST(IUMap, Empty) {
-  midi2::iumap<int, std::string, 8> const h;
+  midi2::adt::iumap<int, std::string, 8> const h;
   EXPECT_EQ(h.size(), 0U);
   EXPECT_EQ(h.max_size(), 8U);
   EXPECT_EQ(h.capacity(), 8U);
@@ -35,7 +35,7 @@ TEST(IUMap, Empty) {
 }
 
 TEST(IUMap, Insert) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::adt::iumap<int, std::string, 8> h;
   using value_type = decltype(h)::value_type;
 
   auto [pos1, did_insert1] = h.insert(std::make_pair(1, "one"s));
@@ -58,7 +58,7 @@ TEST(IUMap, Insert) {
 }
 
 TEST(IUMap, InsertIntoAFullMap) {
-  midi2::iumap<int, std::string, 2> h;
+  midi2::adt::iumap<int, std::string, 2> h;
   h.insert(std::make_pair(1, "one"s));
   h.insert(std::make_pair(2, "two"s));
   auto [pos, did_insert] = h.insert(std::make_pair(3, "three"s));
@@ -67,7 +67,7 @@ TEST(IUMap, InsertIntoAFullMap) {
 }
 
 TEST(IUMap, InsertOrAssign) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::adt::iumap<int, std::string, 8> h;
   using value_type = decltype(h)::value_type;
 
   auto [pos1, did_insert1] = h.insert_or_assign(10, "ten"s);
@@ -82,7 +82,7 @@ TEST(IUMap, InsertOrAssign) {
 }
 
 TEST(IUMap, InsertOrAssignIntoAFullMap) {
-  midi2::iumap<int, std::string, 2> h;
+  midi2::adt::iumap<int, std::string, 2> h;
   h.insert(std::make_pair(1, "one"s));
   h.insert(std::make_pair(2, "two"s));
   auto [pos, did_insert] = h.insert_or_assign(3, "three"s);
@@ -91,7 +91,7 @@ TEST(IUMap, InsertOrAssignIntoAFullMap) {
 }
 
 TEST(IUMap, Erase) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::adt::iumap<int, std::string, 8> h;
   auto [pos1, did_insert1] = h.insert(std::make_pair(10, "ten"s));
   h.erase(pos1);
   EXPECT_EQ(h.size(), 0U);
@@ -99,7 +99,7 @@ TEST(IUMap, Erase) {
 }
 
 TEST(IUMap, FindFound) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::adt::iumap<int, std::string, 8> h;
   h.insert(std::make_pair(10, "ten"s));
   auto pos = h.find(10);
   ASSERT_NE(pos, h.end());
@@ -108,14 +108,14 @@ TEST(IUMap, FindFound) {
 }
 
 TEST(IUMap, FindNotFound) {
-  midi2::iumap<int, std::string, 8> h;
+  midi2::adt::iumap<int, std::string, 8> h;
   h.insert(std::make_pair(10, "ten"s));
   auto pos = h.find(11);
   EXPECT_EQ(pos, h.end());
 }
 
 TEST(IUMap, CopyAssign) {
-  midi2::iumap<int, std::string, 4> a;
+  midi2::adt::iumap<int, std::string, 4> a;
   a.insert(std::make_pair(1, "one"));
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(std::make_pair(3, "three"));
@@ -125,7 +125,7 @@ TEST(IUMap, CopyAssign) {
   auto const six = std::pair<int const, std::string>{6, "six"s};
   auto const seven = std::pair<int const, std::string>{7, "seven"s};
 
-  midi2::iumap<int, std::string, 4> b;
+  midi2::adt::iumap<int, std::string, 4> b;
   b.insert(four);
   auto pb5 = b.insert(std::make_pair(5, "five")).first;
   b.insert(six);
@@ -150,7 +150,7 @@ TEST(IUMap, CopyAssign) {
 }
 
 TEST(IUMap, MoveAssign) {
-  midi2::iumap<int, std::string, 4> a;
+  midi2::adt::iumap<int, std::string, 4> a;
   a.insert(std::make_pair(1, "one"));
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(std::make_pair(3, "three"));
@@ -160,7 +160,7 @@ TEST(IUMap, MoveAssign) {
   auto const six = std::pair<int const, std::string>{6, "six"s};
   auto const seven = std::pair<int const, std::string>{7, "seven"s};
 
-  midi2::iumap<int, std::string, 4> b;
+  midi2::adt::iumap<int, std::string, 4> b;
   b.insert(four);
   auto pb5 = b.insert(std::make_pair(5, "five")).first;
   b.insert(six);
@@ -188,13 +188,13 @@ TEST(IUMap, CopyCtor) {
   auto const one = std::pair<int const, std::string>{1, "one"s};
   auto const three = std::pair<int const, std::string>{3, "three"s};
 
-  midi2::iumap<int, std::string, 4> a;
+  midi2::adt::iumap<int, std::string, 4> a;
   a.insert(one);
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(three);
   a.erase(pa2);  // an erase so that the container holds a tombstone record
 
-  midi2::iumap<int, std::string, 4> b(a);
+  midi2::adt::iumap<int, std::string, 4> b(a);
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(1), b.end());
   EXPECT_EQ(*a.find(1), one);
@@ -207,13 +207,13 @@ TEST(IUMap, MoveCtor) {
   auto const one = std::pair<int const, std::string>{1, "one"s};
   auto const three = std::pair<int const, std::string>{3, "three"s};
 
-  midi2::iumap<int, std::string, 4> a;
+  midi2::adt::iumap<int, std::string, 4> a;
   a.insert(one);
   auto pa2 = a.insert(std::make_pair(2, "two")).first;
   a.insert(three);
   a.erase(pa2);  // an erase so that the container holds a tombstone record
 
-  midi2::iumap<int, std::string, 4> const b{std::move(a)};
+  midi2::adt::iumap<int, std::string, 4> const b{std::move(a)};
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(1), b.end());
   EXPECT_EQ(*b.find(1), one);
@@ -237,13 +237,13 @@ private:
   int a_;
 };
 TEST(IUMap, MoveOnlyCtor) {
-  midi2::iumap<int, move_only, 4> a;
+  midi2::adt::iumap<int, move_only, 4> a;
   a.try_emplace(3, 43);
   auto pa5 = a.try_emplace(5, 47).first;
   a.try_emplace(7, 53);
   a.erase(pa5);  // an erase so that the container holds a tombstone record
 
-  midi2::iumap<int, move_only, 4> const b{std::move(a)};
+  midi2::adt::iumap<int, move_only, 4> const b{std::move(a)};
   EXPECT_EQ(b.size(), 2U);
   ASSERT_NE(b.find(3), b.end());
   EXPECT_EQ(*b.find(3), (decltype(b)::value_type{3, move_only{43}}));
@@ -252,8 +252,8 @@ TEST(IUMap, MoveOnlyCtor) {
   EXPECT_EQ(*b.find(7), (decltype(b)::value_type{7, move_only{53}}));
 }
 TEST(IUMap, MoveOnlyAssign) {
-  midi2::iumap<int, move_only, 4> a;
-  midi2::iumap<int, move_only, 4> b;
+  midi2::adt::iumap<int, move_only, 4> a;
+  midi2::adt::iumap<int, move_only, 4> b;
 
   a.try_emplace(3, 43);
   auto pa5 = a.try_emplace(5, 47).first;
@@ -272,7 +272,7 @@ TEST(IUMap, MoveOnlyAssign) {
 }
 
 TEST(IUMap, IteratorAdd) {
-  midi2::iumap<int, int, 4> a;
+  midi2::adt::iumap<int, int, 4> a;
   a.try_emplace(1, 1);
   a.try_emplace(2, 2);
   a.try_emplace(3, 3);
@@ -286,7 +286,7 @@ TEST(IUMap, IteratorAdd) {
 }
 
 TEST(IUMap, IteratorSubtract) {
-  midi2::iumap<int, int, 4> a;
+  midi2::adt::iumap<int, int, 4> a;
   a.try_emplace(1, 1);
   a.try_emplace(2, 2);
   a.try_emplace(3, 3);
@@ -300,7 +300,7 @@ TEST(IUMap, IteratorSubtract) {
 }
 
 void Thrash(std::vector<int> const &in, std::vector<int> const &del) {
-  midi2::iumap<int, int, 16> a;
+  midi2::adt::iumap<int, int, 16> a;
   std::unordered_map<int, int> b;
 
   for (int const a1 : in) {

@@ -20,7 +20,7 @@
 #include "midi2/ump/ump_dispatcher.hpp"
 #include "midi2/ump/ump_types.hpp"
 
-namespace midi2 {
+namespace midi2::ump {
 
 /// \brief Converts MIDI 2.0 UMP (Universal MIDI Packet) messages to MIDI 1.0 UMP.
 ///
@@ -84,11 +84,11 @@ private:
 
     // value is 14 bit MIDI 1 controller number (bank/index).
     using pn_cache_value = std::pair<std::uint8_t, std::uint8_t>;
-    using pn_cache_type = plru_cache<std::uint16_t, pn_cache_value, 4, 8>;
+    using pn_cache_type = adt::plru_cache<std::uint16_t, pn_cache_value, 4, 8>;
     pn_cache_type pn_cache;
-    fifo<std::uint32_t, 4> output;
+    adt::fifo<std::uint32_t, 4> output;
   };
-  friend struct std::hash<midi2::ump_to_midi1::context_type::pn_cache_key>;
+  friend struct std::hash<midi2::ump::ump_to_midi1::context_type::pn_cache_key>;
 
   struct to_midi1_config {
     // system messages go straight through.
@@ -251,6 +251,6 @@ private:
   ump::ump_dispatcher<to_midi1_config> p_{to_midi1_config{.context = &context_}};
 };
 
-}  // end namespace midi2
+}  // end namespace midi2::ump
 
 #endif  // MIDI2_UMPTOMIDI1_HPP

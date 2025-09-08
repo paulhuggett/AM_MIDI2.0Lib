@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file iumap.hpp
+/// \brief Provides iumap, an in-place unordered hash table.
+
 #ifndef MIDI2_IUMAP_HPP
 #define MIDI2_IUMAP_HPP
 
@@ -27,9 +30,15 @@
 #include <ostream>
 #endif  // IUMAP_TRACE
 
-namespace midi2 {
+namespace midi2::adt {
 
-// An in-place unordered hash table.
+/// An in-place unordered hash table.
+///
+/// \tparam Key  The key type
+/// \tparam Mapped  The value type
+/// \tparam Size  The number of key/value pairs that can be stored in the container
+/// \tparam Hash  The type used to hash keys
+/// \tparam KeyEqual  The type used to compare keys
 template <typename Key, typename Mapped, std::size_t Size, typename Hash = std::hash<std::remove_cv_t<Key>>,
           typename KeyEqual = std::equal_to<Key>>
   requires(is_power_of_two(Size) && std::is_nothrow_destructible_v<Key> && std::is_nothrow_destructible_v<Mapped>)
@@ -38,6 +47,7 @@ class iumap {
   struct member;
 
 public:
+  /// The key type
   using key_type = Key;
   using mapped_type = Mapped;
   using value_type = std::pair<Key const, Mapped>;
@@ -511,6 +521,6 @@ auto *iumap<Key, Mapped, Size, Hash, KeyEqual>::find_insert_slot(Container &cont
   return first_tombstone != nullptr ? first_tombstone : slot_ptr{nullptr};
 }
 
-}  // end namespace midi2
+}  // end namespace midi2::adt
 
 #endif  // MIDI2_IUMAP_HPP

@@ -1,4 +1,3 @@
-
 #===-- CMakeLists ------------------------------------------------------------*- C++ -*-===//
 #
 # midi2 library under the MIT license.
@@ -10,6 +9,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(midi2)
+cmake_policy(SET CMP0140 NEW)
 
 option(MIDI2_WERROR "Enable warnings-as-errors" No)
 option(MIDI2_COVERAGE "Enable code coverage" No)
@@ -17,6 +17,7 @@ option(MIDI2_SANITIZE "Enable sanitizers" No)
 option(MIDI2_FUZZTEST "Enable Fuzz Testing" No)
 option(MIDI2_UNITTEST "Enable Unit Testing" Yes)
 option(MIDI2_DEMO "Enable the demo programs" No)
+option(MIDI2_BENCHMARK "Enable the benchmark" No)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -30,9 +31,12 @@ set(adt_headers
   "${INCLUDE_DIR}/midi2/adt/iumap.hpp"
   "${INCLUDE_DIR}/midi2/adt/lru_list.hpp"
   "${INCLUDE_DIR}/midi2/adt/plru_cache.hpp"
+  "${INCLUDE_DIR}/midi2/adt/uinteger.hpp"
 )
 set(bytestream_headers
   "${INCLUDE_DIR}/midi2/bytestream/bytestream_to_ump.hpp"
+  "${INCLUDE_DIR}/midi2/bytestream/bytestream_types.hpp"
+  "${INCLUDE_DIR}/midi2/bytestream/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/bytestream/usbm1_to_bytestream.hpp"
 )
 set(ci_headers
@@ -45,12 +49,11 @@ set(ci_headers
 set(ump_headers
   "${INCLUDE_DIR}/midi2/ump/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_dispatcher_backend.hpp"
-  "${INCLUDE_DIR}/midi2/ump/ump_to_bytestream.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_to_midi1.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_to_midi2.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_types.hpp"
+  "${INCLUDE_DIR}/midi2/ump/ump_utils.hpp"
 )
-
 set(MIDI2_HEADERS
   ${adt_headers}
   ${bytestream_headers}
@@ -65,27 +68,21 @@ source_group(bytestream FILES ${bytestream_headers})
 source_group(ci FILES ${ci_headers})
 source_group(ump FILES ${ump_headers})
 
+
 add_library(midi2 ${MIDI2_HEADERS}
   src/bytestream_to_ump.cpp
   src/ump_to_midi1.cpp
   src/ump_to_midi2.cpp
 )
 setup_target(midi2)
-
 target_include_directories(midi2 PUBLIC
-    $<BUILD_INTERFACE:${INCLUDE_DIR}>
-    $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${INCLUDE_DIR}>
+  $<INSTALL_INTERFACE:include>
 )
 
 set(MIDI2_EXPORT_NAME midi2-config)
-install(TARGETS midi2
-        EXPORT ${MIDI2_EXPORT_NAME}
-)
-install(EXPORT ${MIDI2_EXPORT_NAME}
-        NAMESPACE midi2::
-        DESTINATION "share/${PROJECT_NAME}"
-)
-
+install(TARGETS midi2 EXPORT ${MIDI2_EXPORT_NAME})
+install(EXPORT ${MIDI2_EXPORT_NAME} NAMESPACE midi2:: DESTINATION "share/${PROJECT_NAME}")
 install(FILES ${MIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 
 
@@ -136,3 +133,8 @@ foreach(target gtest gmock gmock_main gtest_main)
     target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
   endif()
 endforeach()
+
+
+if(MIDI2_BENCHMARK)
+  add_subdirectory(benchmark)
+endif(MIDI2_BENCHMARK)

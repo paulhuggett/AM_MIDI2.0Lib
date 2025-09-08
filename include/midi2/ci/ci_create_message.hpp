@@ -17,10 +17,10 @@
 #include <type_traits>
 
 #include "midi2/ci/ci_types.hpp"
-#include "midi2/utils.hpp"
 
 namespace midi2::ci {
 
+/// \brief Private implementation details of the CI types and functions
 namespace details {
 
 template <typename T> struct type_to_packed {};

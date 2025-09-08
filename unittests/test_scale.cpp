@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
-#include "midi2/utils.hpp"
+#include "midi2/ump/ump_utils.hpp"
 
 // Google test
 #include <gtest/gtest.h>
@@ -51,7 +51,7 @@ TYPED_TEST_SUITE(McmScale, TestTypes);
 // NOLINTNEXTLINE
 TYPED_TEST(McmScale, Ok) {
   constexpr auto actual =
-      midi2::mcm_scale<TypeParam::source_bits::value, TypeParam::dest_bits::value>(TypeParam::input::value);
+      midi2::ump::mcm_scale<TypeParam::source_bits::value, TypeParam::dest_bits::value>(TypeParam::input::value);
   EXPECT_EQ(actual, TypeParam::expected::value);
 }
 

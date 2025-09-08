@@ -23,7 +23,7 @@ namespace {
 
 template <std::ranges::input_range Range> auto convert(Range const& input) {
   std::vector<std::uint32_t> output;
-  midi2::ump_to_midi2 ump2m2{0};
+  midi2::ump::ump_to_midi2 ump2m2{0};
   for (auto const message : input) {
     ump2m2.push(message);
     while (!ump2m2.empty()) {
@@ -83,7 +83,7 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
                                       .group(group)
                                       .channel(channel)
                                       .note(note_number)
-                                      .velocity(midi2::mcm_scale<7, 16>(velocity));
+                                      .velocity(midi2::ump::mcm_scale<7, 16>(velocity));
     expected.push_back(get<0>(expected_non).word());
     expected.push_back(get<1>(expected_non).word());
   }
@@ -112,7 +112,7 @@ TEST(UMPToMidi2, PolyPressure) {
   expected.group(0);
   expected.channel(0);
   expected.note(note);
-  expected.pressure(midi2::mcm_scale<7, 32>(in.pressure()));
+  expected.pressure(midi2::ump::mcm_scale<7, 32>(in.pressure()));
 
   std::array const input{get<0>(in).word()};
   EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
@@ -131,7 +131,7 @@ TEST(UMPToMidi2, PitchBend) {
   midi2::ump::m2cvm::pitch_bend m2;
   m2.group(0);
   m2.channel(0);
-  m2.value(midi2::mcm_scale<14, 32>(pb14));
+  m2.value(midi2::ump::mcm_scale<14, 32>(pb14));
 
   std::array const input{get<0>(m1).word()};
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
@@ -151,7 +151,7 @@ TEST(UMPToMidi2, ChannelPressure) {
   midi2::ump::m2cvm::channel_pressure m2;
   m2.group(group);
   m2.channel(channel);
-  m2.value(midi2::mcm_scale<7, 32>(pressure));
+  m2.value(midi2::ump::mcm_scale<7, 32>(pressure));
 
   std::array const input{get<0>(m1).word()};
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
@@ -173,7 +173,7 @@ TEST(UMPToMidi2, SimpleContinuousController) {
   m2.group(group);
   m2.channel(channel);
   m2.controller(controller);
-  m2.value(midi2::mcm_scale<7, 32>(value));
+  m2.value(midi2::ump::mcm_scale<7, 32>(value));
 
   std::array const input{get<0>(m1).word()};
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
@@ -217,7 +217,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
     constexpr auto m1cc_bank_msb = midi2::ump::m1cvm::control_change{}
                                        .group(group)
                                        .channel(channel)
-                                       .controller(midi2::control::bank_select)
+                                       .controller(midi2::ump::control::bank_select)
                                        .value(bank_msb);
     input.push_back(get<0>(m1cc_bank_msb).word());
   }
@@ -225,7 +225,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
     constexpr auto mc11_bank_lsb = midi2::ump::m1cvm::control_change{}
                                        .group(group)
                                        .channel(channel)
-                                       .controller(midi2::control::bank_select_lsb)
+                                       .controller(midi2::ump::control::bank_select_lsb)
                                        .value(bank_lsb);
     input.push_back(get<0>(mc11_bank_lsb).word());
   }
@@ -259,7 +259,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto pn_msb = midi2::ump::m1cvm::control_change{}
                                 .group(group)
                                 .channel(channel)
-                                .controller(midi2::control::rpn_msb)
+                                .controller(midi2::ump::control::rpn_msb)
                                 .value(control_msb);
     input.push_back(get<0>(pn_msb).word());
   }
@@ -267,7 +267,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto pn_lsb = midi2::ump::m1cvm::control_change{}
                                 .group(group)
                                 .channel(channel)
-                                .controller(midi2::control::rpn_lsb)
+                                .controller(midi2::ump::control::rpn_lsb)
                                 .value(control_lsb);
     input.push_back(get<0>(pn_lsb).word());
   }
@@ -275,7 +275,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto param_value_msb = midi2::ump::m1cvm::control_change{}
                                          .group(group)
                                          .channel(channel)
-                                         .controller(midi2::control::data_entry_msb)
+                                         .controller(midi2::ump::control::data_entry_msb)
                                          .value(value_msb);
     input.push_back(get<0>(param_value_msb).word());
   }
@@ -283,7 +283,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto param_value_lsb = midi2::ump::m1cvm::control_change{}
                                          .group(group)
                                          .channel(channel)
-                                         .controller(midi2::control::data_entry_lsb)
+                                         .controller(midi2::ump::control::data_entry_lsb)
                                          .value(value_lsb);
     input.push_back(get<0>(param_value_lsb).word());
   }
@@ -291,7 +291,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto null_msb = midi2::ump::m1cvm::control_change{}
                                   .group(group)
                                   .channel(channel)
-                                  .controller(midi2::control::rpn_msb)
+                                  .controller(midi2::ump::control::rpn_msb)
                                   .value(0x7F);
     input.push_back(get<0>(null_msb).word());
   }
@@ -299,17 +299,18 @@ TEST(UMPToMidi2, ControlChangeRPN) {
     constexpr auto null_lsb = midi2::ump::m1cvm::control_change{}
                                   .group(group)
                                   .channel(channel)
-                                  .controller(midi2::control::rpn_lsb)
+                                  .controller(midi2::ump::control::rpn_lsb)
                                   .value(0x7F);
     input.push_back(get<0>(null_lsb).word());
   }
 
-  constexpr auto m2 = midi2::ump::m2cvm::rpn_controller{}
-                          .group(group)
-                          .channel(channel)
-                          .bank(control_msb)
-                          .index(control_lsb)
-                          .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+  constexpr auto m2 =
+      midi2::ump::m2cvm::rpn_controller{}
+          .group(group)
+          .channel(channel)
+          .bank(control_msb)
+          .index(control_lsb)
+          .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
@@ -323,52 +324,35 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
 
   std::vector<std::uint32_t> input;
 
+  using enum midi2::ump::control;
   {
-    auto const pn_msb = midi2::ump::m1cvm::control_change{}
-                            .group(group)
-                            .channel(channel)
-                            .controller(midi2::control::nrpn_msb)
-                            .value(control_msb);
+    auto const pn_msb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(control_msb);
     input.push_back(get<0>(pn_msb).word());
   }
   {
-    auto const pn_lsb = midi2::ump::m1cvm::control_change{}
-                            .group(group)
-                            .channel(channel)
-                            .controller(midi2::control::nrpn_lsb)
-                            .value(control_lsb);
+    auto const pn_lsb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(control_lsb);
     input.push_back(get<0>(pn_lsb).word());
   }
   {
-    auto const param_value_msb = midi2::ump::m1cvm::control_change{}
-                                     .group(group)
-                                     .channel(channel)
-                                     .controller(midi2::control::data_entry_msb)
-                                     .value(value_msb);
+    auto const param_value_msb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_msb).value(value_msb);
     input.push_back(get<0>(param_value_msb).word());
   }
   {
-    auto const param_value_lsb = midi2::ump::m1cvm::control_change{}
-                                     .group(group)
-                                     .channel(channel)
-                                     .controller(midi2::control::data_entry_lsb)
-                                     .value(value_lsb);
+    auto const param_value_lsb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_lsb).value(value_lsb);
     input.push_back(get<0>(param_value_lsb).word());
   }
   {
-    auto const null_msb = midi2::ump::m1cvm::control_change{}
-                              .group(group)
-                              .channel(channel)
-                              .controller(midi2::control::nrpn_msb)
-                              .value(0x7F);
+    auto const null_msb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(0x7F);
     input.push_back(get<0>(null_msb).word());
   }
   {
-    auto const null_lsb = midi2::ump::m1cvm::control_change{}
-                              .group(group)
-                              .channel(channel)
-                              .controller(midi2::control::nrpn_lsb)
-                              .value(0x7F);
+    auto const null_lsb =
+        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(0x7F);
     input.push_back(get<0>(null_lsb).word());
   }
 
@@ -377,7 +361,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
                       .channel(channel)
                       .bank(control_msb)
                       .index(control_lsb)
-                      .value(midi2::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+                      .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
@@ -508,7 +492,7 @@ void NeverCrashes(std::uint8_t group, std::vector<std::uint32_t> const& packets)
     return;
   }
   // This test simply gets ump_to_midi2 to consume a random buffer.
-  midi2::ump_to_midi2 ump2m2{group};
+  midi2::ump::ump_to_midi2 ump2m2{group};
   for (auto const b : packets) {
     ump2m2.push(b);
     while (!ump2m2.empty()) {

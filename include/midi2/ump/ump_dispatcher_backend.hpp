@@ -11,6 +11,7 @@
 #include <functional>
 
 #include "midi2/ump/ump_types.hpp"
+#include "midi2/utils.hpp"
 
 namespace midi2::ump::dispatcher_backend {
 
