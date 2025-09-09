@@ -317,7 +317,7 @@ AUTOLINK_IGNORE_WORDS  =
 # collaboration diagrams that involve STL classes more complete and accurate.
 # The default value is: NO.
 
-BUILTIN_STL_SUPPORT    = NO
+BUILTIN_STL_SUPPORT    = Yes
 
 # If member grouping is used in the documentation and the DISTRIBUTE_GROUP_DOC
 # tag is set to YES then Doxygen will reuse the documentation of the first
