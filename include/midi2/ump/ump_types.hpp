@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ump_types.hpp
+/// \brief Defines UMP message types
+
 #ifndef MIDI2_UMP_TYPES_HPP
 #define MIDI2_UMP_TYPES_HPP
 
@@ -97,6 +100,7 @@ enum class data64 : std::uint8_t {
   sysex7_end = 0x03,
 };
 
+/// Status codes for UMP messages in the Utility group
 enum class ump_utility : std::uint8_t {
   noop = 0b0000,
   jr_clock = 0b0001,
@@ -316,6 +320,7 @@ namespace midi2::ump {
 template <> struct message_size<message_type::utility> : std::integral_constant<unsigned, 1> {};
 }  // end namespace midi2::ump
 
+/// Defines the C++ types that represent Utility type messages
 namespace midi2::ump::utility {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -336,16 +341,19 @@ class delta_clockstamp;
 // F.1.1 Message Type 0x0: Utility
 // Table 26 4-Byte UMP Formats for Message Type 0x0: Utility
 
-// 7.2.1 NOOP
+/// \brief The NOOP message (section 7.2.1)
 class midi2::ump::utility::noop {
 public:
+  /// The word of a NOOP message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::noop); }
 
+    /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the status field for the NOOP message
     using status = details::bitfield<20, 4>;
   };
 
@@ -365,17 +373,23 @@ private:
 UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 
 // 7.2.2.1 JR Clock Message
+/// \brief The JR Clock message message (section 7.2.2.1)
 class midi2::ump::utility::jr_clock {
 public:
+  /// The first word of a JR Clock message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_clock); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0
+    /// Defines the bit position of the mt (message-type) field. Always 0.
+    using mt = details::bitfield<28, 4>;
+    /// Defines a group of reserved bits.
     using reserved0 = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  // 0b0001
+    /// Defines the bit position of the status field. Always 0x1.
+    using status = details::bitfield<20, 4>;
+    /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
     using sender_clock_time = details::bitfield<0, 16>;
   };
@@ -402,15 +416,20 @@ UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_cloc
 // 7.2.2.2 JR Timestamp Message
 class midi2::ump::utility::jr_timestamp {
 public:
+  /// The first word of a JR Timestamp message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_ts); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0
+    /// Defines the bit position of the mt (message-type) field. Always 0.
+    using mt = details::bitfield<28, 4>;
+    /// Defines a group of reserved bits.
     using reserved0 = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  // 0b0010
+    /// Defines the bit position of the status field. Always 0x2.
+    using status = details::bitfield<20, 4>;
+    /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
     using timestamp = details::bitfield<0, 16>;
   };
@@ -443,9 +462,13 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_tick); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0
+    /// Defines the bit position of the mt (message-type) field. Always 0.
+    using mt = details::bitfield<28, 4>;
+    /// Defines a group of reserved bits.
     using reserved0 = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  // 0b0011
+    /// Defines the bit position of the status field. Always 0x3.
+    using status = details::bitfield<20, 4>;
+    /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
     using ticks_pqn = details::bitfield<0, 16>;
   };
@@ -478,9 +501,12 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_since); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0
+    /// Defines the bit position of the mt (message-type) field. Always 0.
+    using mt = details::bitfield<28, 4>;
+    /// Defines a group of reserved bits.
     using reserved0 = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  // 0b0100
+    /// Defines the bit position of the status field. Always 0b0100.
+    using status = details::bitfield<20, 4>;
     using ticks_per_quarter_note = details::bitfield<0, 20>;
   };
 
@@ -512,6 +538,7 @@ UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for
 
 template <> struct midi2::ump::message_size<midi2::ump::message_type::system> : std::integral_constant<unsigned, 1> {};
 
+/// Defines the C++ types that represent System type messages
 namespace midi2::ump::system {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -542,12 +569,19 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_code); }
 
-    using mt = details::bitfield<28U, 4U>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1
+    using mt = details::bitfield<28U, 4U>;
+    /// Defines the bit position of the group field
     using group = details::bitfield<24U, 4U>;
-    using status = details::bitfield<16U, 8U>;  ///< Always 0xF1
+    /// Defines the bit position of the status field. Always 0xF1
+    using status = details::bitfield<16U, 8U>;
+    /// Defines a reserved bit
     using reserved0 = details::bitfield<15, 1>;
+    /// 7 bit time code 0xnd
     using time_code = details::bitfield<8, 7>;
+    /// Defines a group of reserved bits
     using reserved1 = details::bitfield<7, 1>;
+    /// Defines a group of reserved bits
     using reserved2 = details::bitfield<0, 7>;
   };
 
@@ -579,11 +613,15 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::spp); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF2
+    /// Defines a reserved bit
     using reserved0 = details::bitfield<15, 1>;
     using position_lsb = details::bitfield<8, 7>;
+    /// Defines a reserved bit
     using reserved1 = details::bitfield<7, 1>;
     using position_msb = details::bitfield<0, 7>;
   };
@@ -617,12 +655,17 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::song_select); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF3
+    /// Defines a reserved bit
     using reserved0 = details::bitfield<15, 1>;
     using song = details::bitfield<8, 7>;
+    /// Defines a reserved bit
     using reserved1 = details::bitfield<7, 1>;
+    /// Defines a group of reserved bits
     using reserved2 = details::bitfield<0, 7>;
   };
 
@@ -654,7 +697,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::tune_request); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF6
     using reserved0 = details::bitfield<8, 8>;
@@ -688,7 +733,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_clock); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xF8
     using reserved0 = details::bitfield<8, 8>;
@@ -722,7 +769,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_start); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFA
     using reserved0 = details::bitfield<8, 8>;
@@ -756,7 +805,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_continue); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFB
     using reserved0 = details::bitfield<8, 8>;
@@ -790,7 +841,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_stop); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFC
     using reserved0 = details::bitfield<8, 8>;
@@ -824,7 +877,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::active_sensing); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFE
     using reserved0 = details::bitfield<8, 8>;
@@ -858,7 +913,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::system_reset); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x1
+    /// Defines the bit position of the mt (message-type) field. Always 0x1.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<16, 8>;  ///< Always 0xFF
     using reserved0 = details::bitfield<8, 8>;
@@ -894,6 +951,7 @@ UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for reset
 // Messages
 template <> struct midi2::ump::message_size<midi2::ump::message_type::m1cvm> : std::integral_constant<unsigned, 1> {};
 
+/// Defines the C++ types that represent MIDI 1.0 Channel Voice type messages
 namespace midi2::ump::m1cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -922,7 +980,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_on); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x09.
     using channel = details::bitfield<16, 4>;
@@ -963,7 +1023,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_off); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x08.
     using channel = details::bitfield<16, 4>;
@@ -1004,7 +1066,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::poly_pressure); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x08.
     using channel = details::bitfield<16, 4>;
@@ -1045,7 +1109,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::cc); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  /// Always 0x0B.
     using channel = details::bitfield<16, 4>;
@@ -1088,7 +1154,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::program_change); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x0C.
     using channel = details::bitfield<16, 4>;
@@ -1127,7 +1195,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::channel_pressure); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x2 (MIDI 1.0 Channel Voice)
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x08.
     using channel = details::bitfield<16, 4>;
@@ -1166,7 +1236,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::pitch_bend); }
 
-    using mt = details::bitfield<28, 4>;  // 0x2
+    /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  // 0b1000..0b1110
     using channel = details::bitfield<16, 4>;
@@ -1284,6 +1356,7 @@ struct std::tuple_element<I, midi2::ump::data64::details::sysex7<Status>> { /* N
   using type = std::tuple_element_t<I, decltype(midi2::ump::data64::details::sysex7<Status>::words_)>;
 };
 
+/// Defines the C++ types that represent Data 64 Bit messages
 namespace midi2::ump::data64 {
 
 using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_in_1>;
@@ -1312,6 +1385,7 @@ static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
 
 template <> struct midi2::ump::message_size<midi2::ump::message_type::m2cvm> : std::integral_constant<unsigned, 2> {};
 
+/// Defines the C++ types that represent MIDI 2.0 Channel Voice messages
 namespace midi2::ump::m2cvm {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -1348,7 +1422,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_off); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Note-off=0x8, note-on=0x9
     using channel = details::bitfield<16, 4>;
@@ -1397,7 +1473,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_on); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Note-on=0x9
     using channel = details::bitfield<16, 4>;
@@ -1446,7 +1524,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::poly_pressure); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0xA
     using channel = details::bitfield<16, 4>;
@@ -1489,7 +1569,10 @@ public:
   public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_pernote); }
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Registered Per-Note Controller=0x0
     using channel = details::bitfield<16, 4>;
@@ -1536,7 +1619,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_pernote); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Assignable Per-Note Controller=0x1
     using channel = details::bitfield<16, 4>;
@@ -1588,7 +1673,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Registered Control (RPN)=0x2
     using channel = details::bitfield<16, 4>;
@@ -1635,7 +1722,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Assignable Control (RPN)=0x3
     using channel = details::bitfield<16, 4>;
@@ -1682,7 +1771,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_relative); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Registered Relative Control (RPN)=0x4
     using channel = details::bitfield<16, 4>;
@@ -1728,7 +1819,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_relative); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Assignable Relative Control (NRPN)=0x5
     using channel = details::bitfield<16, 4>;
@@ -1777,7 +1870,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pernote_manage); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Per-Note Management=0xF
     using channel = details::bitfield<16, 4>;
@@ -1828,7 +1923,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::cc); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0xB
     using channel = details::bitfield<16, 4>;
@@ -1875,7 +1972,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::program_change); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0xC
     using channel = details::bitfield<16, 4>;
@@ -1929,7 +2028,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::channel_pressure); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0xD
     using channel = details::bitfield<16, 4>;
@@ -1972,7 +2073,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0xE
     using channel = details::bitfield<16, 4>;
@@ -2015,7 +2118,9 @@ public:
 
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend_pernote); }
 
-    using mt = details::bitfield<28, 4>;  ///< Always 0x4
+    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using status = details::bitfield<20, 4>;  ///< Always 0x6
     using channel = details::bitfield<16, 4>;
@@ -2058,6 +2163,7 @@ UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element fo
 //*            |_|                                *
 template <> struct midi2::ump::message_size<midi2::ump::message_type::stream> : std::integral_constant<unsigned, 4> {};
 
+/// Defines the C++ types that represent UMP Stream messages
 namespace midi2::ump::stream {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -2090,7 +2196,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_discovery); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x00
     using version_major = details::bitfield<8, 8>;
@@ -2145,7 +2252,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_info_notification); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x01
     using version_major = details::bitfield<8, 8>;
@@ -2214,7 +2322,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::device_identity_notification); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x02
     using reserved0 = details::bitfield<0, 16>;
@@ -2296,7 +2405,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_name_notification); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;
     using status = details::bitfield<16, 10>;  // 0x03
     using name1 = details::bitfield<8, 8>;
@@ -2371,6 +2481,7 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::product_instance_id_notification); }
 
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;
     using status = details::bitfield<16, 10>;
@@ -2448,7 +2559,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_request); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x05
     using protocol = details::bitfield<8, 8>;
@@ -2508,7 +2620,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_notification); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x06
     using protocol = details::bitfield<8, 8>;
@@ -2568,7 +2681,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_discovery); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x10
     using block_num = details::bitfield<8, 8>;
@@ -2625,7 +2739,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_info_notification); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x11
     using block_active = details::bitfield<15, 1>;
@@ -2695,7 +2810,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_name_notification); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x12
     using block_num = details::bitfield<8, 8>;
@@ -2770,7 +2886,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::start_of_clip); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x20
     using reserved0 = details::bitfield<0, 16>;
@@ -2821,7 +2938,8 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::end_of_clip); }
 
-    using mt = details::bitfield<28, 4>;       // 0x0F
+    /// Defines the bit position of the mt (message-type) field. Always 0xF.
+    using mt = details::bitfield<28, 4>;
     using format = details::bitfield<26, 2>;   // 0x00
     using status = details::bitfield<16, 10>;  // 0x21
     using reserved0 = details::bitfield<0, 16>;
@@ -2873,6 +2991,7 @@ UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for strea
 template <>
 struct midi2::ump::message_size<midi2::ump::message_type::flex_data> : std::integral_constant<unsigned, 4> {};
 
+/// Defines the C++ types that represent Flex Data messages
 namespace midi2::ump::flex_data {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
@@ -2899,7 +3018,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_tempo); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -2957,7 +3078,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_time_signature); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -3021,7 +3144,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_metronome); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -3091,7 +3216,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_key_signature); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -3210,7 +3337,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_chord_name); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -3302,7 +3431,9 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->set<mt>(std::to_underlying(ump::message_type::flex_data)); }
 
-    using mt = details::bitfield<28, 4>;  // 0x0D
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = details::bitfield<28, 4>;
+    /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
     using form = details::bitfield<22, 2>;
     using addrs = details::bitfield<20, 2>;
@@ -3360,6 +3491,7 @@ UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for fl
 
 template <> struct midi2::ump::message_size<midi2::ump::message_type::data128> : std::integral_constant<unsigned, 4> {};
 
+/// Defines the C++ types that represent Data 128 messages
 namespace midi2::ump::data128 {
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
