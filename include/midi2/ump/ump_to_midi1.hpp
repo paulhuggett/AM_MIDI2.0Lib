@@ -6,8 +6,11 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_UMPTOMIDI1_HPP
-#define MIDI2_UMPTOMIDI1_HPP
+/// \file ump_to_midi1.hpp
+/// \brief ump_to_midi1 converts UMP messages from MIDI 2.0 to MIDI 1.0.
+
+#ifndef MIDI2_UMP_UMP_TO_MIDI1_HPP
+#define MIDI2_UMP_UMP_TO_MIDI1_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -51,6 +54,8 @@ public:
   void push(input_type const ump) { p_.process_ump(ump); }
 
 private:
+  /// \brief Holds the converter's state
+  /// An instance is passed to each of the message handlers as each message is processed. It enables sharing of state.
   struct context_type {
     template <typename T>
       requires(std::tuple_size_v<T> >= 0)
@@ -91,69 +96,100 @@ private:
   friend struct std::hash<midi2::ump::ump_to_midi1::context_type::pn_cache_key>;
 
   struct to_midi1_config {
-    // system messages go straight through.
+    /// \brief Handles System messages by passing them straight through without change.
     struct system {
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the MIDI Time Code message
       static constexpr void midi_time_code(context_type *const ctxt, ump::system::midi_time_code const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Song Position Pointer message
       static constexpr void song_position_pointer(context_type *const ctxt,
                                                   ump::system::song_position_pointer const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Song Select message
       static constexpr void song_select(context_type *const ctxt, ump::system::song_select const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Tune Request message
       static constexpr void tune_request(context_type *const ctxt, ump::system::tune_request const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Timing Clock message
       static constexpr void timing_clock(context_type *const ctxt, ump::system::timing_clock const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Sequence Start message
       static constexpr void seq_start(context_type *const ctxt, ump::system::sequence_start const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Sequence Continue message
       static constexpr void seq_continue(context_type *const ctxt, ump::system::sequence_continue const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Sequence Stop message
       static constexpr void seq_stop(context_type *const ctxt, ump::system::sequence_stop const &in) { ctxt->push(in); }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Active Sensing message
       static constexpr void active_sensing(context_type *const ctxt, ump::system::active_sensing const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
+      /// \param in The input for the Reset message
       static constexpr void reset(context_type *const ctxt, ump::system::reset const &in) { ctxt->push(in); }
     };
-    // m1cvm messages go straight through.
+    /// \brief Handles m1cvm messages by passing them straight through without change.
     struct m1cvm {
+      /// \param ctxt The context for the conversion process.
       static constexpr void note_off(context_type *const ctxt, ump::m1cvm::note_off const &in) { ctxt->push(in); }
+      /// \param ctxt The context for the conversion process.
       static constexpr void note_on(context_type *const ctxt, ump::m1cvm::note_on const &in) { ctxt->push(in); }
+      /// \param ctxt The context for the conversion process.
       static constexpr void poly_pressure(context_type *const ctxt, ump::m1cvm::poly_pressure const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void control_change(context_type *const ctxt, ump::m1cvm::control_change const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void program_change(context_type *const ctxt, ump::m1cvm::program_change const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void channel_pressure(context_type *const ctxt, ump::m1cvm::channel_pressure const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void pitch_bend(context_type *const ctxt, ump::m1cvm::pitch_bend const &in) { ctxt->push(in); }
     };
-    // data64 messages go straight through.
+    /// \brief Handles data64 messages by passing them straight through without change.
     struct data64 {
+      /// \param ctxt The context for the conversion process.
       static constexpr void sysex7_in_1(context_type *const ctxt, ump::data64::sysex7_in_1 const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void sysex7_start(context_type *const ctxt, ump::data64::sysex7_start const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void sysex7_continue(context_type *const ctxt, ump::data64::sysex7_continue const &in) {
         ctxt->push(in);
       }
+      /// \param ctxt The context for the conversion process.
       static constexpr void sysex7_end(context_type *const ctxt, ump::data64::sysex7_end const &in) { ctxt->push(in); }
     };
 
-    /// \brief Translated MIDI 2.0 Channel Voice Messages (m2cvm) and translates them to m1cvm messages.
+    /// \brief Translates MIDI 2.0 Channel Voice Messages (m2cvm) and translates them to m1cvm messages.
     class m2cvm {
     public:
       /// \brief Translates a MIDI 2.0 note off message to a MIDI 1.0 note off message.
@@ -253,4 +289,4 @@ private:
 
 }  // end namespace midi2::ump
 
-#endif  // MIDI2_UMPTOMIDI1_HPP
+#endif  // MIDI2_UMP_UMP_TO_MIDI1_HPP
