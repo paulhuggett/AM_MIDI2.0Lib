@@ -75,6 +75,9 @@ public:
     return node - (Ways - 1U);
   }
 
+  /// Resets the access bits to their initial state.
+  constexpr void reset() { bits_.reset(); }
+
 private:
   std::bitset<Ways - 1U> bits_{};
 };
@@ -214,7 +217,15 @@ public:
   }
 
   constexpr bool contains(Key key) const noexcept { return find_matching(tagged_key_type{key}) < Ways; }
-
+  constexpr void clear() noexcept {
+    for (auto index = std::size_t{0}; index < Ways; ++index) {
+      if (keys_[index].valid()) {
+        std::destroy_at(&values_[index].value());
+      }
+      keys_[index] = tagged_key_type{};
+    }
+    plru_.reset();
+  }
   constexpr std::size_t size() const noexcept {
     return static_cast<std::size_t>(std::ranges::count_if(keys_, [](tagged_key_type const &v) { return v.valid(); }));
   }
@@ -399,6 +410,12 @@ public:
   [[nodiscard]] constexpr bool contains(key_type key) const noexcept {
     assert(plru_cache::set(key) < Sets);
     return sets_[plru_cache::set(key)].contains(key);
+  }
+
+  void clear() {
+    for (ways_type &w : sets_) {
+      w.clear();
+    }
   }
 
   /// \returns An iterator to the beginning

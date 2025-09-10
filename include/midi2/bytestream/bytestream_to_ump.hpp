@@ -22,7 +22,9 @@ namespace midi2::bytestream {
 
 class bytestream_to_ump {
 public:
+  /// \brief The type of input from a bytestream
   using input_type = std::byte;
+  /// \brief The type of a UMP message
   using output_type = std::uint32_t;
 
   constexpr bytestream_to_ump() = default;
@@ -35,6 +37,10 @@ public:
   }
 
   void push(input_type midi1_byte);
+
+  /// \brief Restore the translator to its original state.
+  /// Any in-flight messages are lost.
+  void reset();
 
 private:
   static constexpr auto unknown = std::byte{0xFF};
@@ -55,7 +61,11 @@ private:
     /// System exclusive message bytes gathered for the current UMP
     std::array<std::byte, 6> bytes{};
 
-    void reset() { std::ranges::fill(bytes, std::byte{0}); }
+    void reset() {
+      state = sysex7::status::none;
+      pos = 0;
+      std::ranges::fill(bytes, std::byte{0});
+    }
   };
   sysex7 sysex7_;
   adt::fifo<std::uint32_t, 4> output_{};

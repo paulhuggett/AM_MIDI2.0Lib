@@ -981,7 +981,7 @@ RECURSIVE              = Yes
 # Note that relative paths are relative to the directory from which Doxygen is
 # run.
 
-EXCLUDE                =
+EXCLUDE                = include/midi2/icubaby.hpp
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1489,143 +1489,6 @@ DOCSET_PUBLISHER_NAME  = Publisher
 
 GENERATE_HTMLHELP      = NO
 
-# The CHM_FILE tag can be used to specify the file name of the resulting .chm
-# file. You can add a path in front of the file if the result should not be
-# written to the html output directory.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-CHM_FILE               =
-
-# The HHC_LOCATION tag can be used to specify the location (absolute path
-# including file name) of the HTML help compiler (hhc.exe). If non-empty,
-# Doxygen will try to run the HTML help compiler on the generated index.hhp.
-# The file has to be specified with full path.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-HHC_LOCATION           =
-
-# The GENERATE_CHI flag controls if a separate .chi index file is generated
-# (YES) or that it should be included in the main .chm file (NO).
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-GENERATE_CHI           = NO
-
-# The CHM_INDEX_ENCODING is used to encode HtmlHelp index (hhk), content (hhc)
-# and project file content.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-CHM_INDEX_ENCODING     =
-
-# The BINARY_TOC flag controls whether a binary table of contents is generated
-# (YES) or a normal table of contents (NO) in the .chm file. Furthermore it
-# enables the Previous and Next buttons.
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-BINARY_TOC             = NO
-
-# The TOC_EXPAND flag can be set to YES to add extra items for group members to
-# the table of contents of the HTML help documentation and to the tree view.
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTMLHELP is set to YES.
-
-TOC_EXPAND             = NO
-
-# The SITEMAP_URL tag is used to specify the full URL of the place where the
-# generated documentation will be placed on the server by the user during the
-# deployment of the documentation. The generated sitemap is called sitemap.xml
-# and placed on the directory specified by HTML_OUTPUT. In case no SITEMAP_URL
-# is specified no sitemap is generated. For information about the sitemap
-# protocol see https://www.sitemaps.org
-# This tag requires that the tag GENERATE_HTML is set to YES.
-
-SITEMAP_URL            =
-
-# If the GENERATE_QHP tag is set to YES and both QHP_NAMESPACE and
-# QHP_VIRTUAL_FOLDER are set, an additional index file will be generated that
-# can be used as input for Qt's qhelpgenerator to generate a Qt Compressed Help
-# (.qch) of the generated HTML documentation.
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTML is set to YES.
-
-GENERATE_QHP           = NO
-
-# If the QHG_LOCATION tag is specified, the QCH_FILE tag can be used to specify
-# the file name of the resulting .qch file. The path specified is relative to
-# the HTML output folder.
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QCH_FILE               =
-
-# The QHP_NAMESPACE tag specifies the namespace to use when generating Qt Help
-# Project output. For more information please see Qt Help Project / Namespace
-# (see:
-# https://doc.qt.io/archives/qt-4.8/qthelpproject.html#namespace).
-# The default value is: org.doxygen.Project.
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHP_NAMESPACE          = org.doxygen.Project
-
-# The QHP_VIRTUAL_FOLDER tag specifies the namespace to use when generating Qt
-# Help Project output. For more information please see Qt Help Project / Virtual
-# Folders (see:
-# https://doc.qt.io/archives/qt-4.8/qthelpproject.html#virtual-folders).
-# The default value is: doc.
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHP_VIRTUAL_FOLDER     = doc
-
-# If the QHP_CUST_FILTER_NAME tag is set, it specifies the name of a custom
-# filter to add. For more information please see Qt Help Project / Custom
-# Filters (see:
-# https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters).
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHP_CUST_FILTER_NAME   =
-
-# The QHP_CUST_FILTER_ATTRS tag specifies the list of the attributes of the
-# custom filter to add. For more information please see Qt Help Project / Custom
-# Filters (see:
-# https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters).
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHP_CUST_FILTER_ATTRS  =
-
-# The QHP_SECT_FILTER_ATTRS tag specifies the list of the attributes this
-# project's filter section matches. Qt Help Project / Filter Attributes (see:
-# https://doc.qt.io/archives/qt-4.8/qthelpproject.html#filter-attributes).
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHP_SECT_FILTER_ATTRS  =
-
-# The QHG_LOCATION tag can be used to specify the location (absolute path
-# including file name) of Qt's qhelpgenerator. If non-empty Doxygen will try to
-# run qhelpgenerator on the generated .qhp file.
-# This tag requires that the tag GENERATE_QHP is set to YES.
-
-QHG_LOCATION           =
-
-# If the GENERATE_ECLIPSEHELP tag is set to YES, additional index files will be
-# generated, together with the HTML files, they form an Eclipse help plugin. To
-# install this plugin and make it available under the help contents menu in
-# Eclipse, the contents of the directory containing the HTML and XML files needs
-# to be copied into the plugins directory of eclipse. The name of the directory
-# within the plugins directory should be the same as the ECLIPSE_DOC_ID value.
-# After copying Eclipse needs to be restarted before the help appears.
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTML is set to YES.
-
-GENERATE_ECLIPSEHELP   = NO
-
-# A unique identifier for the Eclipse help plugin. When installing the plugin
-# the directory name containing the HTML and XML files should also have this
-# name. Each documentation set should have its own identifier.
-# The default value is: org.doxygen.Project.
-# This tag requires that the tag GENERATE_ECLIPSEHELP is set to YES.
-
-ECLIPSE_DOC_ID         = org.doxygen.Project
-
 # If you want full control over the layout of the generated HTML pages it might
 # be necessary to disable the index and replace it with your own. The
 # DISABLE_INDEX tag can be used to turn on/off the condensed index (tabs) at top
@@ -1959,7 +1822,7 @@ INCLUDE_FILE_PATTERNS  =
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
 PREDEFINED             = \
-  ICUBABY_INSIDE_NS = midi2
+  ICUBABY_INSIDE_NS=midi2
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -193,7 +193,7 @@ namespace details {
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
 [[nodiscard]] constexpr b28 from_le7(byte_array<4> const &v) noexcept {
-  assert(((v[0] | v[1] | v[2] | v[3]) & (std::byte{1} << 7)) == std::byte{0});
+  assert(((v[0] | v[1] | v[2] | v[3]) & std::byte{0x80}) == std::byte{0});
   using ut = b28::underlying_type;
   return b28{(static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
              (static_cast<ut>(to_underlying(v[1] & mask7b)) << (7 * 1)) |
@@ -201,12 +201,13 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
              (static_cast<ut>(to_underlying(v[3] & mask7b)) << (7 * 3))};
 }
 [[nodiscard]] constexpr b14 from_le7(byte_array<2> const &v) noexcept {
-  assert(((v[0] | v[1]) & (std::byte{1} << 7)) == std::byte{0});
+  assert(((v[0] | v[1]) & std::byte{0x80}) == std::byte{0});
   using ut = b14::underlying_type;
   return b14{static_cast<ut>((static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
                              (static_cast<ut>(to_underlying(v[1] & mask7b)) << (7 * 1)))};
 }
 [[nodiscard]] constexpr b7 from_le7(std::byte const v) noexcept {
+  assert((v & std::byte{0x80}) == std::byte{0});
   return b7{to_underlying(v)};
 }
 [[nodiscard]] constexpr b7_array<5> from_le7(byte_array<5> const &v) noexcept {

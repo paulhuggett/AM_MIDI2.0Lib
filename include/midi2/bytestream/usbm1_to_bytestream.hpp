@@ -16,17 +16,22 @@ namespace midi2::bytestream {
 
 class usbm1_to_bytestream {
 public:
-  explicit constexpr usbm1_to_bytestream(std::uint8_t cable) : cable_{cable} {
+  /// \brief The type of input from a 32-bit UMP stream
+  using input_type = std::uint32_t;
+  /// \brief The type of output to a bytestream
+  using output_type = std::byte;
+
+  explicit constexpr usbm1_to_bytestream(std::uint8_t cable) noexcept : cable_{cable} {
     assert(cable < 16U && "cable number must be four bits");
   }
 
-  [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
-  [[nodiscard]] constexpr std::byte read() {
+  [[nodiscard]] constexpr bool empty() const noexcept { return output_.empty(); }
+  [[nodiscard]] constexpr output_type pop() noexcept {
     assert(!empty());
     return output_.pop_front();
   }
 
-  constexpr void receive(std::uint32_t const usbm1) {
+  constexpr void push(input_type const usbm1) noexcept {
     if (cable(usbm1) != cable_) {
       return;
     }
@@ -42,6 +47,10 @@ public:
       output_.push_back(static_cast<std::byte>(usbm1 & 0xFF));
     }
   }
+
+  /// \brief Restore the translator to its original state.
+  /// Any in-flight messages are lost.
+  constexpr void reset() { output_.clear(); }
 
 private:
   std::uint8_t cable_;

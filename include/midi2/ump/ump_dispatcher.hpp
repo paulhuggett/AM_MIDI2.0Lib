@@ -97,7 +97,7 @@ public:
     pos_ = 0;
     std::ranges::fill(message_, std::uint8_t{0});
   }
-  void process_ump(std::uint32_t const ump) {
+  void dispatch(std::uint32_t const ump) {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     assert(pos_ < message_.size());

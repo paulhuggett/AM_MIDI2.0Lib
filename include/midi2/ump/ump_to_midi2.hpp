@@ -37,29 +37,48 @@ public:
 
   /// \brief Checks if the output is empty
   /// \return True if the output FIFO is empty, false otherwise.
-  [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return context_.output.empty(); }
 
   /// \brief Pops the front message from the output FIFO.
   /// \return The first message in the output FIFO.
   /// \note This method asserts that the output FIFO is not empty.
-  [[nodiscard]] constexpr output_type pop() {
+  [[nodiscard]] constexpr output_type pop() noexcept {
     assert(!context_.output.empty());
     return context_.output.pop_front();
   }
 
   /// \brief Pushes an input UMP message for processing.
   /// \param ump The input UMP message.
-  void push(input_type const ump) { p_.process_ump(ump); }
+  void push(input_type const ump) { p_.dispatch(ump); }
+
+  /// \brief Restore the translator to its original state.
+  /// Any in-flight messages are lost.
+  constexpr void reset() { context_.reset(); }
 
 private:
   struct context {
     template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      ump::apply(value, [this](auto const v) {
-        output.push_back(v.word());
+      ump::apply(value, [this](std::uint32_t const v) {
+        output.push_back(v);
         return false;
       });
+    }
+
+    constexpr void reset() noexcept {
+      group = 0;
+      for (auto &bank_row : bank) {
+        for (auto &b : bank_row) {
+          b.reset();
+        }
+      }
+      for (auto &pn_row : parameter_number) {
+        for (auto &pn : pn_row) {
+          pn.reset();
+        }
+      }
+      output.clear();
     }
 
     struct bank {
@@ -79,6 +98,12 @@ private:
         lsb_valid = true;
       }
       [[nodiscard]] constexpr bool is_valid() const noexcept { return lsb_valid && msb_valid; }
+      constexpr void reset() noexcept {
+        msb_valid = false;
+        msb = 0;
+        lsb_valid = false;
+        lsb = 0;
+      }
     };
 
     /// Represents the status of registered (RPN) or non-registered/assignable (NRPN) parameters
@@ -102,7 +127,7 @@ private:
         pn_lsb = value;
         pn_lsb_valid = true;
       }
-      constexpr void reset_number() noexcept {
+      constexpr void reset() noexcept {
         pn_msb_valid = false;
         pn_msb = 0;
         pn_lsb_valid = false;

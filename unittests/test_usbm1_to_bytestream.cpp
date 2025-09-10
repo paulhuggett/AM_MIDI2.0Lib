@@ -29,9 +29,9 @@ template <std::ranges::input_range Range> auto convert(std::uint8_t const cable,
   std::vector<std::byte> output;
   midi2::bytestream::usbm1_to_bytestream m1tobs{cable};
   for (std::uint32_t const m1 : range) {
-    m1tobs.receive(m1);
+    m1tobs.push(m1);
     while (!m1tobs.empty()) {
-      output.push_back(m1tobs.read());
+      output.push_back(m1tobs.pop());
     }
   }
   return output;

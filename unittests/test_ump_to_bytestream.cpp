@@ -80,8 +80,8 @@ TEST(UMPToBytestream, NoteOffFiltered) {
   constexpr auto velocity1 = 0x7F;
 
   std::vector<std::uint32_t> input;
-  auto const push_back = [&input](auto const v) {
-    input.push_back(v.word());
+  auto const push_back = [&input](std::uint32_t const v) {
+    input.push_back(v);
     return false;
   };
 
@@ -108,8 +108,8 @@ TEST(UMPToBytestream, NoteOn) {
   constexpr auto velocity1 = 0;
 
   std::vector<std::uint32_t> input;
-  auto const push_back = [&input](auto const v) {
-    input.push_back(v.word());
+  auto const push_back = [&input](std::uint32_t const v) {
+    input.push_back(v);
     return false;
   };
 
@@ -305,7 +305,7 @@ TEST(UMPToBytestream, SystemReset) {
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
   auto const actual = convert(input);
-  EXPECT_THAT(actual, ElementsAre(midi2::to_byte(systemreset)));
+  EXPECT_THAT(actual, ElementsAre(midi2::to_byte(system_reset)));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
 

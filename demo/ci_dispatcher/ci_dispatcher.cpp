@@ -87,7 +87,7 @@ int main() {
                                0x01, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x02, 0x00, 0x00, 0x00};
   dispatcher.start(my_group, device_id);
   for (auto const b : message) {
-    dispatcher.processMIDICI(static_cast<std::byte>(b));
+    dispatcher.dispatch(static_cast<std::byte>(b));
   }
   dispatcher.finish();
 }

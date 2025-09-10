@@ -58,13 +58,13 @@ concept unaligned_copyable = alignof(T) == 1 && std::is_trivially_copyable_v<T>;
 
 template <ci_dispatcher_config Config> class ci_dispatcher {
 public:
-  explicit ci_dispatcher(Config config) : config_{config} {}
+  constexpr explicit ci_dispatcher(Config config) : config_{config} {}
 
-  void start(std::uint8_t group, b7 deviceId);
-  void finish() { /* here for symmetry with start */
+  constexpr void start(std::uint8_t group, b7 deviceId);
+  constexpr void finish() { /* here for symmetry with start */
   }
 
-  void processMIDICI(std::byte s7Byte);
+  void dispatch(std::byte s7Byte);
 
   constexpr Config const &config() const noexcept { return config_; }
   constexpr Config &config() noexcept { return config_; }
@@ -124,7 +124,7 @@ private:
   void process_inquiry_midi_message_report_end();
 };
 
-template <ci_dispatcher_config Config> void ci_dispatcher<Config>::start(std::uint8_t group, b7 device_id) {
+template <ci_dispatcher_config Config> constexpr void ci_dispatcher<Config>::start(std::uint8_t group, b7 device_id) {
   using header_type = struct header;
   header_ = header_type{};
   header_.device_id = device_id;
@@ -681,9 +681,9 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::overflow() {
   consumer_ = &ci_dispatcher::discard;
 }
 
-// processMIDICI
-// ~~~~~~~~~~~~~
-template <ci_dispatcher_config Config> void ci_dispatcher<Config>::processMIDICI(std::byte const s7) {
+// dispatch
+// ~~~~~~~~
+template <ci_dispatcher_config Config> void ci_dispatcher<Config>::dispatch(std::byte const s7) {
   if (count_ > 0) {
     if (pos_ >= buffer_.size()) {
       this->overflow();

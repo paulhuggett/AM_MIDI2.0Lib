@@ -86,7 +86,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
     // Setting RPN to 7FH,7FH will disable the data entry, data increment, and data decrement controllers
     // until a new RPN or NRPN is selected. (MIDI 1.0 Approved Protocol JMSC-0011)
     if (c.pn_is_rpn && c.pn_msb_valid && c.pn_msb == 0x7F && value == 0x7F) {
-      c.reset_number();
+      c.reset();
     } else {
       c.pn_is_rpn = true;
       c.set_number_lsb(value);
@@ -105,7 +105,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context 
     }
     break;
 
-  case reset_all_controllers: c.reset_number(); [[fallthrough]];
+  case reset_all_controllers: c.reset(); [[fallthrough]];
 
   default: {
     constexpr auto m2v = ump::m2cvm::control_change::word1::value::bits();

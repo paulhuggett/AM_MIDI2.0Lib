@@ -234,13 +234,13 @@ protected:
 
   template <typename Content> void dispatch_ci(std::uint8_t group, header const &hdr, Content const &content) {
     processor_.start(group, hdr.device_id);
-    std::ranges::for_each(make_message(hdr, content), [this](std::byte const b) { processor_.processMIDICI(b); });
+    std::ranges::for_each(make_message(hdr, content), [this](std::byte const b) { processor_.dispatch(b); });
     processor_.finish();
   }
 };
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, Empty) {
-  processor_.processMIDICI(0_b);
+  processor_.dispatch(0_b);
 }
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, DiscoveryV1) {
@@ -964,7 +964,7 @@ void NeverCrashes(std::vector<std::byte> const &message) {
   static constexpr auto buffer_size = std::size_t{64};
   auto dispatcher = midi2::ci::make_function_dispatcher<empty, buffer_size>();
   dispatcher.config().system.on_check_muid([](empty, std::uint8_t, midi2::ci::muid) { return true; });
-  std::ranges::for_each(message2, std::bind_front(&decltype(dispatcher)::processMIDICI, &dispatcher));
+  std::ranges::for_each(message2, std::bind_front(&decltype(dispatcher)::dispatch, &dispatcher));
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST

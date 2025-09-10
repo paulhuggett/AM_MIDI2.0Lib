@@ -62,7 +62,6 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   });
 
   sysex7_.reset();
-  sysex7_.state = sysex7::status::none;
 }
 
 void bytestream_to_ump::sysex_data_byte(std::byte const midi1_byte) {
@@ -125,6 +124,11 @@ void bytestream_to_ump::push(std::byte const midi1_byte) {
       }
     }
   }
+}
+
+void bytestream_to_ump::reset() {
+  output_.clear();
+  sysex7_.reset();
 }
 
 }  // end namespace midi2::bytestream

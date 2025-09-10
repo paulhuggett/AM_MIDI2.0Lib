@@ -1,9 +1,20 @@
+//===-- Bytestream Types ------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
+/// \file bytestream_types.hpp
+/// \brief
 #ifndef MIDI2_BYTESTREAM_BYTESTREAM_TYPES_HPP
 #define MIDI2_BYTESTREAM_BYTESTREAM_TYPES_HPP
 
 #include <cstddef>
 #include <cstdint>
 
+/// Functions and types relating to processing of MIDI 1.0 bytestreams
 namespace midi2::bytestream {
 
 /// Bytestream status message codes
@@ -33,7 +44,7 @@ enum class status : std::uint8_t {
   sequence_stop = 0xFC,      ///< Stop the current sequence
   reserved4 = 0xFD,
   active_sensing = 0xFE,
-  systemreset = 0xFF,
+  system_reset = 0xFF,
 };
 
 [[nodiscard]] constexpr bool is_system_real_time_message(std::byte const midi1_byte) noexcept {
@@ -44,7 +55,7 @@ enum class status : std::uint8_t {
   case sequence_continue:
   case sequence_stop:
   case active_sensing:
-  case systemreset: return true;
+  case system_reset: return true;
   default: return false;
   }
 }

@@ -32,26 +32,28 @@ namespace midi2::ump {
 /// for output messages.
 class ump_to_midi1 {
 public:
-  /// \brief The type of input UMP message.
+  /// \brief The type of an input UMP message.
   using input_type = std::uint32_t;
-  /// \brief The type of output MIDI 1.0 message.
+  /// \brief The type of an output MIDI 1.0 message.
   using output_type = std::uint32_t;
 
   /// \brief Checks if the output is empty
   /// \return True if the output FIFO is empty, false otherwise.
-  [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return context_.output.empty(); }
 
   /// \brief Pops the front message from the output FIFO.
   /// \return The first message in the output FIFO.
   /// \note This method asserts that the output FIFO is not empty.
-  [[nodiscard]] constexpr output_type pop() {
+  [[nodiscard]] constexpr output_type pop() noexcept {
     assert(!empty());
     return context_.output.pop_front();
   }
 
   /// \brief Pushes an input UMP message for processing.
   /// \param ump The input UMP message.
-  void push(input_type const ump) { p_.process_ump(ump); }
+  void push(input_type const ump) { dispatcher_.dispatch(ump); }
+
+  constexpr void reset() { context_.reset(); }
 
 private:
   /// \brief Holds the converter's state
@@ -60,8 +62,8 @@ private:
     template <typename T>
       requires(std::tuple_size_v<T> >= 0)
     constexpr void push(T const &value) {
-      ump::apply(value, [this](auto const v) {
-        output.push_back(std::uint32_t{v});
+      ump::apply(value, [this](std::uint32_t const v) {
+        output.push_back(v);
         return false;
       });
     }
@@ -87,6 +89,10 @@ private:
       std::uint16_t v_ = 0;
     };
 
+    constexpr void reset() {
+      pn_cache.clear();
+      output.clear();
+    }
     // value is 14 bit MIDI 1 controller number (bank/index).
     using pn_cache_value = std::pair<std::uint8_t, std::uint8_t>;
     using pn_cache_type = adt::plru_cache<std::uint16_t, pn_cache_value, 4, 8>;
@@ -284,7 +290,7 @@ private:
     [[no_unique_address]] ump::dispatcher_backend::flex_data_null<decltype(context)> flex{};
   };
   context_type context_;
-  ump::ump_dispatcher<to_midi1_config> p_{to_midi1_config{.context = &context_}};
+  ump::ump_dispatcher<to_midi1_config> dispatcher_{to_midi1_config{.context = &context_}};
 };
 
 }  // end namespace midi2::ump

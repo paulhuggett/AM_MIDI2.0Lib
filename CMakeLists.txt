@@ -61,6 +61,7 @@ set(MIDI2_HEADERS
   ${ump_headers}
   "${INCLUDE_DIR}/midi2/icubaby.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
+  "${INCLUDE_DIR}/midi2/midi2.hpp"
   "${INCLUDE_DIR}/midi2/utils.hpp"
 )
 source_group(adt FILES ${adt_headers})

@@ -33,27 +33,36 @@ using testing::ElementsAre;
 using testing::InSequence;
 using testing::StrictMock;
 
+class fake_message {
+public:
+  constexpr explicit fake_message(std::uint32_t v) : v_{v} {}
+  constexpr std::uint32_t word() const { return v_; }
+
+private:
+  std::uint32_t v_;
+};
+
 TEST(UMPApply, AlwaysTrue) {
-  std::vector<int> values;
-  midi2::ump::apply(std::tuple{1, 2}, [&values](int const v) {
+  std::vector<std::uint32_t> values;
+  midi2::ump::apply(std::tuple{fake_message{1}, fake_message{2}}, [&values](std::uint32_t const v) {
     values.push_back(v);
     return false;
   });
-  EXPECT_THAT(values, ElementsAre(1, 2));
+  EXPECT_THAT(values, ElementsAre(1U, 2U));
 }
 
 TEST(UMPApply, ErrorCodeAlwaysSuccess) {
-  std::vector<int> values;
-  midi2::ump::apply(std::tuple{1, 2}, [&values](int const v) {
+  std::vector<std::uint32_t> values;
+  midi2::ump::apply(std::tuple{fake_message{1}, fake_message{2}}, [&values](std::uint32_t const v) {
     values.push_back(v);
     return std::error_code{};
   });
-  EXPECT_THAT(values, ElementsAre(1, 2));
+  EXPECT_THAT(values, ElementsAre(1U, 2U));
 }
 
 TEST(UMPApply, ErrorCodeFails) {
-  std::vector<int> values;
-  auto const result = midi2::ump::apply(std::tuple{1, 2}, [&values](auto const v) {
+  std::vector<std::uint32_t> values;
+  auto const result = midi2::ump::apply(std::tuple{fake_message{1}, fake_message{2}}, [&values](std::uint32_t const v) {
     values.push_back(v);
     return std::make_error_code(std::errc::io_error);
   });
@@ -186,7 +195,7 @@ public:
 
   void apply(auto const &message) {
     midi2::ump::apply(message, [this](auto const v) {
-      dispatcher_.process_ump(std::uint32_t{v});
+      dispatcher_.dispatch(std::uint32_t{v});
       return false;
     });
   }
@@ -250,7 +259,7 @@ TEST_F(UMPDispatcherUtility, BadMessage) {
   constexpr std::uint32_t message =
       (std::to_underlying(midi2::ump::message_type::utility) << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
-  dispatcher_.process_ump(message);
+  dispatcher_.dispatch(message);
 }
 
 //*  ___         _              *
@@ -331,7 +340,7 @@ TEST_F(UMPDispatcherSystem, BadStatus) {
   constexpr std::uint32_t message =
       (std::uint32_t{std::to_underlying(midi2::ump::message_type::system)} << 28) | (std::uint32_t{0xF} << 20);
   EXPECT_CALL(config_.utility, unknown(config_.context, ElementsAre(message)));
-  dispatcher_.process_ump(message);
+  dispatcher_.dispatch(message);
 }
 
 //*        _    _ _   _   __   *
@@ -625,12 +634,12 @@ TEST_F(UMPDispatcher, PartialMessageThenClear) {
 
   // The first half of a 64-bit MIDI 2 note-on message.
   constexpr auto m2on = midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note_number);
-  dispatcher_.process_ump(std::uint32_t{get<0>(m2on)});
+  dispatcher_.dispatch(std::uint32_t{get<0>(m2on)});
   dispatcher_.clear();
 
   // An entire 32-bit MIDI 1 note-on message.
   constexpr auto m1on = midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
-  dispatcher_.process_ump(std::uint32_t{get<0>(m1on)});
+  dispatcher_.dispatch(std::uint32_t{get<0>(m1on)});
 }
 
 //*  _   _ __  __ ___   ___ _                       *
@@ -899,7 +908,7 @@ TEST_F(UMPDispatcherFlexData, Text) {
 
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
   midi2::ump::ump_dispatcher p;
-  std::ranges::for_each(in, [&p](std::uint32_t ump) { p.process_ump(ump); });
+  std::ranges::for_each(in, [&p](std::uint32_t ump) { p.dispatch(ump); });
 }
 
 #if defined(MIDI2_FUZZTEST) && MIDI2_FUZZTEST
@@ -916,7 +925,7 @@ template <midi2::ump::message_type MessageType> void process_message(std::span<s
     message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{std::to_underlying(MessageType)} << 24);
     midi2::ump::ump_dispatcher p;
     for (auto const w : message) {
-      p.process_ump(w);
+      p.dispatch(w);
     }
   }
 }

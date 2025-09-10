@@ -49,9 +49,11 @@ namespace midi2::ump {
 enum class message_type : std::uint8_t { UMP_MESSAGE_TYPES };
 #undef X
 
+/// Collects the enumeration that define the values for the UMP "mt" (message type) field
 namespace mt {
 
 // Here, CRT is short for "common and real-time".
+/// The message types for the System Common and System Real-time messages
 enum class system_crt : std::uint8_t {
   timing_code = 0xF1,
   spp = 0xF2,  ///< Song Position Pointer
@@ -65,6 +67,7 @@ enum class system_crt : std::uint8_t {
   system_reset = 0xFF,
 };
 
+/// The message types for the MIDI 1 Channel Voice messages
 enum class m1cvm : std::uint8_t {
   note_off = 0x8,
   note_on = 0x9,
@@ -75,11 +78,12 @@ enum class m1cvm : std::uint8_t {
   pitch_bend = 0xE,
 };
 
+/// Message types for the MIDI 2 Channel Voice messages
 enum class m2cvm : std::uint8_t {
-  rpn_pernote = 0x0,
-  nrpn_pernote = 0x1,
-  rpn = 0x2,   ///< Registered Parameter Number
-  nrpn = 0x3,  ///< Assignable Controller Number
+  rpn_pernote = 0x0,   ///< Registered Per-Note Controller
+  nrpn_pernote = 0x1,  ///< Assignable Per-Note Controller
+  rpn = 0x2,           ///< Registered Parameter Number
+  nrpn = 0x3,          ///< Assignable Controller Number
   rpn_relative = 0x4,
   nrpn_relative = 0x5,
   pitch_bend_pernote = 0x6,
@@ -88,11 +92,12 @@ enum class m2cvm : std::uint8_t {
   poly_pressure = 0xA,
   cc = 0xB,  ///< Continuous Controller
   program_change = 0xC,
-  channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
+  channel_pressure = 0xD,  ///< Channel Pressure (aftertouch)
   pitch_bend = 0xE,
-  pernote_manage = 0xF,
+  pernote_manage = 0xF,  ///< Per-note management
 };
 
+/// Message types for the Data 64 Bit messages
 enum class data64 : std::uint8_t {
   sysex7_in_1 = 0x00,
   sysex7_start = 0x01,
@@ -163,10 +168,9 @@ concept bitfield_type = requires(T) {
 /// \returns  The result of the calling \p function which was converted to boolean true, or the
 ///   last result received.
 template <typename T, typename Function, std::size_t Index = 0>
-  requires(Index < std::tuple_size_v<T> &&
-           std::is_constructible_v<bool, std::invoke_result_t<Function, std::tuple_element_t<Index, T>>>)
+  requires(Index < std::tuple_size_v<T> && std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
 constexpr auto apply(T const &message, Function function) {
-  auto const result = function(get<Index>(message));
+  auto const result = function(get<Index>(message).word());
   if (bool{result}) {
     return result;
   }
@@ -224,7 +228,7 @@ public:
   constexpr word_base() noexcept = default;
   constexpr explicit word_base(value_type const v) noexcept : value_{v} {}
 
-  [[nodiscard]] constexpr auto word() const noexcept { return value_; }
+  [[nodiscard]] constexpr value_type word() const noexcept { return value_; }
   [[nodiscard]] constexpr explicit operator value_type() const noexcept { return value_; }
 
   friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;

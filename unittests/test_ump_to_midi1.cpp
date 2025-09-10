@@ -204,8 +204,8 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
     // This test modifies the same RPN controller twice in succession. We
     // expect that the MIDI-1 messages to set the RPN value are sent just
     // once.
-    auto const input_append = [&input](auto const v) {
-      input.push_back(v.word());
+    auto const input_append = [&input](std::uint32_t const v) {
+      input.push_back(v);
       return false;
     };
     constexpr auto rpnc = []() constexpr {
@@ -217,8 +217,8 @@ TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
   std::vector<std::uint32_t> expected;
   expected.reserve(6);
   {
-    auto const expected_append = [&expected](auto const v) {
-      expected.push_back(v.word());
+    auto const expected_append = [&expected](std::uint32_t const v) {
+      expected.push_back(v);
       return false;
     };
     constexpr auto value0_14 = midi2::ump::mcm_scale<32, 14>(value0);
@@ -248,8 +248,8 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
   {
     // This test mixes up the modification of two different RPN controllers, sending different values for then each
     // time. This verifies that controller MBS/LSB values are cached correctly.
-    auto const input_append = [&input](midi2::ump::details::word_base const v) {
-      input.push_back(v.word());
+    auto const input_append = [&input](std::uint32_t const v) {
+      input.push_back(v);
       return false;
     };
     constexpr auto rpnc = []() constexpr { return midi2::ump::m2cvm::rpn_controller{}.group(group).channel(channel); };
@@ -263,8 +263,8 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
   std::vector<std::uint32_t> expected;
   input.reserve(16);
   {
-    auto const expected_append = [&expected](midi2::ump::details::word_base const v) {
-      expected.push_back(v.word());
+    auto const expected_append = [&expected](std::uint32_t const v) {
+      expected.push_back(v);
       return false;
     };
     // values14[] has the 32 bit controller values[] rescaled to 14 bits.
@@ -308,8 +308,8 @@ TEST(UMPToMIDI1, M2NRPNController) {
   std::vector<std::uint32_t> input;
   midi2::ump::apply(
       midi2::ump::m2cvm::nrpn_controller{}.group(group).channel(channel).bank(bank).index(index).value(value),
-      [&input](auto const v) {
-        input.push_back(v.word());
+      [&input](std::uint32_t const v) {
+        input.push_back(v);
         return false;
       });
 
@@ -319,8 +319,8 @@ TEST(UMPToMIDI1, M2NRPNController) {
 
   std::vector<std::uint32_t> expected;
   {
-    auto const expected_append = [&expected](auto const v) {
-      expected.push_back(v.word());
+    auto const expected_append = [&expected](std::uint32_t const v) {
+      expected.push_back(v);
       return false;
     };
     constexpr auto cc = []() constexpr { return control_change{}.group(group).channel(channel); };

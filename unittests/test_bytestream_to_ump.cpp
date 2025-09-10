@@ -128,8 +128,8 @@ TEST(BytestreamToUMP, Midi1ChannelPressure) {
   std::vector<std::uint32_t> expected;
   midi2::ump::apply(
       midi2::ump::m1cvm::channel_pressure().channel(std::to_underlying(channel)).data(std::to_underlying(pressure)),
-      [&expected](auto const v) {
-        expected.push_back(v.word());
+      [&expected](std::uint32_t const v) {
+        expected.push_back(v);
         return false;
       });
 

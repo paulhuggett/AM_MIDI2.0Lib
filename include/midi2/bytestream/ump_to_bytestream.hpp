@@ -6,8 +6,8 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_UMPTOBYTESTREAM_HPP
-#define MIDI2_UMPTOBYTESTREAM_HPP
+#ifndef MIDI2_UMP_UMP_TO_BYTESTREAM_HPP
+#define MIDI2_UMP_UMP_TO_BYTESTREAM_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -24,66 +24,81 @@
 
 namespace midi2::bytestream {
 
+/// \brief An integral constant which holds the number of bytes of a specific message type.
 template <status> struct message_size {};
 
-template <> struct message_size<midi2::bytestream::status::note_off> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::bytestream::status::note_on> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::bytestream::status::poly_pressure> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::bytestream::status::cc> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::bytestream::status::program_change> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::bytestream::status::channel_pressure> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::bytestream::status::pitch_bend> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a note-off message.
+template <> struct message_size<status::note_off> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a note-on message.
+template <> struct message_size<status::note_on> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a poly-pressure message.
+template <> struct message_size<status::poly_pressure> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a continuous-controller message.
+template <> struct message_size<status::cc> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a program-change message.
+template <> struct message_size<status::program_change> : std::integral_constant<unsigned, 2> {};
+/// \brief An integral constant which holds the number of bytes of a channel-pressure message.
+template <> struct message_size<status::channel_pressure> : std::integral_constant<unsigned, 2> {};
+/// \brief An integral constant which holds the number of bytes of a pitch-bend message.
+template <> struct message_size<status::pitch_bend> : std::integral_constant<unsigned, 3> {};
 
 // System Common Messages
-template <> struct message_size<midi2::bytestream::status::sysex_start> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::timing_code> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::bytestream::status::spp> : std::integral_constant<unsigned, 3> {};
-template <> struct message_size<midi2::bytestream::status::song_select> : std::integral_constant<unsigned, 2> {};
-template <> struct message_size<midi2::bytestream::status::tune_request> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::sysex_stop> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a system exclusive start
+///   message.
+template <> struct message_size<status::sysex_start> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a timing-code message.
+template <> struct message_size<status::timing_code> : std::integral_constant<unsigned, 2> {};
+/// \brief An integral constant which holds the number of bytes of a song-position-pointer message.
+template <> struct message_size<status::spp> : std::integral_constant<unsigned, 3> {};
+/// \brief An integral constant which holds the number of bytes of a song-select message.
+template <> struct message_size<status::song_select> : std::integral_constant<unsigned, 2> {};
+/// \brief An integral constant which holds the number of bytes of a tune-request message.
+template <> struct message_size<status::tune_request> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a system-exclusive-stop message.
+template <> struct message_size<status::sysex_stop> : std::integral_constant<unsigned, 1> {};
 // System Realtime Messages
-template <> struct message_size<midi2::bytestream::status::timing_clock> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::sequence_start> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::sequence_continue> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::sequence_stop> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::active_sensing> : std::integral_constant<unsigned, 1> {};
-template <> struct message_size<midi2::bytestream::status::systemreset> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a timing-clock message.
+template <> struct message_size<status::timing_clock> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a sequence-start message.
+template <> struct message_size<status::sequence_start> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a sequence-continue message.
+template <> struct message_size<status::sequence_continue> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a sequence-stop message.
+template <> struct message_size<status::sequence_stop> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of an active-sensing message.
+template <> struct message_size<status::active_sensing> : std::integral_constant<unsigned, 1> {};
+/// \brief An integral constant which holds the number of bytes of a system-reset message.
+template <> struct message_size<status::system_reset> : std::integral_constant<unsigned, 1> {};
 
 /// \brief Converts UMP messages to a MIDI 1.0 Bytestream
-///
-///   midi2::bytestream::ump_to_bytestream ump2bs;
-///   ump2bs.group_filter(group_filter);
-///   for (auto const ump : input) {
-///     ump2bs.push(ump);
-///     while (!ump2bs.empty()) {
-///       std::byte b = ump2bs.pop();
-///       // Send b to its destination
-///     }
-///   }
-
 class ump_to_bytestream {
 public:
+  /// \brief The type of input from a 32-bit UMP stream
   using input_type = std::uint32_t;
+  /// \brief The type of output to a bytestream
   using output_type = std::byte;
 
-  ump_to_bytestream() = default;
+  constexpr ump_to_bytestream() = default;
 
   /// Checks if the output has no elements
-  [[nodiscard]] constexpr bool empty() const { return context_.output.empty(); }
-  [[nodiscard]] constexpr output_type pop() {
+  [[nodiscard]] constexpr bool empty() const noexcept { return context_.output.empty(); }
+  [[nodiscard]] constexpr output_type pop() noexcept {
     assert(!empty());
     return context_.output.pop_front();
   }
 
-  void push(input_type const ump) { p_.process_ump(ump); }
+  constexpr void push(input_type const ump) { dispatcher_.dispatch(ump); }
 
-  void group_filter(std::uint16_t const group_bitmap) {
+  constexpr void group_filter(std::uint16_t const group_bitmap) noexcept {
     context_.only_groups = group_bitmap == 0 ? std::uint16_t{0xFFFF} : group_bitmap;
   }
+  /// \brief Restore the translator to its original state.
+  /// Any in-flight messages are lost.
+  constexpr void reset() noexcept { context_.reset(); }
 
 private:
   struct context_type {
-    void push_back(std::byte const s) {
+    constexpr void push_back(std::byte const s) {
       if (!is_status_byte(s) || is_system_real_time_message(s)) {
         // Not a status byte or a system real-time message, so always emit. Don't update running status.
         output.push_back(s);
@@ -105,8 +120,13 @@ private:
     template <typename T> [[nodiscard]] constexpr bool filter_message(T const& in) const {
       return (only_groups & (1U << in.group())) == 0U;
     }
-
-    std::uint16_t only_groups = 0;    ///< A bitmap indicating which groups should be included in the output
+    constexpr void reset() noexcept {
+      only_groups = std::uint16_t{0xFFFF};
+      status.reset();
+      output.clear();
+    }
+    std::uint16_t only_groups =
+        std::uint16_t{0xFFFF};        ///< A bitmap indicating which groups should be included in the output
     std::optional<std::byte> status;  ///< Last status emitted.
     adt::fifo<std::byte, 8> output;
   };
@@ -114,61 +134,62 @@ private:
   struct to_bytestream_config {
     class system {
     public:
-      static void midi_time_code(context_type* const ctxt, ump::system::midi_time_code const& in) {
+      static constexpr void midi_time_code(context_type* const ctxt, ump::system::midi_time_code const& in) {
         static_assert(message_size<status::timing_code>() == 2);
         system::push(ctxt, in.group(), status::timing_code, std::byte{in.time_code()});
       }
-      static void song_position_pointer(context_type* const ctxt, ump::system::song_position_pointer const& in) {
+      static constexpr void song_position_pointer(context_type* const ctxt,
+                                                  ump::system::song_position_pointer const& in) {
         static_assert(message_size<status::spp>() == 3);
         system::push(ctxt, in.group(), status::spp, std::byte{in.position_lsb()}, std::byte{in.position_msb()});
       }
-      static void song_select(context_type* const ctxt, ump::system::song_select const& in) {
+      static constexpr void song_select(context_type* const ctxt, ump::system::song_select const& in) {
         static_assert(message_size<status::song_select>() == 2);
         system::push(ctxt, in.group(), status::song_select, std::byte{in.song()});
       }
-      static void tune_request(context_type* const ctxt, ump::system::tune_request const& in) {
+      static constexpr void tune_request(context_type* const ctxt, ump::system::tune_request const& in) {
         static_assert(message_size<status::tune_request>() == 1);
         system::push(ctxt, in.group(), status::tune_request);
       }
-      static void timing_clock(context_type* const ctxt, ump::system::timing_clock const& in) {
+      static constexpr void timing_clock(context_type* const ctxt, ump::system::timing_clock const& in) {
         static_assert(message_size<status::timing_clock>() == 1);
         system::push(ctxt, in.group(), status::timing_clock);
       }
-      static void seq_start(context_type* const ctxt, ump::system::sequence_start const& in) {
+      static constexpr void seq_start(context_type* const ctxt, ump::system::sequence_start const& in) {
         static_assert(message_size<status::sequence_start>() == 1);
         system::push(ctxt, in.group(), status::sequence_start);
       }
-      static void seq_continue(context_type* const ctxt, ump::system::sequence_continue const& in) {
+      static constexpr void seq_continue(context_type* const ctxt, ump::system::sequence_continue const& in) {
         static_assert(message_size<status::sequence_continue>() == 1);
         system::push(ctxt, in.group(), status::sequence_continue);
       }
-      static void seq_stop(context_type* const ctxt, ump::system::sequence_stop const& in) {
+      static constexpr void seq_stop(context_type* const ctxt, ump::system::sequence_stop const& in) {
         static_assert(message_size<status::sequence_stop>() == 1);
         system::push(ctxt, in.group(), status::sequence_stop);
       }
-      static void active_sensing(context_type* const ctxt, ump::system::active_sensing const& in) {
+      static constexpr void active_sensing(context_type* const ctxt, ump::system::active_sensing const& in) {
         static_assert(message_size<status::active_sensing>() == 1);
         system::push(ctxt, in.group(), status::active_sensing);
       }
-      static void reset(context_type* const ctxt, ump::system::reset const& in) {
-        static_assert(message_size<status::systemreset>() == 1);
-        system::push(ctxt, in.group(), status::systemreset);
+      static constexpr void reset(context_type* const ctxt, ump::system::reset const& in) {
+        static_assert(message_size<status::system_reset>() == 1);
+        system::push(ctxt, in.group(), status::system_reset);
       }
 
     private:
-      static void push(context_type* const ctxt, unsigned const group, status const s) {
+      static constexpr void push(context_type* const ctxt, unsigned const group, status const s) {
         if (!ctxt->filter_message(group)) {
           ctxt->push_back(to_byte(s));
         }
       }
-      static void push(context_type* const ctxt, unsigned const group, status const s, std::byte const b1) {
+      static constexpr void push(context_type* const ctxt, unsigned const group, status const s, std::byte const b1) {
         if (!ctxt->filter_message(group)) {
           ctxt->push_back(to_byte(s));
           ctxt->push_back(b1);
         }
       }
-      static void push(context_type* const ctxt, unsigned const group, status const s, std::byte const b1,
-                       std::byte const b2) {
+      static constexpr void push(context_type* const ctxt, unsigned const group, status const s, std::byte const b1,
+                                 std::byte const b2) {
         if (!ctxt->filter_message(group)) {
           ctxt->push_back(to_byte(s));
           ctxt->push_back(b1);
@@ -178,7 +199,7 @@ private:
     };
     class m1cvm {
     public:
-      static void note_off(context_type* const ctxt, ump::m1cvm::note_off const& in) {
+      static constexpr void note_off(context_type* const ctxt, ump::m1cvm::note_off const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -187,7 +208,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
-      static void note_on(context_type* const ctxt, ump::m1cvm::note_on const& in) {
+      static constexpr void note_on(context_type* const ctxt, ump::m1cvm::note_on const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -196,7 +217,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.velocity()});
       }
-      static void poly_pressure(context_type* const ctxt, ump::m1cvm::poly_pressure const& in) {
+      static constexpr void poly_pressure(context_type* const ctxt, ump::m1cvm::poly_pressure const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -205,7 +226,7 @@ private:
         ctxt->push_back(std::byte{in.note()});
         ctxt->push_back(std::byte{in.pressure()});
       }
-      static void control_change(context_type* const ctxt, ump::m1cvm::control_change const& in) {
+      static constexpr void control_change(context_type* const ctxt, ump::m1cvm::control_change const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -214,7 +235,7 @@ private:
         ctxt->push_back(std::byte{in.controller()});
         ctxt->push_back(std::byte{in.value()});
       }
-      static void program_change(context_type* const ctxt, ump::m1cvm::program_change const& in) {
+      static constexpr void program_change(context_type* const ctxt, ump::m1cvm::program_change const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -222,7 +243,7 @@ private:
         ctxt->push_back(to_byte(status::program_change) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.program()});
       }
-      static void channel_pressure(context_type* const ctxt, ump::m1cvm::channel_pressure const& in) {
+      static constexpr void channel_pressure(context_type* const ctxt, ump::m1cvm::channel_pressure const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -230,7 +251,7 @@ private:
         ctxt->push_back(to_byte(status::channel_pressure) | std::byte{in.channel()});
         ctxt->push_back(std::byte{in.data()});
       }
-      static void pitch_bend(context_type* const ctxt, ump::m1cvm::pitch_bend const& in) {
+      static constexpr void pitch_bend(context_type* const ctxt, ump::m1cvm::pitch_bend const& in) {
         if (ctxt->filter_message(in)) {
           return;
         }
@@ -314,9 +335,9 @@ private:
     [[no_unique_address]] ump::dispatcher_backend::flex_data_null<decltype(context)> flex{};
   };
   context_type context_;
-  ump::ump_dispatcher<to_bytestream_config> p_{to_bytestream_config{.context = &context_}};
+  ump::ump_dispatcher<to_bytestream_config> dispatcher_{to_bytestream_config{.context = &context_}};
 };
 
 }  // end namespace midi2::bytestream
 
-#endif  // MIDI2_UMPTOBYTESTREAM_HPP
+#endif  // MIDI2_UMP_UMP_TO_BYTESTREAM_HPP
