@@ -25,7 +25,7 @@ consteval std::byte operator""_b(unsigned long long arg) noexcept {
 int main() {
   // Convert the bytestream to UMP group 0 and write it to stdout.
   std::uint8_t const group = 0;
-  midi2::bytestream_to_ump bs2ump{group};
+  midi2::bytestream::bytestream_to_ump bs2ump{group};
 
   // A bytestream containing MIDI1 note-on events with running status.
   for (auto b : {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b}) {
