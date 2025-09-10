@@ -92,7 +92,7 @@ public:
   [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Elements; }
 
   /// Erases all elements from the container. After this call, size() returns zero.
-  void clear() noexcept {
+  constexpr void clear() noexcept {
     write_index_ = 0;
     read_index_ = 0;
     assert(size() == 0 && empty());
