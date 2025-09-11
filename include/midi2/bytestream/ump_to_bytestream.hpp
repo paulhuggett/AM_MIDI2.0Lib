@@ -87,7 +87,7 @@ public:
     return context_.output.pop_front();
   }
 
-  constexpr void push(input_type const ump) { dispatcher_.dispatch(ump); }
+  void push(input_type const ump) { dispatcher_.dispatch(ump); }
 
   constexpr void group_filter(std::uint16_t const group_bitmap) noexcept {
     context_.only_groups = group_bitmap == 0 ? std::uint16_t{0xFFFF} : group_bitmap;

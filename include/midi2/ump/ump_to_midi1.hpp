@@ -53,7 +53,7 @@ public:
   /// \param ump The input UMP message.
   void push(input_type const ump) { dispatcher_.dispatch(ump); }
 
-  constexpr void reset() { context_.reset(); }
+  void reset() { context_.reset(); }
 
 private:
   /// \brief Holds the converter's state
@@ -89,7 +89,7 @@ private:
       std::uint16_t v_ = 0;
     };
 
-    constexpr void reset() {
+    void reset() {
       pn_cache.clear();
       output.clear();
     }
