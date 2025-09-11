@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ump_to_midi2.hpp
+/// \brief Converts UMP messages from MIDI 1.0 to MIDI 2.0.
+
 #ifndef MIDI2_UMP_TO_MIDI2_HPP
 #define MIDI2_UMP_TO_MIDI2_HPP
 

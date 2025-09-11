@@ -12,8 +12,8 @@
 /// It is intended as a small cache for objects which are relatively cheap to store and relatively
 /// expensive to create. The container's keys must be unsigned integral types.
 
-#ifndef MIDI2_PLRU_CACHE_HPP
-#define MIDI2_PLRU_CACHE_HPP
+#ifndef MIDI2_ADT_PLRU_CACHE_HPP
+#define MIDI2_ADT_PLRU_CACHE_HPP
 
 #include <algorithm>
 #include <array>
@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <new>
 #include <numeric>
 #include <ranges>
@@ -209,7 +210,7 @@ public:
     if (keys_[victim].valid()) {
       result = miss();
     } else {
-      new (&result) MappedType{miss()};
+      std::construct_at(&result, miss());
     }
     keys_[victim] = std::move(tag);
     plru_.touch(victim);
@@ -412,21 +413,26 @@ public:
     return sets_[plru_cache::set(key)].contains(key);
   }
 
-  void clear() {
+  /// \brief Clears the contents of the cache.
+  constexpr void clear() {
     for (ways_type &w : sets_) {
       w.clear();
     }
   }
 
-  /// \returns An iterator to the beginning
+  ///@{
+  /// Returns an iterator to the beginning
   [[nodiscard]] constexpr iterator begin() noexcept { return {this, this->first_valid()}; }
   [[nodiscard]] constexpr const_iterator begin() const noexcept { return {this, this->first_valid()}; }
   [[nodiscard]] constexpr const_iterator cbegin() noexcept { return {this, this->first_valid()}; }
+  ///@}
 
-  /// \returns An iterator to the end
+  ///@{
+  /// Returns an iterator to the end
   [[nodiscard]] constexpr iterator end() noexcept { return iterator_type{this}; }
   [[nodiscard]] constexpr const_iterator end() const noexcept { return iterator_type{this}; }
   [[nodiscard]] constexpr const_iterator cend() noexcept { return iterator_type{this}; }
+  ///@}
 
   /// \returns The maximum possible number of elements that can be held by the cache.
   [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Sets * Ways; }
@@ -468,4 +474,4 @@ private:
 
 }  // end namespace midi2::adt
 
-#endif  // MIDI2_PLRU_CACHE_HPP
+#endif  // MIDI2_ADT_PLRU_CACHE_HPP

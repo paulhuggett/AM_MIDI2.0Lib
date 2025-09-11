@@ -20,6 +20,7 @@
 
 namespace midi2::bytestream {
 
+/// \brief Translates a MIDI 1.0 bytestream to UMP messages
 class bytestream_to_ump {
 public:
   /// \brief The type of input from a bytestream
@@ -28,15 +29,25 @@ public:
   using output_type = std::uint32_t;
 
   constexpr bytestream_to_ump() = default;
+  /// \brief Creates a bytestream to UMP translator
+  /// \param group  The group number that will be assigned to UMP messages created by this translator
   explicit constexpr bytestream_to_ump(std::uint8_t const group) : group_{group} { assert(group <= 0b1111); }
 
+  /// \brief Checks whether there are any UMP messages available to be read
+  /// \return True if there are messages available, false otherwise
   [[nodiscard]] constexpr bool empty() const { return output_.empty(); }
+
+  /// \brief Pops and returns the next available UMP message word
+  /// \return The next available UMP message word
+  /// \pre !empty()
   [[nodiscard]] constexpr output_type pop() {
     assert(!output_.empty());
     return output_.pop_front();
   }
 
-  void push(input_type midi1_byte);
+  /// \brief Provides a byte of MIDI 1.0 input to the translator
+  /// \param b The byte of input to be translated
+  void push(input_type b);
 
   /// \brief Restore the translator to its original state.
   /// Any in-flight messages are lost.
@@ -73,7 +84,7 @@ private:
   void to_ump(std::byte b0, std::byte b1, std::byte b2);
 
   template <typename T> void push_sysex7();
-  void sysex_data_byte(std::byte midi1_byte);
+  void sysex_data_byte(std::byte b);
 };
 
 }  // end namespace midi2::bytestream

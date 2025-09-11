@@ -25,12 +25,18 @@ public:
     assert(cable < 16U && "cable number must be four bits");
   }
 
+  /// Checks if the output has no elements
   [[nodiscard]] constexpr bool empty() const noexcept { return output_.empty(); }
+  /// \brief Pops and returns the next available byte for the bytestream
+  /// \return The next available byte
+  /// \pre !empty()
   [[nodiscard]] constexpr output_type pop() noexcept {
     assert(!empty());
     return output_.pop_front();
   }
 
+  /// \brief Provides a word of USBM1 input to the translator
+  /// \param usbm1 The word of input to be translated
   constexpr void push(input_type const usbm1) noexcept {
     if (cable(usbm1) != cable_) {
       return;

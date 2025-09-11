@@ -20,10 +20,10 @@
 namespace {
 
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is followed by one data byte.
-[[nodiscard]] constexpr bool is_one_byte_message(std::byte const midi1_byte) {
+[[nodiscard]] constexpr bool is_one_byte_message(std::byte const b) {
   using enum midi2::bytestream::status;
-  auto const value = std::to_underlying(midi1_byte);
-  auto const top_nibble = std::to_underlying(midi1_byte & std::byte{0xF0});
+  auto const value = std::to_underlying(b);
+  auto const top_nibble = std::to_underlying(b & std::byte{0xF0});
   return top_nibble == std::to_underlying(program_change) || top_nibble == std::to_underlying(channel_pressure) ||
          value == std::to_underlying(timing_code) || value == std::to_underlying(song_select);
 }
@@ -64,7 +64,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   sysex7_.reset();
 }
 
-void bytestream_to_ump::sysex_data_byte(std::byte const midi1_byte) {
+void bytestream_to_ump::sysex_data_byte(std::byte const b) {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
     using enum sysex7::status;
     switch (sysex7_.state) {
@@ -76,20 +76,20 @@ void bytestream_to_ump::sysex_data_byte(std::byte const midi1_byte) {
     sysex7_.state = sysex7::status::cont;
     sysex7_.pos = 0;
   }
-  sysex7_.bytes[sysex7_.pos] = midi1_byte;
+  sysex7_.bytes[sysex7_.pos] = b;
   ++sysex7_.pos;
 }
 
-void bytestream_to_ump::push(std::byte const midi1_byte) {
-  auto const midi1int = static_cast<status>(midi1_byte);
+void bytestream_to_ump::push(std::byte const b) {
+  auto const midi1int = static_cast<status>(b);
 
-  if (is_status_byte(midi1_byte)) {
-    if (is_system_real_time_message(midi1_byte)) {
-      this->to_ump(midi1_byte, std::byte{0}, std::byte{0});
+  if (is_status_byte(b)) {
+    if (is_system_real_time_message(b)) {
+      this->to_ump(b, std::byte{0}, std::byte{0});
       return;
     }
 
-    d0_ = midi1_byte;
+    d0_ = b;
     d1_ = unknown;
 
     // Except for real-time messages, receiving a status byte will implicitly end any in-progress
@@ -101,7 +101,7 @@ void bytestream_to_ump::push(std::byte const midi1_byte) {
     }
 
     switch (midi1int) {
-    case status::tune_request: this->to_ump(midi1_byte, std::byte{0}, std::byte{0}); break;
+    case status::tune_request: this->to_ump(b, std::byte{0}, std::byte{0}); break;
     case status::sysex_start:
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0;
@@ -111,16 +111,16 @@ void bytestream_to_ump::push(std::byte const midi1_byte) {
   } else {
     // Data byte handling.
     if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
-      this->sysex_data_byte(midi1_byte);
+      this->sysex_data_byte(b);
     } else if (d1_ != unknown) {  // Second byte
-      this->to_ump(d0_, d1_, midi1_byte);
+      this->to_ump(d0_, d1_, b);
       d1_ = unknown;
     } else if (d0_ != std::byte{0}) {  // status byte set
       if (is_one_byte_message(d0_)) {
-        this->to_ump(d0_, midi1_byte, std::byte{0});
+        this->to_ump(d0_, b, std::byte{0});
       } else if (d0_ < to_byte(status::sysex_start) || d0_ == to_byte(status::spp)) {
         // This is the first of a two data byte message.
-        d1_ = midi1_byte;
+        d1_ = b;
       }
     }
   }

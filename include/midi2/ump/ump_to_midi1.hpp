@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 /// \file ump_to_midi1.hpp
-/// \brief ump_to_midi1 converts UMP messages from MIDI 2.0 to MIDI 1.0.
+/// \brief Converts UMP messages from MIDI 2.0 to MIDI 1.0.
 
 #ifndef MIDI2_UMP_UMP_TO_MIDI1_HPP
 #define MIDI2_UMP_UMP_TO_MIDI1_HPP
@@ -89,7 +89,7 @@ private:
       std::uint16_t v_ = 0;
     };
 
-    constexpr void reset() {
+    void reset() {
       pn_cache.clear();
       output.clear();
     }

@@ -291,7 +291,7 @@ struct header {
   constexpr bool operator==(header const &) const noexcept = default;
   explicit constexpr operator packed::header() const noexcept;
 
-  /// Device ID: Source or Destination (depending on type of message):
+  /// \brief Source or Destination (depending on type of message):
   /// - 00–0F: To/from MIDI Channels 1-16
   /// - 10–7D: Reserved
   /// - 7E: To/from Group
@@ -352,6 +352,8 @@ static_assert(sizeof(discovery_v2) > sizeof(discovery_v1));
 
 }  // end namespace packed
 
+/// \brief The fields of a CI discovery message.
+/// An Initiator shall establish connections to MIDI-CI Responders by sending a Discovery message.
 struct discovery {
   [[nodiscard]] static constexpr discovery make(packed::discovery_v1 const &v1, b7 output_path_id = b7{}) noexcept;
   [[nodiscard]] static constexpr discovery make(packed::discovery_v2 const &v2) noexcept;
@@ -359,12 +361,19 @@ struct discovery {
   explicit constexpr operator packed::discovery_v2() const noexcept;
   constexpr bool operator==(discovery const &) const noexcept = default;
 
+  /// Device Manufacturer (System Exclusive ID Number)
   b7_array<3> manufacturer{};
+  /// Device Family
   b14 family;
+  /// Device Family Model Number
   b14 model;
+  /// Software Revision Level (Format is Device specific)
   b7_array<4> version{};
+  /// Capability Inquiry Category Supported (bitmap)
   b7 capability;
+  /// Receivable Maximum SysEx Message Size
   b28 max_sysex_size;
+  /// Initiator's Output Path Id
   b7 output_path_id;
 };
 
@@ -434,6 +443,10 @@ static_assert(sizeof(discovery_reply_v1) <= sizeof(discovery_reply_v2));
 
 }  // end namespace packed
 
+/// \brief Reply to Discovery Message.
+///
+/// When a MIDI-CI Device receives a Discovery message it shall become a Responder and send this
+/// Reply to Discovery message. This message declares the MUID of the Responder.
 struct discovery_reply {
   [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v1 const &v1, b7 output_path_id = b7{},
                                                       b7 function_block = b7{}) noexcept;
@@ -442,13 +455,21 @@ struct discovery_reply {
   explicit constexpr operator packed::discovery_reply_v2() const noexcept;
   constexpr bool operator==(discovery_reply const &) const noexcept = default;
 
+  /// Device Manufacturer (System Exclusive ID Number)
   b7_array<3> manufacturer{};
+  /// Device Family
   b14 family;
+  /// Device Family Model Number
   b14 model;
+  /// Software Revision Level (Format is Device specific)
   b7_array<4> version{};
+  /// Capability Inquiry Category Supported (bitmap)
   b7 capability;
+  /// Receivable Maximum SysEx Message Size
   b28 max_sysex_size;
+  /// Initiator's Output Path Instance Id (from the Discovery message received)
   b7 output_path_id;
+  /// Function Block
   b7 function_block;
 };
 constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const &v1, b7 output_path_id,
@@ -497,11 +518,17 @@ static_assert(std::is_trivially_copyable_v<endpoint_v1>);
 
 }  // end namespace packed
 
+/// \brief Inquiry: Endpoint Message.
+///
+/// An Initiator may send the Inquiry: Endpoint Message to a Function Block in a Responder to get
+/// information about the UMP Endpoint which has the Function Block. A Status field selects the
+/// target data.
 struct endpoint {
   [[nodiscard]] static constexpr endpoint make(packed::endpoint_v1 const &) noexcept;
   explicit constexpr operator packed::endpoint_v1() const noexcept;
   constexpr bool operator==(endpoint const &) const noexcept = default;
 
+  /// The Status field defines which information to retrieve from the Responder.
   b7 status;
 };
 
@@ -616,15 +643,24 @@ static_assert(alignof(ack_v1) == 1);
 
 }  // end namespace packed
 
+/// \brief MIDI-CI ACK Message.
+///
+/// The MIDI-CI ACK Message is a message for dealing with positive acknowledgement of an action, or
+/// to provide a notice of ongoing activity, such as timeout wait messages.
 struct ack {
   [[nodiscard]] static constexpr ack make(packed::ack_v1 const &) noexcept;
   explicit constexpr operator packed::ack_v1() const noexcept;
   constexpr bool operator==(ack const &other) const noexcept;
 
+  /// Original Transaction Sub-ID#2 Classification
   b7 original_id;
+  /// ACK Status Code
   b7 status_code;
+  /// ACK Status Data
   b7 status_data;
+  /// ACK details for each SubID Classification
   b7_array<5> details{};
+  /// Message text
   std::span<b7 const> message;
 };
 
@@ -723,6 +759,7 @@ constexpr bool nak::operator==(nak const &other) const noexcept {
          details == other.details && std::ranges::equal(message, other.message);
 }
 
+/// \brief Types for MIDI CI Profile Configuration Messages.
 namespace profile_configuration {
 
 using profile = b7_array<5>;
@@ -1188,6 +1225,7 @@ constexpr specific_data::operator packed::specific_data_v1() const noexcept {
 
 }  // namespace profile_configuration
 
+/// \brief Types for MIDI-CI Property Exchange Messages.
 namespace property_exchange {
 
 //*                                 _    _ _ _ _   _         *
@@ -1408,6 +1446,7 @@ using notify = property_exchange<property_exchange_type::notify>;
 
 }  // end namespace property_exchange
 
+/// \brief Types for MIDI CI Process Inquiry messages.
 namespace process_inquiry {
 
 //*                     _    _ _ _ _   _         *
