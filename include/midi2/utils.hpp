@@ -18,8 +18,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "midi2/adt/uinteger.hpp"
-
 namespace midi2 {
 
 [[noreturn, maybe_unused]] inline void unreachable() {

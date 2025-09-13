@@ -106,7 +106,7 @@ private:
 template <std::unsigned_integral Key, unsigned SetBits, unsigned Ways> struct match_finder {
   using tagged_key_type = tagged_key<Key, SetBits>;
 
-  /// \return The lane index [0..Ways) if a match if found, or Ways if no match
+  /// \return The lane index [0..Ways) if a match is found, or Ways if no match
   static constexpr std::size_t find(tagged_key_type const tk,
                                     std::array<tagged_key_type, Ways> const &values) noexcept {
     auto index = std::size_t{0};
@@ -217,7 +217,7 @@ public:
     return result;
   }
 
-  constexpr bool contains(Key key) const noexcept { return find_matching(tagged_key_type{key}) < Ways; }
+  [[nodiscard]] constexpr bool contains(Key key) const noexcept { return find_matching(tagged_key_type{key}) < Ways; }
   constexpr void clear() noexcept {
     for (auto index = std::size_t{0}; index < Ways; ++index) {
       if (keys_[index].valid()) {
@@ -227,23 +227,23 @@ public:
     }
     plru_.reset();
   }
-  constexpr std::size_t size() const noexcept {
+  [[nodiscard]] constexpr std::size_t size() const noexcept {
     return static_cast<std::size_t>(std::ranges::count_if(keys_, [](tagged_key_type const &v) { return v.valid(); }));
   }
 
-  constexpr bool valid(std::size_t index) const noexcept {
+  [[nodiscard]] constexpr bool valid(std::size_t index) const noexcept {
     assert(index < Ways);
     return keys_[index].valid();
   }
-  constexpr Key key(std::size_t const index) const noexcept {
+  [[nodiscard]] constexpr Key key(std::size_t const index) const noexcept {
     assert(index < keys_.size());
     return (keys_[index].get() & ~0x01U) << (SetBits - 1);  // this not the entire key!
   }
-  constexpr MappedType const &value(std::size_t const index) const noexcept {
+  [[nodiscard]] constexpr MappedType const &value(std::size_t const index) const noexcept {
     assert(index < values_.size());
     return values_[index].value();
   }
-  constexpr MappedType &value(std::size_t const index) noexcept {
+  [[nodiscard]] constexpr MappedType &value(std::size_t const index) noexcept {
     assert(index < values_.size());
     return values_[index].value();
   }
@@ -289,7 +289,7 @@ public:
   static constexpr std::size_t const sets = Sets;
   static constexpr std::size_t const ways = Ways;
 
-  // Proxy type that pretends to be pair<const Key, T>&
+  /// A proxy type that pretends to be type pair<const Key, T>&
   template <typename T>
     requires(std::is_same_v<T, mapped_type> || std::is_same_v<T, mapped_type const>)
   struct proxy {
@@ -353,7 +353,7 @@ public:
     std::size_t set_index_ = sets;
     std::size_t way_index_ = ways;
 
-    constexpr bool valid() const { return owner_->sets_[set_index_].valid(way_index_); }
+    [[nodiscard]] constexpr bool valid() const { return owner_->sets_[set_index_].valid(way_index_); }
   };
 
   template <typename T> iterator_type(T *) -> iterator_type<typename T::mapped_type>;

@@ -16,6 +16,15 @@
 namespace midi2::ci::dispatcher_backend {
 
 // clang-format off
+/// \brief The system messages concept gathers MIDI CI dispatchers callback functions that relate to the system as a
+/// whole rather than to a specific group of MIDI messages.
+///
+/// The functions that is requires are:
+///
+/// - check_muid: Checks whether the message is addressed to this receiver. If this function returns true, the message
+///   is dispatched otherwise it is dropped.
+/// - unknown_midici: Called when an unrecognized message is received.
+/// - buffer_overflow: Called when the space allocated to the internal buffer is exceeded.
 template <typename T, typename Context>
 concept system = requires(T v, Context context) {
   { v.check_muid(context, std::uint8_t{} /*group*/, muid{}) } -> std::convertible_to<bool>;
@@ -76,9 +85,21 @@ concept process_inquiry = requires(T v, Context context) {
 
 // clang-format off
 template <typename Context> struct system_null {
-  constexpr static bool check_muid(Context, std::uint8_t /*group*/, muid) { return false; }
-  constexpr static void unknown_midici(Context, header const &) { /* do nothing */ }
-  constexpr static void buffer_overflow(Context) { /* do nothing */ }
+  /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
+  /// dispatched otherwise it is dropped.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param group  The MIDI group to which the message was addressed.
+  /// \param id  The MUID to which the message was addressed.
+  /// \returns True if the message is to be dispatched, false if it is to be ignored.
+  constexpr static bool check_muid(Context context, std::uint8_t const group, muid const id) { (void)context; (void)group; (void)id; return false; }
+  /// This function is called when an unrecognized message is received.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param h  The header that for the unrecognized message.
+  constexpr static void unknown_midici(Context context, header const &h) { (void)context; (void)h; /* do nothing */ }
+  /// \param context  The context object passed to all message handlers.
+  constexpr static void buffer_overflow(Context context) { (void)context; /* do nothing */ }
 };
 template <typename Context> struct management_null {
   constexpr static void discovery(Context, header const &, ci::discovery const &) { /* do nothing */ }
@@ -139,8 +160,19 @@ template <typename Context> struct system_pure {
   constexpr system_pure &operator=(system_pure const &) noexcept = default;
   constexpr system_pure &operator=(system_pure &&) noexcept = default;
 
-  virtual bool check_muid(Context, std::uint8_t /*group*/, muid) = 0;
-  virtual void unknown_midici(Context, header const &) = 0;
+  /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
+  /// dispatched otherwise it is dropped.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param group  The MIDI group to which the message was addressed.
+  /// \param id  The MUID to which the message was addressed.
+  /// \returns True if the message is to be dispatched, false if it is to be ignored.
+  virtual bool check_muid(Context context, std::uint8_t group, muid id) = 0;
+  /// This function is called when an unrecognized message is received.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param h  The header that for the unrecognized message.
+  virtual void unknown_midici(Context context, header const &h) = 0;
   virtual void buffer_overflow(Context) = 0;
 };
 template <typename Context> struct management_pure {
@@ -225,11 +257,24 @@ static_assert(property_exchange<property_exchange_pure<int>, int>);
 static_assert(process_inquiry<process_inquiry_pure<int>, int>);
 
 // clang-format off
+template <typename Context> struct system_base : system_pure<Context> {
+  /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
+  /// dispatched otherwise it is dropped.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param group  The MIDI group to which the message was addressed.
+  /// \param id  The MUID to which the message was addressed.
+  /// \returns True if the message is to be dispatched, false if it is to be ignored.
+  bool check_muid(Context context, std::uint8_t const group, muid const id) override { (void)context; (void)group; (void)id; return false; }
+  /// This function is called when an unrecognized message is received.
+  ///
+  /// \param context  The context object passed to all message handlers.
+  /// \param h  The header that for the unrecognized message.
+  void unknown_midici(Context context, header const &h) override { (void)context; (void)h; /* do nothing */ }
+  /// \param context  The context object passed to all message handlers.
+  void buffer_overflow(Context context) override { (void)context; }
+};
 template <typename Context> struct management_base : management_pure<Context> {
-  bool check_muid(Context, std::uint8_t /*group*/, std::uint32_t /*muid*/) override { return false; }
-  void unknown_midici(Context, header const &) override { /* do nothing */ }
-  void buffer_overflow(Context) override { /* do nothing */ }
-
   void discovery(Context, header const &, ci::discovery const &) override { /* do nothing */ }
   void discovery_reply(Context, header const &, ci::discovery_reply const &) override { /* do nothing */ }
   void endpoint(Context, header const &, ci::endpoint const &) override { /* do nothing*/ }
@@ -279,10 +324,19 @@ public:
   using unknown_fn = std::function<void(Context, header const &)>;
   using buffer_overflow_fn = std::function<void(Context)>;
 
+  /// Sets the function that is to be called when the library needs to check whether the message is addressed to
+  /// this receiver.
+  ///
+  /// \param check_muid  The function to be called to check whether a message should be handled.
+  /// \returns *this
   constexpr system_function &on_check_muid(check_muid_fn check_muid) {
     check_muid_ = std::move(check_muid);
     return *this;
   }
+  /// Sets the function that will be called when the library receives an unrecognized message.
+  ///
+  /// \param unknown The function to be called when an unrecognized message is received.
+  /// \returns *this
   constexpr system_function &on_unknown(unknown_fn unknown) {
     unknown_ = std::move(unknown);
     return *this;
@@ -292,9 +346,11 @@ public:
     return *this;
   }
 
+  /// Dispatches a call to system::check_muid to the function that was installed by an earlier call to on_check_muid().
   bool check_muid(Context context, std::uint8_t group, muid m) const {
     return check_muid_ ? check_muid_(std::move(context), group, m) : false;
   }
+  /// Dispatches a call to system::unknown to the function that was installed previously by a call to on_unknown().
   void unknown_midici(Context context, header const &ci) const { call(unknown_, std::move(context), ci); }
   void buffer_overflow(Context context) const { call(overflow_, std::move(context)); }
 
@@ -352,8 +408,8 @@ public:
   void endpoint(Context context, header const &ci, ci::endpoint const &epi) const {
     call(endpoint_, std::move(context), ci, epi);
   }
-  void endpoint_reply(Context context, header const &ci, ci::endpoint_reply const &epir) const {
-    call(endpoint_reply_, std::move(context), ci, epir);
+  void endpoint_reply(Context context, header const &ci, ci::endpoint_reply const &reply) const {
+    call(endpoint_reply_, std::move(context), ci, reply);
   }
   void invalidate_muid(Context context, header const &ci, ci::invalidate_muid const &im) const {
     call(invalidate_muid_, std::move(context), ci, im);

@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+#ifndef MIDI2_CI_CI7TEXT_HPP
+#define MIDI2_CI_CI7TEXT_HPP
+
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -58,8 +61,8 @@ public:
     return dest;
   }
 
-  /// Indicates whether the input was well formed
-  /// \returns True if the input was well formed.
+  /// Indicates whether the input was well-formed
+  /// \returns True if the input was well-formed.
   [[nodiscard]] constexpr bool well_formed() const noexcept { return src_to_32_.well_formed(); }
 
   /// \brief Indicates whether a "partial" code point has been passed to \ref transcoder-call-operator "operator()".
@@ -170,8 +173,8 @@ public:
     return dest;
   }
 
-  /// Indicates whether the input was well formed
-  /// \returns True if the input was well formed.
+  /// Indicates whether the input was well-formed
+  /// \returns True if the input was well-formed.
   [[nodiscard]] constexpr bool well_formed() const noexcept { return well_formed_; }  // src_to_32_.well_formed(); }
 
   /// \brief Indicates whether a "partial" code point has been passed to \ref transcoder-call-operator "operator()".
@@ -242,3 +245,5 @@ private:
 namespace midi2 {
 using icubaby::transcoder;
 }  // end namespace midi2
+
+#endif  // MIDI2_CI_CI7TEXT_HPP

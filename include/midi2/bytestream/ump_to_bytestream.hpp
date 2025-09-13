@@ -288,7 +288,7 @@ private:
         data64::write_sysex_bytes(ctxt, in);
       }
       static void sysex7_continue(context_type* const ctxt, ump::data64::sysex7_continue const& in) {
-        // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
+        // Skip this message if we're filtering the associated group or if we didn't see a preceding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
           return;
@@ -296,7 +296,7 @@ private:
         data64::write_sysex_bytes(ctxt, in);
       }
       static void sysex7_end(context_type* const ctxt, ump::data64::sysex7_end const& in) {
-        // Skip this message if we're filtering the associated group or if we didn't see a preceeding sysex
+        // Skip this message if we're filtering the associated group or if we didn't see a preceding sysex
         // start message.
         if (ctxt->filter_message(in) || ctxt->status != sysex_start) {
           return;

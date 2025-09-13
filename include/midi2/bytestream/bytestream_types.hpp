@@ -30,19 +30,22 @@ enum class status : std::uint8_t {
 
   // System Common/Real Time/Exclusive Messages
   sysex_start = 0xF0,  ///< Begin system exclusive data
-  timing_code = 0xF1,
-  spp = 0xF2,  ///< Song Position Pointer
+  timing_code = 0xF1,  ///< MTC quarter frame
+  spp = 0xF2,          ///< Song Position Pointer
+  /// The song or sequence to be played upon receipt of a Start message.
   song_select = 0xF3,
   reserved1 = 0xF4,
   reserved2 = 0xF5,
+  /// Used with analog synthesizers to request that all oscillators be tuned.
   tune_request = 0xF6,
-  sysex_stop = 0xF7,  ///< End of system exclusive
-  timing_clock = 0xF8,
+  sysex_stop = 0xF7,    ///< End of system exclusive
+  timing_clock = 0xF8,  ///< Synchronize clock-based MIDI systems
   reserved3 = 0xF9,
   sequence_start = 0xFA,     ///< Start the current sequence playing
   sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
   sequence_stop = 0xFC,      ///< Stop the current sequence
   reserved4 = 0xFD,
+  /// Sent every 300 ms whenever there is no other MIDI data being transmitted
   active_sensing = 0xFE,
   system_reset = 0xFF,
 };

@@ -62,11 +62,11 @@ struct default_config {
   [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex;
 };
 
-/// A configuration type for the ump_dispatcher which uses std::function<> for all of the available callbacks.
+/// A configuration type for the ump_dispatcher which uses std::function<> for all the available callbacks.
 /// This is probably the simplest possible configuration type to use, but may not always be the most time and
 /// space efficient. Use judiciously!
 ///
-/// \tparam Context  The type of the context object. This is passed to all of the callbacks to enable sharing
+/// \tparam Context  The type of the context object. This is passed to the callbacks to enable sharing
 ///   of context.
 template <typename Context> struct function_config {
   explicit function_config(Context c) : context{c} {}
@@ -189,7 +189,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::utility_mes
 
 // system message
 // ~~~~~~~~~~~~~~
-// 32 bit System Common and Real Time
+// 32-bit System Common and Real Time
 template <ump_dispatcher_config Config> void ump_dispatcher<Config>::system_message() {
   static_assert(message_size<midi2::ump::message_type::system>() == 1);
   using enum ump::mt::system_crt;
@@ -438,8 +438,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::flex_data_m
   auto const status_bank = (message_[0] >> 8) & 0xFF;
   if (status_bank == 0) {
     using enum ump::mt::flex_data;
-    auto const status = static_cast<ump::mt::flex_data>(message_[0] & 0xFF);
-    switch (status) {
+    switch (auto const status = static_cast<ump::mt::flex_data>(message_[0] & 0xFF); status) {
       // 7.5.3 Set Tempo Message
     case set_tempo:
       config_.flex.set_tempo(config_.context, ump::flex_data::set_tempo{span});

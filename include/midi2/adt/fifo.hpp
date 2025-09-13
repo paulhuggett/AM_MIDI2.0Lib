@@ -89,7 +89,7 @@ public:
     return w - r;
   }
   /// \brief Returns the maximum possible number of elements.
-  [[nodiscard]] constexpr std::size_t max_size() const noexcept { return Elements; }
+  [[nodiscard]] static constexpr std::size_t max_size() noexcept { return Elements; }
 
   /// Erases all elements from the container. After this call, size() returns zero.
   constexpr void clear() noexcept {

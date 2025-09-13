@@ -18,7 +18,6 @@
 #include <array>
 #include <bit>
 #include <cassert>
-#include <concepts>
 #include <cstddef>
 #include <functional>
 #include <iterator>
@@ -204,7 +203,7 @@ public:
   [[nodiscard]] constexpr auto empty() const noexcept { return size_ == 0; }
   [[nodiscard]] constexpr auto size() const noexcept { return size_; }
   [[nodiscard]] constexpr auto max_size() const noexcept { return v_.max_size(); }
-  [[nodiscard]] constexpr auto capacity() const noexcept { return Size; }
+  [[nodiscard]] static constexpr auto capacity() noexcept { return Size; }
 
   // Modifiers
   void clear() noexcept;
@@ -222,8 +221,8 @@ public:
   [[nodiscard]] const_iterator find(Key const &k) const;
 
   // Observers
-  [[nodiscard]] hasher hash_function() const { return Hash{}; }
-  [[nodiscard]] key_equal key_eq() const { return KeyEqual{}; }
+  [[nodiscard]] static constexpr hasher hash_function() { return Hash{}; }
+  [[nodiscard]] static constexpr key_equal key_eq() { return KeyEqual{}; }
 
 #ifdef IUMAP_TRACE
   void dump(std::ostream &os) const {
@@ -233,7 +232,7 @@ public:
       ++index;
       switch (slot.state) {
       case state::unused: os << '*'; break;
-      case state::tombstone: os << "\xF0\x9F\xAA\xA6"; break;  // UTF-8 U+1fAA6 tomestone
+      case state::tombstone: os << "\xF0\x9F\xAA\xA6"; break;  // UTF-8 U+1fAA6 tombstone
       case state::occupied: {
         auto const *const kvp = slot.cast();
         os << "> " << kvp->first << '=' << kvp->second;

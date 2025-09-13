@@ -155,26 +155,33 @@ private:
     /// \brief Handles m1cvm messages by passing them straight through without change.
     struct m1cvm {
       /// \param ctxt The context for the conversion process.
+      /// \param in A note-off description structure.
       static constexpr void note_off(context_type *const ctxt, ump::m1cvm::note_off const &in) { ctxt->push(in); }
       /// \param ctxt The context for the conversion process.
+      /// \param in A note-on description structure
       static constexpr void note_on(context_type *const ctxt, ump::m1cvm::note_on const &in) { ctxt->push(in); }
       /// \param ctxt The context for the conversion process.
+      /// \param in A structure with the details of a "poly pressure" event.
       static constexpr void poly_pressure(context_type *const ctxt, ump::m1cvm::poly_pressure const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A structure with the details of a control-change event.
       static constexpr void control_change(context_type *const ctxt, ump::m1cvm::control_change const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A structure with the details of a program-change event.
       static constexpr void program_change(context_type *const ctxt, ump::m1cvm::program_change const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A structure with the details of a channel-pressure event.
       static constexpr void channel_pressure(context_type *const ctxt, ump::m1cvm::channel_pressure const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A structure with the details of a pitch-bend event.
       static constexpr void pitch_bend(context_type *const ctxt, ump::m1cvm::pitch_bend const &in) { ctxt->push(in); }
     };
     /// \brief Handles data64 messages by passing them straight through without change.

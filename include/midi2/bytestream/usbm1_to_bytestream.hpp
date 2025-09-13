@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+#ifndef MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
+#define MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
+
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -99,3 +102,5 @@ private:
 };
 
 }  // end namespace midi2::bytestream
+
+#endif  // MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP

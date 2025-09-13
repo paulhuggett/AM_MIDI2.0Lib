@@ -21,10 +21,10 @@ template <std::size_t N>
   requires(N <= 64)
 struct uinteger {
   /// The type of an unsigned integral with at least \p N bits.
-  using type = typename uinteger<N + 1>::type;
+  using type = uinteger<N + 1>::type;
 };
 /// \brief A helper type for convenient use of uinteger<N>::type.
-template <std::size_t N> using uinteger_t = typename uinteger<N>::type;
+template <std::size_t N> using uinteger_t = uinteger<N>::type;
 /// \brief Yields an unsigned integral type of 8 bits or more.
 template <> struct uinteger<8> {
   /// Smallest unsigned integer type with width of at least 8 bits.

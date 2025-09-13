@@ -155,7 +155,7 @@ concept bitfield_type = requires(T) {
   requires std::unsigned_integral<typename T::bits::value_type>;
 };
 
-/// Calls the suppplied function for each of the values held by the tuple-like type
+/// Calls the supplied function for each of the values held by the tuple-like type
 /// \p T.
 ///
 /// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::ump namespace.
@@ -260,7 +260,7 @@ protected:
   }
 
 private:
-  ///\returns The maximum value that can be held in \p Bits bits of type \p T.
+  ///\returns The maximum value that can be held in \p Bits of type \p T.
   template <std::unsigned_integral T, unsigned Bits>
     requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
   static constexpr T max_value() noexcept {
@@ -297,10 +297,10 @@ private:
   UMP_GETTER(word, field)              \
   UMP_SETTER(word, field)
 
-/// This macro is used to generate boilerplate definitions of three items for the class specficied by the \p group
+/// This macro is used to generate boilerplate definitions of three items for the class specified by the \p group
 /// and \p message parameters:
-/// 1. An specialization of std::tuple_size<>
-/// 2. An specialization of std::tuple_element<>
+/// 1. A specialization of std::tuple_size<>
+/// 2. A specialization of std::tuple_element<>
 /// 3. A static assertion that the tuple size for the class matches that of the group as a whole
 #define UMP_TUPLE(group, message)                                                                                    \
   template <>                                                                                                        \
@@ -321,10 +321,8 @@ template <message_type> struct message_size;  // not defined
 //* | || |  _| | | |  _| || | *
 //*  \_,_|\__|_|_|_|\__|\_, | *
 //*                     |__/  *
-namespace midi2::ump {
 /// \brief An integral constant which holds the number of bytes of a UMP utility message.
-template <> struct message_size<message_type::utility> : std::integral_constant<unsigned, 1> {};
-}  // end namespace midi2::ump
+template <> struct midi2::ump::message_size<midi2::ump::message_type::utility> : std::integral_constant<unsigned, 1> {};
 
 /// Defines the C++ types that represent Utility type messages
 namespace midi2::ump::utility {
@@ -379,7 +377,7 @@ private:
 UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 
 // 7.2.2.1 JR Clock Message
-/// \brief The JR Clock message message (section 7.2.2.1)
+/// \brief The JR Clock message (section 7.2.2.1)
 class midi2::ump::utility::jr_clock {
 public:
   /// The first word of a JR Clock message
@@ -1675,7 +1673,7 @@ UMP_TUPLE(m2cvm, nrpn_per_note_controller)  // Define tuple_size and tuple_eleme
 /// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
 /// map and translate directly to MIDI 1.0 Registered Parameter Numbers and use the same
 /// definitions as MMA/AMEI approved RPN messages. Registered Controllers are organized in 128 Banks
-/// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB).
+/// (corresponds to RPN MSB), with 128 controllers per Bank (corresponds to RPN LSB)."
 class midi2::ump::m2cvm::rpn_controller {
 public:
   class word0 : public details::word_base {
@@ -2485,7 +2483,7 @@ private:
 // Define tuple_size and tuple_element for stream/endpoint_name_notification
 UMP_TUPLE(stream, endpoint_name_notification)
 
-// 7.1.5 Product Instance Id Notification Message
+// 7.1.5 Product Instance ID Notification Message
 class midi2::ump::stream::product_instance_id_notification {
 public:
   class word0 : public details::word_base {

@@ -60,7 +60,7 @@ template <ci_dispatcher_config Config> class ci_dispatcher {
 public:
   constexpr explicit ci_dispatcher(Config config) : config_{config} {}
 
-  constexpr void start(std::uint8_t group, b7 deviceId);
+  constexpr void start(std::uint8_t group, b7 device_id);
   constexpr void finish() { /* here for symmetry with start */
   }
 
