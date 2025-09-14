@@ -25,13 +25,13 @@ using testing::IsEmpty;
 
 namespace {
 
-template <std::ranges::input_range Range> auto convert(std::uint8_t const cable, Range const& range) {
+template <std::ranges::input_range Range> constexpr auto convert(std::uint8_t const cable, Range const& range) {
   std::vector<std::byte> output;
-  midi2::bytestream::usbm1_to_bytestream m1tobs{cable};
+  midi2::bytestream::usbm1_to_bytestream m1_to_bs{cable};
   for (std::uint32_t const m1 : range) {
-    m1tobs.push(m1);
-    while (!m1tobs.empty()) {
-      output.push_back(m1tobs.pop());
+    m1_to_bs.push(m1);
+    while (!m1_to_bs.empty()) {
+      output.push_back(m1_to_bs.pop());
     }
   }
   return output;
@@ -46,7 +46,7 @@ TEST(USBM1ToByteStream, NoteOnCable1) {
   constexpr auto kk = 0x46U;
   constexpr auto vv = 0x3FU;
 
-  auto const events = std::array{std::uint32_t{(cable << 28) | (9U << 24) | (0x90 << 16) | (kk << 8) | vv}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (9U << 24) | (0x90 << 16) | (kk << 8) | vv}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0x90}, std::byte{kk}, std::byte{vv}));
   EXPECT_THAT(convert(0, events), IsEmpty());
@@ -61,7 +61,7 @@ TEST(USBM1ToByteStream, ControlChangeCable10) {
   constexpr auto pp = 0x46U;
   constexpr auto vv = 0x3FU;
 
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0xBU << 24) | (0xB0 << 16) | (pp << 8) | vv}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0xBU << 24) | (0xB0 << 16) | (pp << 8) | vv}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xB0}, std::byte{pp}, std::byte{vv}));
 }
@@ -73,7 +73,7 @@ TEST(USBM1ToByteStream, ControlChangeCable10) {
 TEST(USBM1ToByteStream, TimingClockCable3) {
   constexpr auto cable = 0x3U;
 
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0xFU << 24) | (0xF8 << 16)}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0xFU << 24) | (0xF8 << 16)}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF8}));
 }
@@ -85,8 +85,8 @@ TEST(USBM1ToByteStream, TimingClockCable3) {
 // NOLINTNEXTLINE
 TEST(USBM1ToByteStream, SysExFourBytes) {
   constexpr auto cable = 0x3U;
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
-                                 std::uint32_t{(cable << 28) | (0x5U << 24) | (0xF7 << 16)}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
+                                     std::uint32_t{(cable << 28) | (0x5U << 24) | (0xF7 << 16)}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF0}, std::byte{0x00}, std::byte{0x01}, std::byte{0xF7}));
 }
@@ -98,8 +98,8 @@ TEST(USBM1ToByteStream, SysExFourBytes) {
 // NOLINTNEXTLINE
 TEST(USBM1ToByteStream, SysExFiveBytes) {
   constexpr auto cable = 0x2U;
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
-                                 std::uint32_t{(cable << 28) | (0x6U << 24) | (0x02 << 16) | (0xF7 << 8)}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
+                                     std::uint32_t{(cable << 28) | (0x6U << 24) | (0x02 << 16) | (0xF7 << 8)}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF0}, std::byte{0x00}, std::byte{0x01}, std::byte{0x02}, std::byte{0xF7}));
 }
@@ -111,8 +111,8 @@ TEST(USBM1ToByteStream, SysExFiveBytes) {
 // NOLINTNEXTLINE
 TEST(USBM1ToByteStream, SysExSixBytes) {
   constexpr auto cable = 0x9U;
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
-                                 std::uint32_t{(cable << 28) | (0x7U << 24) | (0x02 << 16) | (0x03 << 8) | 0xF7}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0x4U << 24) | (0xF0 << 16) | (0x00 << 8) | 0x01},
+                                     std::uint32_t{(cable << 28) | (0x7U << 24) | (0x02 << 16) | (0x03 << 8) | 0xF7}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF0}, std::byte{0x00}, std::byte{0x01}, std::byte{0x02}, std::byte{0x03},
                                   std::byte{0xF7}));
@@ -124,7 +124,7 @@ TEST(USBM1ToByteStream, SysExSixBytes) {
 // NOLINTNEXTLINE
 TEST(USBM1ToByteStream, SysExTwoBytes) {
   constexpr auto cable = 0x9U;
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0x6U << 24) | (0xF0 << 16) | (0xF7 << 8)}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0x6U << 24) | (0xF0 << 16) | (0xF7 << 8)}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF0}, std::byte{0xF7}));
 }
@@ -135,7 +135,7 @@ TEST(USBM1ToByteStream, SysExTwoBytes) {
 // NOLINTNEXTLINE
 TEST(USBM1ToByteStream, SysExThreeBytes) {
   constexpr auto cable = 0x9U;
-  auto const events = std::array{std::uint32_t{(cable << 28) | (0x7U << 24) | (0xF0 << 16) | (0x7F << 8) | 0xF7}};
+  constexpr auto events = std::array{std::uint32_t{(cable << 28) | (0x7U << 24) | (0xF0 << 16) | (0x7F << 8) | 0xF7}};
   auto const actual = convert(cable, events);
   EXPECT_THAT(actual, ElementsAre(std::byte{0xF0}, std::byte{0x7F}, std::byte{0xF7}));
 }

@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 
-/// Functions and types relating to processing of MIDI 1.0 bytestreams
+/// Functions and types relating to processing of a MIDI 1.0 bytestream
 namespace midi2::bytestream {
 
 /// Bytestream status message codes

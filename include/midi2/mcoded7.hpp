@@ -6,6 +6,36 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file mcoded7.hpp
+/// \brief MIDI Mcoded7 Encoding and Decoding
+///
+/// Each group of seven stored bytes is transmitted as eight bytes. First, the
+/// sign bits of the seven bytes are sent, followed by the low-order 7 bits of
+/// each byte. (The reasoning is that this would make the auxiliary bytes appear
+/// in every 8th byte without exception, which would therefore be slightly easier
+/// for the receiver to decode.)
+///
+/// The seven bytes:
+///
+///     AAAAaaaa BBBBbbbb CCCCcccc DDDDdddd EEEEeeee FFFFffff GGGGgggg
+///
+/// are sent as:
+///
+///     0ABCDEFG
+///     0AAAaaaa 0BBBbbbb 0CCCcccc 0DDDdddd 0EEEeeee 0FFFffff 0GGGgggg
+///
+/// From a buffer to be encoded, complete groups of seven bytes are encoded into
+/// groups of eight bytes. If the buffer size is not a multiple of seven, there
+/// will be some number of bytes leftover after the groups of seven are encoded.
+/// This short group is transmitted similarly, with the sign bits occupying the
+/// most significant bits of the first transmitted byte. For example:
+///
+///     AAAAaaaa BBBBbbbb CCCCcccc
+///
+/// are transmitted as:
+///
+///     0ABC0000 0AAAaaaa 0BBBbbbb 0CCCcccc
+
 #ifndef MIDI2_MCODED7_HPP
 #define MIDI2_MCODED7_HPP
 
@@ -18,29 +48,7 @@
 
 #include "midi2/utils.hpp"
 
-// MIDI Mcoded7 Encoding
-// ~~~~~~~~~~~~~~~~~~~~~
-// Each group of seven stored bytes is transmitted as eight bytes. First, the
-// sign bits of the seven bytes are sent, followed by the low-order 7 bits of
-// each byte. (The reasoning is that this would make the auxiliary bytes appear
-// in every 8th byte without exception, which would therefore be slightly easier
-// for the receiver to decode.)
-//
-// The seven bytes:
-//     AAAAaaaa BBBBbbbb CCCCcccc DDDDdddd EEEEeeee FFFFffff GGGGgggg
-// are sent as:
-//     0ABCDEFG
-//     0AAAaaaa 0BBBbbbb 0CCCcccc 0DDDdddd 0EEEeeee 0FFFffff 0GGGgggg
-//
-// From a buffer to be encoded, complete groups of seven bytes are encoded into
-// groups of eight bytes. If the buffer size is not a multiple of seven, there
-// will be some number of bytes leftover after the groups of seven are encoded.
-// This short group is transmitted similarly, with the sign bits occupying the
-// most significant bits of the first transmitted byte. For example:
-//     AAAAaaaa BBBBbbbb CCCCcccc
-// are transmitted as:
-//     0ABC0000 0AAAaaaa 0BBBbbbb 0CCCcccc
-
+/// \brief  MIDI Mcoded7 Encoding and Decoding
 namespace midi2::mcoded7 {
 
 class encoder {
@@ -159,7 +167,7 @@ template <std::output_iterator<std::byte> OutputIterator> OutputIterator encoder
 template <std::output_iterator<std::byte> OutputIterator>
 OutputIterator decoder::parse_byte(std::byte const value, OutputIterator out) {
   if (pos_ == msbs_byte_pos_) {
-    // This the the byte that encodes the sign bits of the seven following
+    // This is the byte that encodes the sign bits of the seven following
     // bytes.
     msbs_ = to_underlying(value);
   } else {

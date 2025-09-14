@@ -60,7 +60,7 @@ TEST(UMPToBytestream, NoteOff) {
   midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note1).velocity(velocity1),
                     push_back);
 
-  std::array const expected{
+  constexpr std::array expected{
       midi2::to_byte(note_off) | std::byte{channel},
       std::byte{note0},
       std::byte{velocity0},
@@ -91,7 +91,7 @@ TEST(UMPToBytestream, NoteOffFiltered) {
   // message should not be filtered out
   midi2::ump::apply(midi2::ump::m1cvm::note_off{}.group(0).channel(channel).note(note1).velocity(velocity1), push_back);
 
-  std::array const expected{
+  constexpr std::array expected{
       midi2::to_byte(note_off) | std::byte{channel},
       std::byte{note1},
       std::byte{velocity1},
@@ -116,7 +116,7 @@ TEST(UMPToBytestream, NoteOn) {
   midi2::ump::apply(midi2::ump::m1cvm::note_on{}.channel(channel).note(note0).velocity(velocity0), push_back);
   midi2::ump::apply(midi2::ump::m1cvm::note_on{}.channel(channel).note(note1).velocity(velocity1), push_back);
 
-  std::array const expected{
+  constexpr std::array expected{
       midi2::to_byte(note_on) | std::byte{channel},
       std::byte{note0},
       std::byte{velocity0},
@@ -137,7 +137,7 @@ TEST(UMPToBytestream, ControlChange) {
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{
+  constexpr std::array expected{
       midi2::to_byte(cc) | std::byte{channel},
       std::byte{controller},
       std::byte{value},
@@ -203,7 +203,7 @@ TEST(UMPToBytestream, M1CVMPitchBend) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemTimeCode) {
-  auto const tc = 0b1010101;
+  constexpr auto tc = 0b1010101;
   midi2::ump::system::midi_time_code message;
   message.time_code(tc);
 
@@ -214,59 +214,59 @@ TEST(UMPToBytestream, SystemTimeCode) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSongPositionPointer) {
-  auto const lsb = 0b01111000;
-  auto const msb = 0b00001111;
+  constexpr auto lsb = 0b01111000;
+  constexpr auto msb = 0b00001111;
   constexpr auto message = midi2::ump::system::song_position_pointer{}.position_lsb(lsb).position_msb(msb);
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{midi2::to_byte(spp), std::byte{lsb}, std::byte{msb}};
+  constexpr std::array expected{midi2::to_byte(spp), std::byte{lsb}, std::byte{msb}};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
 }
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSongSelect) {
-  auto const group = 1U;
-  auto const song = 0x64U;
+  constexpr auto group = 1U;
+  constexpr auto song = 0x64U;
   constexpr auto message = midi2::ump::system::song_select{}.group(group).song(song);
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{midi2::to_byte(song_select), std::byte{song}};
+  constexpr std::array expected{midi2::to_byte(song_select), std::byte{song}};
   EXPECT_THAT(convert(input), ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceStart) {
-  auto const group = 1U;
+  constexpr auto group = 1U;
   midi2::ump::system::sequence_start message;
   message.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{midi2::to_byte(sequence_start)};
+  constexpr std::array expected{midi2::to_byte(sequence_start)};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceContinue) {
-  auto const group = 1U;
-  auto const message = midi2::ump::system::sequence_continue{}.group(group);
+  constexpr auto group = 1U;
+  constexpr auto message = midi2::ump::system::sequence_continue{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{midi2::to_byte(sequence_continue)};
+  constexpr std::array expected{midi2::to_byte(sequence_continue)};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
 }
 // NOLINTNEXTLINE
 TEST(UMPToByteStream, SystemSequenceStop) {
-  auto const group = 1U;
-  auto const message = midi2::ump::system::sequence_stop{}.group(group);
+  constexpr auto group = 1U;
+  constexpr auto message = midi2::ump::system::sequence_stop{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
-  std::array const expected{midi2::to_byte(sequence_stop)};
+  constexpr std::array expected{midi2::to_byte(sequence_stop)};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAreArray(expected));
   EXPECT_THAT(convert(input, std::uint16_t{group}), IsEmpty());
@@ -288,8 +288,8 @@ TEST(UMPToBytestream, SystemTimingClock) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemActiveSensing) {
-  auto const group = 1U;
-  auto const message = midi2::ump::system::active_sensing{}.group(group);
+  constexpr auto group = 1U;
+  constexpr auto message = midi2::ump::system::active_sensing{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -299,8 +299,8 @@ TEST(UMPToBytestream, SystemActiveSensing) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, SystemReset) {
-  auto const group = 1U;
-  auto const message = midi2::ump::system::reset{}.group(group);
+  constexpr auto group = 1U;
+  constexpr auto message = midi2::ump::system::reset{}.group(group);
 
   static_assert(std::tuple_size_v<decltype(message)> == 1);
   std::array const input{get<0>(message).word()};
@@ -311,7 +311,7 @@ TEST(UMPToBytestream, SystemReset) {
 
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, ProgramChangeTwoBytes) {
-  std::array const input{std::uint32_t{0x20C64000}};
+  constexpr std::array input{std::uint32_t{0x20C64000}};
   EXPECT_THAT(convert(input), ElementsAre(std::byte{0xC6}, std::byte{0x40}));
 }
 // NOLINTNEXTLINE
@@ -324,10 +324,10 @@ TEST(UMPToBytestream, SysexInOne) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToBytestream, Sysex) {
-  std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
-                         std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
-                         std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
-                         std::uint32_t{0x10000000}};
+  constexpr std::array input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
+                             std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
+                             std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
+                             std::uint32_t{0x10000000}};
   EXPECT_THAT(
       convert(input),
       ElementsAre(std::byte{0xF0}, std::byte{0x7E}, std::byte{0x7F}, std::byte{0x0D}, std::byte{0x70}, std::byte{0x02},

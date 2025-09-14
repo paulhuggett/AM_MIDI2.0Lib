@@ -50,7 +50,7 @@ TEST_F(DispatcherBackendUtility, Noop) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, JrClock) {
   StrictMock<MockFunction<decltype(be_)::jr_clock_fn>> fn;
-  midi2::ump::utility::jr_clock const clock;
+  constexpr midi2::ump::utility::jr_clock const clock;
   be_.jr_clock(context_, clock);
   be_.on_jr_clock(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, clock)).Times(1);
@@ -59,7 +59,7 @@ TEST_F(DispatcherBackendUtility, JrClock) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, JrTimestamp) {
   StrictMock<MockFunction<decltype(be_)::jr_timestamp_fn>> fn;
-  midi2::ump::utility::jr_timestamp const time_stamp;
+  constexpr midi2::ump::utility::jr_timestamp const time_stamp;
   be_.jr_timestamp(context_, time_stamp);
   be_.on_jr_timestamp(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, time_stamp)).Times(1);
@@ -68,7 +68,7 @@ TEST_F(DispatcherBackendUtility, JrTimestamp) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, DeltaClockstampTPQN) {
   StrictMock<MockFunction<decltype(be_)::delta_clockstamp_tpqn_fn>> fn;
-  midi2::ump::utility::delta_clockstamp_tpqn const delta_clockstamp;
+  constexpr midi2::ump::utility::delta_clockstamp_tpqn const delta_clockstamp;
   be_.delta_clockstamp_tpqn(context_, delta_clockstamp);
   be_.on_delta_clockstamp_tpqn(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, delta_clockstamp)).Times(1);
@@ -77,7 +77,7 @@ TEST_F(DispatcherBackendUtility, DeltaClockstampTPQN) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, DeltaClockstamp) {
   StrictMock<MockFunction<decltype(be_)::delta_clockstamp_fn>> fn;
-  midi2::ump::utility::delta_clockstamp const delta_clockstamp;
+  constexpr midi2::ump::utility::delta_clockstamp const delta_clockstamp;
   be_.delta_clockstamp(context_, delta_clockstamp);
   be_.on_delta_clockstamp(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, delta_clockstamp)).Times(1);
@@ -98,7 +98,7 @@ TEST_F(DispatcherBackendUtility, Chained) {
   StrictMock<MockFunction<decltype(be_)::noop_fn>> noop;
   StrictMock<MockFunction<decltype(be_)::jr_clock_fn>> jrc;
   InSequence const _;
-  midi2::ump::utility::jr_clock const clock;
+  constexpr midi2::ump::utility::jr_clock const clock;
   EXPECT_CALL(noop, Call(context_)).Times(1);
   EXPECT_CALL(jrc, Call(context_, clock)).Times(1);
   // Chained calls to the functions setting the message handlers.
@@ -115,7 +115,7 @@ protected:
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, MidiTimeCode) {
-  midi2::ump::system::midi_time_code const mtc;
+  constexpr midi2::ump::system::midi_time_code const mtc;
   // The first call should do nothing since no handler has been installed.
   be_.midi_time_code(context_, mtc);
 
@@ -128,7 +128,7 @@ TEST_F(DispatcherBackendSystem, MidiTimeCode) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SongPositionPointer) {
-  midi2::ump::system::song_position_pointer const spp;
+  constexpr midi2::ump::system::song_position_pointer const spp;
   be_.song_position_pointer(context_, spp);
 
   StrictMock<MockFunction<decltype(be_)::song_position_pointer_fn>> fn;
@@ -138,7 +138,7 @@ TEST_F(DispatcherBackendSystem, SongPositionPointer) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SongSelect) {
-  midi2::ump::system::song_select const ss;
+  constexpr midi2::ump::system::song_select ss;
   be_.song_select(context_, ss);
 
   StrictMock<MockFunction<decltype(be_)::song_select_fn>> fn;
@@ -148,7 +148,7 @@ TEST_F(DispatcherBackendSystem, SongSelect) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, TuneRequest) {
-  midi2::ump::system::tune_request const tr;
+  constexpr midi2::ump::system::tune_request tr;
   be_.tune_request(context_, tr);
 
   StrictMock<MockFunction<decltype(be_)::tune_request_fn>> fn;
@@ -158,7 +158,7 @@ TEST_F(DispatcherBackendSystem, TuneRequest) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, TimingClock) {
-  midi2::ump::system::timing_clock const clock;
+  constexpr midi2::ump::system::timing_clock clock;
   be_.timing_clock(context_, clock);
 
   StrictMock<MockFunction<decltype(be_)::timing_clock_fn>> fn;
@@ -168,7 +168,7 @@ TEST_F(DispatcherBackendSystem, TimingClock) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SequenceStart) {
-  midi2::ump::system::sequence_start const ss;
+  constexpr midi2::ump::system::sequence_start ss;
   be_.seq_start(context_, ss);
 
   StrictMock<MockFunction<decltype(be_)::seq_start_fn>> fn;
@@ -178,7 +178,7 @@ TEST_F(DispatcherBackendSystem, SequenceStart) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SequenceContinue) {
-  midi2::ump::system::sequence_continue const sc;
+  constexpr midi2::ump::system::sequence_continue sc;
   be_.seq_continue(context_, sc);
 
   StrictMock<MockFunction<decltype(be_)::seq_continue_fn>> fn;
@@ -189,7 +189,7 @@ TEST_F(DispatcherBackendSystem, SequenceContinue) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SequenceStop) {
   StrictMock<MockFunction<decltype(be_)::seq_stop_fn>> fn;
-  midi2::ump::system::sequence_stop const ss;
+  constexpr midi2::ump::system::sequence_stop ss;
   be_.seq_stop(context_, ss);
   be_.on_seq_stop(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, ss)).Times(1);
@@ -198,7 +198,7 @@ TEST_F(DispatcherBackendSystem, SequenceStop) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, ActiveSensing) {
   StrictMock<MockFunction<decltype(be_)::active_sensing_fn>> fn;
-  midi2::ump::system::active_sensing const as;
+  constexpr midi2::ump::system::active_sensing as;
   be_.active_sensing(context_, as);
   be_.on_active_sensing(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, as)).Times(1);
@@ -207,7 +207,7 @@ TEST_F(DispatcherBackendSystem, ActiveSensing) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, Reset) {
   StrictMock<MockFunction<decltype(be_)::reset_fn>> fn;
-  midi2::ump::system::reset const r;
+  constexpr midi2::ump::system::reset r;
   be_.reset(context_, r);
   be_.on_reset(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, r)).Times(1);
@@ -222,7 +222,7 @@ protected:
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, NoteOff) {
   StrictMock<MockFunction<decltype(be_)::note_off_fn>> fn;
-  midi2::ump::m1cvm::note_off const noff;
+  constexpr midi2::ump::m1cvm::note_off noff;
   // The first call should do nothing since no handler has been installed.
   be_.note_off(context_, noff);
   // Install a handler for the noop message.
@@ -234,7 +234,7 @@ TEST_F(DispatcherBackendM1CVM, NoteOff) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, NoteOn) {
   StrictMock<MockFunction<decltype(be_)::note_on_fn>> fn;
-  midi2::ump::m1cvm::note_on const non;
+  constexpr midi2::ump::m1cvm::note_on non;
   be_.note_on(context_, non);
   be_.on_note_on(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, non)).Times(1);
@@ -243,7 +243,7 @@ TEST_F(DispatcherBackendM1CVM, NoteOn) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, PolyPressure) {
   StrictMock<MockFunction<decltype(be_)::poly_pressure_fn>> fn;
-  midi2::ump::m1cvm::poly_pressure const pressure;
+  constexpr midi2::ump::m1cvm::poly_pressure pressure;
   be_.poly_pressure(context_, pressure);
   be_.on_poly_pressure(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, pressure)).Times(1);
@@ -252,7 +252,7 @@ TEST_F(DispatcherBackendM1CVM, PolyPressure) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, ControlChange) {
   StrictMock<MockFunction<decltype(be_)::control_change_fn>> fn;
-  midi2::ump::m1cvm::control_change const cc;
+  constexpr midi2::ump::m1cvm::control_change cc;
   be_.control_change(context_, cc);
   be_.on_control_change(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, cc)).Times(1);
@@ -261,7 +261,7 @@ TEST_F(DispatcherBackendM1CVM, ControlChange) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, ProgramChange) {
   StrictMock<MockFunction<decltype(be_)::program_change_fn>> fn;
-  midi2::ump::m1cvm::program_change const pc;
+  constexpr midi2::ump::m1cvm::program_change pc;
   be_.program_change(context_, pc);
   be_.on_program_change(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, pc)).Times(1);
@@ -270,7 +270,7 @@ TEST_F(DispatcherBackendM1CVM, ProgramChange) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, ChannelPressure) {
   StrictMock<MockFunction<decltype(be_)::channel_pressure_fn>> fn;
-  midi2::ump::m1cvm::channel_pressure const pressure;
+  constexpr midi2::ump::m1cvm::channel_pressure pressure;
   be_.channel_pressure(context_, pressure);
   be_.on_channel_pressure(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, pressure)).Times(1);
@@ -279,7 +279,7 @@ TEST_F(DispatcherBackendM1CVM, ChannelPressure) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM1CVM, PitchBend) {
   StrictMock<MockFunction<decltype(be_)::pitch_bend_fn>> fn;
-  midi2::ump::m1cvm::pitch_bend const pb;
+  constexpr midi2::ump::m1cvm::pitch_bend pb;
   be_.pitch_bend(context_, pb);
   be_.on_pitch_bend(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, pb)).Times(1);
@@ -294,7 +294,7 @@ protected:
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData64, Sysex7In1) {
   StrictMock<MockFunction<decltype(be_)::sysex7_in_1_fn>> fn;
-  midi2::ump::data64::sysex7_in_1 const sx;
+  constexpr midi2::ump::data64::sysex7_in_1 sx;
   // The first call should do nothing since no handler has been installed.
   be_.sysex7_in_1(context_, sx);
   // Install a handler for the noop message.
@@ -306,7 +306,7 @@ TEST_F(DispatcherBackendData64, Sysex7In1) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData64, Sysex7Start) {
   StrictMock<MockFunction<decltype(be_)::sysex7_start_fn>> fn;
-  midi2::ump::data64::sysex7_start const sx;
+  constexpr midi2::ump::data64::sysex7_start sx;
   be_.sysex7_start(context_, sx);
   be_.on_sysex7_start(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -315,7 +315,7 @@ TEST_F(DispatcherBackendData64, Sysex7Start) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData64, Sysex7Continue) {
   StrictMock<MockFunction<decltype(be_)::sysex7_continue_fn>> fn;
-  midi2::ump::data64::sysex7_continue const sx;
+  constexpr midi2::ump::data64::sysex7_continue sx;
   be_.sysex7_continue(context_, sx);
   be_.on_sysex7_continue(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -324,7 +324,7 @@ TEST_F(DispatcherBackendData64, Sysex7Continue) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData64, Sysex7End) {
   StrictMock<MockFunction<decltype(be_)::sysex7_end_fn>> fn;
-  midi2::ump::data64::sysex7_end const sx;
+  constexpr midi2::ump::data64::sysex7_end sx;
   be_.sysex7_end(context_, sx);
   be_.on_sysex7_end(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -339,7 +339,7 @@ protected:
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NoteOff) {
   StrictMock<MockFunction<decltype(be_)::note_off_fn>> fn;
-  midi2::ump::m2cvm::note_off const noff;
+  constexpr midi2::ump::m2cvm::note_off noff;
   // The first call should do nothing since no handler has been installed.
   be_.note_off(context_, noff);
   // Install a handler for the noop message.
@@ -351,7 +351,7 @@ TEST_F(DispatcherBackendM2CVM, NoteOff) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NoteOn) {
   StrictMock<MockFunction<decltype(be_)::note_on_fn>> fn;
-  midi2::ump::m2cvm::note_on const non;
+  constexpr midi2::ump::m2cvm::note_on non;
   be_.note_on(context_, non);
   be_.on_note_on(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, non)).Times(1);
@@ -360,7 +360,7 @@ TEST_F(DispatcherBackendM2CVM, NoteOn) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, PolyPressure) {
   StrictMock<MockFunction<decltype(be_)::poly_pressure_fn>> fn;
-  midi2::ump::m2cvm::poly_pressure const pressure;
+  constexpr midi2::ump::m2cvm::poly_pressure pressure;
   be_.poly_pressure(context_, pressure);
   be_.on_poly_pressure(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, pressure)).Times(1);
@@ -368,7 +368,7 @@ TEST_F(DispatcherBackendM2CVM, PolyPressure) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, ProgramChange) {
-  midi2::ump::m2cvm::program_change const pc;
+  constexpr midi2::ump::m2cvm::program_change pc;
   be_.program_change(context_, pc);
 
   StrictMock<MockFunction<decltype(be_)::program_change_fn>> fn;
@@ -378,7 +378,7 @@ TEST_F(DispatcherBackendM2CVM, ProgramChange) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, ChannelPressure) {
-  midi2::ump::m2cvm::channel_pressure const pressure;
+  constexpr midi2::ump::m2cvm::channel_pressure pressure;
   be_.channel_pressure(context_, pressure);
 
   StrictMock<MockFunction<decltype(be_)::channel_pressure_fn>> fn;
@@ -388,7 +388,7 @@ TEST_F(DispatcherBackendM2CVM, ChannelPressure) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, RPNPerNoteController) {
-  midi2::ump::m2cvm::rpn_per_note_controller const rpn;
+  constexpr midi2::ump::m2cvm::rpn_per_note_controller rpn;
   be_.rpn_per_note_controller(context_, rpn);
 
   StrictMock<MockFunction<decltype(be_)::rpn_per_note_controller_fn>> fn;
@@ -398,7 +398,7 @@ TEST_F(DispatcherBackendM2CVM, RPNPerNoteController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NRPNPerNoteController) {
-  midi2::ump::m2cvm::nrpn_per_note_controller const nrpn;
+  constexpr midi2::ump::m2cvm::nrpn_per_note_controller nrpn;
   be_.nrpn_per_note_controller(context_, nrpn);
 
   StrictMock<MockFunction<decltype(be_)::nrpn_per_note_controller_fn>> fn;
@@ -408,7 +408,7 @@ TEST_F(DispatcherBackendM2CVM, NRPNPerNoteController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, RPNController) {
-  midi2::ump::m2cvm::rpn_controller const rpn;
+  constexpr midi2::ump::m2cvm::rpn_controller rpn;
   be_.rpn_controller(context_, rpn);
 
   StrictMock<MockFunction<decltype(be_)::rpn_controller_fn>> fn;
@@ -418,7 +418,7 @@ TEST_F(DispatcherBackendM2CVM, RPNController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NRPNController) {
-  midi2::ump::m2cvm::nrpn_controller const nrpn;
+  constexpr midi2::ump::m2cvm::nrpn_controller nrpn;
   be_.nrpn_controller(context_, nrpn);
 
   StrictMock<MockFunction<decltype(be_)::nrpn_controller_fn>> fn;
@@ -428,7 +428,7 @@ TEST_F(DispatcherBackendM2CVM, NRPNController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, RPNRelativeController) {
-  midi2::ump::m2cvm::rpn_relative_controller const message;
+  constexpr midi2::ump::m2cvm::rpn_relative_controller message;
   be_.rpn_relative_controller(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::rpn_relative_controller_fn>> fn;
@@ -438,7 +438,7 @@ TEST_F(DispatcherBackendM2CVM, RPNRelativeController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, NRPNRelativeController) {
-  midi2::ump::m2cvm::nrpn_relative_controller const message;
+  constexpr midi2::ump::m2cvm::nrpn_relative_controller message;
   be_.nrpn_relative_controller(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::nrpn_relative_controller_fn>> fn;
@@ -448,7 +448,7 @@ TEST_F(DispatcherBackendM2CVM, NRPNRelativeController) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, PerNoteManagement) {
-  midi2::ump::m2cvm::per_note_management const message;
+  constexpr midi2::ump::m2cvm::per_note_management message;
   be_.per_note_management(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::per_note_management_fn>> fn;
@@ -458,7 +458,7 @@ TEST_F(DispatcherBackendM2CVM, PerNoteManagement) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, ControlChange) {
-  midi2::ump::m2cvm::control_change const message;
+  constexpr midi2::ump::m2cvm::control_change message;
   be_.control_change(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::control_change_fn>> fn;
@@ -468,7 +468,7 @@ TEST_F(DispatcherBackendM2CVM, ControlChange) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, PitchBend) {
-  midi2::ump::m2cvm::pitch_bend const message;
+  constexpr midi2::ump::m2cvm::pitch_bend message;
   be_.pitch_bend(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::pitch_bend_fn>> fn;
@@ -478,7 +478,7 @@ TEST_F(DispatcherBackendM2CVM, PitchBend) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendM2CVM, PerNotePitchBend) {
-  midi2::ump::m2cvm::per_note_pitch_bend const message;
+  constexpr midi2::ump::m2cvm::per_note_pitch_bend message;
   be_.per_note_pitch_bend(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::per_note_pitch_bend_fn>> fn;
@@ -494,7 +494,7 @@ protected:
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, SysEx8In1) {
-  midi2::ump::data128::sysex8_in_1 const sx;
+  constexpr midi2::ump::data128::sysex8_in_1 sx;
   // The first call should do nothing since no handler has been installed.
   be_.sysex8_in_1(context_, sx);
   // Install a handler for the noop message.
@@ -506,7 +506,7 @@ TEST_F(DispatcherBackendData128, SysEx8In1) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, SysEx8Start) {
-  midi2::ump::data128::sysex8_start const sx;
+  constexpr midi2::ump::data128::sysex8_start sx;
   be_.sysex8_start(context_, sx);
   StrictMock<MockFunction<decltype(be_)::sysex8_start_fn>> fn;
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -515,7 +515,7 @@ TEST_F(DispatcherBackendData128, SysEx8Start) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, SysEx8Continue) {
-  midi2::ump::data128::sysex8_continue const sx;
+  constexpr midi2::ump::data128::sysex8_continue sx;
   be_.sysex8_continue(context_, sx);
   StrictMock<MockFunction<decltype(be_)::sysex8_continue_fn>> fn;
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -524,7 +524,7 @@ TEST_F(DispatcherBackendData128, SysEx8Continue) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, SysEx8End) {
-  midi2::ump::data128::sysex8_end const sx;
+  constexpr midi2::ump::data128::sysex8_end sx;
   be_.sysex8_end(context_, sx);
   StrictMock<MockFunction<decltype(be_)::sysex8_end_fn>> fn;
   EXPECT_CALL(fn, Call(context_, sx)).Times(1);
@@ -533,7 +533,7 @@ TEST_F(DispatcherBackendData128, SysEx8End) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, MDSHeader) {
-  midi2::ump::data128::mds_header const mds;
+  constexpr midi2::ump::data128::mds_header mds;
   be_.mds_header(context_, mds);
   StrictMock<MockFunction<decltype(be_)::mds_header_fn>> fn;
   EXPECT_CALL(fn, Call(context_, mds)).Times(1);
@@ -542,7 +542,7 @@ TEST_F(DispatcherBackendData128, MDSHeader) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendData128, MDSPayload) {
-  midi2::ump::data128::mds_payload const mds;
+  constexpr midi2::ump::data128::mds_payload mds;
   be_.mds_payload(context_, mds);
   StrictMock<MockFunction<decltype(be_)::mds_payload_fn>> fn;
   EXPECT_CALL(fn, Call(context_, mds)).Times(1);
@@ -557,7 +557,7 @@ protected:
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointDiscovery) {
-  midi2::ump::stream::endpoint_discovery const message;
+  constexpr midi2::ump::stream::endpoint_discovery message;
   // The first call should do nothing since no handler has been installed.
   be_.endpoint_discovery(context_, message);
   // Install a handler for the noop message.
@@ -569,7 +569,7 @@ TEST_F(DispatcherBackendStream, EndpointDiscovery) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointNotification) {
-  midi2::ump::stream::endpoint_info_notification const message;
+  constexpr midi2::ump::stream::endpoint_info_notification message;
   be_.endpoint_info_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::endpoint_info_notification_fn>> fn;
@@ -579,7 +579,7 @@ TEST_F(DispatcherBackendStream, EndpointNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, DeviceIdentityNotification) {
-  midi2::ump::stream::device_identity_notification const message;
+  constexpr midi2::ump::stream::device_identity_notification message;
   be_.device_identity_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::device_identity_notification_fn>> fn;
@@ -589,7 +589,7 @@ TEST_F(DispatcherBackendStream, DeviceIdentityNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndpointNameNotification) {
-  midi2::ump::stream::endpoint_name_notification const message;
+  constexpr midi2::ump::stream::endpoint_name_notification message;
   be_.endpoint_name_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::endpoint_name_notification_fn>> fn;
@@ -599,7 +599,7 @@ TEST_F(DispatcherBackendStream, EndpointNameNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, ProduceInstanceIDNotification) {
-  midi2::ump::stream::product_instance_id_notification const message;
+  constexpr midi2::ump::stream::product_instance_id_notification message;
   be_.product_instance_id_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::product_instance_id_notification_fn>> fn;
@@ -609,7 +609,7 @@ TEST_F(DispatcherBackendStream, ProduceInstanceIDNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, JRConfigurationRequest) {
-  midi2::ump::stream::jr_configuration_request const message;
+  constexpr midi2::ump::stream::jr_configuration_request message;
   be_.jr_configuration_request(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::jr_configuration_request_fn>> fn;
@@ -619,7 +619,7 @@ TEST_F(DispatcherBackendStream, JRConfigurationRequest) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, JRConfigurationNotification) {
-  midi2::ump::stream::jr_configuration_notification const message;
+  constexpr midi2::ump::stream::jr_configuration_notification message;
   be_.jr_configuration_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::jr_configuration_notification_fn>> fn;
@@ -629,7 +629,7 @@ TEST_F(DispatcherBackendStream, JRConfigurationNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockDiscovery) {
-  midi2::ump::stream::function_block_discovery const message;
+  constexpr midi2::ump::stream::function_block_discovery message;
   be_.function_block_discovery(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_discovery_fn>> fn;
@@ -639,7 +639,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockDiscovery) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockInfoNotification) {
-  midi2::ump::stream::function_block_info_notification const message;
+  constexpr midi2::ump::stream::function_block_info_notification message;
   be_.function_block_info_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_info_notification_fn>> fn;
@@ -649,7 +649,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockInfoNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, FunctionBlockNameNotification) {
-  midi2::ump::stream::function_block_name_notification const message;
+  constexpr midi2::ump::stream::function_block_name_notification message;
   be_.function_block_name_notification(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::function_block_name_notification_fn>> fn;
@@ -659,7 +659,7 @@ TEST_F(DispatcherBackendStream, FunctionBlockNameNotification) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, StartOfClip) {
-  midi2::ump::stream::start_of_clip const message;
+  constexpr midi2::ump::stream::start_of_clip message;
   be_.start_of_clip(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::start_of_clip_fn>> fn;
@@ -669,7 +669,7 @@ TEST_F(DispatcherBackendStream, StartOfClip) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendStream, EndOfClip) {
-  midi2::ump::stream::end_of_clip const message;
+  constexpr midi2::ump::stream::end_of_clip message;
   be_.end_of_clip(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::end_of_clip_fn>> fn;
@@ -685,7 +685,7 @@ protected:
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetTempo) {
-  midi2::ump::flex_data::set_tempo const message;
+  constexpr midi2::ump::flex_data::set_tempo message;
   // The first call should do nothing since no handler has been installed.
   be_.set_tempo(context_, message);
   // Install a handler for the noop message.
@@ -697,7 +697,7 @@ TEST_F(DispatcherBackendFlexData, SetTempo) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetTimeSignature) {
-  midi2::ump::flex_data::set_time_signature const message;
+  constexpr midi2::ump::flex_data::set_time_signature message;
   be_.set_time_signature(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::set_time_signature_fn>> fn;
@@ -707,7 +707,7 @@ TEST_F(DispatcherBackendFlexData, SetTimeSignature) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetMetronome) {
-  midi2::ump::flex_data::set_metronome const message;
+  constexpr midi2::ump::flex_data::set_metronome message;
   be_.set_metronome(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::set_metronome_fn>> fn;
@@ -717,7 +717,7 @@ TEST_F(DispatcherBackendFlexData, SetMetronome) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetKeySignature) {
-  midi2::ump::flex_data::set_key_signature const message;
+  constexpr midi2::ump::flex_data::set_key_signature message;
   be_.set_key_signature(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::set_key_signature_fn>> fn;
@@ -727,7 +727,7 @@ TEST_F(DispatcherBackendFlexData, SetKeySignature) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, SetChordName) {
-  midi2::ump::flex_data::set_chord_name const message;
+  constexpr midi2::ump::flex_data::set_chord_name message;
   be_.set_chord_name(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::set_chord_name_fn>> fn;
@@ -737,7 +737,7 @@ TEST_F(DispatcherBackendFlexData, SetChordName) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendFlexData, Text) {
-  midi2::ump::flex_data::text_common const message;
+  constexpr midi2::ump::flex_data::text_common message;
   be_.text(context_, message);
 
   StrictMock<MockFunction<decltype(be_)::text_fn>> fn;

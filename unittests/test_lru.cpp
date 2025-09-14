@@ -93,10 +93,10 @@ TEST(LruList, TouchOneEvictTwo) {
 TEST(LruList, Sequence) {
   StrictMock<mock_evictor<int>> evictor;
 
-  auto two = 2;
-  auto three = 3;
-  auto four = 4;
   {
+    auto two = 2;
+    auto three = 3;
+    auto four = 4;
     InSequence _;
     EXPECT_CALL(evictor, evict(two)).Times(1);
     EXPECT_CALL(evictor, evict(three)).Times(1);

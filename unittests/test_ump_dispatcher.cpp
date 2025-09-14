@@ -35,8 +35,8 @@ using testing::StrictMock;
 
 class fake_message {
 public:
-  constexpr explicit fake_message(std::uint32_t v) : v_{v} {}
-  constexpr std::uint32_t word() const { return v_; }
+  constexpr explicit fake_message(std::uint32_t v) noexcept : v_{v} {}
+  [[nodiscard]] constexpr std::uint32_t word() const noexcept { return v_; }
 
 private:
   std::uint32_t v_;

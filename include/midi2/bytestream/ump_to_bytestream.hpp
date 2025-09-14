@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <tuple>
 #include <type_traits>
 
 #include "midi2/adt/fifo.hpp"
@@ -139,6 +138,7 @@ private:
   };
 
   struct to_bytestream_config {
+    ///\brief Handlers for the SYSTEM COMMON and SYSTEM REAL TIME groups of messages.
     class system {
     public:
       static constexpr void midi_time_code(context_type* const ctxt, ump::system::midi_time_code const& in) {
@@ -204,6 +204,7 @@ private:
         }
       }
     };
+    /// \brief Handlers for the MIDI 1.0 CHANNEL VOICE group of messages.
     class m1cvm {
     public:
       static constexpr void note_off(context_type* const ctxt, ump::m1cvm::note_off const& in) {
@@ -268,6 +269,7 @@ private:
         ctxt->push_back(std::byte{in.msb_data()});
       }
     };
+    /// \brief Handlers for the DATA 64 BIT group of messages.
     class data64 {
     public:
       static void sysex7_in_1(context_type* const ctxt, ump::data64::sysex7_in_1 const& in) {

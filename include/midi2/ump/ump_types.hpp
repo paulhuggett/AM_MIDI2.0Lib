@@ -15,7 +15,6 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
-#include <cstring>
 #include <limits>
 #include <span>
 #include <tuple>
@@ -80,13 +79,13 @@ enum class m1cvm : std::uint8_t {
 
 /// Message types for the MIDI 2 Channel Voice messages
 enum class m2cvm : std::uint8_t {
-  rpn_pernote = 0x0,   ///< Registered Per-Note Controller
-  nrpn_pernote = 0x1,  ///< Assignable Per-Note Controller
-  rpn = 0x2,           ///< Registered Parameter Number
-  nrpn = 0x3,          ///< Assignable Controller Number
+  rpn_per_note = 0x0,   ///< Registered Per-Note Controller
+  nrpn_per_note = 0x1,  ///< Assignable Per-Note Controller
+  rpn = 0x2,            ///< Registered Parameter Number
+  nrpn = 0x3,           ///< Assignable Controller Number
   rpn_relative = 0x4,
   nrpn_relative = 0x5,
-  pitch_bend_pernote = 0x6,
+  pitch_bend_per_note = 0x6,
   note_off = 0x8,
   note_on = 0x9,
   poly_pressure = 0xA,
@@ -94,7 +93,7 @@ enum class m2cvm : std::uint8_t {
   program_change = 0xC,
   channel_pressure = 0xD,  ///< Channel Pressure (aftertouch)
   pitch_bend = 0xE,
-  pernote_manage = 0xF,  ///< Per-note management
+  per_note_manage = 0xF,  ///< Per-note management
 };
 
 /// Message types for the Data 64 Bit messages
@@ -457,7 +456,7 @@ private:
 
 UMP_TUPLE(utility, jr_timestamp)  // Define tuple_size and tuple_element for jr_timestamp
 
-// 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+// 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
 class midi2::ump::utility::delta_clockstamp_tpqn {
 public:
   class word0 : public details::word_base {
@@ -1577,7 +1576,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_per_note); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1626,7 +1625,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_per_note); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1877,7 +1876,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pernote_manage); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::per_note_manage); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -2125,7 +2124,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend_pernote); }
+    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend_per_note); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -3362,7 +3361,7 @@ public:
   public:
     using word_base::word_base;
 
-    using tonic_sharps_flats = details::bitfield<28, 4>;  // 2's compl
+    using tonic_sharps_flats = details::bitfield<28, 4>;  // 2's complement
     using chord_tonic = details::bitfield<24, 4>;
     using chord_type = details::bitfield<16, 8>;
     using alter_1_type = details::bitfield<12, 4>;
@@ -3384,7 +3383,7 @@ public:
   public:
     using word_base::word_base;
 
-    using bass_sharps_flats = details::bitfield<28, 4>;  // 2's compl
+    using bass_sharps_flats = details::bitfield<28, 4>;  // 2's complement
     using bass_note = details::bitfield<24, 4>;
     using bass_chord_type = details::bitfield<16, 8>;
     using bass_alter_1_type = details::bitfield<12, 4>;

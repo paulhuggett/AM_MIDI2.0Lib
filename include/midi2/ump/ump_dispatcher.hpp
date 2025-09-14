@@ -292,15 +292,15 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
     config_.m2cvm.poly_pressure(config_.context, ump::m2cvm::poly_pressure{span});
     break;
     // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
-  case rpn_pernote:
+  case rpn_per_note:
     config_.m2cvm.rpn_per_note_controller(config_.context, ump::m2cvm::rpn_per_note_controller{span});
     break;
     // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
-  case nrpn_pernote:
+  case nrpn_per_note:
     config_.m2cvm.nrpn_per_note_controller(config_.context, ump::m2cvm::nrpn_per_note_controller{span});
     break;
     // 7.4.5 MIDI 2.0 Per-Note Management Message
-  case pernote_manage:
+  case per_note_manage:
     config_.m2cvm.per_note_management(config_.context, ump::m2cvm::per_note_management{span});
     break;
     // 7.4.6 MIDI 2.0 Control Change Message
@@ -332,7 +332,7 @@ template <ump_dispatcher_config Config> void ump_dispatcher<Config>::m2cvm_messa
     config_.m2cvm.pitch_bend(config_.context, ump::m2cvm::pitch_bend{span});
     break;
     // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-  case pitch_bend_pernote:
+  case pitch_bend_per_note:
     config_.m2cvm.per_note_pitch_bend(config_.context, ump::m2cvm::per_note_pitch_bend{span});
     break;
   default: config_.utility.unknown(config_.context, std::span{message_.data(), 2}); break;

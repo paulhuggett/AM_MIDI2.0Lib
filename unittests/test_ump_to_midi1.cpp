@@ -40,20 +40,20 @@ using testing::ElementsAreArray;
 
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, Foo) {
-  std::array const input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
+  constexpr std::array input{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(convert(input), ElementsAreArray(input));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, Sysex) {
-  std::array const input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
-                         std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
-                         std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
-                         std::uint32_t{0x10000000}};
+  constexpr std::array input{std::uint32_t{0x30167E7F}, std::uint32_t{0x0D70024B}, std::uint32_t{0x3026607A},
+                             std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
+                             std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
+                             std::uint32_t{0x10000000}};
   EXPECT_THAT(convert(input), ElementsAreArray(input));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, SystemMessageOneByte) {
-  std::array const input{std::uint32_t{0x10F80000}};
+  constexpr std::array input{std::uint32_t{0x10F80000}};
   EXPECT_THAT(convert(input), ElementsAreArray(input));
 }
 // NOLINTNEXTLINE
@@ -268,7 +268,7 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
       return false;
     };
     // values14[] has the 32 bit controller values[] rescaled to 14 bits.
-    std::array<std::uint16_t, values.size()> values14;
+    std::array<std::uint16_t, values.size()> values14{};
     std::ranges::transform(values, std::begin(values14),
                            [](std::uint32_t v) { return midi2::ump::mcm_scale<32, 14>(v); });
 
@@ -353,8 +353,8 @@ TEST(UMPToMIDI1, PitchBend) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOff) {
-  midi2::ump::m1cvm::note_off noff;
-  auto const ump = get<0>(noff).word();
+  midi2::ump::m1cvm::note_off off;
+  auto const ump = get<0>(off).word();
   std::array const input{ump};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(ump));

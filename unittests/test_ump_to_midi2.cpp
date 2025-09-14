@@ -326,42 +326,43 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
 
   using enum midi2::ump::control;
   {
-    auto const pn_msb =
+    constexpr auto pn_msb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(control_msb);
     input.push_back(get<0>(pn_msb).word());
   }
   {
-    auto const pn_lsb =
+    constexpr auto pn_lsb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(control_lsb);
     input.push_back(get<0>(pn_lsb).word());
   }
   {
-    auto const param_value_msb =
+    constexpr auto param_value_msb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_msb).value(value_msb);
     input.push_back(get<0>(param_value_msb).word());
   }
   {
-    auto const param_value_lsb =
+    constexpr auto param_value_lsb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_lsb).value(value_lsb);
     input.push_back(get<0>(param_value_lsb).word());
   }
   {
-    auto const null_msb =
+    constexpr auto null_msb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(0x7F);
     input.push_back(get<0>(null_msb).word());
   }
   {
-    auto const null_lsb =
+    constexpr auto null_lsb =
         midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(0x7F);
     input.push_back(get<0>(null_lsb).word());
   }
 
-  auto const m2 = midi2::ump::m2cvm::nrpn_controller{}
-                      .group(group)
-                      .channel(channel)
-                      .bank(control_msb)
-                      .index(control_lsb)
-                      .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
+  constexpr auto m2 =
+      midi2::ump::m2cvm::nrpn_controller{}
+          .group(group)
+          .channel(channel)
+          .bank(control_msb)
+          .index(control_lsb)
+          .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
   EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
 }
 
@@ -470,16 +471,16 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
   using u32 = std::uint32_t;
-  auto const message = midi2::ump::flex_data::text_common{}
-                           .group(0)
-                           .form(0)
-                           .addrs(1)
-                           .channel(3)
-                           .status_bank(1)
-                           .status(4)
-                           .value1((u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0))
-                           .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
-                           .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
+  constexpr auto message = midi2::ump::flex_data::text_common{}
+                               .group(0)
+                               .form(0)
+                               .addrs(1)
+                               .channel(3)
+                               .status_bank(1)
+                               .status(4)
+                               .value1((u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0))
+                               .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
+                               .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
 
   auto input =
       std::array{get<0>(message).word(), get<1>(message).word(), get<2>(message).word(), get<3>(message).word()};

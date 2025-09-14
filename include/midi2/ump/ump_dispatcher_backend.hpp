@@ -13,6 +13,7 @@
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
+/// \brief Concepts and for the CI  dispatcher
 namespace midi2::ump::dispatcher_backend {
 
 // clang-format off
@@ -24,7 +25,7 @@ concept utility = requires(T v, Context context) {
   { v.jr_clock(context, ump::utility::jr_clock{}) } -> std::same_as<void>;
   // 7.2.2.2 JR Timestamp Message
   { v.jr_timestamp(context, ump::utility::jr_timestamp{}) } -> std::same_as<void>;
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
   { v.delta_clockstamp_tpqn(context, ump::utility::delta_clockstamp_tpqn{}) } -> std::same_as<void>;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   { v.delta_clockstamp(context, ump::utility::delta_clockstamp{}) } -> std::same_as<void>;
@@ -140,7 +141,7 @@ template <typename Context> struct utility_null {
   constexpr static void jr_clock(Context, ump::utility::jr_clock const &) noexcept { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
   constexpr static void jr_timestamp(Context, ump::utility::jr_timestamp const &) noexcept { /* do nothing */ }
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
   constexpr static void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) noexcept { /* do nothing */ }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   constexpr static void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) noexcept { /* do nothing */ }
@@ -284,7 +285,7 @@ template <typename Context> struct utility_pure {
   virtual void jr_clock(Context, ump::utility::jr_clock const &) = 0;
   // 7.2.2.2 JR Timestamp Message
   virtual void jr_timestamp(Context, ump::utility::jr_timestamp const &) = 0;
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
   virtual void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) = 0;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   virtual void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) = 0;
@@ -464,7 +465,7 @@ template <typename Context> struct utility_base : public utility_pure<Context> {
   void jr_clock(Context, ump::utility::jr_clock const &) override { /* do nothing */ }
   // 7.2.2.2 JR Timestamp Message
   void jr_timestamp(Context, ump::utility::jr_timestamp const &) override { /* do nothing */ }
-  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
+  // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
   void delta_clockstamp_tpqn(Context, ump::utility::delta_clockstamp_tpqn const &) override { /* do nothing */ }
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
   void delta_clockstamp(Context, ump::utility::delta_clockstamp const &) override { /* do nothing */ }
@@ -746,8 +747,8 @@ public:
     return *this;
   }
 
-  void note_off(Context context, ump::m1cvm::note_off const &noff) const { call(note_off_, context, noff); }
-  void note_on(Context context, ump::m1cvm::note_on const &non) const { call(note_on_, context, non); }
+  void note_off(Context context, ump::m1cvm::note_off const &off) const { call(note_off_, context, off); }
+  void note_on(Context context, ump::m1cvm::note_on const &on) const { call(note_on_, context, on); }
   void poly_pressure(Context context, ump::m1cvm::poly_pressure const &pressure) const {
     call(poly_pressure_, context, pressure);
   }
@@ -832,12 +833,12 @@ public:
   using pitch_bend_fn = std::function<void(Context, ump::m2cvm::pitch_bend const &)>;
   using per_note_pitch_bend_fn = std::function<void(Context, ump::m2cvm::per_note_pitch_bend const &)>;
 
-  constexpr m2cvm_function &on_note_off(note_off_fn noff) noexcept {
-    note_off_ = std::move(noff);
+  constexpr m2cvm_function &on_note_off(note_off_fn off) noexcept {
+    note_off_ = std::move(off);
     return *this;
   }
-  constexpr m2cvm_function &on_note_on(note_on_fn non) noexcept {
-    note_on_ = std::move(non);
+  constexpr m2cvm_function &on_note_on(note_on_fn on) noexcept {
+    note_on_ = std::move(on);
     return *this;
   }
   constexpr m2cvm_function &on_poly_pressure(poly_pressure_fn pressure) noexcept {
@@ -893,8 +894,8 @@ public:
     return *this;
   }
 
-  void note_off(Context context, ump::m2cvm::note_off const &noff) const { call(note_off_, context, noff); }
-  void note_on(Context context, ump::m2cvm::note_on const &non) const { call(note_on_, context, non); }
+  void note_off(Context context, ump::m2cvm::note_off const &off) const { call(note_off_, context, off); }
+  void note_on(Context context, ump::m2cvm::note_on const &on) const { call(note_on_, context, on); }
   void poly_pressure(Context context, ump::m2cvm::poly_pressure const &pressure) const {
     call(poly_pressure_, context, pressure);
   }

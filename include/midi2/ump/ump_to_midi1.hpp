@@ -187,18 +187,22 @@ private:
     /// \brief Handles data64 messages by passing them straight through without change.
     struct data64 {
       /// \param ctxt The context for the conversion process.
+      /// \param in A system exclusive message
       static constexpr void sysex7_in_1(context_type *const ctxt, ump::data64::sysex7_in_1 const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A system exclusive message
       static constexpr void sysex7_start(context_type *const ctxt, ump::data64::sysex7_start const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A system exclusive message
       static constexpr void sysex7_continue(context_type *const ctxt, ump::data64::sysex7_continue const &in) {
         ctxt->push(in);
       }
       /// \param ctxt The context for the conversion process.
+      /// \param in A system exclusive message
       static constexpr void sysex7_end(context_type *const ctxt, ump::data64::sysex7_end const &in) { ctxt->push(in); }
     };
 
