@@ -82,7 +82,8 @@ private:
   std::uint8_t group_ = 0;
   consumer_fn consumer_ = &ci_dispatcher::header;
 
-  header header_;
+  // Note that the struct keyword is necessary to avoid an error from gcc.
+  struct header header_;
   std::array<std::byte, std::remove_reference_t<Config>::buffer_size> buffer_{};
 
   void discard();
