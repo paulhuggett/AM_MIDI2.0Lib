@@ -92,7 +92,7 @@ public:
 
   /// \brief Provides a word of UMP input to the translator
   /// \param ump The byte of input to be translated
-  constexpr void push(input_type const ump) { dispatcher_.dispatch(ump); }
+  void push(input_type const ump) { dispatcher_.dispatch(ump); }
 
   /// \brief Filter the output to only include messages from the specified groups
   /// \param group_bitmap A bitmap indicating which groups should be included in the output
