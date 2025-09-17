@@ -19,6 +19,7 @@
 #include <bit>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <type_traits>
@@ -120,18 +121,8 @@ public:
       return tmp;
     }
 
-    constexpr iterator_type &operator+=(difference_type n) noexcept {
-      if (n < 0) {
-        return decrement_n(-n);
-      }
-      return increment_n(n);
-    }
-    constexpr iterator_type &operator-=(difference_type n) noexcept {
-      if (n < 0) {
-        return increment_n(-n);
-      }
-      return decrement_n(n);
-    }
+    constexpr iterator_type &operator+=(difference_type n) noexcept { return this->move_n(n); }
+    constexpr iterator_type &operator-=(difference_type n) noexcept { return this->move_n(-n); }
 
     friend iterator_type operator+(iterator_type it, difference_type n) noexcept {
       auto result = it;
@@ -162,17 +153,17 @@ public:
         ++slot_;
       }
     }
-    constexpr iterator_type &increment_n(difference_type n) noexcept {
-      assert(n >= 0);
-      for (; n > 0; --n) {
-        ++(*this);
-      }
-      return *this;
-    }
-    constexpr iterator_type &decrement_n(difference_type n) noexcept {
-      assert(n >= 0);
-      for (; n > 0; --n) {
-        --(*this);
+    constexpr iterator_type &move_n(difference_type n) noexcept {
+      if (n == 0) {
+        // nothing to do.
+      } else if (n > 0) {
+        for (; n > 0; --n) {
+          ++(*this);
+        }
+      } else {
+        for (n = -n; n > 0; --n) {
+          --(*this);
+        }
       }
       return *this;
     }

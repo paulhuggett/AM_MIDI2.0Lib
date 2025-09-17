@@ -82,7 +82,7 @@ private:
   std::uint8_t group_ = 0;
   consumer_fn consumer_ = &ci_dispatcher::header;
 
-  struct header header_;
+  header header_;
   std::array<std::byte, std::remove_reference_t<Config>::buffer_size> buffer_{};
 
   void discard();

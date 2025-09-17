@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <span>
 
+#include "midi2/dispatcher.hpp"
 #include "midi2/ump/ump_dispatcher_backend.hpp"
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
@@ -91,7 +92,7 @@ template <ump_dispatcher_config Config = default_config> class ump_dispatcher {
 public:
   explicit constexpr ump_dispatcher(Config const &config = default_config{}) : config_{config} {}
 
-  void clear() {
+  void reset() {
     // Note that this member function has to be defined in the class declaration to avoid a spurious GCC
     // warning that the function is defined but not used. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79001>
     pos_ = 0;
@@ -145,6 +146,7 @@ private:
   void data128_message();
   void flex_data_message();
 
+  // TODO: replace message_/pos_ with arrayvec<> eventually.
   std::array<std::uint32_t, 4> message_{};
   std::uint8_t pos_ = 0;
 

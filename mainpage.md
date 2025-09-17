@@ -39,19 +39,19 @@ The library provides five different translators. They are:
 
 - To and from MIDI 1.0 bytestreams
 
-  - MIDI 1.0 bytestream to UMP (`midi2::bytestream::bytestream_to_ump`)
-  - UMP MIDI 1.0 to MIDI 1.0 bytestream (`midi2::bytestream::ump_to_bytestream`)
-  - USB-MIDI Event Packets to MIDI 1.0 bytestream (`midi2::bytestream::usbm1_to_bytestream`)
+  - MIDI 1.0 bytestream to UMP (\ref midi2::bytestream::bytestream_to_ump)
+  - UMP MIDI 1.0 to MIDI 1.0 bytestream (\ref midi2::bytestream::ump_to_bytestream)
+  - USB-MIDI Event Packets to MIDI 1.0 bytestream (\ref midi2::bytestream::usbm1_to_bytestream)
 
 - UMP MIDI 1 <-> MIDI 2 conversion
-  - MIDI 1.0 UMP packets to MIDI 2.0 UMP (`midi2::ump::ump_to_midi2`)
-  - MIDI 2.0 UMP packets to MIDI 1.0 UMP (`midi2::ump::ump_to_midi1`)
+  - MIDI 1.0 UMP packets to MIDI 2.0 UMP (\ref midi2::ump::ump_to_midi2)
+  - MIDI 2.0 UMP packets to MIDI 1.0 UMP (\ref midi2::ump::ump_to_midi1)
 
-The translators each provide the same interface with `push()`, `empty()`,
+The translators provide a common interface with `push()`, `empty()`,
 `pop()`, and `reset()` methods. Some have additional member functions to
 control filtering of input messages. The `input_type` and `output_type`
 typedefs can be used to determine the correct types for the input and output
-messages.
+messages. This is enforced by the \ref midi2::translator concept.
 
 ```cpp
 class translator {
@@ -92,8 +92,8 @@ The library provides two different dispatchers. The dispatchers accept input
 message bytes or 32-bit values, decode them, and call functions provided by the
 application to handle those messages. They are for:
 
-- MIDI Capability Inquiry message (`midi2::ci::ci_dispatcher<>`)
-- Universal MIDI Packet (UMP) messages (`midi2::ump::ump_dispatcher<>`)
+- MIDI Capability Inquiry message (\ref midi2::ci::ci_dispatcher)
+- Universal MIDI Packet (UMP) messages (\ref midi2::ump::ump_dispatcher)
 
 When instantiating one of the dispatchers, you must provide a configuration
 type. This type defines:

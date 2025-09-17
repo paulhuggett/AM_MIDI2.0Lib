@@ -13,6 +13,7 @@
 #define MIDI2_FIFO_HPP
 
 #include <array>
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>

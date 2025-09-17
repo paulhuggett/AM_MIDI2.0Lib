@@ -7,6 +7,7 @@
 //===------------------------------------------------------------------------------------===//
 
 // DUT
+#include "midi2/dispatcher.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
 
 // MIDI2 library
@@ -213,6 +214,7 @@ public:
   };
   mocked_config config_;
   midi2::ump::ump_dispatcher<mocked_config &> dispatcher_;
+  static_assert(midi2::dispatcher<mocked_config &, std::uint32_t, decltype(dispatcher_)>);
 };
 
 //*       _   _ _ _ _         *
@@ -635,7 +637,7 @@ TEST_F(UMPDispatcher, PartialMessageThenClear) {
   // The first half of a 64-bit MIDI 2 note-on message.
   constexpr auto m2on = midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note_number);
   dispatcher_.dispatch(std::uint32_t{get<0>(m2on)});
-  dispatcher_.clear();
+  dispatcher_.reset();
 
   // An entire 32-bit MIDI 1 note-on message.
   constexpr auto m1on = midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);

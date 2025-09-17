@@ -20,6 +20,7 @@
 
 #include "midi2/adt/fifo.hpp"
 #include "midi2/adt/plru_cache.hpp"
+#include "midi2/translator.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
 #include "midi2/ump/ump_types.hpp"
 
@@ -303,6 +304,8 @@ private:
   context_type context_;
   ump::ump_dispatcher<to_midi1_config> dispatcher_{to_midi1_config{.context = &context_}};
 };
+
+static_assert(translator<std::uint32_t, std::uint32_t, ump_to_midi1>);
 
 }  // end namespace midi2::ump
 

@@ -14,6 +14,7 @@
 #include <cstdint>
 
 #include "midi2/adt/fifo.hpp"
+#include "midi2/translator.hpp"
 
 namespace midi2::bytestream {
 
@@ -100,6 +101,8 @@ private:
     return 0;
   }
 };
+
+static_assert(translator<std::uint32_t, std::byte, usbm1_to_bytestream>);
 
 }  // end namespace midi2::bytestream
 

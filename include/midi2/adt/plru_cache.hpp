@@ -96,8 +96,8 @@ public:
   friend constexpr bool operator==(tagged_key const &, tagged_key const &) noexcept = default;
   [[nodiscard]] constexpr bool valid() const noexcept { return static_cast<bool>(v_ & 1); }
 
-  constexpr value_type &get() noexcept { return v_; }
-  constexpr value_type const &get() const noexcept { return v_; }
+  [[nodiscard]] constexpr value_type &get() noexcept { return v_; }
+  [[nodiscard]] constexpr value_type const &get() const noexcept { return v_; }
 
 private:
   value_type v_ = 0;
@@ -387,7 +387,8 @@ public:
     requires(std::is_invocable_r_v<mapped_type, MissFn>)
   mapped_type &access(key_type key, MissFn miss) {
     assert(plru_cache::set(key) < Sets);
-    return sets_[plru_cache::set(key)].access(key, miss, [](mapped_type const &) constexpr noexcept { return true; });
+    return sets_[plru_cache::set(key)].access(key, std::move(miss),
+                                              [](mapped_type const &) constexpr noexcept { return true; });
   }
 
   /// \tparam MissFn  The type of the function called to instantiate a value in the cache.
@@ -402,7 +403,7 @@ public:
     requires(std::is_invocable_r_v<mapped_type, MissFn> && std::is_invocable_r_v<bool, ValidFn, mapped_type const &>)
   mapped_type &access(key_type key, MissFn miss, ValidFn valid) {
     assert(plru_cache::set(key) < Sets);
-    return sets_[plru_cache::set(key)].access(key, miss, valid);
+    return sets_[plru_cache::set(key)].access(key, std::move(miss), std::move(valid));
   }
 
   /// Checks if there is an element with a key that compares equivalent to \p key

@@ -10,9 +10,9 @@
 #define MIDI2_UTILS_HPP
 
 #include <bit>
-#include <cassert>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <type_traits>
 #include <utility>

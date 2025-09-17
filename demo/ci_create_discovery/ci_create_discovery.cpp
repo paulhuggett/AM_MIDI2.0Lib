@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <format>
+#include <generator>
 #include <iostream>
 #include <iterator>
 #include <ranges>
@@ -20,6 +21,42 @@
 #include "midi2/utils.hpp"
 
 using namespace midi2::ci::literals;
+
+class iterator {
+public:
+  /// Defines this class as fulfilling the requirements of an output iterator.
+  using iterator_category = std::output_iterator_tag;
+  /// The class is an output iterator and as such does not yield values.
+  using value_type = void;
+  /// A type that can be used to identify distance between iterators.
+  using difference_type = std::ptrdiff_t;
+  /// Defines a pointer to the type iterated over (none in the case of this iterator).
+  using pointer = void;
+  /// Defines a reference to the type iterated over (none in the case of this iterator).
+  using reference = void;
+
+  iterator() = default;
+  iterator(iterator const& rhs) = default;
+  iterator(iterator&& rhs) noexcept = default;
+  ~iterator() noexcept = default;
+
+  iterator& operator=(typename Transcoder::input_type const& value) {
+    co_yield value;
+    return *this;
+  }
+
+  iterator& operator=(iterator const& rhs) = default;
+  iterator& operator=(iterator&& rhs) noexcept = default;
+
+  constexpr iterator& operator*() noexcept { return *this; }
+  constexpr iterator& operator++() noexcept { return *this; }
+  constexpr iterator operator++(int) noexcept { return *this; }
+};
+
+template <typename T> std::generator<std::byte> create_message(header const& hdr, T const& t) {
+  iterator t;
+  create_message(iterator{}, trivial_sentinel{}, hdr, t);
+}
 
 int main() {
   constexpr auto my_muid = midi2::ci::muid{0x01234567U};  // Use a proper random number!

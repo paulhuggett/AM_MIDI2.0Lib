@@ -17,6 +17,7 @@
 
 #include "midi2/adt/fifo.hpp"
 #include "midi2/bytestream/bytestream_types.hpp"
+#include "midi2/translator.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
@@ -346,6 +347,8 @@ private:
   context_type context_;
   ump::ump_dispatcher<to_bytestream_config> dispatcher_{to_bytestream_config{.context = &context_}};
 };
+
+static_assert(translator<std::uint32_t, std::byte, ump_to_bytestream>);
 
 }  // end namespace midi2::bytestream
 

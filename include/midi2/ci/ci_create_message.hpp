@@ -27,95 +27,141 @@ template <typename T> struct type_to_packed {};
 
 struct empty {};
 struct not_available {};
+/// Maps the public "discovery" message structure to the packed types that conform to the MIDI CI standard for sending
+/// to other devices.
 template <> struct type_to_packed<discovery> {
   static constexpr auto id = message::discovery;
   using v1 = packed::discovery_v1;
   using v2 = packed::discovery_v2;
 };
+/// Maps the public "discovery reply" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<discovery_reply> {
   static constexpr auto id = message::discovery_reply;
   using v1 = packed::discovery_reply_v1;
   using v2 = packed::discovery_reply_v2;
 };
+/// Maps the public "endpoint" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<endpoint> {
   static constexpr auto id = message::endpoint;
   using v1 = packed::endpoint_v1;
   using v2 = packed::endpoint_v1;
 };
+/// Maps the public "endpoint reply" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<endpoint_reply> {
   static constexpr auto id = message::endpoint_reply;
 };
+/// Maps the public "invalidate MUID" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<invalidate_muid> {
   static constexpr auto id = message::invalidate_muid;
   using v1 = packed::invalidate_muid_v1;
   using v2 = packed::invalidate_muid_v1;
 };
+/// Maps the public "ACK" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<ack> {
   static constexpr auto id = message::ack;
 };
+/// Maps the public "NAK" message structure to the packed types that conform to the MIDI CI standard for
+/// sending to other devices.
 template <> struct type_to_packed<nak> {
   static constexpr auto id = message::nak;
   using v1 = empty;
   using v2 = packed::nak_v2;
 };
+
+// Profile Configuration Types
+
+/// Maps the public "profile configuration added" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::added> {
   static constexpr auto id = message::profile_added;
   using v1 = profile_configuration::packed::added_v1;
   using v2 = profile_configuration::packed::added_v1;
 };
+/// Maps the public "profile configuration removed" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::removed> {
   static constexpr auto id = message::profile_removed;
   using v1 = profile_configuration::packed::removed_v1;
   using v2 = profile_configuration::packed::removed_v1;
 };
+/// Maps the public "profile configuration details" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::details> {
   static constexpr auto id = message::profile_details;
   using v1 = profile_configuration::packed::details_v1;
   using v2 = profile_configuration::packed::details_v1;
 };
+/// Maps the public "profile configuration details reply" message structure to the packed types that conform to the
+/// MIDI CI standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::details_reply> {
   static constexpr auto id = message::profile_details_reply;
   using v1 = profile_configuration::packed::details_reply_v1;
   using v2 = profile_configuration::packed::details_reply_v1;
 };
+/// Maps the public "profile configuration Inquiry" message structure to the packed types that conform to the
+/// MIDI CI standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::inquiry> {
   static constexpr auto id = message::profile_inquiry;
   using v1 = empty;
   using v2 = empty;
 };
+/// Maps the public "profile configuration Inquiry Reply" message structure to the packed types that conform to the
+/// MIDI CI standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::inquiry_reply> {
   static constexpr auto id = message::profile_inquiry_reply;
 };
+/// Maps the public "profile configuration on" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::on> {
   static constexpr auto id = message::profile_set_on;
   using v1 = profile_configuration::packed::on_v1;
   using v2 = profile_configuration::packed::on_v2;
 };
+/// Maps the public "profile configuration off" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::off> {
   static constexpr auto id = message::profile_set_off;
   using v1 = profile_configuration::packed::off_v1;
   using v2 = profile_configuration::packed::off_v2;
 };
+/// Maps the public "profile configuration enabled" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::enabled> {
   static constexpr auto id = message::profile_enabled;
   using v1 = profile_configuration::packed::enabled_v1;
   using v2 = profile_configuration::packed::enabled_v2;
 };
+/// Maps the public "profile configuration disabled" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::disabled> {
   static constexpr auto id = message::profile_disabled;
   using v1 = profile_configuration::packed::disabled_v1;
   using v2 = profile_configuration::packed::disabled_v2;
 };
+/// Maps the public "profile configuration specific data" message structure to the packed types that conform to the
+/// MIDI CI standard for sending to other devices.
 template <> struct type_to_packed<profile_configuration::specific_data> {
   static constexpr auto id = message::profile_specific_data;
   using v1 = profile_configuration::packed::specific_data_v1;
   using v2 = profile_configuration::packed::specific_data_v1;
 };
+
+// Property Exchange Types
+
+/// Maps the public "property exchange capabilities" message structure to the packed types that conform to the MIDI CI
+/// standard for sending to other devices.
 template <> struct type_to_packed<property_exchange::capabilities> {
   static constexpr auto id = message::pe_capability;
   using v1 = property_exchange::packed::capabilities_v1;
   using v2 = property_exchange::packed::capabilities_v2;
 };
+/// Maps the public "property exchange capabilities reply" message structure to the packed types that conform to the
+/// MIDI CI standard for sending to other devices.
 template <> struct type_to_packed<property_exchange::capabilities_reply> {
   static constexpr auto id = message::pe_capability_reply;
   using v1 = property_exchange::packed::capabilities_reply_v1;
@@ -142,6 +188,8 @@ template <> struct type_to_packed<property_exchange::subscription_reply> {
 template <> struct type_to_packed<property_exchange::notify> {
   static constexpr auto id = message::pe_notify;
 };
+
+// Process Inquiry
 
 template <> struct type_to_packed<process_inquiry::capabilities> {
   static constexpr auto id = message::pi_capability;

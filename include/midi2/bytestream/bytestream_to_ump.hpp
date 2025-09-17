@@ -16,6 +16,7 @@
 #include <cstdint>
 
 #include "midi2/adt/fifo.hpp"
+#include "midi2/translator.hpp"
 #include "midi2/ump/ump_types.hpp"
 
 namespace midi2::bytestream {
@@ -86,6 +87,8 @@ private:
   template <typename T> void push_sysex7();
   void sysex_data_byte(std::byte b);
 };
+
+static_assert(translator<std::byte, std::uint32_t, bytestream_to_ump>);
 
 }  // end namespace midi2::bytestream
 
