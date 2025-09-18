@@ -100,7 +100,7 @@ if(MIDI2_DEMO)
 endif(MIDI2_DEMO)
 
 
-if (MIDI2_UNITTEST OR MIDI2_FUZZTEST)
+if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
   FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -115,33 +115,33 @@ if (MIDI2_UNITTEST OR MIDI2_FUZZTEST)
 
   FetchContent_MakeAvailable(googletest)
 
-  add_subdirectory(unittests)
-endif()
-
-if(MIDI2_FUZZTEST)
-  set(FUZZTEST_FUZZING_MODE On)
-  set(FUZZTEST_REPO_BRANCH "main" CACHE STRING "FuzzTest repository branch.")
-  message("Building fuzztest at tag " ${FUZZTEST_REPO_BRANCH})
-  FetchContent_Declare(
-    fuzztest
-    GIT_REPOSITORY https://github.com/google/fuzztest.git
-    GIT_TAG ${FUZZTEST_REPO_BRANCH}
-  )
-  FetchContent_MakeAvailable(fuzztest)
-  include(GoogleTest)
-  fuzztest_setup_fuzzing_flags()
-endif(MIDI2_FUZZTEST)
-
-foreach(target gtest gmock gmock_main gtest_main)
-  if(TARGET ${target})
-    target_compile_options(${target} PRIVATE
+  # Adjust some compilation options for the googletest targets
+  foreach(target gtest gmock gmock_main gtest_main)
+    if(TARGET ${target})
+      target_compile_options(${target} PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-deprecated-declarations -Wno-covered-switch-default>
       )
       target_compile_features(${target} PUBLIC cxx_std_23)
-    target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
-  endif()
-endforeach()
+      target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
+    endif()
+  endforeach()
 
+  if(MIDI2_FUZZTEST)
+    set(FUZZTEST_FUZZING_MODE On)
+    set(FUZZTEST_REPO_BRANCH "main" CACHE STRING "FuzzTest repository branch.")
+    message("Building fuzztest at tag " ${FUZZTEST_REPO_BRANCH})
+    FetchContent_Declare(
+      fuzztest
+      GIT_REPOSITORY https://github.com/google/fuzztest.git
+      GIT_TAG ${FUZZTEST_REPO_BRANCH}
+    )
+    FetchContent_MakeAvailable(fuzztest)
+    include(GoogleTest)
+    fuzztest_setup_fuzzing_flags()
+  endif(MIDI2_FUZZTEST)
+
+  add_subdirectory(unittests)
+endif()
 
 if(MIDI2_BENCHMARK)
   add_subdirectory(benchmark)
