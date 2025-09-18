@@ -87,6 +87,7 @@ jobs:
 
       - name: Compress Results
         run: |
+          PROJECT="${{ env.OWNER }}/${{ env.REPOSITORY }}"
           tar czvf ./$PROJECT.tgz cov-int
 
       - name: Submit Results
