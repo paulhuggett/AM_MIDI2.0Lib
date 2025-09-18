@@ -11,16 +11,17 @@ cmake_minimum_required(VERSION 3.12)
 project(midi2)
 cmake_policy(SET CMP0140 NEW)
 
-option(MIDI2_WERROR "Enable warnings-as-errors" No)
-option(MIDI2_COVERAGE "Enable code coverage" No)
-option(MIDI2_SANITIZE "Enable sanitizers" No)
-option(MIDI2_FUZZTEST "Enable Fuzz Testing" No)
-option(MIDI2_UNITTEST "Enable Unit Testing" Yes)
-option(MIDI2_DEMO "Enable the demo programs" No)
-option(MIDI2_BENCHMARK "Enable the benchmark" No)
+option(MIDI2_WERROR    "Enable warnings-as-errors" No )
+option(MIDI2_COVERAGE  "Enable code coverage"      No )
+option(MIDI2_SANITIZE  "Enable sanitizers"         No )
+option(MIDI2_FUZZTEST  "Enable Fuzz Testing"       No )
+option(MIDI2_UNITTEST  "Enable Unit Testing"       Yes)
+option(MIDI2_DEMO      "Enable the demo programs"  No )
+option(MIDI2_BENCHMARK "Enable the benchmark"      No )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+include(FetchContent)
 include(setup_target)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -99,9 +100,26 @@ if(MIDI2_DEMO)
 endif(MIDI2_DEMO)
 
 
+if (MIDI2_UNITTEST OR MIDI2_FUZZTEST)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG HEAD
+  )
+  # Tell gtest to link against the "Multi-threaded Debug DLL runtime library"
+  # on Windows.
+  set(gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
+  # We don't want to install either gtest or gmock.
+  set(INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
+  set(INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
+
+  FetchContent_MakeAvailable(googletest)
+
+  add_subdirectory(unittests)
+endif()
+
 if(MIDI2_FUZZTEST)
   set(FUZZTEST_FUZZING_MODE On)
-  include(FetchContent)
   set(FUZZTEST_REPO_BRANCH "main" CACHE STRING "FuzzTest repository branch.")
   message("Building fuzztest at tag " ${FUZZTEST_REPO_BRANCH})
   FetchContent_Declare(
@@ -112,20 +130,7 @@ if(MIDI2_FUZZTEST)
   FetchContent_MakeAvailable(fuzztest)
   include(GoogleTest)
   fuzztest_setup_fuzzing_flags()
-
-  add_subdirectory(unittests)
-elseif(MIDI2_UNITTEST AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt")
-  # Tell gtest to link against the "Multi-threaded Debug DLL runtime library"
-  # on Windows.
-  set(gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
-  # We don't want to install either gtest or gmock.
-  set(INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
-  set(INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
-  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/googletest")
-
-  add_subdirectory(unittests)
 endif(MIDI2_FUZZTEST)
-
 
 foreach(target gtest gmock gmock_main gtest_main)
   if(TARGET ${target})
