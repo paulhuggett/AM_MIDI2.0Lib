@@ -128,12 +128,12 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
   static_assert(sizeof(key) <= sizeof(context_type::pn_cache_type::key_type));
   ctxt->pn_cache.access(
       static_cast<std::uint16_t>(key),
-      [&]() {
+      [ctxt, controller_number, key]() {
         // The key was not in the cache or the associated value needs to be updated.
         m2cvm::send_controller_number(ctxt, key, controller_number);
         return controller_number;
       },
-      [&](context_type::pn_cache_value const &in_cache) {
+      [controller_number](context_type::pn_cache_value const& in_cache) {
         // We've got the key in the cache. Does the cached value match the desired?
         return in_cache == controller_number;
       });
