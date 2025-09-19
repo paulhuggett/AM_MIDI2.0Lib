@@ -87,8 +87,7 @@ jobs:
 
       - name: Compress Results
         run: |
-          PROJECT="${{ env.OWNER }}/${{ env.REPOSITORY }}"
-          tar czvf ./$PROJECT.tgz cov-int
+          tar czvf ./results.tgz cov-int
 
       - name: Submit Results
         run: |
@@ -97,7 +96,7 @@ jobs:
           curl                                           \
             --form "token=${{ secrets.COVERITY_TOKEN }}" \
             --form "email=${{ secrets.COVERITY_EMAIL }}" \
-            --form file=@./$PROJECT.tgz                  \
+            --form file=@./results.tgz                   \
             --form "version=$VERSION"                    \
             --form description="MIDI 2.0 library"        \
             "https://${{ env.COVURL }}/builds?project=$PROJECT"
