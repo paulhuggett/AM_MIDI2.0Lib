@@ -260,6 +260,20 @@ constexpr O write_header_body(O first, S const last, header const &hdr, Internal
   return first;
 }
 
+/// Wraps an array of bytes that is large enough to hold an instance of type \p T. \p T is a
+/// trivially copyable type with alignment of 1 so can be safely copied into the byte array.
+/// A data() member enables access to that array.
+template <typename T>
+  requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
+class byte_array_wrapper {
+public:
+  explicit constexpr byte_array_wrapper(T const& other) { std::memcpy(arr_.data(), &other, sizeof(T)); }
+  constexpr std::byte const* data() const noexcept { return arr_.data(); }
+
+private:
+  byte_array<sizeof(T)> arr_;
+};
+
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
 constexpr O write_pe(O first, S const last, header const &hdr, property_exchange::property_exchange<Pet> const &pe,
                      message const id) {
@@ -267,15 +281,12 @@ constexpr O write_pe(O first, S const last, header const &hdr, property_exchange
 
   using property_exchange::packed::property_exchange_pt1;
   using property_exchange::packed::property_exchange_pt2;
-  auto const part1 = static_cast<property_exchange_pt1>(pe);
-  static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
-  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part1),
-                                          offsetof(property_exchange_pt1, header), pe.header);
 
-  auto const part2 = static_cast<property_exchange_pt2>(pe);
-  static_assert(std::is_trivially_copyable_v<decltype(part2)> && alignof(decltype(part2)) == 1);
-  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part2),
-                                          offsetof(property_exchange_pt2, data), pe.data);
+  byte_array_wrapper const part1{static_cast<property_exchange_pt1>(pe)};
+  first =
+      details::write_packed_with_tail(first, last, part1.data(), offsetof(property_exchange_pt1, header), pe.header);
+  byte_array_wrapper const part2{static_cast<property_exchange_pt2>(pe)};
+  first = details::write_packed_with_tail(first, last, part2.data(), offsetof(property_exchange_pt2, data), pe.data);
   return first;
 }
 
@@ -303,19 +314,16 @@ constexpr O create_message(O first, S const last, header const &hdr, T const &t)
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, header const &hdr, endpoint_reply const &reply) {
   first = details::write_header(first, last, hdr, details::type_to_packed<endpoint_reply>::id);
-  auto const v1 = static_cast<packed::endpoint_reply_v1>(reply);
-  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
-  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
-                                         offsetof(packed::endpoint_reply_v1, data), reply.information);
+  details::byte_array_wrapper const v1{static_cast<packed::endpoint_reply_v1>(reply)};
+  return details::write_packed_with_tail(first, last, v1.data(), offsetof(packed::endpoint_reply_v1, data),
+                                         reply.information);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, header const &hdr, struct ack const &ack) {
   first = details::write_header(first, last, hdr, details::type_to_packed<struct ack>::id);
-  auto const v1 = static_cast<packed::ack_v1>(ack);
-  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
-  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
-                                         offsetof(packed::ack_v1, message), ack.message);
+  details::byte_array_wrapper const v1{static_cast<packed::ack_v1>(ack)};
+  return details::write_packed_with_tail(first, last, v1.data(), offsetof(packed::ack_v1, message), ack.message);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -324,10 +332,8 @@ constexpr O create_message(O first, S last, header const &hdr, struct nak const 
   if (hdr.version == b7{1U}) {
     return first;
   }
-  auto const v2 = static_cast<packed::nak_v2>(nak);
-  static_assert(std::is_trivially_copyable_v<decltype(v2)> && alignof(decltype(v2)) == 1);
-  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v2),
-                                         offsetof(packed::nak_v2, message), nak.message);
+  details::byte_array_wrapper const v2{static_cast<packed::nak_v2>(nak)};
+  return details::write_packed_with_tail(first, last, v2.data(), offsetof(packed::nak_v2, message), nak.message);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -335,10 +341,8 @@ constexpr O create_message(O first, S const last, header const &hdr,
                            profile_configuration::details_reply const &reply) {
   using profile_configuration::packed::details_reply_v1;
   first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::details_reply>::id);
-  auto const v1 = static_cast<details_reply_v1>(reply);
-  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
-  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
-                                         offsetof(details_reply_v1, data), reply.data);
+  details::byte_array_wrapper const v1{static_cast<details_reply_v1>(reply)};
+  return details::write_packed_with_tail(first, last, v1.data(), offsetof(details_reply_v1, data), reply.data);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -348,16 +352,12 @@ constexpr O create_message(O first, S const last, header const &hdr,
   using profile_configuration::packed::inquiry_reply_v1_pt2;
 
   first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::inquiry_reply>::id);
-
-  auto const part1 = static_cast<inquiry_reply_v1_pt1>(reply);
-  static_assert(std::is_trivially_copyable_v<decltype(part1)> && alignof(decltype(part1)) == 1);
-  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part1),
-                                          offsetof(inquiry_reply_v1_pt1, ids), reply.enabled);
-
-  auto const part2 = static_cast<inquiry_reply_v1_pt2>(reply);
-  static_assert(std::is_trivially_copyable_v<decltype(part2)> && alignof(decltype(part2)) == 1);
-  first = details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&part2),
-                                          offsetof(inquiry_reply_v1_pt2, ids), reply.disabled);
+  details::byte_array_wrapper const part1{static_cast<inquiry_reply_v1_pt1>(reply)};
+  first =
+      details::write_packed_with_tail(first, last, part1.data(), offsetof(inquiry_reply_v1_pt1, ids), reply.enabled);
+  details::byte_array_wrapper const part2{static_cast<inquiry_reply_v1_pt2>(reply)};
+  first =
+      details::write_packed_with_tail(first, last, part2.data(), offsetof(inquiry_reply_v1_pt2, ids), reply.disabled);
   return first;
 }
 
@@ -365,10 +365,8 @@ template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
 constexpr O create_message(O first, S const last, header const &hdr, profile_configuration::specific_data const &sd) {
   using profile_configuration::packed::specific_data_v1;
   first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::specific_data>::id);
-  auto const v1 = static_cast<specific_data_v1>(sd);
-  static_assert(std::is_trivially_copyable_v<decltype(v1)> && alignof(decltype(v1)) == 1);
-  return details::write_packed_with_tail(first, last, std::bit_cast<std::byte const *>(&v1),
-                                         offsetof(specific_data_v1, data), sd.data);
+  details::byte_array_wrapper const v1{static_cast<specific_data_v1>(sd)};
+  return details::write_packed_with_tail(first, last, v1.data(), offsetof(specific_data_v1, data), sd.data);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
