@@ -700,8 +700,8 @@ template <ci_dispatcher_config Config> void ci_dispatcher<Config>::dispatch(std:
 }
 
 template <typename Context, std::size_t BufferSize>
-ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher(Context context = Context{}) {
-  return midi2::ci::ci_dispatcher{function_config<Context, BufferSize>{std::move(context)}};
+ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher(Context&& context = Context{}) {
+  return midi2::ci::ci_dispatcher{function_config<Context, BufferSize>{std::forward<Context>(context)}};
 }
 
 }  // end namespace midi2::ci
