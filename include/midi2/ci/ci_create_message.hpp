@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <bit>
 #include <cstddef>
+#include <cstring>
 #include <iterator>
 #include <span>
 #include <type_traits>
