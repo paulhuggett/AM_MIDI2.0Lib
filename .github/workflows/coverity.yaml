@@ -76,7 +76,9 @@ jobs:
           cmake                         \
             -S .                        \
             -B ./build                  \
-            -D CMAKE_BUILD_TYPE=Release
+            -D CMAKE_BUILD_TYPE=Release \
+            -D MIDI2_UNITTEST=False     \
+            -D MIDI2_DEMO=True
 
       - name: Build
         run: |
