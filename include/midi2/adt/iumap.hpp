@@ -399,7 +399,7 @@ auto iumap<Key, Mapped, Size, Hash, KeyEqual>::insert_or_assign(Key const &key, 
     slot->state = state::occupied;
     return std::make_pair(iterator{slot, &v_}, true);
   }
-  slot->pointer()->second = value;  // Overwrite the existing value.
+  slot->pointer()->second = std::move(value);  // Overwrite the existing value.
   return std::make_pair(iterator{slot, &v_}, false);
 }
 
