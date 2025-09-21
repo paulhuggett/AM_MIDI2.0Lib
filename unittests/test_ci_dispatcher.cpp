@@ -207,7 +207,7 @@ constexpr auto broadcast_muid = midi2::ci::broadcast_muid;
 
 class CIDispatcher : public testing::Test {
 public:
-  CIDispatcher() : processor_{std::ref(config_)} {}
+  CIDispatcher() : processor_{config_} {}
 
 protected:
   struct mocked_config {
@@ -220,7 +220,7 @@ protected:
     StrictMock<mock_process_inquiry_callbacks> process_inquiry;
   };
   mocked_config config_;
-  midi2::ci::ci_dispatcher<mocked_config &> processor_;
+  midi2::ci::ci_dispatcher<std::reference_wrapper<mocked_config>> processor_;
 
   static constexpr auto sender_muid_ = midi2::ci::muid{from_le7(std::array{0x7F_b, 0x7E_b, 0x7D_b, 0x7C_b})};
   static constexpr auto destination_muid_ = midi2::ci::muid{from_le7(std::array{0x62_b, 0x16_b, 0x63_b, 0x26_b})};
