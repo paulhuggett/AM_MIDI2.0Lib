@@ -61,7 +61,8 @@ dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
   auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>();
   auto &config = dispatcher.config();
 
-  // Register a handler for checking whether a message is addressed to this receiver.
+  // Register a handler for checking whether a message is addressed to this receiver. The default
+  // handler simply rejects all incoming messages!
   config.system.on_check_muid(
       [my_muid](context, std::uint8_t /*group*/, midi2::ci::muid const m) { return m == my_muid; });
 
