@@ -371,8 +371,8 @@ public:
   template <typename T2> static std::vector<std::uint32_t> add(T2 const& ump) {
     std::vector<std::uint32_t> result;
     result.reserve(std::tuple_size_v<T2>);
-    midi2::ump::apply(ump, [&result](auto const v) {
-      result.push_back(std::uint32_t{v});
+    midi2::ump::apply(ump, [&result](std::uint32_t const v) {
+      result.push_back(v);
       return false;
     });
     return result;

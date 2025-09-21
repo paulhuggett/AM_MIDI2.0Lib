@@ -70,16 +70,16 @@ using b14 = details::bn<14>;
 using b28 = details::bn<28>;
 
 namespace literals {
-consteval b7 operator""_b7(char const arg) noexcept {
+[[nodiscard]] consteval b7 operator""_b7(char const arg) noexcept {
   return b7{static_cast<std::uint8_t>(arg)};
 }
-consteval b7 operator""_b7(unsigned long long const arg) noexcept {
+[[nodiscard]] consteval b7 operator""_b7(unsigned long long const arg) noexcept {
   return b7{arg};
 }
-consteval b14 operator""_b14(unsigned long long const arg) noexcept {
+[[nodiscard]] consteval b14 operator""_b14(unsigned long long const arg) noexcept {
   return b14{arg};
 }
-consteval b28 operator""_b28(unsigned long long const arg) noexcept {
+[[nodiscard]] consteval b28 operator""_b28(unsigned long long const arg) noexcept {
   return b28{arg};
 }
 }  // end namespace literals

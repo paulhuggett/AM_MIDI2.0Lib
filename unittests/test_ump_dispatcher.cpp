@@ -195,8 +195,8 @@ public:
   UMPDispatcher() : dispatcher_{std::ref(config_)} {}
 
   void apply(auto const &message) {
-    midi2::ump::apply(message, [this](auto const v) {
-      dispatcher_.dispatch(std::uint32_t{v});
+    midi2::ump::apply(message, [this](std::uint32_t const v) {
+      dispatcher_.dispatch(v);
       return false;
     });
   }
@@ -213,8 +213,8 @@ public:
     StrictMock<FlexDataMocks> flex;
   };
   mocked_config config_;
-  midi2::ump::ump_dispatcher<mocked_config &> dispatcher_;
-  static_assert(midi2::dispatcher<mocked_config &, std::uint32_t, decltype(dispatcher_)>);
+  midi2::ump::ump_dispatcher<std::reference_wrapper<mocked_config>> dispatcher_;
+  static_assert(midi2::dispatcher<std::reference_wrapper<mocked_config>, std::uint32_t, decltype(dispatcher_)>);
 };
 
 //*       _   _ _ _ _         *
@@ -908,8 +908,21 @@ TEST_F(UMPDispatcherFlexData, Text) {
   this->apply(message);
 }
 
+struct default_config {
+  struct empty {};
+  [[no_unique_address]] empty context{};
+  [[no_unique_address]] midi2::ump::dispatcher_backend::utility_null<decltype(context)> utility;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::system_null<decltype(context)> system;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::m1cvm_null<decltype(context)> m1cvm;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::data64_null<decltype(context)> data64;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::m2cvm_null<decltype(context)> m2cvm;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::data128_null<decltype(context)> data128;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::stream_null<decltype(context)> stream;
+  [[no_unique_address]] midi2::ump::dispatcher_backend::flex_data_null<decltype(context)> flex;
+};
+
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const &in) {
-  midi2::ump::ump_dispatcher p;
+  midi2::ump::ump_dispatcher p{default_config{}};
   std::ranges::for_each(in, [&p](std::uint32_t ump) { p.dispatch(ump); });
 }
 
@@ -925,7 +938,7 @@ TEST(UMPDispatcherFuzz, Empty) {
 template <midi2::ump::message_type MessageType> void process_message(std::span<std::uint32_t> message) {
   if (message.size() == midi2::ump::message_size<MessageType>::value) {
     message[0] = (message[0] & 0x00FFFFFF) | (std::uint32_t{std::to_underlying(MessageType)} << 24);
-    midi2::ump::ump_dispatcher p;
+    midi2::ump::ump_dispatcher p{default_config{}};
     for (auto const w : message) {
       p.dispatch(w);
     }

@@ -10,6 +10,7 @@
 #define MIDI2_DISPATCHER_HPP
 
 #include <concepts>
+#include <type_traits>
 #include <utility>
 
 namespace midi2 {
@@ -18,8 +19,8 @@ namespace midi2 {
 template <typename Config, typename InputType, typename T>
 concept dispatcher = requires(T v) {
   { v.dispatch(InputType{}) };
-  { v.config() } -> std::convertible_to<Config>;
-  { std::as_const(v).config() } -> std::convertible_to<Config const>;
+  { v.config() } -> std::convertible_to<std::unwrap_reference_t<Config>&>;
+  { std::as_const(v).config() } -> std::convertible_to<std::remove_reference_t<std::unwrap_reference_t<Config>> const&>;
   { v.reset() };
 };
 

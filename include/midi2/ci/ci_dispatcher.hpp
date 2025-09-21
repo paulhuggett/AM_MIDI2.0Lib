@@ -26,6 +26,7 @@
 
 #include "midi2/ci/ci_dispatcher_backend.hpp"
 #include "midi2/ci/ci_types.hpp"
+#include "midi2/dispatcher.hpp"
 #include "midi2/utils.hpp"
 
 namespace midi2::ci {
@@ -63,15 +64,19 @@ public:
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
   constexpr explicit ci_dispatcher(Config config) noexcept(std::is_nothrow_move_constructible_v<Config>)
-      : config_{std::move(config)} {}
+      : config_{std::move(config)} {
+    static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
+  }
 
   constexpr void start(std::uint8_t group, b7 device_id) noexcept;
   constexpr void finish() noexcept { /* here for symmetry with start */ }
 
-  void dispatch(std::byte s7Byte);
+  void dispatch(std::byte s7);
 
-  constexpr config_type const& config() const noexcept { return config_; }
-  constexpr config_type& config() noexcept { return config_; }
+  [[nodiscard]] constexpr config_type const& config() const noexcept { return config_; }
+  [[nodiscard]] constexpr config_type& config() noexcept { return config_; }
+
+  constexpr void reset() noexcept;
 
 private:
   static constexpr auto header_size = sizeof(ci::packed::header);
@@ -81,14 +86,16 @@ private:
   using consumer_fn = void (ci_dispatcher::*)();
 
   std::size_t count_ = header_size;
-  unsigned pos_ = 0;
   message type_ = static_cast<message>(0x00);
-  std::uint8_t group_ = 0;
+  std::uint8_t group_ = 0;  // set by start()
   consumer_fn consumer_ = &ci_dispatcher::header;
 
-  // Note that the struct keyword is necessary to avoid an error from gcc.
+  // Note that the struct keyword is necessary to avoid an error from gcc about a conflict with header().
   struct header header_;
+
+  // TODO: replace buffr_/pos_ with inplace_vector<> at some point.
   std::array<std::byte, config_type::buffer_size> buffer_{};
+  unsigned pos_ = 0;
 
   void discard();
   void overflow();
@@ -131,16 +138,23 @@ private:
 
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
-constexpr void ci_dispatcher<Config>::start(std::uint8_t group, b7 device_id) noexcept {
+constexpr void ci_dispatcher<Config>::reset() noexcept {
   using header_type = struct header;
   header_ = header_type{};
-  header_.device_id = device_id;
 
   count_ = header_size;
   pos_ = 0;
-  group_ = group;
+  group_ = 0;
   type_ = static_cast<message>(0x00);
   consumer_ = &ci_dispatcher::header;
+}
+
+template <typename Config>
+  requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
+constexpr void ci_dispatcher<Config>::start(std::uint8_t group, b7 device_id) noexcept {
+  this->reset();
+  header_.device_id = device_id;
+  group_ = group;
 }
 
 template <typename Config>
