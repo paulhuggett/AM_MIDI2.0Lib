@@ -269,7 +269,7 @@ template <typename T>
 class byte_array_wrapper {
 public:
   explicit constexpr byte_array_wrapper(T const& other) { std::memcpy(arr_.data(), &other, sizeof(T)); }
-  constexpr std::byte const* data() const noexcept { return arr_.data(); }
+  [[nodiscard]] constexpr std::byte const* data() const noexcept { return arr_.data(); }
 
 private:
   byte_array<sizeof(T)> arr_;
