@@ -24,7 +24,7 @@ enum class control : std::uint8_t {
   nrpn_msb = 0x63,
 
   /// When a device receives the Reset All Controllers message, it should reset the
-  /// condition of all its controllers what it considers an ideal initial state.
+  /// condition of all its controllers to what it considers an ideal initial state.
   reset_all_controllers = 0x79,
 };
 
