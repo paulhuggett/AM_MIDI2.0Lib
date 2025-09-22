@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstdlib>
+#include <exception>
 #include <format>
 #include <iostream>
 #include <type_traits>
@@ -19,7 +20,7 @@ using namespace midi2::ci::literals;
 // A formatter for arrays of 7-bit integer values (b7). These will be represented to
 // comma-separated hex values.
 template <std::size_t Size, typename CharT> struct std::formatter<std::array<midi2::ci::b7, Size>, CharT> {
-  constexpr auto parse(auto &parse_ctx) const { return parse_ctx.begin(); }
+  constexpr auto parse(auto& parse_ctx) const { return std::begin(parse_ctx); }
   auto format(std::array<midi2::ci::b7, Size> const &arr, auto &format_ctx) const {
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto out = format_ctx.out();
@@ -77,18 +78,25 @@ dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
 }  // end anonymous namespace
 
 int main() {
-  constexpr auto my_muid = midi2::ci::muid{0x01234567U};  // Use a proper random number!
-  constexpr auto my_group = std::uint8_t{0};
-  constexpr auto device_id = 0_b7;
-  auto dispatcher = setup_ci_dispatcher(my_muid);
+  try {
+    constexpr auto my_muid = midi2::ci::muid{0x01234567U};  // Use a proper random number!
+    constexpr auto my_group = std::uint8_t{0};
+    constexpr auto device_id = 0_b7;
+    auto dispatcher = setup_ci_dispatcher(my_muid);
 
-  // A system exclusive message containing a CI discovery request.
-  constexpr std::array message{0x7E, 0x7F, 0x0D, 0x70, 0x02, 0x00, 0x00, 0x00, 0x00, 0x7F,
-                               0x7F, 0x7F, 0x7F, 0x12, 0x23, 0x34, 0x79, 0x2E, 0x5D, 0x56,
-                               0x01, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x02, 0x00, 0x00, 0x00};
-  dispatcher.start(my_group, device_id);
-  for (auto const b : message) {
-    dispatcher.dispatch(static_cast<std::byte>(b));
+    // A system exclusive message containing a CI discovery request.
+    constexpr std::array message{0x7E, 0x7F, 0x0D, 0x70, 0x02, 0x00, 0x00, 0x00, 0x00, 0x7F,
+                                 0x7F, 0x7F, 0x7F, 0x12, 0x23, 0x34, 0x79, 0x2E, 0x5D, 0x56,
+                                 0x01, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x02, 0x00, 0x00, 0x00};
+    dispatcher.start(my_group, device_id);
+    for (auto const b : message) {
+      dispatcher.dispatch(static_cast<std::byte>(b));
+    }
+    dispatcher.finish();
+  } catch (std::exception const& e) {
+    // The midi2 library doesn't throw but something else might...
+    std::cerr << "Error: " << e.what() << '\n';
+  } catch (...) {
+    std::cerr << "Unknown error\n";
   }
-  dispatcher.finish();
 }

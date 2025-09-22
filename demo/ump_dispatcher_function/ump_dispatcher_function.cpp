@@ -16,6 +16,7 @@
 // For resource-constrained applications, one of the other backend options may be more suitable.
 
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 
@@ -23,6 +24,7 @@
 #include "midi2/ump/ump_types.hpp"
 
 int main() {
+  int exit_code = EXIT_SUCCESS;
   try {
     // We must pass a "context" to the dispatcher which will be forwarded to the callbacks as they are invoked.
     // The context enables message handlers to efficiently share state but we don't need that in this simple example so
@@ -47,7 +49,10 @@ int main() {
     }
   } catch (std::exception const& ex) {
     std::cerr << "Error: " << ex.what() << '\n';
+    exit_code = EXIT_FAILURE;
   } catch (...) {
     std::cerr << "An unknown error\n";
+    exit_code = EXIT_FAILURE;
   }
+  return exit_code;
 }
