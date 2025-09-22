@@ -24,7 +24,7 @@ namespace midi2::ci {
 /// \brief Private implementation details of the CI types and functions
 namespace details {
 
-template <typename T> struct type_to_packed {};
+template <typename T> struct type_to_packed;
 
 struct empty {};
 struct not_available {};
