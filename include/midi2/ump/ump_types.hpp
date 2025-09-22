@@ -26,27 +26,27 @@
 
 namespace midi2::ump {
 
-#define UMP_MESSAGE_TYPES \
-  X(utility, 0x00)        \
-  X(system, 0x01)         \
-  X(m1cvm, 0x02)          \
-  X(data64, 0x03)         \
-  X(m2cvm, 0x04)          \
-  X(data128, 0x05)        \
-  X(reserved32_06, 0x06)  \
-  X(reserved32_07, 0x07)  \
-  X(reserved64_08, 0x08)  \
-  X(reserved64_09, 0x09)  \
-  X(reserved64_0a, 0x0A)  \
-  X(reserved96_0b, 0x0B)  \
-  X(reserved96_0c, 0x0C)  \
-  X(flex_data, 0x0D)      \
-  X(reserved128_0e, 0x0E) \
-  X(stream, 0x0F)
+#define UMP_MESSAGE_TYPES       \
+  MIDI2_X(utility, 0x00)        \
+  MIDI2_X(system, 0x01)         \
+  MIDI2_X(m1cvm, 0x02)          \
+  MIDI2_X(data64, 0x03)         \
+  MIDI2_X(m2cvm, 0x04)          \
+  MIDI2_X(data128, 0x05)        \
+  MIDI2_X(reserved32_06, 0x06)  \
+  MIDI2_X(reserved32_07, 0x07)  \
+  MIDI2_X(reserved64_08, 0x08)  \
+  MIDI2_X(reserved64_09, 0x09)  \
+  MIDI2_X(reserved64_0a, 0x0A)  \
+  MIDI2_X(reserved96_0b, 0x0B)  \
+  MIDI2_X(reserved96_0c, 0x0C)  \
+  MIDI2_X(flex_data, 0x0D)      \
+  MIDI2_X(reserved128_0e, 0x0E) \
+  MIDI2_X(stream, 0x0F)
 
-#define X(a, b) a = (b),
+#define MIDI2_X(a, b) a = (b),
 enum class message_type : std::uint8_t { UMP_MESSAGE_TYPES };
-#undef X
+#undef MIDI2_X
 
 /// Collects the enumeration that define the values for the UMP "mt" (message type) field
 namespace mt {

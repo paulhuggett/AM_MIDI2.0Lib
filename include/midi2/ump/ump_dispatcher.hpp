@@ -14,6 +14,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <functional>
 #include <span>
 
 #include "midi2/dispatcher.hpp"
@@ -28,13 +29,13 @@ namespace midi2::ump {
 
 [[nodiscard]] constexpr unsigned ump_message_size(ump::message_type const mt) {
   using enum ump::message_type;
-#define X(a, b) \
+#define MIDI2_X(a, b) \
   case a: return message_size<a>();
   switch (mt) {
     UMP_MESSAGE_TYPES
   default: return 0U;
   }
-#undef X
+#undef MIDI2_X
 }
 
 template <typename T>
@@ -57,7 +58,7 @@ concept ump_dispatcher_config = requires(T v) {
 /// \tparam Context  The type of the context object. This is passed to the callbacks to enable sharing
 ///   of context.
 template <typename Context> struct function_config {
-  explicit function_config(Context c) : context{c} {}
+  explicit function_config(Context c) : context{std::move(c)} {}
 
   [[no_unique_address]] Context context;
   dispatcher_backend::utility_function<Context> utility;
@@ -79,6 +80,8 @@ template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 class ump_dispatcher {
 public:
+  /// Type of input messages
+  using input_type = std::uint32_t;
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
   constexpr explicit ump_dispatcher(Config config) noexcept(std::is_nothrow_move_constructible_v<Config>)

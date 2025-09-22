@@ -143,13 +143,15 @@ private:
       }
     };
 
-    std::uint8_t group = 0;
-
+    adt::fifo<std::uint32_t, 4> output;
+    // TODO: the two following arrays take a disproportionate of space (~1.5K). Perhaps
+    // swap them for an LRU cache of the controller values? This trades messages against storage,
+    // but how frequently are controller values for the entire range of possible values being sent?
     /// An alias template for a two-dimensional std::array
     template <typename T, std::size_t Row, std::size_t Col> using array2d = std::array<std::array<T, Col>, Row>;
     array2d<bank, 16, 16> bank{};
     array2d<parameter_number, 16, 16> parameter_number{};
-    adt::fifo<std::uint32_t, 4> output;
+    std::uint8_t group = 0;
   };
 
   struct to_midi2_config {
@@ -344,7 +346,7 @@ private:
   };
 
   context context_;
-  ump::ump_dispatcher<to_midi2_config> p_{to_midi2_config{.context = &context_}};
+  ump_dispatcher<to_midi2_config> p_{to_midi2_config{.context = &context_}};
 };
 
 static_assert(translator<std::uint32_t, std::uint32_t, ump_to_midi2>);

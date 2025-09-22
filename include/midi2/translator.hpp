@@ -27,9 +27,9 @@
 template <typename InputType, typename OutputType, typename T>
 concept translator = requires(T v) {
   /// Type of input messages
-  requires std::same_as<typename T::input_type, InputType>;
+  requires std::same_as<typename std::remove_reference_t<T>::input_type, InputType>;
   /// Type of output messages
-  requires std::same_as<typename T::output_type, OutputType>;
+  requires std::same_as<typename std::remove_reference_t<T>::output_type, OutputType>;
 
   /// Push an input message into the translator
   { v.push(InputType{}) };

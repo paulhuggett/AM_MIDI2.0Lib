@@ -30,7 +30,7 @@ namespace details {
 
 /// Represents an unsigned integer with a specific number of bits
 template <unsigned Bits, std::unsigned_integral Underlying = midi2::adt::uinteger_t<Bits>>
-  requires((1ULL << Bits) < std::numeric_limits<Underlying>::max())
+  requires(adt::max_value<Underlying, Bits>() <= std::numeric_limits<Underlying>::max())
 class bn {
 public:
   using underlying_type = Underlying;
@@ -41,18 +41,17 @@ public:
   constexpr bn(bn &&rhs) noexcept = default;
   template <std::unsigned_integral UInt>
   constexpr explicit bn(UInt const v) noexcept : value_{static_cast<Underlying>(v)} {
-    assert(v < (1ULL << Bits) && "Value is too large");
+    assert((v <= adt::max_value<Underlying, Bits>()) && "Value is too large");
   }
 
   constexpr explicit operator Underlying() const noexcept { return value_; }
 
-  constexpr bool operator==(bn const &rhs) const noexcept = default;
   constexpr std::strong_ordering operator<=>(bn const &rhs) const noexcept = default;
 
   constexpr bn &operator=(bn const &rhs) noexcept = default;
   constexpr bn &operator=(bn &&rhs) noexcept = default;
   constexpr bn &operator=(Underlying const rhs) noexcept {
-    assert(rhs < (1ULL << Bits) && "Value is too large");
+    assert((rhs <= adt::max_value<Underlying, Bits>()) && "Value is too large");
     value_ = rhs;
     return *this;
   }
