@@ -73,8 +73,8 @@ private:
     struct pn_cache_key {
       /// \param group The group number
       /// \param channel  The channel number
-      /// \param is_rpn  True if the controller is RPN (Registered Parameter Number), false if it represents an NRPN (Non-Registered
-      ///   Parameter Number).
+      /// \param is_rpn  True if the controller is RPN (Registered Parameter Number), false if it represents an NRPN
+      ///   (Non-Registered Parameter Number).
       constexpr pn_cache_key(std::uint8_t group, std::uint8_t channel, bool is_rpn) noexcept
           : v_{static_cast<std::uint16_t>(group | (channel << 4) | (is_rpn << 8))} {
         assert(group < 0x10 && channel < 0x10);
@@ -292,14 +292,14 @@ private:
                                          context_type::pn_cache_value const &controller_number);
     };
     context_type *context = nullptr;
-    [[no_unique_address]] ump::dispatcher_backend::utility_null<decltype(context)> utility{};
+    [[no_unique_address]] dispatcher_backend::utility_null<decltype(context)> utility{};
     [[no_unique_address]] struct system system {};
     [[no_unique_address]] struct m1cvm m1cvm {};
     [[no_unique_address]] struct data64 data64 {};
     [[no_unique_address]] class m2cvm m2cvm {};
-    [[no_unique_address]] ump::dispatcher_backend::data128_null<decltype(context)> data128{};
-    [[no_unique_address]] ump::dispatcher_backend::stream_null<decltype(context)> stream{};
-    [[no_unique_address]] ump::dispatcher_backend::flex_data_null<decltype(context)> flex{};
+    [[no_unique_address]] dispatcher_backend::data128_null<decltype(context)> data128{};
+    [[no_unique_address]] dispatcher_backend::stream_null<decltype(context)> stream{};
+    [[no_unique_address]] dispatcher_backend::flex_data_null<decltype(context)> flex{};
   };
   context_type context_;
   ump::ump_dispatcher<to_midi1_config> dispatcher_{to_midi1_config{.context = &context_}};
