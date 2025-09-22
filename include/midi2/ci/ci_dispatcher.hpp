@@ -61,6 +61,8 @@ template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 class ci_dispatcher {
 public:
+  /// Type of input messages
+  using input_type = std::byte;
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
   constexpr explicit ci_dispatcher(Config config) noexcept(std::is_nothrow_move_constructible_v<Config>)
@@ -143,10 +145,12 @@ constexpr void ci_dispatcher<Config>::reset() noexcept {
   header_ = header_type{};
 
   count_ = header_size;
-  pos_ = 0;
   group_ = 0;
   type_ = static_cast<message>(0x00);
   consumer_ = &ci_dispatcher::header;
+
+  std::ranges::fill(buffer_, std::byte{0});
+  pos_ = 0;
 }
 
 template <typename Config>
