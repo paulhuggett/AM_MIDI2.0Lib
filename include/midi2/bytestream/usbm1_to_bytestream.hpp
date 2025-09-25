@@ -5,6 +5,12 @@
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
+/// \file usbm1_to_bytestream.hpp
+///
+/// \brief USB-MIDI Event Packets to MIDI 1.0 bytestream (\ref midi2::bytestream::usbm1_to_bytestream).
+///
+/// This translator converts USB-MIDI event packets as described by the document "Universal Serial Bus Device Class
+/// Definition for MIDI Devices" Release 1.0 dated Nov 1, 1999 to Universal Media Packets.
 
 #ifndef MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
 #define MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
@@ -25,9 +31,23 @@ public:
   /// \brief The type of output to a bytestream
   using output_type = std::byte;
 
-  explicit constexpr usbm1_to_bytestream(std::uint8_t cable) noexcept : cable_{cable} {
+  constexpr usbm1_to_bytestream() noexcept = default;
+
+  /// \param cable The virtual cable number whose messages are to be translated.
+  explicit constexpr usbm1_to_bytestream(std::uint8_t const cable) noexcept : cable_{cable} {
     assert(cable < 16U && "cable number must be four bits");
   }
+
+  /// \brief Sets the cable number to be translated.
+  /// Any in-flight messages are lost.
+  /// \param cable The virtual cable number whose messages are to be translated.
+  constexpr void set_cable(std::uint8_t const cable) {
+    assert(cable < 16U && "cable number must be four bits");
+    reset();
+    cable_ = cable;
+  }
+  /// \brief Set the cable number for messages to be translated.
+  [[nodiscard]] constexpr std::uint8_t get_cable() const noexcept { return cable_; }
 
   /// Checks if the output has no elements
   [[nodiscard]] constexpr bool empty() const noexcept { return output_.empty(); }
@@ -39,10 +59,12 @@ public:
     return output_.pop_front();
   }
 
-  /// \brief Provides a word of USBM1 input to the translator
+  /// \brief Provides a word of USBM1 input to the translator.
+  /// Messages address addressed to a cable number different from the one set in the constructor or by a call to
+  /// set_cable() are ignored.
   /// \param usbm1 The word of input to be translated
   constexpr void push(input_type const usbm1) noexcept {
-    if (cable(usbm1) != cable_) {
+    if (cable(usbm1) != this->get_cable()) {
       return;
     }
     auto const bytes = midi_x_size(get_cin(usbm1));
@@ -58,16 +80,28 @@ public:
     }
   }
 
-  /// \brief Restore the translator to its original state.
+  /// \brief Restore the translator to its original state. Sets the cable number to 0.
   /// Any in-flight messages are lost.
-  constexpr void reset() { output_.clear(); }
+  constexpr void reset() {
+    output_.clear();
+    cable_ = 0U;
+  }
 
 private:
-  std::uint8_t cable_;
+  std::uint8_t cable_ = 0;
   adt::fifo<std::byte, 4> output_;
 
+  /// \param p  A USB_MIDI1 message
+  /// \returns The virtual cable number field from message \p p
   [[nodiscard]] static constexpr std::uint8_t cable(std::uint32_t const p) noexcept { return (p >> 28) & 0x0F; }
+
+  /// Extracts the USB MIDI1 Code Index Number from the supplied USB-MIDI message.
+  /// \param p  A USB_MIDI1 message
+  /// \return The USB MIDI1 Code Index Number field from message \p p
   [[nodiscard]] static constexpr std::uint8_t get_cin(std::uint32_t const p) noexcept { return (p >> 24) & 0x0F; }
+
+  /// Converts the Code Index Number (CIN) from a USB-MIDI packet to the number of bytes contained within the packet's
+  /// fields.
   [[nodiscard]] static constexpr unsigned midi_x_size(std::uint8_t const cin) noexcept {
     assert(cin < 0x10U && "code index number should be four bits");
     // The contents of this switch are based on Table 4-1: "Code Index Number Classifications" in the "Universal
