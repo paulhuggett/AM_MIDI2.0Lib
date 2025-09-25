@@ -27,10 +27,7 @@ include(setup_target)
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(adt_headers
   "${INCLUDE_DIR}/midi2/adt/bitfield.hpp"
-  "${INCLUDE_DIR}/midi2/adt/cache.hpp"
   "${INCLUDE_DIR}/midi2/adt/fifo.hpp"
-  "${INCLUDE_DIR}/midi2/adt/iumap.hpp"
-  "${INCLUDE_DIR}/midi2/adt/lru_list.hpp"
   "${INCLUDE_DIR}/midi2/adt/plru_cache.hpp"
   "${INCLUDE_DIR}/midi2/adt/uinteger.hpp"
 )

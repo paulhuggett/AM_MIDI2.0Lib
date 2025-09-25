@@ -9,15 +9,12 @@
 add_executable (m2unittests
   test_bitfield.cpp
   test_bytestream_to_ump.cpp
-  test_cache.cpp
   test_ci7.cpp
   test_ci_create_message.cpp
   test_ci_dispatcher.cpp
   test_ci_dispatcher_backend.cpp
   test_ci_types.cpp
   test_fifo.cpp
-  test_iumap.cpp
-  test_lru.cpp
   test_mcoded7.cpp
   test_plru_cache.cpp
   test_scale.cpp
