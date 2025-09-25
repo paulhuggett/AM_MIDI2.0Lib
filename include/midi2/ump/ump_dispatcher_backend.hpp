@@ -37,14 +37,14 @@ concept system = requires(T v, Context context) {
   // 7.6 System Common and System Real Time Messages
   { v.midi_time_code(context, ump::system::midi_time_code{}) } -> std::same_as<void>;
   { v.song_position_pointer(context, ump::system::song_position_pointer{}) } -> std::same_as<void>;
-  { v.song_select(context,  ump::system::song_select{}) } -> std::same_as<void>;
-  { v.tune_request(context,  ump::system::tune_request{}) } -> std::same_as<void>;
-  { v.timing_clock(context,  ump::system::timing_clock{}) } -> std::same_as<void>;
-  { v.seq_start(context,  ump::system::sequence_start{}) } -> std::same_as<void>;
-  { v.seq_continue(context,  ump::system::sequence_continue{}) } -> std::same_as<void>;
-  { v.seq_stop(context,  ump::system::sequence_stop{}) } -> std::same_as<void>;
-  { v.active_sensing(context,  ump::system::active_sensing{}) } -> std::same_as<void>;
-  { v.reset(context,  ump::system::reset{}) } -> std::same_as<void>;
+  { v.song_select(context, ump::system::song_select{}) } -> std::same_as<void>;
+  { v.tune_request(context, ump::system::tune_request{}) } -> std::same_as<void>;
+  { v.timing_clock(context, ump::system::timing_clock{}) } -> std::same_as<void>;
+  { v.seq_start(context, ump::system::sequence_start{}) } -> std::same_as<void>;
+  { v.seq_continue(context, ump::system::sequence_continue{}) } -> std::same_as<void>;
+  { v.seq_stop(context, ump::system::sequence_stop{}) } -> std::same_as<void>;
+  { v.active_sensing(context, ump::system::active_sensing{}) } -> std::same_as<void>;
+  { v.reset(context, ump::system::reset{}) } -> std::same_as<void>;
 };
 template<typename T, typename Context>
 concept m1cvm = requires(T v, Context context) {
