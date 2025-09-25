@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iterator>
 #include <ranges>
+#include <utility>
 #include <vector>
 
 #include "midi2/ci/ci_create_message.hpp"
