@@ -6,6 +6,7 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,7 @@
 #include <exception>
 #include <format>
 #include <iostream>
+#include <utility>
 
 #include "midi2/bytestream/bytestream_to_ump.hpp"
 
@@ -28,17 +30,24 @@ namespace {
 int main() {
   int exit_code = EXIT_SUCCESS;
   try {
-    // Convert the bytestream to UMP group 0 and write it to stdout.
-    std::uint8_t const group = 0;
-    midi2::bytestream::bytestream_to_ump bs2ump{group};
-
     // A bytestream containing MIDI1 note-on events with running status.
-    for (auto const b : {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b}) {
+    constexpr std::array input = {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b};
+    std::cout << "Bytestream input: ";
+    for (auto const in : input) {
+      std::cout << std::format("0x{:02X} ", std::to_underlying(in));
+    }
+    std::cout << '\n';
+
+    std::cout << "UMP Packets: ";
+    // Convert the bytestream to UMP group 0 and write it to stdout.
+    constexpr auto group = std::uint8_t{0};
+    midi2::bytestream::bytestream_to_ump bs2ump{group};
+    for (auto const b : input) {
       // Push each byte into the translator instance.
       bs2ump.push(b);
       // Pull as may 32-bit UMP values as are available and display them.
       while (!bs2ump.empty()) {
-        std::cout << std::format("{:02X} ", bs2ump.pop());
+        std::cout << std::format("0x{:08X} ", bs2ump.pop());
       }
     }
     std::cout << '\n';
