@@ -9,45 +9,49 @@
 #include "midi2/ci/ci_dispatcher.hpp"
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <format>
 #include <iostream>
+#include <string_view>
 #include <type_traits>
 
 using namespace midi2::ci::literals;
+using namespace std::string_view_literals;
 
 // A formatter for arrays of 7-bit integer values (b7). These will be represented to
 // comma-separated hex values.
 template <std::size_t Size, typename CharT> struct std::formatter<std::array<midi2::ci::b7, Size>, CharT> {
   constexpr auto parse(auto& parse_ctx) const { return std::begin(parse_ctx); }
   auto format(std::array<midi2::ci::b7, Size> const &arr, auto &format_ctx) const {
+    auto separator = ""sv;
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
-    auto out = format_ctx.out();
-    char const *separator = "";
+    auto out = std::format_to(format_ctx.out(), "[");
     for (auto const value : arr) {
       out = std::format_to(out, "{}0x{:X}", separator, value);
-      separator = ",";
+      separator = ","sv;
     }
-    return out;
+    return std::format_to(out, "]");
   }
 };
 
 namespace {
 // Display the header fields
 void print_header(std::ostream &os, midi2::ci::header const &h) {
-  os << std::format("device-id=0x{:X}\nversion=0x{:X}\n", h.device_id, h.version)
-     << std::format("remote-MUID=0x{:X}\nlocal-MUID=0x{:X}\n\n", h.remote_muid, h.local_muid);
+  os << std::format("device-id=0x{:X}, version=0x{:X}, ", h.device_id, h.version)
+     << std::format("remote-MUID=0x{:X}, local-MUID=0x{:X}\n", h.remote_muid, h.local_muid);
 }
 // Display the discovery data fields
 void print_discovery(std::ostream &os, midi2::ci::discovery const &d) {
-  os << std::format("manufacturer={}\nfamily=0x{:X}\nmodel=0x{:X}\n", d.manufacturer, d.family, d.model)
-     << std::format("version={}\ncapability=0x{:X}\n", d.version, d.capability)
-     << std::format("max-sysex-size=0x{:X}\noutput-path-id=0x{:X}\n", d.max_sysex_size, d.output_path_id);
+  os << std::format("manufacturer={}, family=0x{:X}, model=0x{:X}, ", d.manufacturer, d.family, d.model)
+     << std::format("version={}, capability=0x{:X}, ", d.version, d.capability)
+     << std::format("max-sysex-size=0x{:X}, output-path-id=0x{:X}\n", d.max_sysex_size, d.output_path_id);
 }
 
 // We must pass a “context” to the dispatcher, which will be forwarded to each of the dispatcher's callbacks.
-// The context lets message handlers share state but we don’t need that here, so a struct with no members will suffice.
+// The context lets message handlers share state, but we don’t need that here: a struct with no members will suffice.
 struct context {};
 
 // Normally, these typedefs are not necessary: just use auto! However,
