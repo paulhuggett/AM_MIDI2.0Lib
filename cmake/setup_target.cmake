@@ -94,7 +94,7 @@ function (setup_target target)
   )
   if (CMAKE_CXX_COMPILER_ID MATCHES "GCC")
     check_cxx_compiler_flag (-Wbidi-chars=any GCC_W_BIDI_CHARS)
-    list (APPEND gcc_warning_options $<$<BOOL:${GCC_W_BIDI_CHARS}>:-Wbidi-chars=any)
+    list (APPEND gcc_warning_options $<$<BOOL:${GCC_W_BIDI_CHARS}>:-Wbidi-chars=any>)
   endif()
 
   set (msvc_warning_options
@@ -118,8 +118,12 @@ function (setup_target target)
 
   if (LINUX)
     # TODO: On AArch64 use -mbranch-protection=standard?
-    list (APPEND clang_options -fstack-clash-protection -fcf-protection=full)
-    list (APPEND gcc_options  -fstack-clash-protection -fcf-protection=full)
+    list (APPEND clang_options -fstack-clash-protection)
+    list (APPEND gcc_options   -fstack-clash-protection)
+
+    check_cxx_compiler_flag(-fcf-protection=full FCF_PROTECTION_FULL)
+    list (APPEND clang_options $<$<BOOL:${FCF_PROTECTION_FULL}>:-fcf-protection=full>)
+    list (APPEND gcc_options   $<$<BOOL:${FCF_PROTECTION_FULL}>:-fcf-protection=full>)
   endif (LINUX)
 
   if (MIDI2_WERROR)
