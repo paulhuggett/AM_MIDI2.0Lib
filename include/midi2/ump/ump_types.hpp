@@ -262,7 +262,7 @@ private:
   ///\returns The maximum value that can be held in \p Bits of type \p T.
   template <std::unsigned_integral T, unsigned Bits>
     requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
-  static constexpr T max_value() noexcept {
+  [[nodiscard]] static constexpr T max_value() noexcept {
     if constexpr (Bits == 8U) {
       return std::numeric_limits<std::uint8_t>::max();
     } else if constexpr (Bits == 16U) {
@@ -379,7 +379,7 @@ UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 /// \brief The JR Clock message (section 7.2.2.1)
 class midi2::ump::utility::jr_clock {
 public:
-  /// The first word of a JR Clock message
+  /// The first word of a Jitter Reduction Clock message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -394,6 +394,8 @@ public:
     using status = details::bitfield<20, 4>;
     /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
+    /// \brief Sender Clock Time
+    /// A 16-bit time value in clock ticks of 1/31250 of one second (32 µsec, clock frequency of 1 MHz / 32).
     using sender_clock_time = details::bitfield<0, 16>;
   };
 
@@ -416,10 +418,10 @@ private:
 
 UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_clock
 
-// 7.2.2.2 JR Timestamp Message
+// 7.2.2.2 Jitter-Reduction Timestamp Message
 class midi2::ump::utility::jr_timestamp {
 public:
-  /// The first word of a JR Timestamp message
+  /// The first word of a Jitter-Reduction Timestamp message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -434,6 +436,8 @@ public:
     using status = details::bitfield<20, 4>;
     /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
+    /// \brief Sender Clock Timestamp
+    /// A 16-bit time value in clock ticks of 1/31250 of one second (32 µsec, clock frequency of 1 MHz / 32).
     using timestamp = details::bitfield<0, 16>;
   };
 
@@ -473,6 +477,7 @@ public:
     using status = details::bitfield<20, 4>;
     /// Defines a group of reserved bits.
     using reserved1 = details::bitfield<16, 4>;
+    ///
     using ticks_pqn = details::bitfield<0, 16>;
   };
 
