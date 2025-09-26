@@ -27,7 +27,7 @@ jobs:
       CODACY_URL: https://api.codacy.com
       # The path for clang-tidy output.
       CLANG_TIDY_OUT: /tmp/clang-tidy-out
-      CLANG_VERSION: 19
+      CLANG_VERSION: 20
       # The path for codacy-clang-tidy output.
       CCT_OUT: /tmp/cct-out
 
@@ -56,45 +56,47 @@ jobs:
         env:
           CCT_DOWNLOAD_URL: https://github.com/codacy/codacy-clang-tidy/releases/download/${{ env.CCT_VERSION }}/${{ env.CCT }}-${{ env.CCT_VERSION }}
         run: |
-          mkdir -p "$HOME/cct"
-          curl -L "${CCT_DOWNLOAD_URL}" -o "$HOME/cct/${CCT}-${CCT_VERSION}"
-          chmod +x "$HOME/cct/${CCT}-${CCT_VERSION}"
+          mkdir -p "${HOME}/cct"
+          curl -L "${CCT_DOWNLOAD_URL}" -o "${HOME}/cct/${CCT}-${CCT_VERSION}"
+          chmod +x "${HOME}/cct/${CCT}-${CCT_VERSION}"
 
       - name: Configure
         run: |
           cmake -S .                                           \
-                -B "$BUILD_DIR"                                \
+                -B "${BUILD_DIR}"                                \
                 -G Ninja                                       \
                 -D CMAKE_BUILD_TYPE=Release                    \
                 -D CMAKE_EXPORT_COMPILE_COMMANDS=Yes           \
-                -D "CMAKE_C_COMPILER=clang-$CLANG_VERSION"     \
-                -D "CMAKE_CXX_COMPILER=clang++-$CLANG_VERSION" \
+                -D "CMAKE_C_COMPILER=clang-${CLANG_VERSION}"     \
+                -D "CMAKE_CXX_COMPILER=clang++-${CLANG_VERSION}" \
                 -D MIDI2_DEMO=yes
 
       - name: Run clang-tidy
         run: |
-          find . -name \*.cpp -not \( -path "./$BUILD_DIR/*" -or -path "./googletest/*" -or -path "./icubaby/*" \) -print0 | \
-          xargs -0 -I % "clang-tidy-$CLANG_VERSION" "-p=$BUILD_DIR/compile_commands.json" -header-filter=.* % | \
-          tee -a "${{ env.CLANG_TIDY_OUT }}"
+          find . -name \*.cpp -not \( -path "./${BUILD_DIR}/*" -or -path "./googletest/*" -or -path "./icubaby/*" -or -path "./benchmark/*" \) -print0 | \
+          xargs -0 -I % "clang-tidy-${CLANG_VERSION}" "-p=${BUILD_DIR}/compile_commands.json" -header-filter=.* % | \
+          tee -a "${CLANG_TIDY_OUT}"
 
       # Convert the clang-tidy output to a format that the Codacy API accepts
       - name: Run codacy-clang-tidy
         run: |
-          "$HOME/cct/${CCT}-${CCT_VERSION}" < "$CLANG_TIDY_OUT" > "$CCT_OUT"
+          "${HOME}/cct/${CCT}-${CCT_VERSION}" < "${CLANG_TIDY_OUT"} > "${CCT_OUT}"
 
       - name: Upload to the Codacy server
+        env:
+          TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
           COMMIT=$(git rev-parse HEAD)
           # Send the results to Codacy
-          curl -XPOST                                                  \
-               -L                                                      \
-               -H "project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}" \
-               -H "Content-type: application/json"                     \
-               -d "@$CCT_OUT"                                          \
+          curl -XPOST                              \
+               -L                                  \
+               -H "project-token: ${TOKEN}"        \
+               -H "Content-type: application/json" \
+               -d "@${CCT_OUT}"                    \
                "${CODACY_URL}/2.0/commit/${COMMIT}/issuesRemoteResults"
-          # Signal that Codacy can use the sent results and start a new analysis
-          curl -XPOST                                                  \
-               -L                                                      \
-               -H "project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}" \
-               -H "Content-type: application/json"                     \
+          # Signal that Codacy can use the results and start a new analysis
+          curl -XPOST                              \
+               -L                                  \
+               -H "project-token: ${TOKEN}"        \
+               -H "Content-type: application/json" \
                "${CODACY_URL}/2.0/commit/${COMMIT}/resultsFinal"
