@@ -80,7 +80,7 @@ jobs:
       # Convert the clang-tidy output to a format that the Codacy API accepts
       - name: Run codacy-clang-tidy
         run: |
-          "${HOME}/cct/${CCT}-${CCT_VERSION}" < "${CLANG_TIDY_OUT"} > "${CCT_OUT}"
+          "${HOME}/cct/${CCT}-${CCT_VERSION}" < "${CLANG_TIDY_OUT}" > "${CCT_OUT}"
 
       - name: Upload to the Codacy server
         env:
