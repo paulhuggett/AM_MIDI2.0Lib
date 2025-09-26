@@ -57,8 +57,7 @@ void send_note_on(std::uint8_t channel, std::uint8_t note, std::uint32_t velocit
 
   // Invoke a function for each of the words that make up the complete message. There's
   // no need for this code to understand the layout or size of the message.
-  midi2::ump::apply(message, [](auto const v) {
-      auto const word = std::uint32_t{v};
+  midi2::ump::apply(message, [](std::uint32_t const word) {
       // ... transmit the 32 bit word ...
       return std::error_code{};
     });
