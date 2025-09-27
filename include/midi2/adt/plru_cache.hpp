@@ -367,7 +367,7 @@ public:
   // have a need for them.)
   plru_cache(plru_cache const &) = delete;
   plru_cache(plru_cache &&) noexcept = delete;
-
+  ~plru_cache() noexcept { clear(); }
   plru_cache &operator=(plru_cache const &) noexcept = delete;
   plru_cache &operator=(plru_cache &&) noexcept = delete;
 
@@ -415,7 +415,7 @@ public:
   }
 
   /// \brief Clears the contents of the cache.
-  constexpr void clear() {
+  constexpr void clear() noexcept {
     for (ways_type &w : sets_) {
       w.clear();
     }
