@@ -347,7 +347,7 @@ public:
   }
 
   /// Dispatches a call to system::check_muid to the function that was installed by an earlier call to on_check_muid().
-  bool check_muid(Context context, std::uint8_t group, muid m) const {
+  [[nodiscard]] bool check_muid(Context context, std::uint8_t group, muid m) const {
     return check_muid_ ? check_muid_(std::move(context), group, m) : false;
   }
   /// Dispatches a call to system::unknown to the function that was installed previously by a call to on_unknown().
