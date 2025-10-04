@@ -40,7 +40,7 @@ using midi2::ci::byte_array;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
 using midi2::ci::details::to_le7;
-using namespace midi2::ci::literals;
+using namespace midi2::literals;
 
 class CICreateMessage : public testing::Test {
 protected:

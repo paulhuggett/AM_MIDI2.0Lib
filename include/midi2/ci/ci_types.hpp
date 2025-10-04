@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ci_types.hpp
+/// \brief Types and constants for MIDI CI
+
 #ifndef MIDI2_CI_TYPES_HPP
 #define MIDI2_CI_TYPES_HPP
 
@@ -24,9 +27,8 @@
 #include "midi2/bytestream/bytestream_types.hpp"
 #include "midi2/utils.hpp"
 
-namespace midi2::ci {
-
-namespace details {
+namespace midi2 {
+namespace ci::details {
 
 /// Represents an unsigned integer with a specific number of bits
 template <unsigned Bits, std::unsigned_integral Underlying = midi2::adt::uinteger_t<Bits>>
@@ -62,28 +64,36 @@ private:
   Underlying value_ = 0;
 };
 
-}  // end namespace details
+}  // end namespace ci::details
 
-using b7 = details::bn<7>;
-using b14 = details::bn<14>;
-using b28 = details::bn<28>;
+namespace ci {
+using b7 = ci::details::bn<7>;
+using b14 = ci::details::bn<14>;
+using b28 = ci::details::bn<28>;
+}  // namespace ci
 
 namespace literals {
-[[nodiscard]] consteval b7 operator""_b7(char const arg) noexcept {
-  return b7{static_cast<std::uint8_t>(arg)};
+
+[[nodiscard]] consteval ci::b7 operator""_b7(char const arg) noexcept {
+  assert(arg < (1 << 7));
+  return ci::b7{static_cast<std::uint8_t>(arg)};
 }
-[[nodiscard]] consteval b7 operator""_b7(unsigned long long const arg) noexcept {
-  return b7{arg};
+[[nodiscard]] consteval ci::b7 operator""_b7(unsigned long long const arg) noexcept {
+  assert(arg < (1 << 7));
+  return ci::b7{arg};
 }
-[[nodiscard]] consteval b14 operator""_b14(unsigned long long const arg) noexcept {
-  return b14{arg};
+[[nodiscard]] consteval ci::b14 operator""_b14(unsigned long long const arg) noexcept {
+  assert(arg < (1 << 14));
+  return ci::b14{arg};
 }
-[[nodiscard]] consteval b28 operator""_b28(unsigned long long const arg) noexcept {
-  return b28{arg};
+[[nodiscard]] consteval ci::b28 operator""_b28(unsigned long long const arg) noexcept {
+  assert(arg < (1 << 28));
+  return ci::b28{arg};
 }
+
 }  // end namespace literals
 
-}  // end namespace midi2::ci
+}  // end namespace midi2
 
 template <unsigned Bits, std::unsigned_integral Underlying, typename CharT>
 struct std::formatter<midi2::ci::details::bn<Bits, Underlying>, CharT> : public std::formatter<Underlying, CharT> {
@@ -623,6 +633,7 @@ constexpr invalidate_muid::operator packed::invalidate_muid_v1() const noexcept 
 //*               *
 namespace packed {
 
+/// \brief Version 1 of the CI Ack message
 struct ack_v1 {
   std::byte original_id;         ///< Original Transaction Sub-ID#2 Classification
   std::byte status_code;         ///< ACK Status Code
@@ -692,7 +703,9 @@ constexpr bool ack::operator==(ack const &other) const noexcept {
 //*                 *
 namespace packed {
 
+/// \brief Version 1 of the CI Nak message
 struct nak_v1 {};
+/// \brief Version 2 of the CI Nak message
 struct nak_v2 {
   std::byte original_id;         ///< Original transaction sub-ID#2 classification
   std::byte status_code;         ///< ACK Status Code
@@ -778,6 +791,7 @@ struct inquiry {};
 
 namespace packed {
 
+/// \brief Part 1 of version 1 of the CI Inquiry Reply message
 struct inquiry_reply_v1_pt1 {
   byte_array<2> num_enabled;  ///< Number of currently enabled profiles
   profile ids[1];             ///< Profile ID of currently enabled profiles (array length given by num_enabled)
@@ -789,6 +803,7 @@ static_assert(sizeof(inquiry_reply_v1_pt1) == 7);
 static_assert(alignof(inquiry_reply_v1_pt1) == 1);
 static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt1>);
 
+/// \brief Part 2 of version 1 of the CI Inquiry Reply message
 struct inquiry_reply_v1_pt2 {
   byte_array<2> num_disabled;  ///< Number of currently disabled profiles
   profile ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_disabled)
@@ -837,6 +852,7 @@ constexpr inquiry_reply::operator packed::inquiry_reply_v1_pt2() const noexcept 
 //* |_|                                                  *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Added message
 struct added_v1 {
   profile pid;  // Profile ID of profile being added
 };
@@ -862,6 +878,7 @@ struct added {
 //* |_|                                                         *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Removed message
 struct removed_v1 {
   profile pid;  // Profile ID of profile being removed
 };
@@ -887,8 +904,9 @@ struct removed {
 //* |_|                                                     |_|           |__/  *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Details Inquiry message
 struct details_v1 {
-  profile pid;  // Profile ID of profile
+  profile pid;  ///< Profile ID of profile
   std::byte target;
 };
 static_assert(offsetof(details_v1, pid) == 0);
@@ -914,6 +932,7 @@ struct details {
 
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Details Reply message
 struct details_reply_v1 {
   profile pid;                ///< Profile ID of profile
   std::byte target;           ///< Inquiry target
@@ -966,6 +985,7 @@ constexpr details_reply::operator packed::details_reply_v1() const noexcept {
 //* |_|                                   *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile On message
 struct on_v1 {
   profile pid;  // Profile ID of profile to be set to on (to be enabled)
 };
@@ -974,6 +994,7 @@ static_assert(sizeof(on_v1) == 5);
 static_assert(alignof(on_v1) == 1);
 static_assert(std::is_trivially_copyable_v<on_v1>);
 
+/// \brief Version 2 of the CI Profile On message
 struct on_v2 {
   on_v1 v1;
   /// Number of channels requested (LSB First) to assign to this profile when it is enabled
@@ -1020,6 +1041,7 @@ constexpr on::operator packed::on_v2() const noexcept {
 //* |_|                                      *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Off message
 struct off_v1 {
   profile pid;  // Profile ID of Profile to be Set to On (to be Enabled)
 };
@@ -1028,6 +1050,7 @@ static_assert(sizeof(off_v1) == 5);
 static_assert(alignof(off_v1) == 1);
 static_assert(std::is_trivially_copyable_v<off_v1>);
 
+/// \brief Version 2 of the CI Profile Off message
 struct off_v2 {
   off_v1 v1;
   byte_array<2> reserved;
@@ -1073,6 +1096,7 @@ constexpr off::operator packed::off_v2() const noexcept {
 //* |_|                                                        *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Enabled message
 struct enabled_v1 {
   profile pid;  // Profile ID of Profile that is now enabled
 };
@@ -1081,6 +1105,7 @@ static_assert(sizeof(enabled_v1) == 5);
 static_assert(alignof(enabled_v1) == 1);
 static_assert(std::is_trivially_copyable_v<enabled_v1>);
 
+/// \brief Version 2 of the CI Profile Enabled message
 struct enabled_v2 {
   enabled_v1 v1;
   byte_array<2> num_channels;
@@ -1129,14 +1154,16 @@ constexpr enabled::operator packed::enabled_v2() const noexcept {
 //* |_|                                                          *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Disabled message
 struct disabled_v1 {
-  profile pid;  // Profile ID of Profile that is now disabled
+  profile pid;  ///< Profile ID of Profile that is now disabled
 };
 static_assert(offsetof(disabled_v1, pid) == 0);
 static_assert(sizeof(disabled_v1) == 5);
 static_assert(alignof(disabled_v1) == 1);
 static_assert(std::is_trivially_copyable_v<disabled_v1>);
 
+/// \brief Version 2 of the CI Profile Disabled message
 struct disabled_v2 {
   disabled_v1 v1;
   byte_array<2> num_channels;
@@ -1183,6 +1210,7 @@ constexpr disabled::operator packed::disabled_v2() const noexcept {
 //* |_|                           |_|                                            *
 namespace packed {
 
+/// \brief Version 1 of the CI Profile Specific message
 struct specific_data_v1 {
   profile pid;                ///< Profile ID
   byte_array<2> data_length;  ///< Length of following profile specific data (LSB first)
@@ -1234,6 +1262,7 @@ namespace property_exchange {
 //* |_|                 |_|                                  *
 namespace packed {
 
+/// \brief Version 1 of the CI PE Capabilities message
 struct capabilities_v1 {
   std::byte num_simultaneous;
 };
@@ -1242,6 +1271,7 @@ static_assert(sizeof(capabilities_v1) == 1);
 static_assert(alignof(capabilities_v1) == 1);
 static_assert(std::is_trivially_copyable_v<capabilities_v1>);
 
+/// \brief Version 2 of the CI PE Capabilities message
 struct capabilities_v2 {
   capabilities_v1 v1;
   std::byte major_version;
@@ -1300,6 +1330,7 @@ constexpr capabilities::operator packed::capabilities_v2() const noexcept {
 //* |_|                 |_|                                          |_|     |__/  *
 namespace packed {
 
+/// \brief Version 1 of the CI PE Capabilities Reply message
 struct capabilities_reply_v1 {
   std::byte num_simultaneous;
 };
@@ -1308,6 +1339,7 @@ static_assert(sizeof(capabilities_reply_v1) == 1);
 static_assert(alignof(capabilities_reply_v1) == 1);
 static_assert(std::is_trivially_copyable_v<capabilities_reply_v1>);
 
+/// \brief Version 2 of the CI PE Capabilities Reply message
 struct capabilities_reply_v2 {
   capabilities_reply_v1 v1;
   std::byte major_version;
@@ -1368,10 +1400,11 @@ constexpr capabilities_reply::operator packed::capabilities_reply_v2() const noe
 //* |_|          |_|                |__/                            |___/      *
 namespace packed {
 
+/// \brief Part 1 of the CI Property Exchange message
 struct property_exchange_pt1 {
   std::byte request_id;
   byte_array<2> header_length;
-  std::byte header[1];
+  char header[1];
 };
 static_assert(offsetof(property_exchange_pt1, request_id) == 0);
 static_assert(offsetof(property_exchange_pt1, header_length) == 1);
@@ -1380,11 +1413,12 @@ static_assert(alignof(property_exchange_pt1) == 1);
 static_assert(sizeof(property_exchange_pt1) == 4);
 static_assert(std::is_trivially_copyable_v<property_exchange_pt1>);
 
+/// \brief Part 2 of the CI Property Exchange message
 struct property_exchange_pt2 {
   byte_array<2> number_of_chunks;
   byte_array<2> chunk_number;
   byte_array<2> data_length;
-  std::byte data[1];
+  char data[1];
 };
 static_assert(offsetof(property_exchange_pt2, number_of_chunks) == 0);
 static_assert(offsetof(property_exchange_pt2, chunk_number) == 2);
@@ -1414,7 +1448,7 @@ public:
     return {
         .request_id = static_cast<std::byte>(request.get()),
         .header_length = details::to_le7(static_cast<b14>(header.size())),
-        .header = {std::byte{0}},
+        .header = {'\0'},
     };
   }
   explicit constexpr operator packed::property_exchange_pt2() const noexcept {
@@ -1422,7 +1456,7 @@ public:
         .number_of_chunks = details::to_le7(chunk.number_of_chunks),
         .chunk_number = details::to_le7(chunk.chunk_number),
         .data_length = details::to_le7(static_cast<b14>(data.size_bytes())),
-        .data = {std::byte{0}},
+        .data = {'\0'},
     };
   }
   constexpr bool operator==(property_exchange const &other) const noexcept {

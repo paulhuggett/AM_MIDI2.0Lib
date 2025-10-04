@@ -115,12 +115,8 @@ using midi2::ci::byte_array;
 using midi2::ci::header;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
-using namespace midi2::ci::literals;
+using namespace midi2::literals;
 
-consteval std::byte operator""_b(unsigned long long arg) noexcept {
-  assert(arg < 256);
-  return static_cast<std::byte>(arg);
-}
 consteval std::uint8_t operator""_u8(unsigned long long arg) noexcept {
   assert(arg < 256);
   return static_cast<std::uint8_t>(arg);
@@ -956,13 +952,17 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportEnd) {
 
 // This test simply gets ci_dispatcher to consume a random buffer.
 void NeverCrashes(std::vector<std::byte> const &message) {
-  // Ensure the top bit is clear.
+  // Ensure the top bit of each byte of the incoming message stream is clear.
   std::vector<std::byte> message2;
   message2.reserve(message.size());
   std::ranges::transform(message, std::back_inserter(message2), [](std::byte v) { return v & 0x7F_b; });
+
+  // A context type for the dispatcher
   struct empty {};
+
   static constexpr auto buffer_size = std::size_t{64};
   auto dispatcher = midi2::ci::make_function_dispatcher<empty, buffer_size>();
+
   dispatcher.config().system.on_check_muid([](empty, std::uint8_t, midi2::ci::muid) { return true; });
   std::ranges::for_each(message2, std::bind_front(&decltype(dispatcher)::dispatch, &dispatcher));
 }

@@ -58,7 +58,7 @@ template <typename Enum>
 
 template <typename Function, typename... Args>
   requires(std::is_invocable_v<Function, Args...>)
-void call(Function&& function, Args&&... args) {
+inline void call(Function&& function, Args&&... args) {
   if (function) {
     std::invoke(std::forward<Function>(function), std::forward<Args>(args)...);
   }
@@ -70,6 +70,15 @@ constexpr std::uint8_t lo7(std::unsigned_integral auto v) noexcept {
 constexpr std::uint8_t hi7(std::unsigned_integral auto v) noexcept {
   return (v >> 7) & 0x7F;
 }
+
+namespace literals {
+
+[[nodiscard]] consteval std::byte operator""_b(unsigned long long arg) noexcept {
+  assert(arg < 256);
+  return static_cast<std::byte>(arg);
+}
+
+}  // end namespace literals
 
 }  // end namespace midi2
 

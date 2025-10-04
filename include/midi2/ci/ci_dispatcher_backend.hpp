@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ci_dispatcher_backend.hpp
+/// \brief  Concepts and types for MIDI Capability Inquiry dispatcher backends
+
 #ifndef MIDI2_CI_DISPATCHER_BACKEND_HPP
 #define MIDI2_CI_DISPATCHER_BACKEND_HPP
 
@@ -16,10 +19,10 @@
 namespace midi2::ci::dispatcher_backend {
 
 // clang-format off
-/// \brief The system messages concept gathers MIDI CI dispatchers callback functions that relate to the system as a
+/// \brief The system messages concept gathers MIDI CI dispatcher callback functions that relate to the system as a
 /// whole rather than to a specific group of MIDI messages.
 ///
-/// The functions that is requires are:
+/// The functions required are:
 ///
 /// - check_muid: Checks whether the message is addressed to this receiver. If this function returns true, the message
 ///   is dispatched otherwise it is dropped.
@@ -32,115 +35,151 @@ concept system = requires(T v, Context context) {
   { v.buffer_overflow(context) } -> std::same_as<void>;
 };
 
+/// \brief The management concept gathers MIDI CI dispatcher callback functions for the management category of messages.
+///
+/// The functions required are:
+///
+/// - discovery: Used to by an initiator to establish connections.
+/// - discovery_reply: Received when a responder receives a discover message.
+/// - endpoint: A request for information about an endpoint.
+/// - endpoint_reply: Called when a response to an endpoint message is received.
+/// - invalidate_muid
+/// - ack
+/// - nak
 template <typename T, typename Context>
 concept management = requires(T v, Context context) {
-  { v.discovery(context, header{}, ci::discovery{}) } -> std::same_as<void>;
-  { v.discovery_reply(context, header{}, ci::discovery_reply{}) } -> std::same_as<void>;
-  { v.endpoint(context, header{}, ci::endpoint{}) } -> std::same_as<void>;
-  { v.endpoint_reply(context, header{}, ci::endpoint_reply{}) } -> std::same_as<void>;
-  { v.invalidate_muid(context, header{}, ci::invalidate_muid{}) } -> std::same_as<void>;
-  { v.ack(context, header{}, ci::ack{}) } -> std::same_as<void>;
-  { v.nak(context, header{}, ci::nak{}) } -> std::same_as<void>;
+  { v.discovery(context, header{}, discovery{}) } -> std::same_as<void>;
+  { v.discovery_reply(context, header{}, discovery_reply{}) } -> std::same_as<void>;
+  { v.endpoint(context, header{}, endpoint{}) } -> std::same_as<void>;
+  { v.endpoint_reply(context, header{}, endpoint_reply{}) } -> std::same_as<void>;
+  { v.invalidate_muid(context, header{}, invalidate_muid{}) } -> std::same_as<void>;
+  { v.ack(context, header{}, ack{}) } -> std::same_as<void>;
+  { v.nak(context, header{}, nak{}) } -> std::same_as<void>;
 };
 
 template <typename T, typename Context>
 concept profile = requires(T v, Context context) {
   { v.inquiry(context, header{}) } -> std::same_as<void>;
-  { v.inquiry_reply(context, header{}, ci::profile_configuration::inquiry_reply{}) } -> std::same_as<void>;
-  { v.added(context, header{}, ci::profile_configuration::added{}) } -> std::same_as<void>;
-  { v.removed(context, header{}, ci::profile_configuration::removed{}) } -> std::same_as<void>;
-  { v.details(context, header{}, ci::profile_configuration::details{}) } -> std::same_as<void>;
-  { v.details_reply(context, header{}, ci::profile_configuration::details_reply{}) } -> std::same_as<void>;
-  { v.on(context, header{}, ci::profile_configuration::on{}) } -> std::same_as<void>;
-  { v.off(context, header{}, ci::profile_configuration::off{}) } -> std::same_as<void>;
-  { v.enabled(context, header{}, ci::profile_configuration::enabled{}) } -> std::same_as<void>;
-  { v.disabled(context, header{}, ci::profile_configuration::disabled{}) } -> std::same_as<void>;
-  { v.specific_data(context, header{}, ci::profile_configuration::specific_data{}) } -> std::same_as<void>;
+  { v.inquiry_reply(context, header{}, profile_configuration::inquiry_reply{}) } -> std::same_as<void>;
+  { v.added(context, header{}, profile_configuration::added{}) } -> std::same_as<void>;
+  { v.removed(context, header{}, profile_configuration::removed{}) } -> std::same_as<void>;
+  { v.details(context, header{}, profile_configuration::details{}) } -> std::same_as<void>;
+  { v.details_reply(context, header{}, profile_configuration::details_reply{}) } -> std::same_as<void>;
+  { v.on(context, header{}, profile_configuration::on{}) } -> std::same_as<void>;
+  { v.off(context, header{}, profile_configuration::off{}) } -> std::same_as<void>;
+  { v.enabled(context, header{}, profile_configuration::enabled{}) } -> std::same_as<void>;
+  { v.disabled(context, header{}, profile_configuration::disabled{}) } -> std::same_as<void>;
+  { v.specific_data(context, header{}, profile_configuration::specific_data{}) } -> std::same_as<void>;
 };
 
 template <typename T, typename Context>
 concept property_exchange = requires(T v, Context context) {
-  { v.capabilities(context, header{}, ci::property_exchange::capabilities{}) } -> std::same_as<void>;
-  { v.capabilities_reply(context, header{}, ci::property_exchange::capabilities_reply{}) } -> std::same_as<void>;
+  { v.capabilities(context, header{}, property_exchange::capabilities{}) } -> std::same_as<void>;
+  { v.capabilities_reply(context, header{}, property_exchange::capabilities_reply{}) } -> std::same_as<void>;
 
-  { v.get(context, header{}, ci::property_exchange::get{}) } -> std::same_as<void>;
-  { v.get_reply(context, header{}, ci::property_exchange::get_reply{}) } -> std::same_as<void>;
-  { v.set(context, header{}, ci::property_exchange::set{}) } -> std::same_as<void>;
-  { v.set_reply(context, header{}, ci::property_exchange::set_reply{}) } -> std::same_as<void>;
+  { v.get(context, header{}, property_exchange::get{}) } -> std::same_as<void>;
+  { v.get_reply(context, header{}, property_exchange::get_reply{}) } -> std::same_as<void>;
+  { v.set(context, header{}, property_exchange::set{}) } -> std::same_as<void>;
+  { v.set_reply(context, header{}, property_exchange::set_reply{}) } -> std::same_as<void>;
 
-  { v.subscription(context, header{}, ci::property_exchange::subscription{}) } -> std::same_as<void>;
-  { v.subscription_reply(context, header{}, ci::property_exchange::subscription_reply{}) } -> std::same_as<void>;
-  { v.notify(context, header{}, ci::property_exchange::notify{}) } -> std::same_as<void>;
+  { v.subscription(context, header{}, property_exchange::subscription{}) } -> std::same_as<void>;
+  { v.subscription_reply(context, header{}, property_exchange::subscription_reply{}) } -> std::same_as<void>;
+  { v.notify(context, header{}, property_exchange::notify{}) } -> std::same_as<void>;
 };
 
 template <typename T, typename Context>
 concept process_inquiry = requires(T v, Context context) {
   { v.capabilities(context, header{}) } -> std::same_as<void>;
-  { v.capabilities_reply(context, header{}, ci::process_inquiry::capabilities_reply{}) } -> std::same_as<void>;
-  { v.midi_message_report(context, header{}, ci::process_inquiry::midi_message_report{}) } -> std::same_as<void>;
-  { v.midi_message_report_reply(context, header{}, ci::process_inquiry::midi_message_report_reply{}) } -> std::same_as<void>;
+  { v.capabilities_reply(context, header{}, process_inquiry::capabilities_reply{}) } -> std::same_as<void>;
+  { v.midi_message_report(context, header{}, process_inquiry::midi_message_report{}) } -> std::same_as<void>;
+  { v.midi_message_report_reply(context, header{}, process_inquiry::midi_message_report_reply{}) } -> std::same_as<void>;
   { v.midi_message_report_end(context, header{}) } -> std::same_as<void>;
 };
 // clang-format on
 
 // clang-format off
+/// An implementation of the MIDI CI system message handlers which each discard the incoming message.
 template <typename Context> struct system_null {
   /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
   /// dispatched otherwise it is dropped.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param group  The MIDI group to which the message was addressed.
   /// \param id  The MUID to which the message was addressed.
   /// \returns True if the message is to be dispatched, false if it is to be ignored.
-  constexpr static bool check_muid(Context context, std::uint8_t const group, muid const id) { (void)context; (void)group; (void)id; return false; }
+  constexpr static bool check_muid(Context c, std::uint8_t const group, muid const id) { (void)c; (void)group; (void)id; return false; }
   /// This function is called when an unrecognized message is received.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param h  The header that for the unrecognized message.
-  constexpr static void unknown_midici(Context context, header const &h) { (void)context; (void)h; /* do nothing */ }
-  /// \param context  The context object passed to all message handlers.
-  constexpr static void buffer_overflow(Context context) { (void)context; /* do nothing */ }
+  constexpr static void unknown_midici(Context c, header const &h) { (void)c; (void)h; /* do nothing */ }
+  /// Called when a message has overflowed the capacity of the internal buffer.
+  ///
+  /// \param c  The context object passed to all message handlers.
+  constexpr static void buffer_overflow(Context c) { (void)c; /* do nothing */ }
 };
+/// An implementation of the MIDI CI management message handlers which each discard the incoming message.
 template <typename Context> struct management_null {
-  constexpr static void discovery(Context, header const &, ci::discovery const &) { /* do nothing */ }
-  constexpr static void discovery_reply(Context, header const &, ci::discovery_reply const &) { /* do nothing */ }
-  constexpr static void endpoint(Context, header const &, ci::endpoint const &) { /* do nothing*/ }
-  constexpr static void endpoint_reply(Context, header const &, ci::endpoint_reply const &) { /* do nothing */ }
-  constexpr static void invalidate_muid(Context, header const &, ci::invalidate_muid const &) { /* do nothing */ }
-  constexpr static void ack(Context, header const &, ci::ack const &) { /* do nothing */ }
-  constexpr static void nak(Context, header const &, ci::nak const &) { /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The discovery message fields.
+  constexpr static void discovery(Context c, header const &h, discovery const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The discovery-reply message fields.
+  constexpr static void discovery_reply(Context c, header const &h, discovery_reply const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The endpoint message fields.
+  constexpr static void endpoint(Context c, header const &h, endpoint const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The endpoint-reply message fields.
+  constexpr static void endpoint_reply(Context c, header const &h, endpoint_reply const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The invalidate-MUID message fields.
+  constexpr static void invalidate_muid(Context c, header const &h, invalidate_muid const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The Ack message fields.
+  constexpr static void ack(Context c, header const &h, ack const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
+  /// \param c  The context object passed to all message handlers.
+  /// \param h  An instance of midi2::ci::header which contains fields from the standard MIDI CI header.
+  /// \param m  The Nak message fields.
+  constexpr static void nak(Context c, header const &h, nak const &m) { (void)c; (void)h; (void)m; /* do nothing */ }
 };
 template <typename Context> struct profile_null {
   constexpr static void inquiry(Context, header const &) { /* do nothing */ }
-  constexpr static void inquiry_reply(Context, header const &, ci::profile_configuration::inquiry_reply const &) { /* do nothing */ }
-  constexpr static void added(Context, header const &, ci::profile_configuration::added const &) { /* do nothing */ }
-  constexpr static void removed(Context, header const &, ci::profile_configuration::removed const &) { /* do nothing */ }
-  constexpr static void details(Context, header const &, ci::profile_configuration::details const &) { /* do nothing */ }
-  constexpr static void details_reply(Context, header const &, ci::profile_configuration::details_reply const &) { /* do nothing */ }
-  constexpr static void on(Context, header const &, ci::profile_configuration::on const &) { /* do nothing */ }
-  constexpr static void off(Context, header const &, ci::profile_configuration::off const &) { /* do nothing */ }
-  constexpr static void enabled(Context, header const &, ci::profile_configuration::enabled const &) { /* do nothing */ }
-  constexpr static void disabled(Context, header const &, ci::profile_configuration::disabled const &) { /* do nothing */ }
-  constexpr static void specific_data(Context, header const &, ci::profile_configuration::specific_data const &) { /* do nothing */ }
+  constexpr static void inquiry_reply(Context, header const &, profile_configuration::inquiry_reply const &) { /* do nothing */ }
+  constexpr static void added(Context, header const &, profile_configuration::added const &) { /* do nothing */ }
+  constexpr static void removed(Context, header const &, profile_configuration::removed const &) { /* do nothing */ }
+  constexpr static void details(Context, header const &, profile_configuration::details const &) { /* do nothing */ }
+  constexpr static void details_reply(Context, header const &, profile_configuration::details_reply const &) { /* do nothing */ }
+  constexpr static void on(Context, header const &, profile_configuration::on const &) { /* do nothing */ }
+  constexpr static void off(Context, header const &, profile_configuration::off const &) { /* do nothing */ }
+  constexpr static void enabled(Context, header const &, profile_configuration::enabled const &) { /* do nothing */ }
+  constexpr static void disabled(Context, header const &, profile_configuration::disabled const &) { /* do nothing */ }
+  constexpr static void specific_data(Context, header const &, profile_configuration::specific_data const &) { /* do nothing */ }
 };
 template <typename Context> struct property_exchange_null {
-  constexpr static void capabilities(Context, header const &, ci::property_exchange::capabilities const &) { /* do nothing */ }
-  constexpr static void capabilities_reply(Context, header const &, ci::property_exchange::capabilities_reply const &) { /* do nothing */ }
+  constexpr static void capabilities(Context, header const &, property_exchange::capabilities const &) { /* do nothing */ }
+  constexpr static void capabilities_reply(Context, header const &, property_exchange::capabilities_reply const &) { /* do nothing */ }
 
-  constexpr static void get(Context, header const &, ci::property_exchange::get const &) { /* do nothing */ }
-  constexpr static void get_reply(Context, header const &, ci::property_exchange::get_reply const &) { /* do nothing */ }
-  constexpr static void set(Context, header const &, ci::property_exchange::set const &) { /* do nothing */ }
-  constexpr static void set_reply(Context, header const &, ci::property_exchange::set_reply const &) { /* do nothing */ }
+  constexpr static void get(Context, header const &, property_exchange::get const &) { /* do nothing */ }
+  constexpr static void get_reply(Context, header const &, property_exchange::get_reply const &) { /* do nothing */ }
+  constexpr static void set(Context, header const &, property_exchange::set const &) { /* do nothing */ }
+  constexpr static void set_reply(Context, header const &, property_exchange::set_reply const &) { /* do nothing */ }
 
-  constexpr static void subscription(Context, header const &, ci::property_exchange::subscription const &) { /* do nothing */ }
-  constexpr static void subscription_reply(Context, header const &, ci::property_exchange::subscription_reply const &) { /* do nothing */ }
-  constexpr static void notify(Context, header const &, ci::property_exchange::notify const &) { /* do nothing */ }
+  constexpr static void subscription(Context, header const &, property_exchange::subscription const &) { /* do nothing */ }
+  constexpr static void subscription_reply(Context, header const &, property_exchange::subscription_reply const &) { /* do nothing */ }
+  constexpr static void notify(Context, header const &, property_exchange::notify const &) { /* do nothing */ }
 };
 template <typename Context> struct process_inquiry_null {
   constexpr static void capabilities(Context, header const &) { /* do nothing */ }
-  constexpr static void capabilities_reply(Context, header const &, ci::process_inquiry::capabilities_reply const &) { /* do nothing */ }
-  constexpr static void midi_message_report(Context, header const &, ci::process_inquiry::midi_message_report const &) { /* do nothing */ }
-  constexpr static void midi_message_report_reply(Context, header const &, ci::process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
+  constexpr static void capabilities_reply(Context, header const &, process_inquiry::capabilities_reply const &) { /* do nothing */ }
+  constexpr static void midi_message_report(Context, header const &, process_inquiry::midi_message_report const &) { /* do nothing */ }
+  constexpr static void midi_message_report_reply(Context, header const &, process_inquiry::midi_message_report_reply const &) { /* do nothing */ }
   constexpr static void midi_message_report_end(Context, header const &) { /* do nothing */ }
 };
 // clang-format on
@@ -163,17 +202,20 @@ template <typename Context> struct system_pure {
   /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
   /// dispatched otherwise it is dropped.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param group  The MIDI group to which the message was addressed.
   /// \param id  The MUID to which the message was addressed.
   /// \returns True if the message is to be dispatched, false if it is to be ignored.
-  virtual bool check_muid(Context context, std::uint8_t group, muid id) = 0;
+  virtual bool check_muid(Context c, std::uint8_t group, muid id) = 0;
   /// This function is called when an unrecognized message is received.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param h  The header that for the unrecognized message.
-  virtual void unknown_midici(Context context, header const &h) = 0;
-  virtual void buffer_overflow(Context) = 0;
+  virtual void unknown_midici(Context c, header const& h) = 0;
+  /// Called when a message has overflowed the capacity of the internal buffer.
+  ///
+  /// \param c  The context object passed to all message handlers.
+  virtual void buffer_overflow(Context c) = 0;
 };
 template <typename Context> struct management_pure {
   constexpr management_pure() noexcept = default;
@@ -184,13 +226,13 @@ template <typename Context> struct management_pure {
   constexpr management_pure &operator=(management_pure const &) noexcept = default;
   constexpr management_pure &operator=(management_pure &&) noexcept = default;
 
-  virtual void discovery(Context, header const &, ci::discovery const &) = 0;
-  virtual void discovery_reply(Context, header const &, ci::discovery_reply const &) = 0;
-  virtual void endpoint(Context, header const &, ci::endpoint const &) = 0;
-  virtual void endpoint_reply(Context, header const &, ci::endpoint_reply const &) = 0;
-  virtual void invalidate_muid(Context, header const &, ci::invalidate_muid const &) = 0;
-  virtual void ack(Context, header const &, ci::ack const &) = 0;
-  virtual void nak(Context, header const &, ci::nak const &) = 0;
+  virtual void discovery(Context, header const&, discovery const&) = 0;
+  virtual void discovery_reply(Context, header const&, discovery_reply const&) = 0;
+  virtual void endpoint(Context, header const&, endpoint const&) = 0;
+  virtual void endpoint_reply(Context, header const&, endpoint_reply const&) = 0;
+  virtual void invalidate_muid(Context, header const&, invalidate_muid const&) = 0;
+  virtual void ack(Context, header const&, ack const&) = 0;
+  virtual void nak(Context, header const&, nak const&) = 0;
 };
 template <typename Context> struct profile_pure {
   constexpr profile_pure() = default;
@@ -202,16 +244,16 @@ template <typename Context> struct profile_pure {
   constexpr profile_pure &operator=(profile_pure &&) noexcept = default;
 
   virtual void inquiry(Context, header const &) = 0;
-  virtual void inquiry_reply(Context, header const &, ci::profile_configuration::inquiry_reply const &) = 0;
-  virtual void added(Context, header const &, ci::profile_configuration::added const &) = 0;
-  virtual void removed(Context, header const &, ci::profile_configuration::removed const &) = 0;
-  virtual void details(Context, header const &, ci::profile_configuration::details const &) = 0;
-  virtual void details_reply(Context, header const &, ci::profile_configuration::details_reply const &) = 0;
-  virtual void on(Context, header const &, ci::profile_configuration::on const &) = 0;
-  virtual void off(Context, header const &, ci::profile_configuration::off const &) = 0;
-  virtual void enabled(Context, header const &, ci::profile_configuration::enabled const &) = 0;
-  virtual void disabled(Context, header const &, ci::profile_configuration::disabled const &) = 0;
-  virtual void specific_data(Context, header const &, ci::profile_configuration::specific_data const &) = 0;
+  virtual void inquiry_reply(Context, header const&, profile_configuration::inquiry_reply const&) = 0;
+  virtual void added(Context, header const&, profile_configuration::added const&) = 0;
+  virtual void removed(Context, header const&, profile_configuration::removed const&) = 0;
+  virtual void details(Context, header const&, profile_configuration::details const&) = 0;
+  virtual void details_reply(Context, header const&, profile_configuration::details_reply const&) = 0;
+  virtual void on(Context, header const&, profile_configuration::on const&) = 0;
+  virtual void off(Context, header const&, profile_configuration::off const&) = 0;
+  virtual void enabled(Context, header const&, profile_configuration::enabled const&) = 0;
+  virtual void disabled(Context, header const&, profile_configuration::disabled const&) = 0;
+  virtual void specific_data(Context, header const&, profile_configuration::specific_data const&) = 0;
 };
 template <typename Context> struct property_exchange_pure {
   constexpr property_exchange_pure() = default;
@@ -222,17 +264,17 @@ template <typename Context> struct property_exchange_pure {
   constexpr property_exchange_pure &operator=(property_exchange_pure const &) = default;
   constexpr property_exchange_pure &operator=(property_exchange_pure &&) noexcept = default;
 
-  virtual void capabilities(Context, header const &, ci::property_exchange::capabilities const &) = 0;
-  virtual void capabilities_reply(Context, header const &, ci::property_exchange::capabilities_reply const &) = 0;
+  virtual void capabilities(Context, header const&, property_exchange::capabilities const&) = 0;
+  virtual void capabilities_reply(Context, header const&, property_exchange::capabilities_reply const&) = 0;
 
-  virtual void get(Context, header const &, ci::property_exchange::get const &) = 0;
-  virtual void get_reply(Context, header const &, ci::property_exchange::get_reply const &) = 0;
-  virtual void set(Context, header const &, ci::property_exchange::set const &) = 0;
-  virtual void set_reply(Context, header const &, ci::property_exchange::set_reply const &) = 0;
+  virtual void get(Context, header const&, property_exchange::get const&) = 0;
+  virtual void get_reply(Context, header const&, property_exchange::get_reply const&) = 0;
+  virtual void set(Context, header const&, property_exchange::set const&) = 0;
+  virtual void set_reply(Context, header const&, property_exchange::set_reply const&) = 0;
 
-  virtual void subscription(Context, header const &, ci::property_exchange::subscription const &) = 0;
-  virtual void subscription_reply(Context, header const &, ci::property_exchange::subscription_reply const &) = 0;
-  virtual void notify(Context, header const &, ci::property_exchange::notify const &) = 0;
+  virtual void subscription(Context, header const&, property_exchange::subscription const&) = 0;
+  virtual void subscription_reply(Context, header const&, property_exchange::subscription_reply const&) = 0;
+  virtual void notify(Context, header const&, property_exchange::notify const&) = 0;
 };
 template <typename Context> struct process_inquiry_pure {
   process_inquiry_pure() = default;
@@ -244,10 +286,9 @@ template <typename Context> struct process_inquiry_pure {
   process_inquiry_pure &operator=(process_inquiry_pure &&) noexcept = default;
 
   virtual void capabilities(Context, header const &) = 0;
-  virtual void capabilities_reply(Context, header const &, ci::process_inquiry::capabilities_reply const &) = 0;
-  virtual void midi_message_report(Context, header const &, ci::process_inquiry::midi_message_report const &) = 0;
-  virtual void midi_message_report_reply(Context, header const &,
-                                         ci::process_inquiry::midi_message_report_reply const &) = 0;
+  virtual void capabilities_reply(Context, header const&, process_inquiry::capabilities_reply const&) = 0;
+  virtual void midi_message_report(Context, header const&, process_inquiry::midi_message_report const&) = 0;
+  virtual void midi_message_report_reply(Context, header const&, process_inquiry::midi_message_report_reply const&) = 0;
   virtual void midi_message_report_end(Context, header const &) = 0;
 };
 
@@ -261,59 +302,61 @@ template <typename Context> struct system_base : system_pure<Context> {
   /// Checks whether the message is addressed to this receiver. If this function returns true, the message is
   /// dispatched otherwise it is dropped.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param group  The MIDI group to which the message was addressed.
   /// \param id  The MUID to which the message was addressed.
   /// \returns True if the message is to be dispatched, false if it is to be ignored.
-  bool check_muid(Context context, std::uint8_t const group, muid const id) override { (void)context; (void)group; (void)id; return false; }
+  bool check_muid(Context c, std::uint8_t const group, muid const id) override { (void)c; (void)group; (void)id; return false; }
   /// This function is called when an unrecognized message is received.
   ///
-  /// \param context  The context object passed to all message handlers.
+  /// \param c  The context object passed to all message handlers.
   /// \param h  The header that for the unrecognized message.
-  void unknown_midici(Context context, header const &h) override { (void)context; (void)h; /* do nothing */ }
-  /// \param context  The context object passed to all message handlers.
-  void buffer_overflow(Context context) override { (void)context; }
+  void unknown_midici(Context c, header const &h) override { (void)c; (void)h; /* do nothing */ }
+  /// Called when a message has overflowed the capacity of the internal buffer.
+  ///
+  /// \param c  The context object passed to all message handlers.
+  void buffer_overflow(Context c) override { (void)c; }
 };
 template <typename Context> struct management_base : management_pure<Context> {
-  void discovery(Context, header const &, ci::discovery const &) override { /* do nothing */ }
-  void discovery_reply(Context, header const &, ci::discovery_reply const &) override { /* do nothing */ }
-  void endpoint(Context, header const &, ci::endpoint const &) override { /* do nothing*/ }
-  void endpoint_reply(Context, header const &, ci::endpoint_reply const &) override { /* do nothing */ }
-  void invalidate_muid(Context, header const &, ci::invalidate_muid const &) override { /* do nothing */ }
-  void ack(Context, header const &, ci::ack const &) override { /* do nothing */ }
-  void nak(Context, header const &, ci::nak const &) override { /* do nothing */ }
+  void discovery(Context, header const &, discovery const &) override { /* do nothing */ }
+  void discovery_reply(Context, header const &, discovery_reply const &) override { /* do nothing */ }
+  void endpoint(Context, header const &, endpoint const &) override { /* do nothing*/ }
+  void endpoint_reply(Context, header const &, endpoint_reply const &) override { /* do nothing */ }
+  void invalidate_muid(Context, header const &, invalidate_muid const &) override { /* do nothing */ }
+  void ack(Context, header const &, ack const &) override { /* do nothing */ }
+  void nak(Context, header const &, nak const &) override { /* do nothing */ }
 };
 template <typename Context> struct profile_base : profile_pure<Context> {
   void inquiry(Context, header const &) override { /* do nothing */ }
-  void inquiry_reply(Context, header const &, ci::profile_configuration::inquiry_reply const &) override { /* do nothing */ }
-  void added(Context, header const &, ci::profile_configuration::added const &) override { /* do nothing */ }
-  void removed(Context, header const &, ci::profile_configuration::removed const &) override { /* do nothing */ }
-  void details(Context, header const &, ci::profile_configuration::details const &) override { /* do nothing */ }
-  void details_reply(Context, header const &, ci::profile_configuration::details_reply const &) override { /* do nothing */ }
-  void on(Context, header const &, ci::profile_configuration::on const &) override { /* do nothing */ }
-  void off(Context, header const &, ci::profile_configuration::off const &) override { /* do nothing */ }
-  void enabled(Context, header const &, ci::profile_configuration::enabled const &) override { /* do nothing */ }
-  void disabled(Context, header const &, ci::profile_configuration::disabled const &) override { /* do nothing */ }
-  void specific_data(Context, header const &, ci::profile_configuration::specific_data const &) override { /* do nothing */ }
+  void inquiry_reply(Context, header const &, profile_configuration::inquiry_reply const &) override { /* do nothing */ }
+  void added(Context, header const &, profile_configuration::added const &) override { /* do nothing */ }
+  void removed(Context, header const &, profile_configuration::removed const &) override { /* do nothing */ }
+  void details(Context, header const &, profile_configuration::details const &) override { /* do nothing */ }
+  void details_reply(Context, header const &, profile_configuration::details_reply const &) override { /* do nothing */ }
+  void on(Context, header const &, profile_configuration::on const &) override { /* do nothing */ }
+  void off(Context, header const &, profile_configuration::off const &) override { /* do nothing */ }
+  void enabled(Context, header const &, profile_configuration::enabled const &) override { /* do nothing */ }
+  void disabled(Context, header const &, profile_configuration::disabled const &) override { /* do nothing */ }
+  void specific_data(Context, header const &, profile_configuration::specific_data const &) override { /* do nothing */ }
 };
 template <typename Context> struct property_exchange_base : property_exchange_pure<Context> {
-  void capabilities(Context, header const &, ci::property_exchange::capabilities const &) override { /* do nothing */ }
-  void capabilities_reply(Context, header const &, ci::property_exchange::capabilities_reply const &) override { /* do nothing */ }
+  void capabilities(Context, header const &, property_exchange::capabilities const &) override { /* do nothing */ }
+  void capabilities_reply(Context, header const &, property_exchange::capabilities_reply const &) override { /* do nothing */ }
 
-  void get(Context, header const &, ci::property_exchange::get const &) override { /* do nothing */ }
-  void get_reply(Context, header const &, ci::property_exchange::get_reply const &) override { /* do nothing */ }
-  void set(Context, header const &, ci::property_exchange::set const &) override { /* do nothing */ }
-  void set_reply(Context, header const &, ci::property_exchange::set_reply const &) override { /* do nothing */ }
+  void get(Context, header const &, property_exchange::get const &) override { /* do nothing */ }
+  void get_reply(Context, header const &, property_exchange::get_reply const &) override { /* do nothing */ }
+  void set(Context, header const &, property_exchange::set const &) override { /* do nothing */ }
+  void set_reply(Context, header const &, property_exchange::set_reply const &) override { /* do nothing */ }
 
-  void subscription(Context, header const &, ci::property_exchange::subscription const &) override { /* do nothing */ }
-  void subscription_reply(Context, header const &, ci::property_exchange::subscription_reply const &) override { /* do nothing */ }
-  void notify(Context, header const &, ci::property_exchange::notify const &) override { /* do nothing */ }
+  void subscription(Context, header const &, property_exchange::subscription const &) override { /* do nothing */ }
+  void subscription_reply(Context, header const &, property_exchange::subscription_reply const &) override { /* do nothing */ }
+  void notify(Context, header const &, property_exchange::notify const &) override { /* do nothing */ }
 };
 template <typename Context> struct process_inquiry_base : process_inquiry_pure<Context> {
   void capabilities(Context, header const &) override { /* do nothing */ }
-  void capabilities_reply(Context, header const &, ci::process_inquiry::capabilities_reply const &) override { /* do nothing */ }
-  void midi_message_report(Context, header const &, ci::process_inquiry::midi_message_report const &) override { /* do nothing */ }
-  void midi_message_report_reply(Context, header const &, ci::process_inquiry::midi_message_report_reply const &) override { /* do nothing */ }
+  void capabilities_reply(Context, header const &, process_inquiry::capabilities_reply const &) override { /* do nothing */ }
+  void midi_message_report(Context, header const &, process_inquiry::midi_message_report const &) override { /* do nothing */ }
+  void midi_message_report_reply(Context, header const &, process_inquiry::midi_message_report_reply const &) override { /* do nothing */ }
   void midi_message_report_end(Context, header const &) override { /* do nothing */ }
 };
 // clang-format on
@@ -341,6 +384,10 @@ public:
     unknown_ = std::move(unknown);
     return *this;
   }
+  /// Sets the function that will be called when a message has overflowed the capacity of the internal buffer.
+  ///
+  /// \param overflow  The function to be called when the internal buffer overflows.
+  /// \returns  *this
   constexpr system_function &on_buffer_overflow(buffer_overflow_fn overflow) {
     overflow_ = std::move(overflow);
     return *this;
@@ -351,7 +398,10 @@ public:
     return check_muid_ ? check_muid_(std::move(context), group, m) : false;
   }
   /// Dispatches a call to system::unknown to the function that was installed previously by a call to on_unknown().
+  /// If no function has been installed, the message is dropped.
   void unknown_midici(Context context, header const &ci) const { call(unknown_, std::move(context), ci); }
+  /// Dispatches a call to system::buffer_overflow to the function that was installed previously by a call to
+  /// on_buffer_overflow(). If no function has been installed, the message is dropped.
   void buffer_overflow(Context context) const { call(overflow_, std::move(context)); }
 
 private:

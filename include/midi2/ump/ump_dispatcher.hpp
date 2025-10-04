@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file ump_dispatcher.hpp
+/// \brief Defines the UMP dispatcher
+
 #ifndef MIDI2_UMP_DISPATCHER_HPP
 #define MIDI2_UMP_DISPATCHER_HPP
 
@@ -27,8 +30,8 @@ namespace midi2::ump {
 // See M2-104-UM (UMP Format & MIDI 2.0 Protocol v.1.1.2 2023-10-27)
 //    Table 4 Message Type (MT) Allocation
 
-[[nodiscard]] constexpr unsigned ump_message_size(ump::message_type const mt) {
-  using enum ump::message_type;
+[[nodiscard]] constexpr unsigned ump_message_size(message_type const mt) {
+  using enum message_type;
 #define MIDI2_X(a, b) \
   case a: return message_size<a>();
   switch (mt) {
@@ -41,7 +44,7 @@ namespace midi2::ump {
 template <typename T>
 concept ump_dispatcher_config = requires(T v) {
   { v.context };
-  { v.utility } -> ump::dispatcher_backend::utility<decltype(v.context)>;
+  { v.utility } -> dispatcher_backend::utility<decltype(v.context)>;
   { v.system } -> dispatcher_backend::system<decltype(v.context)>;
   { v.m1cvm } -> dispatcher_backend::m1cvm<decltype(v.context)>;
   { v.data64 } -> dispatcher_backend::data64<decltype(v.context)>;
@@ -52,8 +55,8 @@ concept ump_dispatcher_config = requires(T v) {
 };
 
 /// A configuration type for the ump_dispatcher which uses std::function<> for all the available callbacks.
-/// This is probably the simplest possible configuration type to use, but may not always be the most time and
-/// space efficient. Use judiciously!
+/// \note This is probably the simplest possible configuration type to use, but may not always be the most time and
+///   space efficient. Use judiciously!
 ///
 /// \tparam Context  The type of the context object. This is passed to the callbacks to enable sharing
 ///   of context.
@@ -101,8 +104,8 @@ public:
     assert(pos_ < message_.size());
     message_[pos_] = ump;
     ++pos_;
-    if (auto const mt = static_cast<ump::message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
-      using enum ump::message_type;
+    if (auto const mt = static_cast<message_type>((message_[0] >> 28) & 0xF); pos_ >= ump_message_size(mt)) {
+      using enum message_type;
       switch (mt) {
       case utility: this->utility_message(); break;
       case system: this->system_message(); break;
@@ -161,31 +164,31 @@ template <typename T> ump_dispatcher(T) -> ump_dispatcher<T>;
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::utility_message() {
-  constexpr auto size = ump_message_size(midi2::ump::message_type::utility);
+  constexpr auto size = ump_message_size(message_type::utility);
   assert(pos_ == size);
 
   auto& c = this->config();
   auto const span = std::span<std::uint32_t, size>{message_.data(), size};
-  using enum ump::mt::ump_utility;
-  switch (static_cast<ump::mt::ump_utility>((message_[0] >> 20) & 0x0F)) {
+  using enum mt::utility;
+  switch (static_cast<mt::utility>((message_[0] >> 20) & 0x0F)) {
     // 7.2.1 NOOP
   case noop:
     c.utility.noop(c.context);
     break;
     // 7.2.2.1 JR Clock
   case jr_clock:
-    c.utility.jr_clock(c.context, ump::utility::jr_clock{span});
+    c.utility.jr_clock(c.context, utility::jr_clock{span});
     break;
     // 7.2.2.2 JR Timestamp
   case jr_ts:
-    c.utility.jr_timestamp(c.context, ump::utility::jr_timestamp{span});
+    c.utility.jr_timestamp(c.context, utility::jr_timestamp{span});
     break;
     // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (DCTPQ)
   case delta_clock_tick:
-    c.utility.delta_clockstamp_tpqn(c.context, ump::utility::delta_clockstamp_tpqn{message_[0]});
+    c.utility.delta_clockstamp_tpqn(c.context, utility::delta_clockstamp_tpqn{message_[0]});
     break;
     // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  case delta_clock_since: c.utility.delta_clockstamp(c.context, ump::utility::delta_clockstamp{message_[0]}); break;
+  case delta_clock_since: c.utility.delta_clockstamp(c.context, utility::delta_clockstamp{message_[0]}); break;
   default: c.utility.unknown(c.context, span); break;
   }
 }
@@ -196,23 +199,21 @@ void ump_dispatcher<Config>::utility_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::system_message() {
-  static_assert(message_size<midi2::ump::message_type::system>() == 1);
-  using enum ump::mt::system_crt;
+  static_assert(message_size<message_type::system>() == 1);
+  using enum mt::system_crt;
   auto& c = this->config();
-  switch (static_cast<ump::mt::system_crt>((message_[0] >> 16) & 0xFF)) {
-  case timing_code: c.system.midi_time_code(c.context, ump::system::midi_time_code{message_[0]}); break;
-  case spp: c.system.song_position_pointer(c.context, ump::system::song_position_pointer{message_[0]}); break;
-  case song_select: c.system.song_select(c.context, ump::system::song_select{message_[0]}); break;
-  case tune_request: c.system.tune_request(c.context, ump::system::tune_request{message_[0]}); break;
-  case timing_clock: c.system.timing_clock(c.context, ump::system::timing_clock{message_[0]}); break;
-  case sequence_start: c.system.seq_start(c.context, ump::system::sequence_start{message_[0]}); break;
-  case sequence_continue: c.system.seq_continue(c.context, ump::system::sequence_continue{message_[0]}); break;
-  case sequence_stop: c.system.seq_stop(c.context, ump::system::sequence_stop{message_[0]}); break;
-  case active_sensing: c.system.active_sensing(c.context, ump::system::active_sensing{message_[0]}); break;
-  case system_reset: c.system.reset(c.context, ump::system::reset{message_[0]}); break;
-  default:
-    c.utility.unknown(c.context, std::span{message_.data(), message_size<midi2::ump::message_type::system>()});
-    break;
+  switch (static_cast<mt::system_crt>((message_[0] >> 16) & 0xFF)) {
+  case timing_code: c.system.midi_time_code(c.context, system::midi_time_code{message_[0]}); break;
+  case spp: c.system.song_position_pointer(c.context, system::song_position_pointer{message_[0]}); break;
+  case song_select: c.system.song_select(c.context, system::song_select{message_[0]}); break;
+  case tune_request: c.system.tune_request(c.context, system::tune_request{message_[0]}); break;
+  case timing_clock: c.system.timing_clock(c.context, system::timing_clock{message_[0]}); break;
+  case sequence_start: c.system.seq_start(c.context, system::sequence_start{message_[0]}); break;
+  case sequence_continue: c.system.seq_continue(c.context, system::sequence_continue{message_[0]}); break;
+  case sequence_stop: c.system.seq_stop(c.context, system::sequence_stop{message_[0]}); break;
+  case active_sensing: c.system.active_sensing(c.context, system::active_sensing{message_[0]}); break;
+  case system_reset: c.system.reset(c.context, system::reset{message_[0]}); break;
+  default: c.utility.unknown(c.context, std::span{message_.data(), message_size<message_type::system>()}); break;
   }
 }
 
@@ -222,38 +223,38 @@ void ump_dispatcher<Config>::system_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::m1cvm_message() {
-  static_assert(ump_message_size(midi2::ump::message_type::m1cvm) == 1);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::m1cvm));
+  static_assert(ump_message_size(message_type::m1cvm) == 1);
+  assert(pos_ >= ump_message_size(message_type::m1cvm));
 
-  using enum ump::mt::m1cvm;
+  using enum mt::m1cvm;
   auto& c = this->config();
-  switch (static_cast<ump::mt::m1cvm>((message_[0] >> 20) & 0xF)) {
+  switch (static_cast<mt::m1cvm>((message_[0] >> 20) & 0xF)) {
     // 7.3.1 MIDI 1.0 Note Off Message
   case note_off:
-    c.m1cvm.note_off(c.context, ump::m1cvm::note_off{message_[0]});
+    c.m1cvm.note_off(c.context, m1cvm::note_off{message_[0]});
     break;
     // 7.3.2 MIDI 1.0 Note On Message
   case note_on:
-    c.m1cvm.note_on(c.context, ump::m1cvm::note_on{message_[0]});
+    c.m1cvm.note_on(c.context, m1cvm::note_on{message_[0]});
     break;
     // 7.3.3 MIDI 1.0 Poly Pressure Message
   case poly_pressure:
-    c.m1cvm.poly_pressure(c.context, ump::m1cvm::poly_pressure{message_[0]});
+    c.m1cvm.poly_pressure(c.context, m1cvm::poly_pressure{message_[0]});
     break;
     // 7.3.4 MIDI 1.0 Control Change Message
   case cc:
-    c.m1cvm.control_change(c.context, ump::m1cvm::control_change{message_[0]});
+    c.m1cvm.control_change(c.context, m1cvm::control_change{message_[0]});
     break;
     // 7.3.5 MIDI 1.0 Program Change Message
   case program_change:
-    c.m1cvm.program_change(c.context, ump::m1cvm::program_change{message_[0]});
+    c.m1cvm.program_change(c.context, m1cvm::program_change{message_[0]});
     break;
     // 7.3.6 MIDI 1.0 Channel Pressure Message
   case channel_pressure:
-    c.m1cvm.channel_pressure(c.context, ump::m1cvm::channel_pressure{message_[0]});
+    c.m1cvm.channel_pressure(c.context, m1cvm::channel_pressure{message_[0]});
     break;
     // 7.3.7 MIDI 1.0 Pitch Bend Message
-  case pitch_bend: c.m1cvm.pitch_bend(c.context, ump::m1cvm::pitch_bend{message_[0]}); break;
+  case pitch_bend: c.m1cvm.pitch_bend(c.context, m1cvm::pitch_bend{message_[0]}); break;
   default: c.utility.unknown(c.context, std::span{message_.data(), 1}); break;
   }
 }
@@ -263,17 +264,17 @@ void ump_dispatcher<Config>::m1cvm_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::data64_message() {
-  constexpr auto size = ump_message_size(midi2::ump::message_type::data64);
+  constexpr auto size = ump_message_size(message_type::data64);
   assert(pos_ == size);
 
-  using enum ump::mt::data64;
+  using enum mt::data64;
   auto& c = this->config();
   auto const span = std::span<std::uint32_t, size>{message_.data(), size};
-  switch (static_cast<ump::mt::data64>((message_[0] >> 20) & 0x0F)) {
-  case sysex7_in_1: c.data64.sysex7_in_1(c.context, ump::data64::sysex7_in_1{span}); break;
-  case sysex7_start: c.data64.sysex7_start(c.context, ump::data64::sysex7_start{span}); break;
-  case sysex7_continue: c.data64.sysex7_continue(c.context, ump::data64::sysex7_continue{span}); break;
-  case sysex7_end: c.data64.sysex7_end(c.context, ump::data64::sysex7_end{span}); break;
+  switch (static_cast<mt::data64>((message_[0] >> 20) & 0x0F)) {
+  case sysex7_in_1: c.data64.sysex7_in_1(c.context, data64::sysex7_in_1{span}); break;
+  case sysex7_start: c.data64.sysex7_start(c.context, data64::sysex7_start{span}); break;
+  case sysex7_continue: c.data64.sysex7_continue(c.context, data64::sysex7_continue{span}); break;
+  case sysex7_end: c.data64.sysex7_end(c.context, data64::sysex7_end{span}); break;
   default: c.utility.unknown(c.context, span); break;
   }
 }
@@ -284,63 +285,63 @@ void ump_dispatcher<Config>::data64_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::m2cvm_message() {
-  static_assert(message_size<midi2::ump::message_type::m2cvm>() == 2);
+  static_assert(message_size<message_type::m2cvm>() == 2);
   auto const span = std::span<std::uint32_t, 2>{message_.data(), 2};
-  using enum ump::mt::m2cvm;
+  using enum mt::m2cvm;
   auto& c = this->config();
-  switch (static_cast<ump::mt::m2cvm>((message_[0] >> 20) & 0xF)) {
+  switch (static_cast<mt::m2cvm>((message_[0] >> 20) & 0xF)) {
     // 7.4.1 MIDI 2.0 Note Off Message
   case note_off:
-    c.m2cvm.note_off(c.context, ump::m2cvm::note_off{span});
+    c.m2cvm.note_off(c.context, m2cvm::note_off{span});
     break;
     // 7.4.2 MIDI 2.0 Note On Message
   case note_on:
-    c.m2cvm.note_on(c.context, ump::m2cvm::note_on{span});
+    c.m2cvm.note_on(c.context, m2cvm::note_on{span});
     break;
     // 7.4.3 MIDI 2.0 Poly Pressure Message
   case poly_pressure:
-    c.m2cvm.poly_pressure(c.context, ump::m2cvm::poly_pressure{span});
+    c.m2cvm.poly_pressure(c.context, m2cvm::poly_pressure{span});
     break;
     // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message
   case rpn_per_note:
-    c.m2cvm.rpn_per_note_controller(c.context, ump::m2cvm::rpn_per_note_controller{span});
+    c.m2cvm.rpn_per_note_controller(c.context, m2cvm::rpn_per_note_controller{span});
     break;
     // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Message
   case nrpn_per_note:
-    c.m2cvm.nrpn_per_note_controller(c.context, ump::m2cvm::nrpn_per_note_controller{span});
+    c.m2cvm.nrpn_per_note_controller(c.context, m2cvm::nrpn_per_note_controller{span});
     break;
     // 7.4.5 MIDI 2.0 Per-Note Management Message
   case per_note_manage:
-    c.m2cvm.per_note_management(c.context, ump::m2cvm::per_note_management{span});
+    c.m2cvm.per_note_management(c.context, m2cvm::per_note_management{span});
     break;
     // 7.4.6 MIDI 2.0 Control Change Message
   case cc:
-    c.m2cvm.control_change(c.context, ump::m2cvm::control_change{span});
+    c.m2cvm.control_change(c.context, m2cvm::control_change{span});
     break;
     // 7.4.7 MIDI 2.0 Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case rpn: c.m2cvm.rpn_controller(c.context, ump::m2cvm::rpn_controller{span}); break;
+  case rpn: c.m2cvm.rpn_controller(c.context, m2cvm::rpn_controller{span}); break;
   case nrpn:
-    c.m2cvm.nrpn_controller(c.context, ump::m2cvm::nrpn_controller{span});
+    c.m2cvm.nrpn_controller(c.context, m2cvm::nrpn_controller{span});
     break;
     // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) and Assignable Controller (NRPN) Message
-  case rpn_relative: c.m2cvm.rpn_relative_controller(c.context, ump::m2cvm::rpn_relative_controller{span}); break;
+  case rpn_relative: c.m2cvm.rpn_relative_controller(c.context, m2cvm::rpn_relative_controller{span}); break;
   case nrpn_relative:
-    c.m2cvm.nrpn_relative_controller(c.context, ump::m2cvm::nrpn_relative_controller{span});
+    c.m2cvm.nrpn_relative_controller(c.context, m2cvm::nrpn_relative_controller{span});
     break;
     // 7.4.9 MIDI 2.0 Program Change Message
   case program_change:
-    c.m2cvm.program_change(c.context, ump::m2cvm::program_change{span});
+    c.m2cvm.program_change(c.context, m2cvm::program_change{span});
     break;
     // 7.4.10 MIDI 2.0 Channel Pressure Message
   case channel_pressure:
-    c.m2cvm.channel_pressure(c.context, ump::m2cvm::channel_pressure{span});
+    c.m2cvm.channel_pressure(c.context, m2cvm::channel_pressure{span});
     break;
     // 7.4.11 MIDI 2.0 Pitch Bend Message
   case pitch_bend:
-    c.m2cvm.pitch_bend(c.context, ump::m2cvm::pitch_bend{span});
+    c.m2cvm.pitch_bend(c.context, m2cvm::pitch_bend{span});
     break;
     // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
-  case pitch_bend_per_note: c.m2cvm.per_note_pitch_bend(c.context, ump::m2cvm::per_note_pitch_bend{span}); break;
+  case pitch_bend_per_note: c.m2cvm.per_note_pitch_bend(c.context, m2cvm::per_note_pitch_bend{span}); break;
   default: c.utility.unknown(c.context, std::span{message_.data(), 2}); break;
   }
 }
@@ -350,70 +351,70 @@ void ump_dispatcher<Config>::m2cvm_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::stream_message() {
-  using ump::stream::device_identity_notification;
-  using ump::stream::end_of_clip;
-  using ump::stream::endpoint_discovery;
-  using ump::stream::endpoint_info_notification;
-  using ump::stream::endpoint_name_notification;
-  using ump::stream::function_block_discovery;
-  using ump::stream::function_block_info_notification;
-  using ump::stream::function_block_name_notification;
-  using ump::stream::jr_configuration_notification;
-  using ump::stream::jr_configuration_request;
-  using ump::stream::product_instance_id_notification;
-  using ump::stream::start_of_clip;
+  using stream::device_identity_notification;
+  using stream::end_of_clip;
+  using stream::endpoint_discovery;
+  using stream::endpoint_info_notification;
+  using stream::endpoint_name_notification;
+  using stream::function_block_discovery;
+  using stream::function_block_info_notification;
+  using stream::function_block_name_notification;
+  using stream::jr_configuration_notification;
+  using stream::jr_configuration_request;
+  using stream::product_instance_id_notification;
+  using stream::start_of_clip;
 
-  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
+  static_assert(ump_message_size(message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(message_type::stream));
   auto& c = this->config();
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  switch (static_cast<ump::mt::stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
+  switch (static_cast<mt::stream>((message_[0] >> 16) & ((std::uint32_t{1} << 10) - 1U))) {
     // 7.1.1 Endpoint Discovery Message
-  case ump::mt::stream::endpoint_discovery:
+  case mt::stream::endpoint_discovery:
     c.stream.endpoint_discovery(c.context, endpoint_discovery{span});
     break;
     // 7.1.2 Endpoint Info Notification Message
-  case ump::mt::stream::endpoint_info_notification:
+  case mt::stream::endpoint_info_notification:
     c.stream.endpoint_info_notification(c.context, endpoint_info_notification{span});
     break;
     // 7.1.3 Device Identity Notification Message
-  case ump::mt::stream::device_identity_notification:
+  case mt::stream::device_identity_notification:
     c.stream.device_identity_notification(c.context, device_identity_notification{span});
     break;
     // 7.1.4 Endpoint Name Notification
-  case ump::mt::stream::endpoint_name_notification:
+  case mt::stream::endpoint_name_notification:
     c.stream.endpoint_name_notification(c.context, endpoint_name_notification{span});
     break;
     // 7.1.5 Product Instance Id Notification Message
-  case ump::mt::stream::product_instance_id_notification:
+  case mt::stream::product_instance_id_notification:
     c.stream.product_instance_id_notification(c.context, product_instance_id_notification{span});
     break;
     // 7.1.6.2 Stream Configuration Request
-  case ump::mt::stream::jr_configuration_request:
+  case mt::stream::jr_configuration_request:
     c.stream.jr_configuration_request(c.context, jr_configuration_request{span});
     break;
     // 7.1.6.3 Stream Configuration Notification Message
-  case ump::mt::stream::jr_configuration_notification:
+  case mt::stream::jr_configuration_notification:
     c.stream.jr_configuration_notification(c.context, jr_configuration_notification{span});
     break;
     // 7.1.7 Function Block Discovery Message
-  case ump::mt::stream::function_block_discovery:
+  case mt::stream::function_block_discovery:
     c.stream.function_block_discovery(c.context, function_block_discovery{span});
     break;
     // 7.1.8 Function Block Info Notification
-  case ump::mt::stream::function_block_info_notification:
+  case mt::stream::function_block_info_notification:
     c.stream.function_block_info_notification(c.context, function_block_info_notification{span});
     break;
     // 7.1.9 Function Block Name Notification
-  case ump::mt::stream::function_block_name_notification:
+  case mt::stream::function_block_name_notification:
     c.stream.function_block_name_notification(c.context, function_block_name_notification{span});
     break;
     // 7.1.10 Start of Clip Message
-  case ump::mt::stream::start_of_clip:
+  case mt::stream::start_of_clip:
     c.stream.start_of_clip(c.context, start_of_clip{span});
     break;
     // 7.1.11 End of Clip Message
-  case ump::mt::stream::end_of_clip: c.stream.end_of_clip(c.context, end_of_clip{span}); break;
+  case mt::stream::end_of_clip: c.stream.end_of_clip(c.context, end_of_clip{span}); break;
   default: c.utility.unknown(c.context, std::span{message_.data(), 4}); break;
   }
 }
@@ -423,19 +424,19 @@ void ump_dispatcher<Config>::stream_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::data128_message() {
-  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
+  static_assert(ump_message_size(message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(message_type::stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
-  using enum ump::mt::data128;
+  using enum mt::data128;
   auto& c = this->config();
-  switch (static_cast<ump::mt::data128>((message_[0] >> 20) & 0x0F)) {
-  case sysex8_in_1: c.data128.sysex8_in_1(c.context, ump::data128::sysex8_in_1{span}); break;
-  case sysex8_start: c.data128.sysex8_start(c.context, ump::data128::sysex8_start{span}); break;
-  case sysex8_continue: c.data128.sysex8_continue(c.context, ump::data128::sysex8_continue{span}); break;
-  case sysex8_end: c.data128.sysex8_end(c.context, ump::data128::sysex8_end{span}); break;
-  case mixed_data_set_header: c.data128.mds_header(c.context, ump::data128::mds_header{span}); break;
-  case mixed_data_set_payload: c.data128.mds_payload(c.context, ump::data128::mds_payload{span}); break;
+  switch (static_cast<mt::data128>((message_[0] >> 20) & 0x0F)) {
+  case sysex8_in_1: c.data128.sysex8_in_1(c.context, data128::sysex8_in_1{span}); break;
+  case sysex8_start: c.data128.sysex8_start(c.context, data128::sysex8_start{span}); break;
+  case sysex8_continue: c.data128.sysex8_continue(c.context, data128::sysex8_continue{span}); break;
+  case sysex8_end: c.data128.sysex8_end(c.context, data128::sysex8_end{span}); break;
+  case mixed_data_set_header: c.data128.mds_header(c.context, data128::mds_header{span}); break;
+  case mixed_data_set_payload: c.data128.mds_payload(c.context, data128::mds_payload{span}); break;
   default: c.utility.unknown(c.context, span); break;
   }
 }
@@ -445,37 +446,37 @@ void ump_dispatcher<Config>::data128_message() {
 template <typename Config>
   requires ump_dispatcher_config<std::unwrap_reference_t<Config>>
 void ump_dispatcher<Config>::flex_data_message() {
-  static_assert(ump_message_size(midi2::ump::message_type::stream) == 4);
-  assert(pos_ >= ump_message_size(midi2::ump::message_type::stream));
+  static_assert(ump_message_size(message_type::stream) == 4);
+  assert(pos_ >= ump_message_size(message_type::stream));
 
   auto const span = std::span<std::uint32_t, 4>{message_.data(), 4};
   auto const status_bank = (message_[0] >> 8) & 0xFF;
   auto& c = this->config();
   if (status_bank == 0) {
-    using enum ump::mt::flex_data;
-    switch (auto const status = static_cast<ump::mt::flex_data>(message_[0] & 0xFF); status) {
+    using enum mt::flex_data;
+    switch (auto const status = static_cast<mt::flex_data>(message_[0] & 0xFF); status) {
       // 7.5.3 Set Tempo Message
     case set_tempo:
-      c.flex.set_tempo(c.context, ump::flex_data::set_tempo{span});
+      c.flex.set_tempo(c.context, flex_data::set_tempo{span});
       break;
       // 7.5.4 Set Time Signature Message
     case set_time_signature:
-      c.flex.set_time_signature(c.context, ump::flex_data::set_time_signature{span});
+      c.flex.set_time_signature(c.context, flex_data::set_time_signature{span});
       break;
       // 7.5.5 Set Metronome Message
     case set_metronome:
-      c.flex.set_metronome(c.context, ump::flex_data::set_metronome{span});
+      c.flex.set_metronome(c.context, flex_data::set_metronome{span});
       break;
       // 7.5.7 Set Key Signature Message
     case set_key_signature:
-      c.flex.set_key_signature(c.context, ump::flex_data::set_key_signature{span});
+      c.flex.set_key_signature(c.context, flex_data::set_key_signature{span});
       break;
       // 7.5.8 Set Chord Name Message
-    case set_chord_name: c.flex.set_chord_name(c.context, ump::flex_data::set_chord_name{span}); break;
+    case set_chord_name: c.flex.set_chord_name(c.context, flex_data::set_chord_name{span}); break;
     default: c.utility.unknown(c.context, span); break;
     }
   } else {
-    c.flex.text(c.context, ump::flex_data::text_common{span});
+    c.flex.text(c.context, flex_data::text_common{span});
   }
 }
 

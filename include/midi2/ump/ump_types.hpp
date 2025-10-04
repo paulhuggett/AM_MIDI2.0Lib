@@ -54,67 +54,73 @@ namespace mt {
 // Here, CRT is short for "common and real-time".
 /// The message types for the System Common and System Real-time messages
 enum class system_crt : std::uint8_t {
-  timing_code = 0xF1,
-  spp = 0xF2,  ///< Song Position Pointer
-  song_select = 0xF3,
-  tune_request = 0xF6,
-  timing_clock = 0xF8,
+  // System Common messages
+  timing_code = 0xF1,   ///< MIDI Time Code
+  spp = 0xF2,           ///< Song Position Pointer
+  song_select = 0xF3,   ///< Song Select
+  tune_request = 0xF6,  ///< Tune Request
+  timing_clock = 0xF8,  ///< Timing Clock
+  // System Real Time messages
   sequence_start = 0xFA,     ///< Start the current sequence playing
   sequence_continue = 0xFB,  ///< Continue at the point the sequence was stopped
   sequence_stop = 0xFC,      ///< Stop the current sequence
-  active_sensing = 0xFE,
-  system_reset = 0xFF,
+  active_sensing = 0xFE,     ///< Active Sensing
+  system_reset = 0xFF,       ///< Reset
 };
 
 /// The message types for the MIDI 1 Channel Voice messages
 enum class m1cvm : std::uint8_t {
-  note_off = 0x8,
-  note_on = 0x9,
-  poly_pressure = 0xA,  ///< Polyphonic Key Pressure (Aftertouch).
-  cc = 0xB,             ///< Continuous Controller
-  program_change = 0xC,
+  note_off = 0x8,          ///< Note Off
+  note_on = 0x9,           ///< Note On
+  poly_pressure = 0xA,     ///< Polyphonic Key Pressure (Aftertouch).
+  cc = 0xB,                ///< Continuous Controller
+  program_change = 0xC,    /// Program Change
   channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
-  pitch_bend = 0xE,
+  pitch_bend = 0xE,        ///< Pitch Bend
 };
 
 /// Message types for the MIDI 2 Channel Voice messages
 enum class m2cvm : std::uint8_t {
-  rpn_per_note = 0x0,   ///< Registered Per-Note Controller
-  nrpn_per_note = 0x1,  ///< Assignable Per-Note Controller
-  rpn = 0x2,            ///< Registered Parameter Number
-  nrpn = 0x3,           ///< Assignable Controller Number
-  rpn_relative = 0x4,
-  nrpn_relative = 0x5,
-  pitch_bend_per_note = 0x6,
-  note_off = 0x8,
-  note_on = 0x9,
-  poly_pressure = 0xA,
-  cc = 0xB,  ///< Continuous Controller
-  program_change = 0xC,
-  channel_pressure = 0xD,  ///< Channel Pressure (aftertouch)
-  pitch_bend = 0xE,
-  per_note_manage = 0xF,  ///< Per-note management
+  rpn_per_note = 0x0,         ///< Registered per-note controller
+  nrpn_per_note = 0x1,        ///< Assignable per-note controller
+  rpn = 0x2,                  ///< Registered parameter number
+  nrpn = 0x3,                 ///< Assignable controller number
+  rpn_relative = 0x4,         ///< Relative registered controller number
+  nrpn_relative = 0x5,        ///< Relative non-registered controller Number
+  pitch_bend_per_note = 0x6,  ///< Per-note patch bend
+  note_off = 0x8,             ///< Note off
+  note_on = 0x9,              ///< Note on
+  poly_pressure = 0xA,        ///< Polyphonic aftertouch
+  cc = 0xB,                   ///< Continuous controller
+  program_change = 0xC,       ///< Program change
+  channel_pressure = 0xD,     ///< Channel pressure (aftertouch)
+  pitch_bend = 0xE,           ///< Pitch bend
+  per_note_manage = 0xF,      ///< Per-note management
 };
 
 /// Message types for the Data 64 Bit messages
 enum class data64 : std::uint8_t {
+  /// Complete system exclusive message in one UMP.
   sysex7_in_1 = 0x00,
+  /// System exclusive start UMP. Terminate with a System Exclusive End UMP.
   sysex7_start = 0x01,
+  /// System exclusive continue UMP.
   sysex7_continue = 0x02,
+  /// System exclusive end UMP.
   sysex7_end = 0x03,
 };
 
 /// Status codes for UMP messages in the Utility group
-enum class ump_utility : std::uint8_t {
-  noop = 0b0000,
-  jr_clock = 0b0001,
-  jr_ts = 0b0010,
-  delta_clock_tick = 0b0011,
-  delta_clock_since = 0b0100,
+enum class utility : std::uint8_t {
+  noop = 0b0000,               ///< A "no operation" message
+  jr_clock = 0b0001,           ///< Jitter reduction clock
+  jr_ts = 0b0010,              ///< Jitter reduction time-stamp
+  delta_clock_tick = 0b0011,   ///< Delta Clockstamp: Ticks Per Quarter Note
+  delta_clock_since = 0b0100,  ///< Delta Clockstamp: Ticks Since Last Event
 };
 
+/// Status codes for UMP messages in the Flex Data group
 enum class flex_data : std::uint8_t {
-  // status bank == 0
   set_tempo = 0x00,
   set_time_signature = 0x01,
   set_metronome = 0x02,
@@ -122,6 +128,7 @@ enum class flex_data : std::uint8_t {
   set_chord_name = 0x06,
 };
 
+/// Status codes for UMP messages in the UMP Stream group
 enum class stream : std::uint16_t {
   endpoint_discovery = 0x00,
   endpoint_info_notification = 0x01,
@@ -137,6 +144,7 @@ enum class stream : std::uint16_t {
   end_of_clip = 0x21,
 };
 
+/// Status codes for UMP messages in the DATA 128 Bit group
 enum class data128 : std::uint8_t {
   sysex8_in_1 = 0x00,
   sysex8_start = 0x01,
@@ -147,12 +155,6 @@ enum class data128 : std::uint8_t {
 };
 
 }  // end namespace mt
-
-template <typename T>
-concept bitfield_type = requires(T) {
-  requires std::unsigned_integral<typename T::index::value_type>;
-  requires std::unsigned_integral<typename T::bits::value_type>;
-};
 
 /// Calls the supplied function for each of the values held by the tuple-like type
 /// \p T.
@@ -189,7 +191,7 @@ struct status_to_message_type;
 template <> struct status_to_message_type<mt::system_crt> {
   static constexpr auto value = message_type::system;
 };
-template <> struct status_to_message_type<mt::ump_utility> {
+template <> struct status_to_message_type<mt::utility> {
   static constexpr auto value = message_type::utility;
 };
 template <> struct status_to_message_type<mt::m1cvm> {
@@ -215,10 +217,22 @@ template <typename T>
   requires std::is_enum_v<T>
 constexpr message_type status_to_message_type_v = status_to_message_type<T>::value;
 
-template <unsigned Index, unsigned Bits> struct bitfield {
+template <typename T>
+concept bitfield_type = requires(T) {
+  requires std::unsigned_integral<typename T::index::value_type>;
+  requires std::unsigned_integral<typename T::bits::value_type>;
+
+  requires typename T::bits() > 0;
+  requires typename T::index() + typename T::bits() <= 32;
+};
+
+template <unsigned Index, unsigned Bits>
+  requires(Bits > 0 && Index + Bits <= 32)
+struct bitfield {
   using index = std::integral_constant<unsigned, Index>;
   using bits = std::integral_constant<unsigned, Bits>;
 };
+static_assert(bitfield_type<bitfield<0, 1>>, "expected bitfield<> to conform to the bitfield_type concept");
 
 class word_base {
 public:
@@ -259,10 +273,10 @@ protected:
   }
 
 private:
-  ///\returns The maximum value that can be held in \p Bits of type \p T.
+  /// \returns The maximum value that can be held in \p Bits of type \p T.
   template <std::unsigned_integral T, unsigned Bits>
     requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
-  [[nodiscard]] static constexpr T max_value() noexcept {
+  [[nodiscard]] static consteval T max_value() noexcept {
     if constexpr (Bits == 8U) {
       return std::numeric_limits<std::uint8_t>::max();
     } else if constexpr (Bits == 16U) {
@@ -352,7 +366,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::noop); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::noop); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -384,7 +398,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_clock); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::jr_clock); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -426,7 +440,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::jr_ts); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::jr_ts); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -467,7 +481,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_tick); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::delta_clock_tick); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -507,7 +521,7 @@ public:
   public:
     using word_base::word_base;
 
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::ump_utility::delta_clock_since); }
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::delta_clock_since); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -572,6 +586,7 @@ class reset;
 
 class midi2::ump::system::midi_time_code {
 public:
+  /// \brief The contents of the MIDI time code message
   class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
@@ -614,6 +629,7 @@ private:
 
 UMP_TUPLE(system, midi_time_code)  // Define tuple_size and tuple_element for midi_time_code
 
+/// \brief The contents of the MIDI song position pointer message
 class midi2::ump::system::song_position_pointer {
 public:
   class word0 : public details::word_base {
@@ -658,6 +674,7 @@ UMP_TUPLE(system, song_position_pointer)  // Define tuple_size and tuple_element
 
 class midi2::ump::system::song_select {
 public:
+  /// \brief The contents of the MIDI song select message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -700,6 +717,7 @@ UMP_TUPLE(system, song_select)  // Define tuple_size and tuple_element for song_
 
 class midi2::ump::system::tune_request {
 public:
+  /// \brief The contents of the MIDI tune-request message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -736,6 +754,7 @@ UMP_TUPLE(system, tune_request)  // Define tuple_size and tuple_element for tune
 
 class midi2::ump::system::timing_clock {
 public:
+  /// \brief The contents of the MIDI timing-clock message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;

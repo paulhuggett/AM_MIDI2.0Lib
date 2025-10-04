@@ -250,7 +250,7 @@ void ci_dispatcher<Config>::header() {
       message_dispatch_info{message::nak, sizeof(packed::nak_v1), offsetof(packed::nak_v2, message),
                             &ci_dispatcher::nak},
   };
-  auto const *const h = std::bit_cast<packed::header const *>(buffer_.data());
+  auto const* const h = reinterpret_cast<packed::header const*>(buffer_.data());
   type_ = static_cast<message>(h->sub_id_2);
   header_.version = to_underlying(h->version);
   header_.remote_muid = details::from_le7(h->source_muid);
@@ -294,9 +294,9 @@ void ci_dispatcher<Config>::discovery() {
     c.management.discovery(c.context, header_, discovery::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<packed::discovery_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<packed::discovery_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<packed::discovery_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<packed::discovery_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -312,9 +312,9 @@ void ci_dispatcher<Config>::discovery_reply() {
     c.management.discovery_reply(c.context, header_, discovery_reply::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<packed::discovery_reply_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<packed::discovery_reply_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<packed::discovery_reply_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<packed::discovery_reply_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -326,7 +326,8 @@ template <typename Config>
 void ci_dispatcher<Config>::invalidate_muid() {
   using type = packed::invalidate_muid_v1;
   auto& c = this->config();
-  c.management.invalidate_muid(c.context, header_, invalidate_muid::make(*std::bit_cast<type const*>(buffer_.data())));
+  c.management.invalidate_muid(c.context, header_,
+                               invalidate_muid::make(*reinterpret_cast<type const*>(buffer_.data())));
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -335,15 +336,14 @@ void ci_dispatcher<Config>::invalidate_muid() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::ack() {
-  using type = packed::ack_v1;
-  auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
+  auto const* const ptr = reinterpret_cast<packed::ack_v1 const*>(buffer_.data());
   auto const message_length = details::from_le7(ptr->message_length).get();
-  if (pos_ == offsetof(type, message) && message_length > 0U) {
+  if (pos_ == offsetof(packed::ack_v1, message) && message_length > 0U) {
     // We've got the fixed-size part of the message. Now wait for the variable-length message buffer.
     count_ = message_length;
     return;
   }
-  assert(pos_ == offsetof(type, message) + message_length);
+  assert(pos_ == offsetof(packed::ack_v1, message) + message_length);
   auto& c = this->config();
   c.management.ack(c.context, header_, ack::make(*ptr));
   consumer_ = &ci_dispatcher::discard;
@@ -364,11 +364,11 @@ void ci_dispatcher<Config>::nak() {
   };
   if (header_.version == b7{1U}) {
     assert(pos_ == sizeof(v1_type));
-    handler(*std::bit_cast<v1_type const *>(buffer_.data()));
+    handler(*reinterpret_cast<v1_type const*>(buffer_.data()));
     return;
   }
 
-  auto const *const v2ptr = std::bit_cast<v2_type const *>(buffer_.data());
+  auto const* const v2ptr = reinterpret_cast<v2_type const*>(buffer_.data());
   auto const message_length = details::from_le7(v2ptr->message_length).get();
   if (pos_ == offsetof(ci::packed::nak_v2, message) && message_length > 0) {
     count_ = message_length;
@@ -386,7 +386,7 @@ void ci_dispatcher<Config>::endpoint() {
   using type = ci::packed::endpoint_v1;
   assert(pos_ == sizeof(type));
   auto& c = this->config();
-  c.management.endpoint(c.context, header_, ci::endpoint::make(*std::bit_cast<type const*>(buffer_.data())));
+  c.management.endpoint(c.context, header_, ci::endpoint::make(*reinterpret_cast<type const*>(buffer_.data())));
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -396,7 +396,7 @@ template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::endpoint_reply() {
   using type = ci::packed::endpoint_reply_v1;
-  auto const *const ptr = std::bit_cast<type const *>(buffer_.data());
+  auto const* const ptr = reinterpret_cast<type const*>(buffer_.data());
   auto const data_length = details::from_le7(ptr->data_length).get();
   if (pos_ == offsetof(type, data) && data_length > 0) {
     // We've got the basic structure. Now get the variable length data array.
@@ -426,7 +426,7 @@ template <typename Config>
 void ci_dispatcher<Config>::profile_inquiry_reply() {
   using pt1_type = ci::profile_configuration::packed::inquiry_reply_v1_pt1;
   using pt2_type = ci::profile_configuration::packed::inquiry_reply_v1_pt2;
-  auto const *const pt1 = std::bit_cast<pt1_type const *>(buffer_.data());
+  auto const* const pt1 = reinterpret_cast<pt1_type const*>(buffer_.data());
   auto const num_enabled = details::from_le7(pt1->num_enabled).get();
   auto const num_enabled_size = num_enabled * sizeof(pt1->ids[0]);
   if (num_enabled > 0 && pos_ == offsetof(pt1_type, ids)) {
@@ -435,7 +435,8 @@ void ci_dispatcher<Config>::profile_inquiry_reply() {
     return;
   }
 
-  auto const *const pt2 = std::bit_cast<pt2_type const *>(buffer_.data() + offsetof(pt1_type, ids) + num_enabled_size);
+  auto const* const pt2 =
+      reinterpret_cast<pt2_type const*>(buffer_.data() + offsetof(pt1_type, ids) + num_enabled_size);
   if (auto const num_disabled = details::from_le7(pt2->num_disabled).get();
       num_disabled > 0 && pos_ == offsetof(pt1_type, ids) + num_enabled_size + offsetof(pt2_type, ids)) {
     // Get the variable length "disabled" array.
@@ -456,7 +457,7 @@ void ci_dispatcher<Config>::profile_added() {
   assert(pos_ == sizeof(type));
   auto& c = this->config();
   c.profile.added(c.context, header_,
-                  ci::profile_configuration::added::make(*std::bit_cast<type const*>(buffer_.data())));
+                  ci::profile_configuration::added::make(*reinterpret_cast<type const*>(buffer_.data())));
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -469,7 +470,7 @@ void ci_dispatcher<Config>::profile_removed() {
   assert(pos_ == sizeof(type));
   auto& c = this->config();
   c.profile.removed(c.context, header_,
-                    ci::profile_configuration::removed::make(*std::bit_cast<type const*>(buffer_.data())));
+                    ci::profile_configuration::removed::make(*reinterpret_cast<type const*>(buffer_.data())));
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -482,7 +483,7 @@ void ci_dispatcher<Config>::profile_details() {
   assert(pos_ == sizeof(type));
   auto& c = this->config();
   c.profile.details(c.context, header_,
-                    ci::profile_configuration::details::make(*std::bit_cast<type const*>(buffer_.data())));
+                    ci::profile_configuration::details::make(*reinterpret_cast<type const*>(buffer_.data())));
   consumer_ = &ci_dispatcher::discard;
 }
 
@@ -492,7 +493,7 @@ template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_details_reply() {
   using type = ci::profile_configuration::packed::details_reply_v1;
-  auto const *const reply = std::bit_cast<type const *>(buffer_.data());
+  auto const* const reply = reinterpret_cast<type const*>(buffer_.data());
   if (auto const data_length = details::from_le7(reply->data_length).get();
       pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
@@ -514,9 +515,9 @@ void ci_dispatcher<Config>::profile_on() {
     c.profile.on(c.context, header_, ci::profile_configuration::on::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::profile_configuration::packed::on_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::on_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::profile_configuration::packed::on_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::on_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -532,9 +533,9 @@ void ci_dispatcher<Config>::profile_off() {
     c.profile.off(c.context, header_, ci::profile_configuration::off::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::profile_configuration::packed::off_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::off_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::profile_configuration::packed::off_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::off_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -550,9 +551,9 @@ void ci_dispatcher<Config>::profile_enabled() {
     c.profile.enabled(c.context, header_, ci::profile_configuration::enabled::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::profile_configuration::packed::enabled_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::enabled_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::profile_configuration::packed::enabled_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::enabled_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -568,9 +569,9 @@ void ci_dispatcher<Config>::profile_disabled() {
     c.profile.disabled(c.context, header_, ci::profile_configuration::disabled::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::profile_configuration::packed::disabled_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::disabled_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::profile_configuration::packed::disabled_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::profile_configuration::packed::disabled_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -581,7 +582,7 @@ template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_specific_data() {
   using type = ci::profile_configuration::packed::specific_data_v1;
-  auto const *const reply = std::bit_cast<type const *>(buffer_.data());
+  auto const* const reply = reinterpret_cast<type const*>(buffer_.data());
   if (auto const data_length = details::from_le7(reply->data_length).get();
       pos_ == offsetof(type, data) && data_length > 0) {
     count_ = data_length * sizeof(type::data[0]);
@@ -603,9 +604,9 @@ void ci_dispatcher<Config>::pe_capabilities() {
     c.property_exchange.capabilities(c.context, header_, ci::property_exchange::capabilities::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::property_exchange::packed::capabilities_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::property_exchange::packed::capabilities_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::property_exchange::packed::capabilities_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::property_exchange::packed::capabilities_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -621,9 +622,9 @@ void ci_dispatcher<Config>::pe_capabilities_reply() {
     c.property_exchange.capabilities_reply(c.context, header_, ci::property_exchange::capabilities_reply::make(*v));
   };
   if (header_.version == b7{1U}) {
-    handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v1 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::property_exchange::packed::capabilities_reply_v1 const*>(buffer_.data()));
   } else {
-    handler(std::bit_cast<ci::property_exchange::packed::capabilities_reply_v2 const *>(buffer_.data()));
+    handler(reinterpret_cast<ci::property_exchange::packed::capabilities_reply_v2 const*>(buffer_.data()));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -636,7 +637,7 @@ void ci_dispatcher<Config>::property_exchange() {
   using ci::property_exchange::packed::property_exchange_pt1;
   using ci::property_exchange::packed::property_exchange_pt2;
   auto size = offsetof(property_exchange_pt1, header);
-  auto const *const pt1 = std::bit_cast<property_exchange_pt1 const *>(buffer_.data());
+  auto const* const pt1 = reinterpret_cast<property_exchange_pt1 const*>(buffer_.data());
   auto const header_length = details::from_le7(pt1->header_length).get();
   if (pos_ == size && header_length > 0) {
     count_ = header_length * sizeof(pt1->header[0]);
@@ -649,7 +650,7 @@ void ci_dispatcher<Config>::property_exchange() {
     return;
   }
 
-  auto const *const pt2 = std::bit_cast<property_exchange_pt2 const *>(buffer_.data() + size);
+  auto const* const pt2 = reinterpret_cast<property_exchange_pt2 const*>(buffer_.data() + size);
   size += pt2_size;
   auto const data_length = details::from_le7(pt2->data_length).get();
   if (pos_ == size && data_length > 0) {
@@ -658,39 +659,33 @@ void ci_dispatcher<Config>::property_exchange() {
   }
 
   using chunk_info = ci::property_exchange::chunk_info;
+
   auto const chunk = chunk_info{details::from_le7(pt2->number_of_chunks), details::from_le7(pt2->chunk_number)};
   auto const request = b7{to_underlying(pt1->request_id)};
-  auto const header = std::span<char const>{std::bit_cast<char const *>(&pt1->header[0]), header_length};
-  auto const data = std::span<char const>{std::bit_cast<char const *>(&pt2->data[0]), data_length};
+  auto const header = std::span{&pt1->header[0], header_length};
+  auto const data = std::span{&pt2->data[0], data_length};
 
   auto& c = this->config();
   using enum message;
+  using ci::property_exchange::get;
+  using ci::property_exchange::get_reply;
+  using ci::property_exchange::notify;
+  using ci::property_exchange::set;
+  using ci::property_exchange::set_reply;
+  using ci::property_exchange::subscription;
+  using ci::property_exchange::subscription_reply;
+
+  auto& pe = c.property_exchange;
   switch (type_) {
-  case pe_get:
-    c.property_exchange.get(c.context, header_, ci::property_exchange::get::make(chunk, request, header));
-    break;
-  case pe_get_reply:
-    c.property_exchange.get_reply(c.context, header_,
-                                  ci::property_exchange::get_reply::make(chunk, request, header, data));
-    break;
-  case pe_set:
-    c.property_exchange.set(c.context, header_, ci::property_exchange::set::make(chunk, request, header, data));
-    break;
-  case pe_set_reply:
-    c.property_exchange.set_reply(c.context, header_,
-                                  ci::property_exchange::set_reply::make(chunk, request, header, data));
-    break;
-  case pe_sub:
-    c.property_exchange.subscription(c.context, header_,
-                                     ci::property_exchange::subscription::make(chunk, request, header, data));
-    break;
+  case pe_get: pe.get(c.context, header_, get ::make(chunk, request, header)); break;
+  case pe_get_reply: pe.get_reply(c.context, header_, get_reply ::make(chunk, request, header, data)); break;
+  case pe_set: pe.set(c.context, header_, set ::make(chunk, request, header, data)); break;
+  case pe_set_reply: pe.set_reply(c.context, header_, set_reply ::make(chunk, request, header, data)); break;
+  case pe_sub: pe.subscription(c.context, header_, subscription ::make(chunk, request, header, data)); break;
   case pe_sub_reply:
-    c.property_exchange.subscription_reply(
-        c.context, header_, ci::property_exchange::subscription_reply::make(chunk, request, header, data));
+    pe.subscription_reply(c.context, header_, subscription_reply::make(chunk, request, header, data));
     break;
-  case pe_notify:
-    c.property_exchange.notify(c.context, header_, ci::property_exchange::notify::make(chunk, request, header, data));
-    break;
+  case pe_notify: pe.notify(c.context, header_, notify ::make(chunk, request, header, data)); break;
   default: assert(false); break;
   }
   consumer_ = &ci_dispatcher::discard;
@@ -713,12 +708,13 @@ void ci_dispatcher<Config>::process_inquiry_capabilities() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::process_inquiry_capabilities_reply() {
+  using reply = ci::process_inquiry::capabilities_reply;
+  using reply_v2 = ci::process_inquiry::packed::capabilities_reply_v2;
+
   if (header_.version > b7{1U}) {
     auto& c = this->config();
-    c.process_inquiry.capabilities_reply(
-        c.context, header_,
-        ci::process_inquiry::capabilities_reply::make(
-            *std::bit_cast<ci::process_inquiry::packed::capabilities_reply_v2 const*>(buffer_.data())));
+    c.process_inquiry.capabilities_reply(c.context, header_,
+                                         reply::make(*reinterpret_cast<reply_v2 const*>(buffer_.data())));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -728,12 +724,13 @@ void ci_dispatcher<Config>::process_inquiry_capabilities_reply() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::process_inquiry_midi_message_report() {
+  using report = ci::process_inquiry::midi_message_report;
+  using report_v2 = ci::process_inquiry::packed::midi_message_report_v2;
+
   if (header_.version > b7{1U}) {
     auto& c = this->config();
-    c.process_inquiry.midi_message_report(
-        c.context, header_,
-        ci::process_inquiry::midi_message_report::make(
-            *std::bit_cast<ci::process_inquiry::packed::midi_message_report_v2 const*>(buffer_.data())));
+    c.process_inquiry.midi_message_report(c.context, header_,
+                                          report::make(*reinterpret_cast<report_v2 const*>(buffer_.data())));
   }
   consumer_ = &ci_dispatcher::discard;
 }
@@ -743,12 +740,13 @@ void ci_dispatcher<Config>::process_inquiry_midi_message_report() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::process_inquiry_midi_message_report_reply() {
+  using reply = ci::process_inquiry::midi_message_report_reply;
+  using reply_v2 = ci::process_inquiry::packed::midi_message_report_reply_v2;
+
   if (header_.version > b7{1U}) {
     auto& c = this->config();
-    c.process_inquiry.midi_message_report_reply(
-        c.context, header_,
-        ci::process_inquiry::midi_message_report_reply::make(
-            *std::bit_cast<ci::process_inquiry::packed::midi_message_report_reply_v2 const*>(buffer_.data())));
+    c.process_inquiry.midi_message_report_reply(c.context, header_,
+                                                reply::make(*reinterpret_cast<reply_v2 const*>(buffer_.data())));
   }
   consumer_ = &ci_dispatcher::discard;
 }

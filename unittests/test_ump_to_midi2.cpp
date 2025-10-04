@@ -1,3 +1,11 @@
+//===-- UMP to MIDI 2 ---------------------------------------------------------*- C++ -*-===//
+//
+// midi2 library under the MIT license.
+// See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===------------------------------------------------------------------------------------===//
+
 // DUT
 #include "midi2/ump/ump_to_midi2.hpp"
 #include "midi2/ump/ump_types.hpp"
@@ -213,26 +221,14 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
 
   std::vector<std::uint32_t> input;
 
-  {
-    constexpr auto m1cc_bank_msb = midi2::ump::m1cvm::control_change{}
-                                       .group(group)
-                                       .channel(channel)
-                                       .controller(midi2::ump::control::bank_select)
-                                       .value(bank_msb);
-    input.push_back(get<0>(m1cc_bank_msb).word());
-  }
-  {
-    constexpr auto mc11_bank_lsb = midi2::ump::m1cvm::control_change{}
-                                       .group(group)
-                                       .channel(channel)
-                                       .controller(midi2::ump::control::bank_select_lsb)
-                                       .value(bank_lsb);
-    input.push_back(get<0>(mc11_bank_lsb).word());
-  }
-  {
-    constexpr auto m1 = midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(program);
-    input.push_back(get<0>(m1).word());
-  }
+  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const append = [&input](std::uint32_t v) {
+    input.push_back(v);
+    return false;
+  };
+  midi2::ump::apply(cc().controller(midi2::ump::control::bank_select).value(bank_msb), append);
+  midi2::ump::apply(cc().controller(midi2::ump::control::bank_select_lsb).value(bank_lsb), append);
+  midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(program), append);
 
   midi2::ump::m2cvm::program_change m2;
   m2.group(group);
@@ -255,54 +251,18 @@ TEST(UMPToMidi2, ControlChangeRPN) {
 
   std::vector<std::uint32_t> input;
 
-  {
-    constexpr auto pn_msb = midi2::ump::m1cvm::control_change{}
-                                .group(group)
-                                .channel(channel)
-                                .controller(midi2::ump::control::rpn_msb)
-                                .value(control_msb);
-    input.push_back(get<0>(pn_msb).word());
-  }
-  {
-    constexpr auto pn_lsb = midi2::ump::m1cvm::control_change{}
-                                .group(group)
-                                .channel(channel)
-                                .controller(midi2::ump::control::rpn_lsb)
-                                .value(control_lsb);
-    input.push_back(get<0>(pn_lsb).word());
-  }
-  {
-    constexpr auto param_value_msb = midi2::ump::m1cvm::control_change{}
-                                         .group(group)
-                                         .channel(channel)
-                                         .controller(midi2::ump::control::data_entry_msb)
-                                         .value(value_msb);
-    input.push_back(get<0>(param_value_msb).word());
-  }
-  {
-    constexpr auto param_value_lsb = midi2::ump::m1cvm::control_change{}
-                                         .group(group)
-                                         .channel(channel)
-                                         .controller(midi2::ump::control::data_entry_lsb)
-                                         .value(value_lsb);
-    input.push_back(get<0>(param_value_lsb).word());
-  }
-  {
-    constexpr auto null_msb = midi2::ump::m1cvm::control_change{}
-                                  .group(group)
-                                  .channel(channel)
-                                  .controller(midi2::ump::control::rpn_msb)
-                                  .value(0x7F);
-    input.push_back(get<0>(null_msb).word());
-  }
-  {
-    constexpr auto null_lsb = midi2::ump::m1cvm::control_change{}
-                                  .group(group)
-                                  .channel(channel)
-                                  .controller(midi2::ump::control::rpn_lsb)
-                                  .value(0x7F);
-    input.push_back(get<0>(null_lsb).word());
-  }
+  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const append = [&input](std::uint32_t v) {
+    input.push_back(v);
+    return false;
+  };
+  using enum midi2::ump::control;
+  midi2::ump::apply(cc().controller(rpn_msb).value(control_msb), append);
+  midi2::ump::apply(cc().controller(rpn_lsb).value(control_lsb), append);
+  midi2::ump::apply(cc().controller(data_entry_msb).value(value_msb), append);
+  midi2::ump::apply(cc().controller(data_entry_lsb).value(value_lsb), append);
+  midi2::ump::apply(cc().controller(rpn_msb).value(0x7F), append);
+  midi2::ump::apply(cc().controller(rpn_lsb).value(0x7F), append);
 
   constexpr auto m2 =
       midi2::ump::m2cvm::rpn_controller{}
@@ -325,36 +285,17 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
   std::vector<std::uint32_t> input;
 
   using enum midi2::ump::control;
-  {
-    constexpr auto pn_msb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(control_msb);
-    input.push_back(get<0>(pn_msb).word());
-  }
-  {
-    constexpr auto pn_lsb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(control_lsb);
-    input.push_back(get<0>(pn_lsb).word());
-  }
-  {
-    constexpr auto param_value_msb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_msb).value(value_msb);
-    input.push_back(get<0>(param_value_msb).word());
-  }
-  {
-    constexpr auto param_value_lsb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(data_entry_lsb).value(value_lsb);
-    input.push_back(get<0>(param_value_lsb).word());
-  }
-  {
-    constexpr auto null_msb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_msb).value(0x7F);
-    input.push_back(get<0>(null_msb).word());
-  }
-  {
-    constexpr auto null_lsb =
-        midi2::ump::m1cvm::control_change{}.group(group).channel(channel).controller(nrpn_lsb).value(0x7F);
-    input.push_back(get<0>(null_lsb).word());
-  }
+  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const append = [&input](std::uint32_t v) {
+    input.push_back(v);
+    return false;
+  };
+  midi2::ump::apply(cc().controller(nrpn_msb).value(control_msb), append);
+  midi2::ump::apply(cc().controller(nrpn_lsb).value(control_lsb), append);
+  midi2::ump::apply(cc().controller(data_entry_msb).value(value_msb), append);
+  midi2::ump::apply(cc().controller(data_entry_lsb).value(value_lsb), append);
+  midi2::ump::apply(cc().controller(nrpn_msb).value(0x7F), append);
+  midi2::ump::apply(cc().controller(nrpn_lsb).value(0x7F), append);
 
   constexpr auto m2 =
       midi2::ump::m2cvm::nrpn_controller{}

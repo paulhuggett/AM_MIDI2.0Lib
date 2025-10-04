@@ -6,8 +6,12 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#include "midi2/ci/ci_dispatcher.hpp"
+// midi2 library
+#include <midi2/ci/ci_dispatcher.hpp>
+#include <midi2/ci/ci_types.hpp>
+#include <midi2/utils.hpp>
 
+// Standard library
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +22,7 @@
 #include <string_view>
 #include <type_traits>
 
-using namespace midi2::ci::literals;
+using namespace midi2::literals;
 using namespace std::string_view_literals;
 
 // A formatter for arrays of 7-bit integer values (b7). These will be represented to
@@ -89,12 +93,12 @@ int main() {
     auto dispatcher = setup_ci_dispatcher(my_muid);
 
     // A system exclusive message containing a CI discovery request.
-    constexpr std::array message{0x7E, 0x7F, 0x0D, 0x70, 0x02, 0x00, 0x00, 0x00, 0x00, 0x7F,
-                                 0x7F, 0x7F, 0x7F, 0x12, 0x23, 0x34, 0x79, 0x2E, 0x5D, 0x56,
-                                 0x01, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x02, 0x00, 0x00, 0x00};
+    constexpr std::array message{0x7E_b, 0x7F_b, 0x0D_b, 0x70_b, 0x02_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x7F_b,
+                                 0x7F_b, 0x7F_b, 0x7F_b, 0x12_b, 0x23_b, 0x34_b, 0x79_b, 0x2E_b, 0x5D_b, 0x56_b,
+                                 0x01_b, 0x00_b, 0x00_b, 0x00_b, 0x7F_b, 0x00_b, 0x02_b, 0x00_b, 0x00_b, 0x00_b};
     dispatcher.start(my_group, device_id);
     for (auto const b : message) {
-      dispatcher.dispatch(static_cast<std::byte>(b));
+      dispatcher.dispatch(b);
     }
     dispatcher.finish();
   } catch (std::exception const& e) {
