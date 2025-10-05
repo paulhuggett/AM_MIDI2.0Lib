@@ -46,12 +46,8 @@ jobs:
       - name: Build
         run: cmake --build "$BUILD_DIR"
 
-      - name: Run the Test Binaries
-        run: |
-          ctest                      \
-            --test-dir "$BUILD_DIR"  \
-            --output-junit junit.xml \
-            --verbose
+      - name: Run the executables
+        run: find "${BUILD_DIR}" -type f -executable -print -exec {} \;
 
       - name: Collect the Coverage
         run: |
