@@ -20,7 +20,7 @@
 namespace {
 
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is followed by one data byte.
-[[nodiscard]] constexpr bool is_one_byte_message(std::byte const b) {
+[[nodiscard]] constexpr bool is_one_byte_message(std::byte const b) noexcept {
   using enum midi2::bytestream::status;
   auto const value = std::to_underlying(b);
   auto const top_nibble = std::to_underlying(b & std::byte{0xF0});
@@ -32,7 +32,13 @@ namespace {
 
 namespace midi2::bytestream {
 
-void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
+void bytestream_to_ump::set_group(std::uint8_t const group) noexcept {
+  assert(group <= 0b1111 && "group number is out of range");
+  this->reset();
+  group_ = static_cast<std::byte>(group);
+}
+
+void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept {
   assert((b0 & std::byte{0x80}) != std::byte{0} && "Top bit of b0 must be set");
   assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
          "The top bit of b1 and b2 must be zero");
@@ -46,8 +52,14 @@ void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) {
                     (std::to_integer<std::uint32_t>(b1) << 8) | std::to_integer<std::uint32_t>(b2));
 }
 
-template <typename T> void bytestream_to_ump::push_sysex7() {
-  auto const t = T{}.group(to_integer<std::uint8_t>(group_))
+using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_in_1>;
+using sysex7_start = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_start>;
+using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_continue>;
+using sysex7_end = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_end>;
+
+template <ump::mt::data64 T> void bytestream_to_ump::push_sysex7() noexcept {
+  auto const t = ump::data64::details::sysex7<T>{}
+                     .group(to_integer<std::uint8_t>(group_))
                      .number_of_bytes(sysex7_.pos)
                      .data0(to_integer<std::uint8_t>(sysex7_.bytes[0]))
                      .data1(to_integer<std::uint8_t>(sysex7_.bytes[1]))
@@ -55,8 +67,7 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
                      .data3(to_integer<std::uint8_t>(sysex7_.bytes[3]))
                      .data4(to_integer<std::uint8_t>(sysex7_.bytes[4]))
                      .data5(to_integer<std::uint8_t>(sysex7_.bytes[5]));
-  static_assert(std::tuple_size_v<T> == 2);
-  ump::apply(t, [this](auto const w) {
+  ump::apply(t, [this](auto const w) noexcept {
     output_.push_back(std::uint32_t{w});
     return false;
   });
@@ -64,12 +75,12 @@ template <typename T> void bytestream_to_ump::push_sysex7() {
   sysex7_.reset();
 }
 
-void bytestream_to_ump::sysex_data_byte(std::byte const b) {
+void bytestream_to_ump::sysex_data_byte(std::byte const b) noexcept {
   if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
     using enum sysex7::status;
     switch (sysex7_.state) {
-    case start: push_sysex7<ump::data64::sysex7_start>(); break;
-    case cont: push_sysex7<ump::data64::sysex7_continue>(); break;
+    case start: push_sysex7<ump::mt::data64::sysex7_start>(); break;
+    case cont: push_sysex7<ump::mt::data64::sysex7_continue>(); break;
     default: assert(false); break;
     }
     sysex7_.reset();
@@ -80,7 +91,7 @@ void bytestream_to_ump::sysex_data_byte(std::byte const b) {
   ++sysex7_.pos;
 }
 
-void bytestream_to_ump::push(std::byte const b) {
+void bytestream_to_ump::push(std::byte const b) noexcept {
   auto const midi1int = static_cast<status>(b);
 
   if (is_status_byte(b)) {
@@ -95,8 +106,8 @@ void bytestream_to_ump::push(std::byte const b) {
     // Except for real-time messages, receiving a status byte will implicitly end any in-progress
     // sysex sequence.
     switch (sysex7_.state) {
-    case sysex7::status::start: this->push_sysex7<ump::data64::sysex7_in_1>(); break;
-    case sysex7::status::cont: this->push_sysex7<ump::data64::sysex7_end>(); break;
+    case sysex7::status::start: this->push_sysex7<ump::mt::data64::sysex7_in_1>(); break;
+    case sysex7::status::cont: this->push_sysex7<ump::mt::data64::sysex7_end>(); break;
     default: break;
     }
 
@@ -126,7 +137,7 @@ void bytestream_to_ump::push(std::byte const b) {
   }
 }
 
-void bytestream_to_ump::reset() {
+void bytestream_to_ump::reset() noexcept {
   output_.clear();
   sysex7_.reset();
 }
