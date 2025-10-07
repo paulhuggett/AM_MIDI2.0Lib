@@ -198,7 +198,7 @@ public:
     return *this;
   }
 
-  int get() const { return v_; }
+  [[nodiscard]] int get() const { return v_; }
 
 private:
   int v_;
