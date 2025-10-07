@@ -26,13 +26,26 @@ add_executable (m2unittests
   test_ump_to_midi2.cpp
   test_usbm1_to_bytestream.cpp
 )
-target_compile_definitions (m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)
+target_compile_definitions(m2unittests PRIVATE MIDI2_FUZZTEST=$<BOOL:${MIDI2_FUZZTEST}>)
 target_link_libraries(m2unittests PRIVATE midi2)
 setup_target(m2unittests PEDANTIC $<NOT:$<BOOL:${MIDI2_FUZZTEST}>>)
-set (clang_options -Wno-exit-time-destructors -Wno-global-constructors -Wno-used-but-marked-unused)
-set (gcc_options)
-set (msvc_options -wd4702) # unreachable code.
-target_compile_options (
+
+set(clang_options )
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang$")
+  set(extra_flags
+    -Wno-exit-time-destructors
+    -Wno-global-constructors
+    -Wno-used-but-marked-unused
+    -Wno-unneeded-member-function
+  )
+  foreach(flag IN LISTS extra_flags)
+    flag_if_available(${flag} new_flag)
+    list(APPEND clang_options ${new_flag})
+  endforeach()
+endif()
+set(gcc_options)
+set(msvc_options -wd4702) # unreachable code.
+target_compile_options(
   m2unittests
   PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:${clang_options}>
@@ -41,10 +54,10 @@ target_compile_options (
 )
 
 if (MIDI2_FUZZTEST)
-  target_link_libraries (m2unittests PRIVATE gtest gmock)
-  link_fuzztest (m2unittests)
+  target_link_libraries(m2unittests PRIVATE gtest gmock)
+  link_fuzztest(m2unittests)
 else ()
-  target_link_libraries (m2unittests PRIVATE gmock_main)
+  target_link_libraries(m2unittests PRIVATE gmock_main)
 endif (MIDI2_FUZZTEST)
 
 include(GoogleTest)
