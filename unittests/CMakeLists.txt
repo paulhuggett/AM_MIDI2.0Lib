@@ -35,8 +35,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang$")
   set(extra_flags
     -Wno-exit-time-destructors
     -Wno-global-constructors
-    -Wno-used-but-marked-unused
     -Wno-unneeded-member-function
+    -Wno-unused-member-function
+    -Wno-used-but-marked-unused
   )
   foreach(flag IN LISTS extra_flags)
     flag_if_available(${flag} new_flag)
