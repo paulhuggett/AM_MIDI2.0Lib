@@ -253,7 +253,7 @@ private:
   ///
   /// \param tk The key for which the function will search
   /// \returns  The index of the located key if present otherwise \p Ways.
-  constexpr std::size_t find_matching(tagged_key_type tk) const noexcept {
+  [[nodiscard]] constexpr std::size_t find_matching(tagged_key_type tk) const noexcept {
     return match_finder<Key, SetBits, Ways>::find(tk, keys_);
   }
 
