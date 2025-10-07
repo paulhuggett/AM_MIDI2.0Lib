@@ -157,7 +157,7 @@ private:
   std::array<aligned_storage<value_type>, Elements> arr_{};
 
   [[nodiscard]] constexpr bool wrapped() const noexcept { return (write_index_ & ~mask_) != (read_index_ & ~mask_); }
-  [[nodiscard]] constexpr value_type* write_address() noexcept { return &arr_[(write_index_)&mask_].value(); }
+  [[nodiscard]] constexpr value_type* write_address() noexcept { return &arr_[write_index_ & mask_].value(); }
   /// The number of bits required to represent the maximum index in the arr_
   /// container.
   static constexpr auto bits_ = details::bits_required(Elements - 1U);
