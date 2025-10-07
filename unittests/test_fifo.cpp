@@ -32,7 +32,7 @@ TEST(IsPowerOfTwo, IsPowerOfTwo) {
   EXPECT_FALSE(is_power_of_two(65537U));
 }
 TEST(BitsRequired, BitsRequired) {
-  using midi2::adt::bits_required;
+  using midi2::adt::details::bits_required;
   EXPECT_EQ(bits_required(0U), 0U);
   EXPECT_EQ(bits_required(1U), 1U);
   EXPECT_EQ(bits_required(2U), 2U);
@@ -183,6 +183,47 @@ TYPED_TEST(Fifo, PushUntilFullPopOne) {
     }
     EXPECT_THAT(toVector(fifo), testing::ContainerEq(toVector(queue)));
   }
+}
+
+class no_copy {
+public:
+  explicit no_copy(int v) : v_{v} {}
+  no_copy(no_copy const&) = delete;
+  no_copy(no_copy&& v) noexcept : v_{v.v_} {}
+  ~no_copy() noexcept = default;
+
+  no_copy& operator=(no_copy const&) = delete;
+  no_copy& operator=(no_copy&& v) noexcept {
+    v_ = v.v_;
+    return *this;
+  }
+
+  int get() const { return v_; }
+
+private:
+  int v_;
+};
+
+TEST(FifoNoCopy, Empty) {
+  midi2::adt::fifo<no_copy, 4> fifo;
+}
+TEST(FifoNoCopy, Push) {
+  midi2::adt::fifo<no_copy, 4> fifo;
+  bool const ok = fifo.push_back(no_copy{3});
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(fifo.size(), 1U);
+  no_copy const nc = fifo.pop_front();
+  EXPECT_EQ(nc.get(), 3);
+  EXPECT_EQ(fifo.size(), 0U);
+}
+TEST(FifoNoCopy, Emplace) {
+  midi2::adt::fifo<no_copy, 4> fifo;
+  bool const ok = fifo.emplace_back(3);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(fifo.size(), 1U);
+  no_copy const nc = fifo.pop_front();
+  EXPECT_EQ(nc.get(), 3);
+  EXPECT_EQ(fifo.size(), 0U);
 }
 
 }  // end anonymous namespace
