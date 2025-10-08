@@ -59,7 +59,7 @@ public:
 };
 
 template <midi2::icubaby::unicode_char_type T> class CI7TextEncode : public testing::Test {
-protected:
+public:
   std::string convert(std::u32string const& in32) {
     std::basic_string<T> out;
     std::ranges::copy(in32 | midi2::icubaby::views::transcode<char32_t, T>, std::back_inserter(out));
@@ -72,7 +72,9 @@ protected:
     t_.end_cp(dest);
     return output;
   }
+  auto const& transcoder() const { return t_; }
 
+private:
   midi2::transcoder<T, char> t_;
 };
 
@@ -87,8 +89,8 @@ TYPED_TEST(CI7TextEncode, SimpleASCII) {
       'H', 'e', 'l', 'l', 'o',
   };
   EXPECT_EQ(this->convert(str32), "Hello");
-  EXPECT_FALSE(this->t_.partial());
-  EXPECT_TRUE(this->t_.well_formed());
+  EXPECT_FALSE(this->transcoder().partial());
+  EXPECT_TRUE(this->transcoder().well_formed());
 }
 
 // NOLINTNEXTLINE
