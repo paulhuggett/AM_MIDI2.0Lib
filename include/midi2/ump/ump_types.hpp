@@ -26,6 +26,20 @@
 
 namespace midi2::ump {
 
+/// Convert a fixed-size span<> of T to a tuple<> with the same number of elements in the same order. Each
+/// member of the tuple must be constructible from T.
+///
+///     std::array<T1, 2> in = {...};
+///     std::tuple<T2, T3> out = span_to_tuple(in);
+///
+/// (where instances of T2 and T3 can be constructed from T1).
+template <typename T, std::size_t N> constexpr auto span_to_tuple(std::span<T, N> s) {
+  auto const impl = []<std::size_t... Is>(std::span<T, N> sp, std::index_sequence<Is...>) {
+    return std::tuple{sp[Is]...};
+  };
+  return impl(s, std::make_index_sequence<N>{});
+}
+
 #define UMP_MESSAGE_TYPES       \
   MIDI2_X(utility, 0x00)        \
   MIDI2_X(system, 0x01)         \
@@ -48,7 +62,7 @@ namespace midi2::ump {
 enum class message_type : std::uint8_t { UMP_MESSAGE_TYPES };
 #undef MIDI2_X
 
-/// Collects the enumeration that define the values for the UMP "mt" (message type) field
+/// Collects the enumerations that define the values for the UMP "mt" (message type) field
 namespace mt {
 
 // Here, CRT is short for "common and real-time".
@@ -146,11 +160,17 @@ enum class stream : std::uint16_t {
 
 /// Status codes for UMP messages in the DATA 128 Bit group
 enum class data128 : std::uint8_t {
+  /// Status code for the midi2::ump::data128::sysex8_in_1 message.
   sysex8_in_1 = 0x00,
+  /// Status code for the midi2::ump::data128::sysex8_start message.
   sysex8_start = 0x01,
+  /// Status code for the midi2::ump::data128::sysex8_continue message.
   sysex8_continue = 0x02,
+  /// Status code for the midi2::ump::data128::sysex8_end message.
   sysex8_end = 0x03,
+  /// Status code for the midi2::ump::data128::mds_header message.
   mixed_data_set_header = 0x08,
+  /// Status code for the midi2::ump::data128::mds_header message.
   mixed_data_set_payload = 0x09,
 };
 
@@ -185,6 +205,9 @@ constexpr auto apply(T const &message, Function function) {
 /// \brief Private implementation details of the UMP types and functions
 namespace details {
 
+/// \brief Converts one of the status enumerations to the corresponding message_type enumeration value
+/// This value is used by the "mt" field in UMP messages.
+/// \tparam T One fo the status enumerations defined in midi2::ump::mt
 template <typename T>
   requires std::is_enum_v<T>
 struct status_to_message_type;
@@ -226,10 +249,15 @@ concept bitfield_type = requires(T) {
   requires typename T::index() + typename T::bits() <= 32;
 };
 
+/// \brief Defines the starting bit index and number of bits for a bitfield.
+/// \tparam Index The index of the first bit in the bitfield (0 = least significant bit).
+/// \tparam Bits The number of bits in the bitfield.
 template <unsigned Index, unsigned Bits>
   requires(Bits > 0 && Index + Bits <= 32)
 struct bitfield {
+  /// \brief The index of the first bit in the bitfield.
   using index = std::integral_constant<unsigned, Index>;
+  /// \brief The number of bits in the bitfield.
   using bits = std::integral_constant<unsigned, Bits>;
 };
 static_assert(bitfield_type<bitfield<0, 1>>, "expected bitfield<> to conform to the bitfield_type concept");
@@ -246,6 +274,10 @@ public:
 
   friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
 
+  /// Sets the bits described by \p BitRange to the value \p v.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
+  /// \pre v<2^BitRange::bits()>
   template <bitfield_type BitRange> constexpr auto &set(unsigned v) noexcept {
     constexpr auto index = typename BitRange::index();
     constexpr auto bits = typename BitRange::bits();
@@ -256,6 +288,9 @@ public:
     return *this;
   }
 
+  /// Returns the value held by the bits described by \p BitRange.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
   template <bitfield_type BitRange>
   [[nodiscard]] constexpr adt::uinteger_t<BitRange::bits::value> get() const noexcept {
     constexpr auto index = typename BitRange::index();
@@ -270,6 +305,19 @@ protected:
   constexpr void init(StatusType const status) noexcept {
     this->set<MtField>(std::to_underlying(status_to_message_type_v<StatusType>));
     this->set<StatusField>(std::to_underlying(status));
+  }
+
+  template <typename StatusType>
+    requires std::is_enum_v<StatusType>
+  static constexpr auto underlying_mt(StatusType const /*s*/) {
+    return std::to_underlying(midi2::ump::details::status_to_message_type_v<std::remove_const_t<StatusType>>);
+  }
+
+  template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
+    requires std::is_enum_v<StatusType>
+  constexpr void check(StatusType const status) const noexcept {
+    assert(this->get<MtField>() == underlying_mt(status));
+    assert(this->get<StatusField>() == std::to_underlying(status));
   }
 
 private:
@@ -297,15 +345,18 @@ private:
 
 }  // end namespace midi2::ump
 
+/// Creates a "getter" member function for classes derived from midi2::ump::details::word_base.
 #define UMP_GETTER(word, field)                                         \
   constexpr auto field() const noexcept {                               \
     return std::get<word>(words_).template get<typename word::field>(); \
   }
+/// Creates a "setter" member function for classes derived from midi2::ump::details::word_base.
 #define UMP_SETTER(word, field)                                                       \
   constexpr auto &field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
     std::get<word>(words_).template set<typename word::field>(v);                     \
     return *this;                                                                     \
   }
+/// Creates both "getter" and "setter" member functions for classes derived from midi2::ump::details::word_base.
 #define UMP_GETTER_SETTER(word, field) \
   UMP_GETTER(word, field)              \
   UMP_SETTER(word, field)
@@ -325,10 +376,23 @@ private:
   static_assert(std::tuple_size_v<::midi2::ump::group::message> ==                                                   \
                 ::midi2::ump::message_size<::midi2::ump::message_type::group>::value);
 
+/// Defines a constructor for the class specified by the \p group and \p message parameters which takes a span of
+/// std::uint32_t with a size equal to the number of words in the message. The constructor initialises the message from
+/// the span and checks that the message type and status fields are correct.
+#define SPAN_CTOR(group, message)                                                  \
+  constexpr ::midi2::ump::group::message::message(                                 \
+      ::std::span<::std::uint32_t, ::std::tuple_size_v<message>> const m) noexcept \
+      : words_{span_to_tuple(m)} {                                                 \
+    get<0>(words_).check();                                                        \
+  }
+
 namespace midi2::ump {
+
 /// \brief An integral constant which holds the number of bytes of a specific UMP message type.
 template <message_type> struct message_size;  // not defined
+
 }  // end namespace midi2::ump
+
 //*       _   _ _ _ _         *
 //*  _  _| |_(_) (_) |_ _  _  *
 //* | || |  _| | | |  _| || | *
@@ -375,7 +439,6 @@ public:
   };
 
   constexpr noop() noexcept = default;
-  constexpr explicit noop(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
   friend constexpr bool operator==(noop const &, noop const &) noexcept = default;
 
 private:
@@ -386,7 +449,6 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 
 // 7.2.2.1 JR Clock Message
@@ -397,8 +459,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::jr_clock); }
+    static constexpr auto message = ump::mt::utility::jr_clock;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -414,7 +477,7 @@ public:
   };
 
   constexpr jr_clock() noexcept = default;
-  constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
+  constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -429,18 +492,20 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_clock
+SPAN_CTOR(utility, jr_clock)  // Define the span constructor for jr_clock
 
 // 7.2.2.2 Jitter-Reduction Timestamp Message
+/// \brief The Jitter-Reduction Timestamp message (section 7.2.2.2)
 class midi2::ump::utility::jr_timestamp {
 public:
   /// The first word of a Jitter-Reduction Timestamp message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::jr_ts); }
+    static constexpr auto message = ump::mt::utility::jr_ts;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -456,7 +521,7 @@ public:
   };
 
   constexpr jr_timestamp() noexcept = default;
-  constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept : words_{m[0]} {}
+  constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -471,17 +536,20 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(utility, jr_timestamp)  // Define tuple_size and tuple_element for jr_timestamp
+SPAN_CTOR(utility, jr_timestamp)  // Define the span constructor for jr_timestamp
 
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
+/// \brief The Delta Clockstamp Ticks Per Quarter Note (TPQN) message
 class midi2::ump::utility::delta_clockstamp_tpqn {
 public:
+  /// \brief The first word of a Delta Clockstamp TPQN message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::delta_clock_tick); }
+    static constexpr auto message = ump::mt::utility::delta_clock_tick;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -496,7 +564,7 @@ public:
   };
 
   constexpr delta_clockstamp_tpqn() noexcept = default;
-  constexpr explicit delta_clockstamp_tpqn(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -511,17 +579,19 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(utility, delta_clockstamp_tpqn)  // Define tuple_size and tuple_element for delta_clockstamp_tpqn
+SPAN_CTOR(utility, delta_clockstamp_tpqn)  // Define the span constructor for delta_clockstamp_tpqn
 
-// 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
+/// \brief The Delta Clockstamp (DC): Ticks Since Last Event message
 class midi2::ump::utility::delta_clockstamp {
 public:
+  /// \brief The first word of a Delta Clockstamp Since Last Event message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::delta_clock_since); }
+    static constexpr auto message = ump::mt::utility::delta_clock_since;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = details::bitfield<28, 4>;
@@ -533,7 +603,7 @@ public:
   };
 
   constexpr delta_clockstamp() noexcept = default;
-  constexpr explicit delta_clockstamp(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -548,8 +618,8 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for delta_clockstamp
+SPAN_CTOR(utility, delta_clockstamp)  // Define the span constructor for delta_clockstamp
 
 //*             _              *
 //*  ____  _ __| |_ ___ _ __   *
@@ -584,14 +654,16 @@ class reset;
 
 }  // namespace midi2::ump::system
 
+/// @brief  The contents of the MIDI time code message
 class midi2::ump::system::midi_time_code {
 public:
-  /// \brief The contents of the MIDI time code message
+  /// \brief The first and only word of the MIDI time code message
   class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_code); }
+    static constexpr auto message = ump::mt::system_crt::timing_code;
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::timing_code); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
     using mt = details::bitfield<28U, 4U>;
@@ -610,7 +682,7 @@ public:
   };
 
   constexpr midi_time_code() noexcept = default;
-  constexpr explicit midi_time_code(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit midi_time_code(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -626,8 +698,8 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, midi_time_code)  // Define tuple_size and tuple_element for midi_time_code
+SPAN_CTOR(system, midi_time_code)  // Define the span constructor for midi_time_code
 
 /// \brief The contents of the MIDI song position pointer message
 class midi2::ump::system::song_position_pointer {
@@ -635,8 +707,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
+    static constexpr auto message = midi2::ump::mt::system_crt::spp;
     constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::spp); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
     using mt = details::bitfield<28, 4>;
@@ -652,7 +725,7 @@ public:
   };
 
   constexpr song_position_pointer() noexcept = default;
-  constexpr explicit song_position_pointer(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -669,23 +742,26 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, song_position_pointer)  // Define tuple_size and tuple_element for song_position_pointer
+SPAN_CTOR(system, song_position_pointer)  // Define the span constructor for song_position_pointer
 
+/// \brief The contents of the MIDI song select message
 class midi2::ump::system::song_select {
 public:
-  /// \brief The contents of the MIDI song select message
+  /// \brief The first and only word of the MIDI song select message
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::system_crt::song_select;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::song_select); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
     /// Defines the bit position of the group field.
     using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xF3
+    ///< Always 0xF3
+    using status = details::bitfield<16, 8>;
     /// Defines a reserved bit
     using reserved0 = details::bitfield<15, 1>;
     using song = details::bitfield<8, 7>;
@@ -696,7 +772,7 @@ public:
   };
 
   constexpr song_select() noexcept = default;
-  constexpr explicit song_select(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit song_select(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(song_select const &, song_select const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -712,17 +788,19 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, song_select)  // Define tuple_size and tuple_element for song_select
+SPAN_CTOR(system, song_select)  // Define the span constructor for song_select
 
+/// \brief The contents of the MIDI tune-request message
 class midi2::ump::system::tune_request {
 public:
-  /// \brief The contents of the MIDI tune-request message
+  /// \brief The contents of the first and only word of a MIDI tune-request message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::tune_request); }
+    static constexpr auto message = ump::mt::system_crt::tune_request;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -734,7 +812,7 @@ public:
   };
 
   constexpr tune_request() noexcept = default;
-  constexpr explicit tune_request(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit tune_request(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -749,17 +827,19 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, tune_request)  // Define tuple_size and tuple_element for tune_request
+SPAN_CTOR(system, tune_request)  // Define the span constructor for tune_request
 
+//
 class midi2::ump::system::timing_clock {
 public:
   /// \brief The contents of the MIDI timing-clock message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::timing_clock); }
+    static constexpr auto message = ump::mt::system_crt::timing_clock;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -771,7 +851,7 @@ public:
   };
 
   constexpr timing_clock() noexcept = default;
-  constexpr explicit timing_clock(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit timing_clock(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(timing_clock const &, timing_clock const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -786,16 +866,19 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, timing_clock)  // Define tuple_size and tuple_element for timing_clock
+SPAN_CTOR(system, timing_clock)  // Define the span constructor for timing_clock
 
+/// \brief Defines the MIDI sequence-start message
 class midi2::ump::system::sequence_start {
 public:
+  /// \brief The contents of the first and only word of a MIDI sequence-start message
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_start); }
+    static constexpr auto message = ump::mt::system_crt::sequence_start;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -807,7 +890,7 @@ public:
   };
 
   constexpr sequence_start() noexcept = default;
-  constexpr explicit sequence_start(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit sequence_start(std::span<std::uint32_t, 1> const w0) noexcept;
   friend constexpr bool operator==(sequence_start const &, sequence_start const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -822,16 +905,19 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, sequence_start)  // Define tuple_size and tuple_element for sequence_start
+SPAN_CTOR(system, sequence_start)  // Define the span constructor for sequence_start
 
+/// \brief Defines the MIDI sequence-continue message
 class midi2::ump::system::sequence_continue {
 public:
+  /// \brief The contents of the first and only word of a MIDI sequence-continue message
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::system_crt::sequence_continue;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_continue); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -843,7 +929,7 @@ public:
   };
 
   constexpr sequence_continue() noexcept = default;
-  constexpr explicit sequence_continue(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit sequence_continue(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -858,16 +944,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, sequence_continue)  // Define tuple_size and tuple_element for sequence_continue
+SPAN_CTOR(system, sequence_continue)  // Define the span constructor for sequence_continue
 
+/// \brief Defines the MIDI sequence-stop message
 class midi2::ump::system::sequence_stop {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::system_crt::sequence_stop;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::sequence_stop); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -879,7 +967,7 @@ public:
   };
 
   constexpr sequence_stop() noexcept = default;
-  constexpr explicit sequence_stop(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit sequence_stop(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -896,14 +984,17 @@ private:
 };
 
 UMP_TUPLE(system, sequence_stop)  // Define tuple_size and tuple_element for sequence_stop
+SPAN_CTOR(system, sequence_stop)  // Define the span constructor for sequence_stop
 
+/// \brief Defines the MIDI active-sensing message
 class midi2::ump::system::active_sensing {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::system_crt::active_sensing;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::active_sensing); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -915,7 +1006,7 @@ public:
   };
 
   constexpr active_sensing() noexcept = default;
-  constexpr explicit active_sensing(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit active_sensing(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(active_sensing const &, active_sensing const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -930,16 +1021,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(system, active_sensing)  // Define tuple_size and tuple_element for active_sensing
+SPAN_CTOR(system, active_sensing)  // Define the span constructor for active_sensing
 
+/// \brief Defines the MIDI reset message
 class midi2::ump::system::reset {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::system_crt::system_reset;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::system_reset); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = details::bitfield<28, 4>;
@@ -951,7 +1044,7 @@ public:
   };
 
   constexpr reset() noexcept = default;
-  constexpr explicit reset(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit reset(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(reset const &, reset const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -966,8 +1059,8 @@ private:
 
   std::tuple<word0> words_;
 };
-
-UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for reset
+UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for system/reset
+SPAN_CTOR(system, reset)  // Define the span constructor for system/reset
 
 //*        _                 *
 //*  _ __ / |  ____ ___ __   *
@@ -1006,9 +1099,10 @@ class midi2::ump::m1cvm::note_on {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::note_on;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_on); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1023,7 +1117,7 @@ public:
   };
 
   constexpr note_on() noexcept = default;
-  constexpr explicit note_on(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit note_on(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(note_on const &, note_on const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1041,17 +1135,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, note_on)  // Define tuple_size and tuple_element for m1cvm/note_on
+SPAN_CTOR(m1cvm, note_on)  // Define the span constructor for m1cvm/note_on
 
 // 7.3.1 MIDI 1.0 Note Off Message
 class midi2::ump::m1cvm::note_off {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::note_off;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::note_off); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1066,7 +1161,7 @@ public:
   };
 
   constexpr note_off() noexcept = default;
-  constexpr explicit note_off(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit note_off(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1084,17 +1179,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
+SPAN_CTOR(m1cvm, note_off)  // Define the span constructor for m1cvm/note_off
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
 class midi2::ump::m1cvm::poly_pressure {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::poly_pressure;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1109,7 +1205,7 @@ public:
   };
 
   constexpr poly_pressure() noexcept = default;
-  constexpr explicit poly_pressure(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1127,17 +1223,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
+SPAN_CTOR(m1cvm, poly_pressure)  // Define the span constructor for m1cvm/poly_pressure
 
 // 7.3.4 MIDI 1.0 Control Change Message
 class midi2::ump::m1cvm::control_change {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::cc;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1152,7 +1249,7 @@ public:
   };
 
   constexpr control_change() noexcept = default;
-  constexpr explicit control_change(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit control_change(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1172,17 +1269,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
+SPAN_CTOR(m1cvm, control_change)  // Define the span constructor for m1cvm/control_change
 
 // 7.3.5 MIDI 1.0 Program Change Message
 class midi2::ump::m1cvm::program_change {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::program_change;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1196,7 +1294,7 @@ public:
   };
 
   constexpr program_change() noexcept = default;
-  constexpr explicit program_change(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit program_change(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1213,17 +1311,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, program_change)  // Define tuple_size and tuple_element for m1cvm/program_change
+SPAN_CTOR(m1cvm, program_change)  // Define the span constructor for m1cvm/program_change
 
 // 7.3.6 MIDI 1.0 Channel Pressure Message
 class midi2::ump::m1cvm::channel_pressure {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::channel_pressure;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1237,7 +1336,7 @@ public:
   };
 
   constexpr channel_pressure() noexcept = default;
-  constexpr explicit channel_pressure(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit channel_pressure(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1254,17 +1353,18 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
+SPAN_CTOR(m1cvm, channel_pressure)  // Define the span constructor for m1cvm/channel_pressure
 
 // 7.3.7 MIDI 1.0 Pitch Bend Message
 class midi2::ump::m1cvm::pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = ump::mt::m1cvm::pitch_bend;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::m1cvm::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = details::bitfield<28, 4>;
@@ -1278,7 +1378,7 @@ public:
     using msb_data = details::bitfield<0, 7>;
   };
   constexpr pitch_bend() noexcept = default;
-  constexpr explicit pitch_bend(std::uint32_t const w0) noexcept : words_{w0} {}
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 1> const m) noexcept;
   friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1296,8 +1396,8 @@ private:
 
   std::tuple<word0> words_;
 };
-
 UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/pitch_bend
+SPAN_CTOR(m1cvm, pitch_bend)  // Define the span constructor for m1cvm/pitch_bend
 
 //*     _      _         __ _ _   *
 //*  __| |__ _| |_ __ _ / /| | |  *
@@ -1326,11 +1426,14 @@ template <midi2::ump::mt::data64 Status> class midi2::ump::data64::details::syse
 public:
   class word0 : public midi2::ump::details::word_base {
   public:
+    static constexpr auto message = Status;
     using word_base::word_base;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
-    constexpr word0() noexcept { this->init<mt, status>(Status); }
-
+    /// Defines the bit position of the mt (message-type) field.
     using mt = midi2::ump::details::bitfield<28, 4>;
+    /// Defines the bit position of the group field
     using group = midi2::ump::details::bitfield<24, 4>;
     using status = midi2::ump::details::bitfield<20, 4>;
     using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
@@ -1354,7 +1457,9 @@ public:
   };
 
   constexpr sysex7() noexcept = default;
-  constexpr explicit sysex7(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit sysex7(std::span<std::uint32_t, 2> const m) noexcept : words_{span_to_tuple(m)} {
+    get<0>(words_).check();
+  }
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1384,6 +1489,7 @@ struct std::tuple_size<midi2::ump::data64::details::sysex7<Status>> /* NOLINT(ce
 
 template <std::size_t I, midi2::ump::mt::data64 Status>
 struct std::tuple_element<I, midi2::ump::data64::details::sysex7<Status>> { /* NOLINT(cert-dcl58-cpp] */
+  /// The type of Ith element of the tuple-like type midi2::ump::data64::details::sysex7<>.
   using type = std::tuple_element_t<I, decltype(midi2::ump::data64::details::sysex7<Status>::words_)>;
 };
 
@@ -1445,25 +1551,29 @@ class per_note_pitch_bend;
 
 }  // end namespace midi2::ump::m2cvm
 
-// 7.4.1 MIDI 2.0 Note Off Message
+/// \brief Defines the MIDI 2.0 Note Off Message
 class midi2::ump::m2cvm::note_off {
 public:
+  /// \brief The first word of the MIDI 2.0 Note Off Message
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::note_off;
     using word_base::word_base;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_off); }
-
-    /// Defines the bit position of the mt (message-type) field. Always 0x4.
+    /// Defines the bit range of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
-    /// Defines the bit position of the group field.
+    /// Defines the bit range of the group field.
     using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Note-off=0x8, note-on=0x9
+    /// Defines the bit range of the status field. Always 0x8.
+    using status = details::bitfield<20, 4>;
     using channel = details::bitfield<16, 4>;
     using reserved0 = details::bitfield<15, 1>;
     using note = details::bitfield<8, 7>;
     using attribute_type = details::bitfield<0, 8>;
   };
+  /// \brief The second word of the MIDI 2.0 Note Off Message
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
@@ -1473,7 +1583,7 @@ public:
   };
 
   constexpr note_off() noexcept = default;
-  constexpr explicit note_off(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit note_off(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(note_off const &a, note_off const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1493,17 +1603,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, note_off)  // Define tuple_size and tuple_element for m2cvm/note_off
+SPAN_CTOR(m2cvm, note_off)  // Define the span constructor for m2cvm/note_off
 
 // 7.4.2 MIDI 2.0 Note On Message
 class midi2::ump::m2cvm::note_on {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::note_on;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::note_on); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1524,7 +1635,7 @@ public:
   };
 
   constexpr note_on() noexcept = default;
-  constexpr explicit note_on(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit note_on(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(note_on const &a, note_on const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1544,17 +1655,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, note_on)  // Define tuple_size and tuple_element for m2cvm/note_on
+SPAN_CTOR(m2cvm, note_on)  // Define the span constructor for m2cvm/note_on
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 class midi2::ump::m2cvm::poly_pressure {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::poly_pressure;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::poly_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1573,7 +1685,7 @@ public:
   };
 
   constexpr poly_pressure() noexcept = default;
-  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1591,16 +1703,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, poly_pressure)  // Define tuple_size and tuple_element for m2cvm/poly_pressure
+SPAN_CTOR(m2cvm, poly_pressure)  // Define the span constructor for m2cvm/poly_pressure
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 class midi2::ump::m2cvm::rpn_per_note_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::rpn_per_note;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_per_note); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1619,7 +1733,7 @@ public:
   };
 
   constexpr rpn_per_note_controller() noexcept = default;
-  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(rpn_per_note_controller const &, rpn_per_note_controller const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1639,17 +1753,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, rpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_per_note_controller
+SPAN_CTOR(m2cvm, rpn_per_note_controller)  // Define the span constructor for m2cvm/rpn_per_note_controller
 
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
 class midi2::ump::m2cvm::nrpn_per_note_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::nrpn_per_note;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_per_note); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1668,7 +1783,7 @@ public:
   };
 
   constexpr nrpn_per_note_controller() noexcept = default;
-  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(nrpn_per_note_controller const &,
                                    nrpn_per_note_controller const &) noexcept = default;
 
@@ -1689,8 +1804,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, nrpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_per_note_controller
+SPAN_CTOR(m2cvm, nrpn_per_note_controller)  // Define the span constructor for m2cvm/nrpn_per_note_controller
 
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
 /// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
@@ -1701,9 +1816,10 @@ class midi2::ump::m2cvm::rpn_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::rpn;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1723,7 +1839,7 @@ public:
   };
 
   constexpr rpn_controller() noexcept = default;
-  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(rpn_controller const &, rpn_controller const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1742,17 +1858,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
-UMP_TUPLE(m2cvm, rpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_per_note_controller
+UMP_TUPLE(m2cvm, rpn_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_controller
+SPAN_CTOR(m2cvm, rpn_controller)  // Define the span constructor for m2cvm/rpn_controller
 
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 class midi2::ump::m2cvm::nrpn_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::nrpn;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1772,7 +1889,7 @@ public:
   };
 
   constexpr nrpn_controller() noexcept = default;
-  constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(nrpn_controller const &, nrpn_controller const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1791,17 +1908,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, nrpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_controller
+SPAN_CTOR(m2cvm, nrpn_controller)  // Define the span constructor for m2cvm/nrpn_controller
 
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 class midi2::ump::m2cvm::rpn_relative_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::rpn_relative;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::rpn_relative); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1821,7 +1939,7 @@ public:
   };
 
   constexpr rpn_relative_controller() noexcept = default;
-  constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(rpn_relative_controller const &, rpn_relative_controller const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1840,16 +1958,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, rpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
+SPAN_CTOR(m2cvm, rpn_relative_controller)  // Define the span constructor for m2cvm/rpn_relative_controller
 
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 class midi2::ump::m2cvm::nrpn_relative_controller {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::nrpn_relative;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::nrpn_relative); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1869,7 +1989,7 @@ public:
   };
 
   constexpr nrpn_relative_controller() noexcept = default;
-  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(nrpn_relative_controller const &,
                                    nrpn_relative_controller const &) noexcept = default;
 
@@ -1891,16 +2011,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
-UMP_TUPLE(m2cvm, nrpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
+UMP_TUPLE(m2cvm, nrpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_relative_controller
+SPAN_CTOR(m2cvm, nrpn_relative_controller)  // Define the span constructor for m2cvm/nrpn_relative_controller
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 class midi2::ump::m2cvm::per_note_management {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::per_note_manage;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::per_note_manage); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1921,7 +2043,7 @@ public:
   };
 
   constexpr per_note_management() noexcept = default;
-  constexpr explicit per_note_management(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit per_note_management(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(per_note_management const &, per_note_management const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1943,17 +2065,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, per_note_management)  // Define tuple_size and tuple_element for m2cvm/per_note_management
+SPAN_CTOR(m2cvm, per_note_management)  // Define the span constructor for m2cvm/per_note_management
 
 // 7.4.6 MIDI 2.0 Control Change Message
 class midi2::ump::m2cvm::control_change {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::cc;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::cc); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -1972,7 +2095,7 @@ public:
   };
 
   constexpr control_change() noexcept = default;
-  constexpr explicit control_change(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit control_change(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1992,17 +2115,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, control_change)  // Define tuple_size and tuple_element for m2cvm/control_change
+SPAN_CTOR(m2cvm, control_change)  // Define the span constructor for m2cvm/control_change
 
 // 7.4.9 MIDI 2.0 Program Change Message
 class midi2::ump::m2cvm::program_change {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::program_change;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::program_change); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -2027,7 +2151,7 @@ public:
   };
 
   constexpr program_change() noexcept = default;
-  constexpr explicit program_change(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit program_change(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2048,17 +2172,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, program_change)  // Define tuple_size and tuple_element for m2cvm/program_change
+SPAN_CTOR(m2cvm, program_change)  // Define the span constructor for m2cvm/program_change
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 class midi2::ump::m2cvm::channel_pressure {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::channel_pressure;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::channel_pressure); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -2076,7 +2201,7 @@ public:
   };
 
   constexpr channel_pressure() noexcept = default;
-  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2093,17 +2218,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, channel_pressure)  // Define tuple_size and tuple_element for m2cvm/channel_pressure
+SPAN_CTOR(m2cvm, channel_pressure)  // Define the span constructor for m2cvm/channel_pressure
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 class midi2::ump::m2cvm::pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::pitch_bend;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -2121,7 +2247,7 @@ public:
   };
 
   constexpr pitch_bend() noexcept = default;
-  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2138,17 +2264,18 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, pitch_bend)  // Define tuple_size and tuple_element for m2cvm/pitch_bend
+SPAN_CTOR(m2cvm, pitch_bend)  // Define the span constructor for m2cvm/channel_pressure
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 class midi2::ump::m2cvm::per_note_pitch_bend {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::m2cvm::pitch_bend_per_note;
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::m2cvm::pitch_bend_per_note); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = details::bitfield<28, 4>;
@@ -2167,7 +2294,7 @@ public:
   };
 
   constexpr per_note_pitch_bend() noexcept = default;
-  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) noexcept : words_{m[0], m[1]} {}
+  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(per_note_pitch_bend const &, per_note_pitch_bend const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2185,8 +2312,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-
 UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element for m2cvm/per_note_pitch_bend
+SPAN_CTOR(m2cvm, per_note_pitch_bend)  // Define the span constructor for m2cvm/per_note_pitch_bend
 
 //*                       _                       *
 //*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
@@ -2226,8 +2353,10 @@ class midi2::ump::stream::endpoint_discovery {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::endpoint_discovery;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2254,7 +2383,7 @@ public:
   };
 
   constexpr endpoint_discovery() noexcept = default;
-  constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(endpoint_discovery const &, endpoint_discovery const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2274,16 +2403,18 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(stream, endpoint_discovery)  // Define tuple_size and tuple_element for stream/endpoint_discovery
+SPAN_CTOR(stream, endpoint_discovery)  // Define the span constructor for stream/endpoint_discovery
 
 // 7.1.2 Endpoint Info Notification Message
 class midi2::ump::stream::endpoint_info_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::endpoint_info_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2316,8 +2447,7 @@ public:
   };
 
   constexpr endpoint_info_notification() noexcept = default;
-  constexpr explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(endpoint_info_notification const &,
                                    endpoint_info_notification const &) noexcept = default;
 
@@ -2343,17 +2473,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/endpoint_info_notification
 UMP_TUPLE(stream, endpoint_info_notification)
+// Define the span constructor for stream/endpoint_info_notification
+SPAN_CTOR(stream, endpoint_info_notification)
 
 // 7.1.3 Device Identity Notification Message
 class midi2::ump::stream::device_identity_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::device_identity_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::device_identity_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2398,8 +2531,7 @@ public:
   };
 
   constexpr device_identity_notification() noexcept = default;
-  constexpr explicit device_identity_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit device_identity_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(device_identity_notification const &,
                                    device_identity_notification const &) noexcept = default;
 
@@ -2426,17 +2558,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/device_identity_notification
 UMP_TUPLE(stream, device_identity_notification)
+// Define the span constructor for stream/device_identity_notification
+SPAN_CTOR(stream, device_identity_notification)
 
 // 7.1.4 Endpoint Name Notification
 class midi2::ump::stream::endpoint_name_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::endpoint_name_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::endpoint_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2471,8 +2606,7 @@ public:
   };
 
   constexpr endpoint_name_notification() noexcept = default;
-  constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(endpoint_name_notification const &,
                                    endpoint_name_notification const &) noexcept = default;
 
@@ -2502,17 +2636,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/endpoint_name_notification
 UMP_TUPLE(stream, endpoint_name_notification)
+// Define the span constructor for stream/endpoint_name_notification
+SPAN_CTOR(stream, endpoint_name_notification)
 
 // 7.1.5 Product Instance ID Notification Message
 class midi2::ump::stream::product_instance_id_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::product_instance_id_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::product_instance_id_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2547,8 +2684,7 @@ public:
   };
 
   constexpr product_instance_id_notification() noexcept = default;
-  constexpr explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(product_instance_id_notification const &,
                                    product_instance_id_notification const &) noexcept = default;
 
@@ -2578,9 +2714,10 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/product_instance_id_notification
 UMP_TUPLE(stream, product_instance_id_notification)
+// Define the span constructor for stream/product_instance_id_notification
+SPAN_CTOR(stream, product_instance_id_notification)
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
@@ -2589,8 +2726,10 @@ class midi2::ump::stream::jr_configuration_request {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::jr_configuration_request;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_request); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2618,8 +2757,7 @@ public:
   };
 
   constexpr jr_configuration_request() noexcept = default;
-  constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(jr_configuration_request const &,
                                    jr_configuration_request const &) noexcept = default;
 
@@ -2644,14 +2782,18 @@ private:
 
 // Define tuple_size and tuple_element for stream/jr_configuration_request
 UMP_TUPLE(stream, jr_configuration_request)
+// Define the span constructor for stream/jr_configuration_request
+SPAN_CTOR(stream, jr_configuration_request)
 
 // 7.1.6.3 JR Stream Configuration Notification Message
 class midi2::ump::stream::jr_configuration_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::jr_configuration_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::jr_configuration_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2679,8 +2821,7 @@ public:
   };
 
   constexpr jr_configuration_notification() noexcept = default;
-  constexpr explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(jr_configuration_notification const &,
                                    jr_configuration_notification const &) noexcept = default;
 
@@ -2705,14 +2846,18 @@ private:
 
 // Define tuple_size and tuple_element for stream/jr_configuration_notification
 UMP_TUPLE(stream, jr_configuration_notification)
+// Define the span constructor for stream/jr_configuration_notification
+SPAN_CTOR(stream, jr_configuration_notification)
 
 // 7.1.7 Function Block Discovery Message
 class midi2::ump::stream::function_block_discovery {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::function_block_discovery;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_discovery); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2738,8 +2883,7 @@ public:
   };
 
   constexpr function_block_discovery() noexcept = default;
-  constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(function_block_discovery const &,
                                    function_block_discovery const &) noexcept = default;
 
@@ -2760,17 +2904,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/function_block_discovery
 UMP_TUPLE(stream, function_block_discovery)
+// Define the span constructor for stream/function_block_discovery
+SPAN_CTOR(stream, function_block_discovery)
 
 // 7.1.8 Function Block Info Notification
 class midi2::ump::stream::function_block_info_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::function_block_info_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_info_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2803,8 +2950,7 @@ public:
   };
 
   constexpr function_block_info_notification() noexcept = default;
-  constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(function_block_info_notification const &,
                                    function_block_info_notification const &) noexcept = default;
 
@@ -2831,17 +2977,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/function_block_info_notification
 UMP_TUPLE(stream, function_block_info_notification)
+// Define the span constructor for stream/function_block_info_notification
+SPAN_CTOR(stream, function_block_info_notification)
 
 // 7.1.9 Function Block Name Notification
 class midi2::ump::stream::function_block_name_notification {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::function_block_name_notification;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::function_block_name_notification); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2876,8 +3025,7 @@ public:
   };
 
   constexpr function_block_name_notification() noexcept = default;
-  constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) noexcept
-      : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(function_block_name_notification const &,
                                    function_block_name_notification const &) noexcept = default;
 
@@ -2907,17 +3055,20 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/function_block_name_notification
 UMP_TUPLE(stream, function_block_name_notification)
+// Define the span constructor for stream/function_block_name_notification
+SPAN_CTOR(stream, function_block_name_notification)
 
 // 7.1.10 Start of Clip Message
 class midi2::ump::stream::start_of_clip {
 public:
   class word0 : public details::word_base {
   public:
+    static constexpr auto message = mt::stream::start_of_clip;
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::start_of_clip); }
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2942,7 +3093,7 @@ public:
   };
 
   constexpr start_of_clip() noexcept = default;
-  constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(start_of_clip const &, start_of_clip const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -2960,8 +3111,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(stream, start_of_clip)  // Define tuple_size and tuple_element for stream/start_of_clip
+SPAN_CTOR(stream, start_of_clip)  // Define the span constructor for stream/start_of_clip
 
 // 7.1.11 End of Clip Message
 class midi2::ump::stream::end_of_clip {
@@ -2969,7 +3120,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::stream::end_of_clip); }
+    static constexpr auto message = ump::mt::stream::end_of_clip;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = details::bitfield<28, 4>;
@@ -2994,7 +3147,7 @@ public:
   };
 
   constexpr end_of_clip() noexcept = default;
-  constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(end_of_clip const &, end_of_clip const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3012,8 +3165,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for stream/end_of_clip
+SPAN_CTOR(stream, end_of_clip)  // Define the span constructor for stream/end_of_clip
 
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *
@@ -3050,7 +3203,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_tempo); }
+    static constexpr auto message = ump::mt::flex_data::set_tempo;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3079,7 +3234,7 @@ public:
   };
 
   constexpr set_tempo() noexcept = default;
-  constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_tempo const &, set_tempo const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3101,8 +3256,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, set_tempo)  // Define tuple_size and tuple_element for flex_data/set_tempo
+SPAN_CTOR(flex_data, set_tempo)  // Define the span constructor for flex_data/set_tempo
 
 // 7.5.4 Set Time Signature Message
 class midi2::ump::flex_data::set_time_signature {
@@ -3110,7 +3265,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_time_signature); }
+    static constexpr auto message = ump::mt::flex_data::set_time_signature;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3143,7 +3300,7 @@ public:
   };
 
   constexpr set_time_signature() noexcept = default;
-  constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_time_signature const &, set_time_signature const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3167,8 +3324,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, set_time_signature)  // Define tuple_size and tuple_element for flex_data/set_time_signature
+SPAN_CTOR(flex_data, set_time_signature)  // Define the span constructor for flex_data/set_time_signature
 
 // 7.5.5 Set Metronome Message
 class midi2::ump::flex_data::set_metronome {
@@ -3176,7 +3333,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_metronome); }
+    static constexpr auto message = ump::mt::flex_data::set_metronome;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3213,7 +3372,7 @@ public:
   };
 
   constexpr set_metronome() noexcept = default;
-  constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_metronome const &, set_metronome const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3239,8 +3398,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for flex_data/set_metronome
+SPAN_CTOR(flex_data, set_metronome)  // Define the span constructor for flex_data/set_metronome
 
 // 7.5.7 Set Key Signature Message
 class midi2::ump::flex_data::set_key_signature {
@@ -3248,7 +3407,9 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_key_signature); }
+    static constexpr auto message = ump::mt::flex_data::set_key_signature;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3279,7 +3440,7 @@ public:
   };
 
   constexpr set_key_signature() noexcept = default;
-  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3302,8 +3463,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
+SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor for flex_data/set_key_signature
 
 // 7.5.8 Set Chord Name Message
 namespace midi2::ump::flex_data {
@@ -3366,10 +3527,13 @@ enum class chord_type : std::uint8_t {
 
 class midi2::ump::flex_data::set_chord_name {
 public:
+  /// The firs
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::flex_data::set_chord_name); }
+    static constexpr auto message = ump::mt::flex_data::set_chord_name;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3417,7 +3581,7 @@ public:
   };
 
   constexpr set_chord_name() noexcept = default;
-  constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3454,8 +3618,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, set_chord_name)  // Define tuple_size and tuple_element for flex_data/set_chord_name
+SPAN_CTOR(flex_data, set_chord_name)  // Define the span constructor for flex_data/set_chord_name
 
 // 7.5.9 Text Messages Common Format
 class midi2::ump::flex_data::text_common {
@@ -3464,6 +3628,9 @@ public:
   public:
     using word_base::word_base;
     constexpr word0() noexcept { this->set<mt>(std::to_underlying(ump::message_type::flex_data)); }
+    constexpr void check() const noexcept {
+      assert(this->get<mt>() == std::to_underlying(ump::message_type::flex_data));
+    }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = details::bitfield<28, 4>;
@@ -3492,7 +3659,7 @@ public:
   };
 
   constexpr text_common() noexcept = default;
-  constexpr explicit text_common(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit text_common(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(text_common const &, text_common const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3514,8 +3681,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for flex_data/text_common
+SPAN_CTOR(flex_data, text_common)  // Define the span constructor for flex_data/text_common
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
@@ -3564,9 +3731,12 @@ public:
   class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(Status); }
+    static constexpr auto message = Status;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
     using mt = midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    /// Defines the bit position of the group field
     using group = midi2::ump::details::bitfield<24, 4>;
     using status = midi2::ump::details::bitfield<20, 4>;
     using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
@@ -3602,7 +3772,9 @@ public:
   };
 
   constexpr sysex8() noexcept = default;
-  constexpr explicit sysex8(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit sysex8(std::span<std::uint32_t, 4> const m) noexcept : words_{span_to_tuple(m)} {
+    get<0>(words_).check();
+  }
   friend constexpr bool operator==(sysex8 const &, sysex8 const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3640,30 +3812,41 @@ struct std::tuple_size<midi2::ump::data128::details::sysex8<Status>> /* NOLINT(c
 
 template <std::size_t I, midi2::ump::mt::data128 Status>
 struct std::tuple_element<I, midi2::ump::data128::details::sysex8<Status>> { /* NOLINT(cert-dcl58-cpp] */
+  /// The type of Ith element of the tuple-like type midi2::ump::data128::details::sysex8<>.
   using type = std::tuple_element_t<I, decltype(midi2::ump::data128::details::sysex8<Status>::words_)>;
 };
 
 namespace midi2::ump::data128 {
 
+/// The message type used for 8-bit wide system exclusive data packed into a single UMP message.
 using sysex8_in_1 = details::sysex8<midi2::ump::mt::data128::sysex8_in_1>;
+/// The start of a block of 8-bit system exclusive data that is split over zero or more of sysex8_continue messages and
+/// completed by a sysex8_end message.
 using sysex8_start = details::sysex8<midi2::ump::mt::data128::sysex8_start>;
+/// A block of 128 bits of system exclusive data. The can be sent as many times as necessary but the must be preceeded
+/// by a sysex8_in_1 message.
 using sysex8_continue = details::sysex8<midi2::ump::mt::data128::sysex8_continue>;
+/// A message which signals the end of a series of sysex8_start and sysex8_continue messages.
 using sysex8_end = details::sysex8<midi2::ump::mt::data128::sysex8_end>;
 
 }  // end namespace midi2::ump::data128
 
-// 7.9 Mixed Data Set Message
-// Mixed Data Set Header (word 1)
-// Mixed Data Set Payload (word 1)
+/// \brief The header message for a Mixed Data Set sequence.
+///
+/// Mixed Data Set messages can carry any data payload, without the 7-bit restriction of the MIDI 1.0
+/// Protocol. This mechanism is targeted primarily for use with large data sets, including non-MIDI
+/// data.
 class midi2::ump::data128::mds_header {
 public:
   class word0 : public ump::details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::data128::mixed_data_set_header); }
+    static constexpr auto message = midi2::ump::mt::data128::mixed_data_set_header;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
     using mt = ump::details::bitfield<28, 4>;  ///< Always 0x05
+    /// Defines the bit position of the group field
     using group = ump::details::bitfield<24, 4>;
     using status = ump::details::bitfield<20, 4>;  ///< Always 0x08
     using mds_id = ump::details::bitfield<16, 4>;
@@ -3692,7 +3875,7 @@ public:
   };
 
   constexpr mds_header() noexcept = default;
-  constexpr explicit mds_header(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit mds_header(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(mds_header const &, mds_header const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3715,32 +3898,43 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(data128, mds_header)  // Define tuple_size and tuple_element for data128/mds_header
+SPAN_CTOR(data128, mds_header)  // Define the span constructor for data128/mds_header
 
+/// \brief The payload message for a Mixed Data Set (MDS) sequence.
+///
+/// Mixed Data Set messages can carry any data payload, without the 7-bit restriction of the MIDI 1.0
+/// Protocol.
 class midi2::ump::data128::mds_payload {
 public:
+  /// \brief The first 32-bit word of an MDS payload message
   class word0 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    constexpr word0() noexcept { this->init<mt, status>(::midi2::ump::mt::data128::mixed_data_set_payload); }
+    static constexpr auto message = midi2::ump::mt::data128::mixed_data_set_payload;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
     using mt = ::midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    /// Defines the bit position of the group field
     using group = ::midi2::ump::details::bitfield<24, 4>;
     using status = ::midi2::ump::details::bitfield<20, 4>;  ///< Always 0x09
     using mds_id = ::midi2::ump::details::bitfield<16, 4>;
     using value0 = ::midi2::ump::details::bitfield<0, 16>;
   };
+  /// \brief The second 32-bit word of an MDS payload message
   class word1 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
     using value1 = ::midi2::ump::details::bitfield<0, 32>;
   };
+  /// \brief The third 32-bit word of an MDS payload message
   class word2 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
     using value2 = ::midi2::ump::details::bitfield<0, 32>;
   };
+  /// \brief The fourth 32-bit word of an MDS payload message
   class word3 : public ::midi2::ump::details::word_base {
   public:
     using word_base::word_base;
@@ -3748,7 +3942,7 @@ public:
   };
 
   constexpr mds_payload() noexcept = default;
-  constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) noexcept : words_{m[0], m[1], m[2], m[3]} {}
+  constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(mds_payload const &, mds_payload const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -3768,8 +3962,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 UMP_TUPLE(data128, mds_payload)  // Define tuple_size and tuple_element for data128/mds_payload
+SPAN_CTOR(data128, mds_payload)  // Define the span constructor for data128/mds_payload
 
 /// \brief An integral constant which holds the number of bytes of a UMP reserved32_06 message.
 template <>
