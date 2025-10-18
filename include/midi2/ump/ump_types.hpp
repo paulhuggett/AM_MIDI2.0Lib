@@ -478,6 +478,8 @@ public:
   };
 
   constexpr jr_clock() noexcept = default;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
   constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
 
@@ -522,6 +524,8 @@ public:
   };
 
   constexpr jr_timestamp() noexcept = default;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
   constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
 
@@ -565,7 +569,9 @@ public:
   };
 
   constexpr delta_clockstamp_tpqn() noexcept = default;
-  constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -604,7 +610,9 @@ public:
   };
 
   constexpr delta_clockstamp() noexcept = default;
-  constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -683,7 +691,9 @@ public:
   };
 
   constexpr midi_time_code() noexcept = default;
-  constexpr explicit midi_time_code(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit midi_time_code(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -726,7 +736,9 @@ public:
   };
 
   constexpr song_position_pointer() noexcept = default;
-  constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -773,7 +785,9 @@ public:
   };
 
   constexpr song_select() noexcept = default;
-  constexpr explicit song_select(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit song_select(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_select const &, song_select const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -813,7 +827,9 @@ public:
   };
 
   constexpr tune_request() noexcept = default;
-  constexpr explicit tune_request(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit tune_request(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -852,7 +868,9 @@ public:
   };
 
   constexpr timing_clock() noexcept = default;
-  constexpr explicit timing_clock(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit timing_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(timing_clock const &, timing_clock const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -891,7 +909,9 @@ public:
   };
 
   constexpr sequence_start() noexcept = default;
-  constexpr explicit sequence_start(std::span<std::uint32_t, 1> const w0) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit sequence_start(std::span<std::uint32_t, 1> w0) noexcept;
   friend constexpr bool operator==(sequence_start const &, sequence_start const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -930,7 +950,9 @@ public:
   };
 
   constexpr sequence_continue() noexcept = default;
-  constexpr explicit sequence_continue(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit sequence_continue(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -968,7 +990,9 @@ public:
   };
 
   constexpr sequence_stop() noexcept = default;
-  constexpr explicit sequence_stop(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit sequence_stop(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1007,7 +1031,9 @@ public:
   };
 
   constexpr active_sensing() noexcept = default;
-  constexpr explicit active_sensing(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit active_sensing(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(active_sensing const &, active_sensing const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1045,7 +1071,9 @@ public:
   };
 
   constexpr reset() noexcept = default;
-  constexpr explicit reset(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit reset(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(reset const &, reset const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1118,7 +1146,9 @@ public:
   };
 
   constexpr note_on() noexcept = default;
-  constexpr explicit note_on(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit note_on(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_on const &, note_on const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1162,7 +1192,9 @@ public:
   };
 
   constexpr note_off() noexcept = default;
-  constexpr explicit note_off(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit note_off(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1206,7 +1238,9 @@ public:
   };
 
   constexpr poly_pressure() noexcept = default;
-  constexpr explicit poly_pressure(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1250,7 +1284,9 @@ public:
   };
 
   constexpr control_change() noexcept = default;
-  constexpr explicit control_change(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit control_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1295,7 +1331,9 @@ public:
   };
 
   constexpr program_change() noexcept = default;
-  constexpr explicit program_change(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit program_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1337,7 +1375,9 @@ public:
   };
 
   constexpr channel_pressure() noexcept = default;
-  constexpr explicit channel_pressure(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit channel_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
@@ -1379,7 +1419,9 @@ public:
     using msb_data = details::bitfield<0, 7>;
   };
   constexpr pitch_bend() noexcept = default;
-  constexpr explicit pitch_bend(std::span<std::uint32_t, 1> const m) noexcept;
+  /// Constructs from a raw 32-bit message.
+  /// In a debug build, checks that the class invariants hold.
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
 
   UMP_GETTER(word0, mt)
