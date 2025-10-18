@@ -28,10 +28,6 @@ namespace midi2 {
 /// - `OutputType pop()`: Pulls a translated value from the object. `empty()` must return false when this function is
 ///   called.
 /// - `void reset()`: restore the translator to its initial state. Any partially translated messages are dropped.
-///
-/// \tparam InputType The type of input messages to be translated.
-/// \tparam OutputType The type of output messages produced by the translator.
-/// \tparam T The type to be tested against this concept.
 template <typename InputType, typename OutputType, typename T>
 concept translator = requires(T v) {
   /// Type of input messages
