@@ -37,7 +37,7 @@
 
 namespace midi2::adt {
 
-/// \brief Private implementation details of the plru_cache type
+/// \brief Private implementation details of the library abstract data types
 namespace details {
 
 template <typename T> struct aligned_storage {
@@ -83,7 +83,7 @@ private:
   std::bitset<Ways - 1U> bits_{};
 };
 
-/// Used to store keys in the cache.
+/// \brief Used to store keys in the cache.
 ///
 /// We don't store the key directly in this struct: some of the bits are determined by the key's set so don't need to
 /// be recorded here. We do need to record whether a key entry is occupied, so there's a bit used for that.
