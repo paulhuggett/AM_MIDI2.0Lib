@@ -854,7 +854,7 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile Added message
 struct added_v1 {
-  profile pid;  // Profile ID of profile being added
+  profile pid{};  ///< Profile ID of profile being added
 };
 static_assert(offsetof(added_v1, pid) == 0);
 static_assert(sizeof(added_v1) == 5);
@@ -868,7 +868,7 @@ struct added {
   explicit constexpr operator packed::added_v1() const noexcept { return {.pid = pid}; }
   constexpr bool operator==(added const &) const noexcept = default;
 
-  profile pid{};
+  profile pid{};  ///< Profile ID of profile being added
 };
 
 //*                __ _ _                                    _  *
@@ -880,7 +880,7 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile Removed message
 struct removed_v1 {
-  profile pid;  // Profile ID of profile being removed
+  profile pid{};  ///< Profile ID of profile being removed
 };
 static_assert(offsetof(removed_v1, pid) == 0);
 static_assert(sizeof(removed_v1) == 5);
@@ -894,7 +894,7 @@ struct removed {
   explicit constexpr operator packed::removed_v1() const noexcept { return {.pid = pid}; }
   constexpr bool operator==(removed const &) const noexcept = default;
 
-  profile pid{};
+  profile pid{};  ///< Profile ID of profile being removed
 };
 
 //*                __      _     _        _ _      _                _           *
@@ -906,8 +906,8 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile Details Inquiry message
 struct details_v1 {
-  profile pid;  ///< Profile ID of profile
-  std::byte target;
+  profile pid{};  ///< Profile ID of profile
+  std::byte target{};
 };
 static_assert(offsetof(details_v1, pid) == 0);
 static_assert(offsetof(details_v1, target) == 5);
@@ -927,17 +927,17 @@ struct details {
   constexpr bool operator==(details const &) const noexcept = default;
 
   profile pid{};
-  b7 target;
+  b7 target{};
 };
 
 namespace packed {
 
 /// \brief Version 1 of the CI Profile Details Reply message
 struct details_reply_v1 {
-  profile pid;                ///< Profile ID of profile
-  std::byte target;           ///< Inquiry target
-  byte_array<2> data_length;  ///< Inquiry target data length (LSB first)
-  b7 data[1];                 ///< Array length given by data_length
+  profile pid{};                ///< Profile ID of profile
+  std::byte target{};           ///< Inquiry target
+  byte_array<2> data_length{};  ///< Inquiry target data length (LSB first)
+  b7 data[1]{};                 ///< Array length given by data_length
 };
 
 static_assert(offsetof(details_reply_v1, pid) == 0);
@@ -958,7 +958,7 @@ struct details_reply {
   }
 
   profile pid{};  ///< Profile ID of profile
-  b7 target;      ///< Inquiry target
+  b7 target{};    ///< Inquiry target
   std::span<b7 const> data;
 };
 
@@ -987,7 +987,7 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile On message
 struct on_v1 {
-  profile pid;  // Profile ID of profile to be set to on (to be enabled)
+  profile pid{};  ///< Profile ID of profile to be set to on (to be enabled)
 };
 static_assert(offsetof(on_v1, pid) == 0);
 static_assert(sizeof(on_v1) == 5);
@@ -1043,7 +1043,7 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile Off message
 struct off_v1 {
-  profile pid;  // Profile ID of Profile to be Set to On (to be Enabled)
+  profile pid{};  ///< Profile ID of Profile to be Set to Off (to be Dsiable)
 };
 static_assert(offsetof(off_v1, pid) == 0);
 static_assert(sizeof(off_v1) == 5);
@@ -1053,7 +1053,7 @@ static_assert(std::is_trivially_copyable_v<off_v1>);
 /// \brief Version 2 of the CI Profile Off message
 struct off_v2 {
   off_v1 v1;
-  byte_array<2> reserved;
+  byte_array<2> reserved{};
 };
 static_assert(offsetof(off_v2, v1) == 0);
 static_assert(offsetof(off_v2, reserved) == 5);
@@ -1098,7 +1098,7 @@ namespace packed {
 
 /// \brief Version 1 of the CI Profile Enabled message
 struct enabled_v1 {
-  profile pid;  // Profile ID of Profile that is now enabled
+  profile pid{};  ///< Profile ID of Profile that is now enabled
 };
 static_assert(offsetof(enabled_v1, pid) == 0);
 static_assert(sizeof(enabled_v1) == 5);
@@ -1108,7 +1108,7 @@ static_assert(std::is_trivially_copyable_v<enabled_v1>);
 /// \brief Version 2 of the CI Profile Enabled message
 struct enabled_v2 {
   enabled_v1 v1;
-  byte_array<2> num_channels;
+  byte_array<2> num_channels{};
 };
 static_assert(offsetof(enabled_v2, v1) == 0);
 static_assert(offsetof(enabled_v2, num_channels) == 5);
