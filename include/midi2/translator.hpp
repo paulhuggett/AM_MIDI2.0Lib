@@ -11,6 +11,10 @@
 
 #include <concepts>
 
+namespace midi2 {
+
+/// \brief Concept defining the interface for a translator object.
+///
 /// The translator types provided by the library implement the protocol defined by this concept.
 /// Type T must define the following two types:
 ///
@@ -24,6 +28,10 @@
 /// - `OutputType pop()`: Pulls a translated value from the object. `empty()` must return false when this function is
 ///   called.
 /// - `void reset()`: restore the translator to its initial state. Any partially translated messages are dropped.
+///
+/// \tparam InputType The type of input messages to be translated.
+/// \tparam OutputType The type of output messages produced by the translator.
+/// \tparam T The type to be tested against this concept.
 template <typename InputType, typename OutputType, typename T>
 concept translator = requires(T v) {
   /// Type of input messages
@@ -40,5 +48,7 @@ concept translator = requires(T v) {
   /// Reset the translator state
   { v.reset() };
 };
+
+}  // end namespace midi2
 
 #endif  // MIDI2_TRANSLATOR_HPP
