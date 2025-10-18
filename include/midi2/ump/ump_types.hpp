@@ -316,6 +316,7 @@ protected:
   template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
     requires std::is_enum_v<StatusType>
   constexpr void check(StatusType const status) const noexcept {
+    (void)status;
     assert(this->get<MtField>() == underlying_mt(status));
     assert(this->get<StatusField>() == std::to_underlying(status));
   }
