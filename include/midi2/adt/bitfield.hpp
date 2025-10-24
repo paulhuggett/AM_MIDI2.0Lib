@@ -1,4 +1,4 @@
-//===-- Bitfield --------------------------------------------------------------*- C++ -*-===//
+//===-- Portable Bitfields ----------------------------------------------------*- C++ -*-===//
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
@@ -6,23 +6,50 @@
 //
 //===------------------------------------------------------------------------------------===//
 
-#ifndef MIDI2_BITFIELD_HPP
-#define MIDI2_BITFIELD_HPP
+/// \file bitfield.hpp
+/// \brief  Portable bit-fields
+
+#ifndef MIDI2_ADT_BITFIELD_HPP
+#define MIDI2_ADT_BITFIELD_HPP
 
 #include <cassert>
 #include <climits>
 #include <concepts>
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 
+#include "midi2/adt/uinteger.hpp"
+
 namespace midi2::adt {
 
-///\returns The maximum value that can be held in \p Bits bits of type \p T.
+/// \brief Defines the starting bit index and number of bits for a bitfield.
+///
+/// \tparam Index The index of the first bit in the bitfield (0 = least significant bit).
+/// \tparam Bits The number of bits in the bitfield.
+template <unsigned Index, unsigned Bits>
+  requires(Bits > 0 && Index + Bits <= 64)
+struct bit_range {
+  /// \brief The index of the first bit in the bitfield.
+  using index = std::integral_constant<unsigned, Index>;
+  /// \brief The number of bits in the bitfield.
+  using bits = std::integral_constant<unsigned, Bits>;
+
+  /// \brief An unsigned integer type with at least \p Bits bits.
+  using uinteger = uinteger_t<bits::value>;
+  /// \brief An signed integer type with at least \p Bits + 1 bits.
+  using sinteger = std::make_signed_t<uinteger_t<bits::value + 1>>;
+};
+
+template <typename T>
+concept bit_range_type = requires(T) { std::is_same_v<T, bit_range<T::index::value, T::bits::value>>; };
+
+/// \returns The maximum value that can be held in \p Bits of type \p T.
 template <std::unsigned_integral T, unsigned Bits>
   requires(Bits <= sizeof(T) * CHAR_BIT && Bits <= 64U)
-[[nodiscard]] consteval T max_value() noexcept {
-  if constexpr (Bits == 8U) {
+[[nodiscard]] static consteval T max_value() noexcept {
+  if constexpr (Bits == 0U) {
+    return T{0};
+  } else if constexpr (Bits == 8U) {
     return std::numeric_limits<std::uint8_t>::max();
   } else if constexpr (Bits == 16U) {
     return std::numeric_limits<std::uint16_t>::max();
@@ -35,69 +62,80 @@ template <std::unsigned_integral T, unsigned Bits>
   }
 }
 
-/// \tparam ContainerType The underlying type used to store the bitfield.
-/// \tparam Index The bit number used as the first bit of the bitfield. Index 0 is the least-significant bit.
-/// \tparam Bits The number of bits to be allocated for this value.
-template <std::unsigned_integral ContainerType, unsigned Index, unsigned Bits>
-  requires(Bits > 0 && Index + Bits <= sizeof(ContainerType) * 8)
-class bitfield {
+template <std::unsigned_integral T> class bit_field {
 public:
-  /// The underlying type used to store the bitfield.
-  using value_type = ContainerType;
+  using value_type = T;
 
-  using small_type = std::conditional_t<
-      Bits <= 8, std::uint8_t,
-      std::conditional_t<Bits <= 16, std::uint16_t, std::conditional_t<Bits <= 32, std::uint32_t, value_type>>>;
+  constexpr bit_field() noexcept = default;
+  constexpr explicit bit_field(value_type const v) noexcept : value_{v} {}
 
-  /// The index of the first bit used by the bitfield.
-  static constexpr auto first_bit = Index;
-  /// The index of the last bit used by the bitfield.
-  static constexpr auto last_bit = Index + Bits;
+  [[nodiscard]] constexpr explicit operator value_type() const noexcept { return value_; }
 
-  /// Returns the smallest value that can be stored.
-  [[nodiscard]] static constexpr small_type min() noexcept { return 0; }
-  /// Returns the largest value that can be stored.
-  [[nodiscard]] static constexpr small_type max() noexcept { return mask_; }
-  // Returns the number of bits that can be stored.
-  [[nodiscard]] static constexpr unsigned bits() noexcept { return Bits; }
+  friend constexpr bool operator==(bit_field const& a, bit_field const& b) noexcept = default;
 
-  /// Returns the value stored in the bitfield.
-  [[nodiscard]] constexpr small_type value() const noexcept { return (value_ >> Index) & mask_; }
-
-  /// Returns the value stored in the bitfield as a signed quantity.
-  [[nodiscard]] constexpr std::make_signed_t<small_type> signed_value() const noexcept {
-    // Taken from Bit Twiddling Hacks by Sean Eron Anderson:
-    // https://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
-    constexpr auto m = value_type{1} << (Bits - 1U);
-    return static_cast<std::make_signed_t<small_type>>((this->value() ^ m) - m);
-  }
-
-  /// Obtains the value of the bitfield.
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  constexpr operator small_type() const noexcept { return this->value(); }
-
-  /// Assigns a value to the bitfield.
-  /// \param v  The value to be stored.
-  constexpr void assign(small_type const v) noexcept {
-    assert(v <= this->max() && "Value too large for bitfield");
-    value_ = static_cast<value_type>(value_ & ~(mask_ << Index)) |
-             static_cast<value_type>((static_cast<value_type>(v) & mask_) << Index);
-  }
-
-  /// Assigns the value \p v to the bitfield.
-  /// \param v  The value to be stored.
+  /// Sets the bits described by \p BitRange to the value \p v.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
+  /// \param v  The new value for the bitfield.
   /// \returns *this
-  constexpr bitfield& operator=(small_type const v) noexcept {
-    this->assign(v);
+  /// \pre v < 2^BitRange::bits()
+  template <bit_range_type BitRange> constexpr auto& set(BitRange::uinteger const v) noexcept {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<T, bits>();
+    assert(v <= mask && "bitfield value is out-of-range");
+    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
+             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
     return *this;
   }
 
+  /// Sets the bits described by \p BitRange to the signed value \p v.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
+  /// \param v  The new value for the bitfield.
+  /// \returns *this
+  /// \pre v -(2^b + 1) <= v <= 2^b where b is BitRange::bits()-1.
+  template <bit_range_type BitRange> constexpr auto& set_signed(BitRange::sinteger const v) noexcept {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<T, bits>();
+
+    assert((v >= -static_cast<typename BitRange::sinteger>(max_value<typename BitRange::uinteger, bits - 1>()) - 1) &&
+           (v <= static_cast<typename BitRange::sinteger>(max_value<typename BitRange::uinteger, bits - 1>())) &&
+           "bit-field value is out-of-range");
+
+    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
+             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
+    return *this;
+  }
+
+  /// Returns the value held by the bits described by \p BitRange.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
+  /// \returns The value held by the bits described by \p BitRange.
+  template <bit_range_type BitRange> [[nodiscard]] constexpr BitRange::uinteger get() const noexcept {
+    constexpr auto index = typename BitRange::index();
+    constexpr auto bits = typename BitRange::bits();
+    constexpr auto mask = max_value<value_type, bits>();
+    return (value_ >> index) & mask;
+  }
+
+  /// Returns the value stored in the bitfield as a signed quantity.
+  ///
+  /// \tparam BitRange  A bitfield_type which describes a range of bits.
+  /// \returns The signed value held by the bits described by \p BitRange.
+  template <bit_range_type BitRange> [[nodiscard]] constexpr BitRange::sinteger get_signed() const noexcept {
+    // Taken from Bit Twiddling Hacks by Sean Eron Anderson:
+    // https://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
+    constexpr auto m = value_type{1} << (typename BitRange::bits() - 1U);
+    auto const u = static_cast<BitRange::uinteger>(this->template get<BitRange>());
+    return static_cast<BitRange::sinteger>((u ^ m) - m);
+  }
+
 private:
-  static constexpr auto mask_ = max_value<ContainerType, Bits>();
-  static_assert(mask_ <= std::numeric_limits<small_type>::max(), "small_type must be able to hold mask_");
-  value_type value_;
+  value_type value_ = 0;
 };
 
 }  // end namespace midi2::adt
 
-#endif  // MIDI2_BITFIELD_HPP
+#endif  // MIDI2_ADT_BITFIELD_HPP

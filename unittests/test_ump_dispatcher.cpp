@@ -11,7 +11,6 @@
 #include "midi2/ump/ump_dispatcher.hpp"
 
 // MIDI2 library
-#include "midi2/adt/bitfield.hpp"
 #include "midi2/ump/ump_types.hpp"
 
 // Standard library
@@ -37,7 +36,7 @@ using testing::StrictMock;
 class fake_message {
 public:
   constexpr explicit fake_message(std::uint32_t v) noexcept : v_{v} {}
-  [[nodiscard]] constexpr std::uint32_t word() const noexcept { return v_; }
+  [[nodiscard]] constexpr explicit operator std::uint32_t() const noexcept { return v_; }
 
 private:
   std::uint32_t v_;
@@ -849,28 +848,37 @@ TEST_F(UMPDispatcherFlexData, SetMetronome) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetKeySignature) {
+  using midi2::ump::flex_data::note;
+  using midi2::ump::flex_data::sharps_flats;
   constexpr auto message = midi2::ump::flex_data::set_key_signature{}
                                .group(0)
                                .form(0)
                                .addrs(1)
                                .channel(3)
                                .status_bank(0)
-                               .sharps_flats(0b100)  // (-8)
-                               .tonic_note(std::to_underlying(midi2::ump::flex_data::note::e));
+                               .sharps_flats(sharps_flats::double_flat)
+                               .tonic_note(note::e);
+
+  EXPECT_EQ(message.sharps_flats(), sharps_flats::double_flat);
+  EXPECT_EQ(message.sharps_flats_raw(), std::to_underlying(sharps_flats::double_flat));
+  EXPECT_EQ(message.tonic_note(), note::e);
+  EXPECT_EQ(message.tonic_note_raw(), std::to_underlying(note::e));
+
   EXPECT_CALL(config_.flex, set_key_signature(config_.context, message)).Times(1);
   this->apply(message);
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetChordName) {
+  using midi2::ump::flex_data::chord_type;
+  using midi2::ump::flex_data::note;
+  using midi2::ump::flex_data::sharps_flats;
   constexpr auto message = midi2::ump::flex_data::set_chord_name{}
                                .group(0x0F)
-                               .form(0x0)
                                .addrs(3)
                                .channel(3)
-                               .status_bank(0x00)
-                               .tonic_sharps_flats(0x1)
-                               .chord_tonic(std::to_underlying(midi2::ump::flex_data::note::e))
-                               .chord_type(std::to_underlying(midi2::ump::flex_data::chord_type::augmented))
+                               .tonic_sharps_flats(sharps_flats::chord_tonic)
+                               .chord_tonic(note::e)
+                               .chord_type(chord_type::augmented)
                                .alter_1_type(1)
                                .alter_1_degree(5)
                                .alter_2_type(2)
@@ -879,13 +887,27 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
                                .alter_3_degree(7)
                                .alter_4_type(4)
                                .alter_4_degree(8)
-                               .bass_sharps_flats(0xE)
-                               .bass_note(std::to_underlying(midi2::ump::flex_data::note::unknown))
-                               .bass_chord_type(std::to_underlying(midi2::ump::flex_data::chord_type::diminished))
+                               .bass_sharps_flats(sharps_flats::chord_tonic)
+                               .bass_note(note::unknown)
+                               .bass_chord_type(chord_type::diminished)
                                .bass_alter_1_type(1)
                                .bass_alter_1_degree(3)
                                .bass_alter_2_type(2)
                                .bass_alter_2_degree(4);
+
+  EXPECT_EQ(message.tonic_sharps_flats(), sharps_flats::chord_tonic);
+  EXPECT_EQ(message.tonic_sharps_flats_raw(), std::to_underlying(sharps_flats::chord_tonic));
+  EXPECT_EQ(message.chord_tonic(), note::e);
+  EXPECT_EQ(message.chord_tonic_raw(), std::to_underlying(note::e));
+  EXPECT_EQ(message.chord_type(), chord_type::augmented);
+  EXPECT_EQ(message.chord_type_raw(), std::to_underlying(chord_type::augmented));
+  EXPECT_EQ(message.bass_sharps_flats(), sharps_flats::chord_tonic);
+  EXPECT_EQ(message.bass_sharps_flats_raw(), std::to_underlying(sharps_flats::chord_tonic));
+  EXPECT_EQ(message.bass_note(), note::unknown);
+  EXPECT_EQ(message.bass_note_raw(), std::to_underlying(note::unknown));
+  EXPECT_EQ(message.bass_chord_type(), chord_type::diminished);
+  EXPECT_EQ(message.bass_chord_type_raw(), std::to_underlying(chord_type::diminished));
+
   EXPECT_CALL(config_.flex, set_chord_name(config_.context, message)).Times(1);
   this->apply(message);
 }

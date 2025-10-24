@@ -293,17 +293,17 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
                                   .data3(4U)
                                   .data4(5U)
                                   .data5(6U);
-    expected.push_back(get<0>(sx_start).word());
-    expected.push_back(get<1>(sx_start).word());
+    expected.push_back(std::uint32_t{get<0>(sx_start)});
+    expected.push_back(std::uint32_t{get<1>(sx_start)});
   }
   {
     constexpr auto sx_end = midi2::ump::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
-    expected.push_back(get<0>(sx_end).word());
-    expected.push_back(get<1>(sx_end).word());
+    expected.push_back(std::uint32_t{get<0>(sx_end)});
+    expected.push_back(std::uint32_t{get<1>(sx_end)});
   }
   {
     auto const noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
-    expected.push_back(get<0>(noff).word());
+    expected.push_back(std::uint32_t{get<0>(noff)});
   }
 
   auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
@@ -325,17 +325,17 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   std::vector<std::uint32_t> expected;
   {
     constexpr auto block1 = sysex7_in_1{}.group(group).number_of_bytes(3).data0(1).data1(2).data2(3);
-    expected.push_back(get<0>(block1).word());
-    expected.push_back(get<1>(block1).word());
+    expected.push_back(std::uint32_t{get<0>(block1)});
+    expected.push_back(std::uint32_t{get<1>(block1)});
   }
   {
     constexpr auto block2 = sysex7_in_1{}.group(group).number_of_bytes(4).data0(4).data1(5).data2(6).data3(7);
-    expected.push_back(get<0>(block2).word());
-    expected.push_back(get<1>(block2).word());
+    expected.push_back(std::uint32_t{get<0>(block2)});
+    expected.push_back(std::uint32_t{get<1>(block2)});
   }
   {
     constexpr auto noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
-    expected.push_back(get<0>(noff).word());
+    expected.push_back(std::uint32_t{get<0>(noff)});
   }
 
   auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
@@ -412,7 +412,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
     w0.template set<decltype(w0)::data0>(data0);
     w0.template set<decltype(w0)::data1>(data1);
-    return w0.word();
+    return std::uint32_t{w0};
   };
   auto const start_message = [](u8 data0, u8 data1) {
     midi2::ump::data64::sysex7_start::word0 w0{};
@@ -420,7 +420,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.template set<decltype(w0)::number_of_bytes>(6U);
     w0.template set<decltype(w0)::data0>(data0);
     w0.template set<decltype(w0)::data1>(data1);
-    return std::bit_cast<std::uint32_t>(w0);
+    return std::uint32_t{w0};
   };
   auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
     assert(number_of_bytes <= 6);
@@ -429,7 +429,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
     w0.template set<decltype(w0)::data0>(data0);
     w0.template set<decltype(w0)::data1>(data1);
-    return std::bit_cast<std::uint32_t>(w0);
+    return std::uint32_t{w0};
   };
 
   std::array const expected{

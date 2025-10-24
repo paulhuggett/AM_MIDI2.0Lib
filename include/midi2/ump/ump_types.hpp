@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "midi2/adt/bitfield.hpp"
 #include "midi2/adt/uinteger.hpp"
 #include "midi2/ump/ump_utils.hpp"
 
@@ -191,7 +192,7 @@ enum class data128 : std::uint8_t {
 template <typename T, typename Function, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> && std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
 constexpr auto apply(T const &message, Function function) {
-  auto const result = function(get<Index>(message).word());
+  auto const result = function(static_cast<std::uint32_t>(get<Index>(message)));
   if (bool{result}) {
     return result;
   }
@@ -240,67 +241,40 @@ template <typename T>
   requires std::is_enum_v<T>
 constexpr message_type status_to_message_type_v = status_to_message_type<T>::value;
 
-template <typename T>
-concept bitfield_type = requires(T) {
-  requires std::unsigned_integral<typename T::index::value_type>;
-  requires std::unsigned_integral<typename T::bits::value_type>;
-
-  requires typename T::bits() > 0;
-  requires typename T::index() + typename T::bits() <= 32;
-};
-
-/// \brief Defines the starting bit index and number of bits for a bitfield.
-/// \tparam Index The index of the first bit in the bitfield (0 = least significant bit).
-/// \tparam Bits The number of bits in the bitfield.
-template <unsigned Index, unsigned Bits>
-  requires(Bits > 0 && Index + Bits <= 32)
-struct bitfield {
-  /// \brief The index of the first bit in the bitfield.
-  using index = std::integral_constant<unsigned, Index>;
-  /// \brief The number of bits in the bitfield.
-  using bits = std::integral_constant<unsigned, Bits>;
-};
-static_assert(bitfield_type<bitfield<0, 1>>, "expected bitfield<> to conform to the bitfield_type concept");
-
-class word_base {
+class word_base : public adt::bit_field<std::uint32_t> {
 public:
-  using value_type = std::uint32_t;
-
   constexpr word_base() noexcept = default;
-  constexpr explicit word_base(value_type const v) noexcept : value_{v} {}
-
-  [[nodiscard]] constexpr value_type word() const noexcept { return value_; }
-  [[nodiscard]] constexpr explicit operator value_type() const noexcept { return value_; }
+  constexpr explicit word_base(value_type const v) noexcept : adt::bit_field<std::uint32_t>{v} {}
 
   friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
 
-  /// Sets the bits described by \p BitRange to the value \p v.
-  ///
-  /// \tparam BitRange  A bitfield_type which describes a range of bits.
-  /// \pre v<2^BitRange::bits()>
-  template <bitfield_type BitRange> constexpr auto &set(unsigned v) noexcept {
-    constexpr auto index = typename BitRange::index();
-    constexpr auto bits = typename BitRange::bits();
-    constexpr auto mask = max_value<value_type, bits>();
-    assert(v <= mask);
-    value_ = static_cast<value_type>(value_ & ~(mask << index)) |
-             static_cast<value_type>((static_cast<value_type>(v) & mask) << index);
+  template <adt::bit_range_type Field, typename Enumeration>
+    requires(std::is_enum_v<Enumeration>)
+  constexpr auto &set_enum_field(Enumeration const v) noexcept {
+    if constexpr (std::is_unsigned_v<std::underlying_type_t<Enumeration>>) {
+      this->template set<Field>(std::to_underlying(v));
+    } else {
+      this->template set_signed<Field>(std::to_underlying(v));
+    }
     return *this;
   }
-
-  /// Returns the value held by the bits described by \p BitRange.
-  ///
-  /// \tparam BitRange  A bitfield_type which describes a range of bits.
-  template <bitfield_type BitRange>
-  [[nodiscard]] constexpr adt::uinteger_t<BitRange::bits::value> get() const noexcept {
-    constexpr auto index = typename BitRange::index();
-    constexpr auto bits = typename BitRange::bits();
-    constexpr auto mask = max_value<value_type, bits>();
-    return (value_ >> index) & mask;
+  template <adt::bit_range_type Field, typename Enumeration>
+    requires(std::is_enum_v<Enumeration>)
+  constexpr auto get_enum_field_raw() const noexcept {
+    if constexpr (std::is_unsigned_v<std::underlying_type_t<Enumeration>>) {
+      return this->template get<Field>();
+    } else {
+      return this->template get_signed<Field>();
+    }
+  }
+  template <adt::bit_range_type Field, typename Enumeration>
+    requires(std::is_enum_v<Enumeration>)
+  constexpr Enumeration get_enum_field() const noexcept {
+    return static_cast<Enumeration>(this->get_enum_field_raw<Field, Enumeration>());
   }
 
 protected:
-  template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
+  template <adt::bit_range_type MtField, adt::bit_range_type StatusField, typename StatusType>
     requires std::is_enum_v<StatusType>
   constexpr void init(StatusType const status) noexcept {
     this->set<MtField>(std::to_underlying(status_to_message_type_v<StatusType>));
@@ -310,36 +284,16 @@ protected:
   template <typename StatusType>
     requires std::is_enum_v<StatusType>
   static constexpr auto underlying_mt(StatusType const /*s*/) {
-    return std::to_underlying(midi2::ump::details::status_to_message_type_v<std::remove_const_t<StatusType>>);
+    return std::to_underlying(ump::details::status_to_message_type_v<std::remove_const_t<StatusType>>);
   }
 
-  template <bitfield_type MtField, bitfield_type StatusField, typename StatusType>
+  template <adt::bit_range_type MtField, adt::bit_range_type StatusField, typename StatusType>
     requires std::is_enum_v<StatusType>
   constexpr void check(StatusType const status) const noexcept {
     (void)status;
     assert(this->get<MtField>() == underlying_mt(status));
     assert(this->get<StatusField>() == std::to_underlying(status));
   }
-
-private:
-  /// \returns The maximum value that can be held in \p Bits of type \p T.
-  template <std::unsigned_integral T, unsigned Bits>
-    requires(Bits <= sizeof(T) * 8 && Bits <= 64U)
-  [[nodiscard]] static consteval T max_value() noexcept {
-    if constexpr (Bits == 8U) {
-      return std::numeric_limits<std::uint8_t>::max();
-    } else if constexpr (Bits == 16U) {
-      return std::numeric_limits<std::uint16_t>::max();
-    } else if constexpr (Bits == 32U) {
-      return std::numeric_limits<std::uint32_t>::max();
-    } else if constexpr (Bits == 64U) {
-      return std::numeric_limits<std::uint64_t>::max();
-    } else {
-      return static_cast<T>((T{1} << Bits) - 1U);
-    }
-  }
-
-  value_type value_ = 0;
 };
 
 }  // end namespace details
@@ -351,16 +305,33 @@ private:
   constexpr auto field() const noexcept {                               \
     return std::get<word>(words_).template get<typename word::field>(); \
   }
+#define UMP_GETTER_ENUM(word, field, enumeration)                                                   \
+  constexpr auto field##_raw() const noexcept {                                                     \
+    return std::get<word>(words_).template get_enum_field_raw<typename word::field, enumeration>(); \
+  }                                                                                                 \
+  constexpr auto field() const noexcept {                                                           \
+    return std::get<word>(words_).template get_enum_field<typename word::field, enumeration>();     \
+  }
+
 /// Creates a "setter" member function for classes derived from midi2::ump::details::word_base.
 #define UMP_SETTER(word, field)                                                       \
   constexpr auto &field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
     std::get<word>(words_).template set<typename word::field>(v);                     \
     return *this;                                                                     \
   }
+#define UMP_SETTER_ENUM(word, field, enumeration)                                         \
+  constexpr auto &field(enum enumeration const v) noexcept {                              \
+    std::get<word>(words_).template set_enum_field<typename word::field, enumeration>(v); \
+    return *this;                                                                         \
+  }
+
 /// Creates both "getter" and "setter" member functions for classes derived from midi2::ump::details::word_base.
 #define UMP_GETTER_SETTER(word, field) \
   UMP_GETTER(word, field)              \
   UMP_SETTER(word, field)
+#define UMP_GETTER_SETTER_ENUM(word, field, enumeration) \
+  UMP_GETTER_ENUM(word, field, enumeration)              \
+  UMP_SETTER_ENUM(word, field, enumeration)
 
 /// This macro is used to generate boilerplate definitions of three items for the class specified by the \p group
 /// and \p message parameters:
@@ -434,9 +405,9 @@ public:
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::noop); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the status field for the NOOP message
-    using status = details::bitfield<20, 4>;
+    using status = adt::bit_range<20, 4>;
   };
 
   constexpr noop() noexcept = default;
@@ -465,16 +436,16 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines a group of reserved bits.
-    using reserved0 = details::bitfield<24, 4>;
+    using reserved0 = adt::bit_range<24, 4>;
     /// Defines the bit position of the status field. Always 0x1.
-    using status = details::bitfield<20, 4>;
+    using status = adt::bit_range<20, 4>;
     /// Defines a group of reserved bits.
-    using reserved1 = details::bitfield<16, 4>;
+    using reserved1 = adt::bit_range<16, 4>;
     /// \brief Sender Clock Time
     /// A 16-bit time value in clock ticks of 1/31250 of one second (32 µsec, clock frequency of 1 MHz / 32).
-    using sender_clock_time = details::bitfield<0, 16>;
+    using sender_clock_time = adt::bit_range<0, 16>;
   };
 
   constexpr jr_clock() noexcept = default;
@@ -511,16 +482,16 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines a group of reserved bits.
-    using reserved0 = details::bitfield<24, 4>;
+    using reserved0 = adt::bit_range<24, 4>;
     /// Defines the bit position of the status field. Always 0x2.
-    using status = details::bitfield<20, 4>;
+    using status = adt::bit_range<20, 4>;
     /// Defines a group of reserved bits.
-    using reserved1 = details::bitfield<16, 4>;
+    using reserved1 = adt::bit_range<16, 4>;
     /// \brief Sender Clock Timestamp
     /// A 16-bit time value in clock ticks of 1/31250 of one second (32 µsec, clock frequency of 1 MHz / 32).
-    using timestamp = details::bitfield<0, 16>;
+    using timestamp = adt::bit_range<0, 16>;
   };
 
   constexpr jr_timestamp() noexcept = default;
@@ -557,15 +528,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines a group of reserved bits.
-    using reserved0 = details::bitfield<24, 4>;
+    using reserved0 = adt::bit_range<24, 4>;
     /// Defines the bit position of the status field. Always 0x3.
-    using status = details::bitfield<20, 4>;
+    using status = adt::bit_range<20, 4>;
     /// Defines a group of reserved bits.
-    using reserved1 = details::bitfield<16, 4>;
+    using reserved1 = adt::bit_range<16, 4>;
     ///
-    using ticks_pqn = details::bitfield<0, 16>;
+    using ticks_pqn = adt::bit_range<0, 16>;
   };
 
   constexpr delta_clockstamp_tpqn() noexcept = default;
@@ -601,12 +572,12 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines a group of reserved bits.
-    using reserved0 = details::bitfield<24, 4>;
+    using reserved0 = adt::bit_range<24, 4>;
     /// Defines the bit position of the status field. Always 0b0100.
-    using status = details::bitfield<20, 4>;
-    using ticks_per_quarter_note = details::bitfield<0, 20>;
+    using status = adt::bit_range<20, 4>;
+    using ticks_per_quarter_note = adt::bit_range<0, 20>;
   };
 
   constexpr delta_clockstamp() noexcept = default;
@@ -675,19 +646,19 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
-    using mt = details::bitfield<28U, 4U>;
+    using mt = adt::bit_range<28U, 4U>;
     /// Defines the bit position of the group field
-    using group = details::bitfield<24U, 4U>;
+    using group = adt::bit_range<24U, 4U>;
     /// Defines the bit position of the status field. Always 0xF1
-    using status = details::bitfield<16U, 8U>;
+    using status = adt::bit_range<16U, 8U>;
     /// Defines a reserved bit
-    using reserved0 = details::bitfield<15, 1>;
+    using reserved0 = adt::bit_range<15, 1>;
     /// 7 bit time code 0xnd
-    using time_code = details::bitfield<8, 7>;
+    using time_code = adt::bit_range<8, 7>;
     /// Defines a group of reserved bits
-    using reserved1 = details::bitfield<7, 1>;
+    using reserved1 = adt::bit_range<7, 1>;
     /// Defines a group of reserved bits
-    using reserved2 = details::bitfield<0, 7>;
+    using reserved2 = adt::bit_range<0, 7>;
   };
 
   constexpr midi_time_code() noexcept = default;
@@ -718,21 +689,21 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = midi2::ump::mt::system_crt::spp;
-    constexpr word0() noexcept { this->init<mt, status>(midi2::ump::mt::system_crt::spp); }
+    static constexpr auto message = ump::mt::system_crt::spp;
+    constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::spp); }
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xF2
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xF2
     /// Defines a reserved bit
-    using reserved0 = details::bitfield<15, 1>;
-    using position_lsb = details::bitfield<8, 7>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using position_lsb = adt::bit_range<8, 7>;
     /// Defines a reserved bit
-    using reserved1 = details::bitfield<7, 1>;
-    using position_msb = details::bitfield<0, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using position_msb = adt::bit_range<0, 7>;
   };
 
   constexpr song_position_pointer() noexcept = default;
@@ -770,18 +741,18 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
+    using group = adt::bit_range<24, 4>;
     ///< Always 0xF3
-    using status = details::bitfield<16, 8>;
+    using status = adt::bit_range<16, 8>;
     /// Defines a reserved bit
-    using reserved0 = details::bitfield<15, 1>;
-    using song = details::bitfield<8, 7>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using song = adt::bit_range<8, 7>;
     /// Defines a reserved bit
-    using reserved1 = details::bitfield<7, 1>;
+    using reserved1 = adt::bit_range<7, 1>;
     /// Defines a group of reserved bits
-    using reserved2 = details::bitfield<0, 7>;
+    using reserved2 = adt::bit_range<0, 7>;
   };
 
   constexpr song_select() noexcept = default;
@@ -813,17 +784,17 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = ump::mt::system_crt::tune_request;
+    static constexpr auto message = mt::system_crt::tune_request;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xF6
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xF6
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr tune_request() noexcept = default;
@@ -854,17 +825,17 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = ump::mt::system_crt::timing_clock;
+    static constexpr auto message = mt::system_crt::timing_clock;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xF8
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xF8
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr timing_clock() noexcept = default;
@@ -895,17 +866,17 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = ump::mt::system_crt::sequence_start;
+    static constexpr auto message = mt::system_crt::sequence_start;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xFA
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xFA
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr sequence_start() noexcept = default;
@@ -941,12 +912,12 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xFB
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xFB
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr sequence_continue() noexcept = default;
@@ -981,12 +952,12 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xFC
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xFC
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr sequence_stop() noexcept = default;
@@ -1022,12 +993,12 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xFE
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xFE
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr active_sensing() noexcept = default;
@@ -1062,12 +1033,12 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<16, 8>;  ///< Always 0xFF
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<16, 8>;  ///< Always 0xFF
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr reset() noexcept = default;
@@ -1134,15 +1105,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x09.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using velocity = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x09.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using velocity = adt::bit_range<0, 7>;
   };
 
   constexpr note_on() noexcept = default;
@@ -1180,15 +1151,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x08.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using velocity = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x08.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using velocity = adt::bit_range<0, 7>;
   };
 
   constexpr note_off() noexcept = default;
@@ -1226,15 +1197,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x08.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using pressure = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x08.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using pressure = adt::bit_range<0, 7>;
   };
 
   constexpr poly_pressure() noexcept = default;
@@ -1272,15 +1243,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  /// Always 0x0B.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using controller = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using value = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  /// Always 0x0B.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using controller = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using value = adt::bit_range<0, 7>;
   };
 
   constexpr control_change() noexcept = default;
@@ -1296,7 +1267,7 @@ public:
   UMP_GETTER_SETTER(word0, controller)
   UMP_GETTER_SETTER(word0, value)
 
-  constexpr auto &controller(midi2::ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
+  constexpr auto &controller(ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
@@ -1320,14 +1291,14 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x0C.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using program = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x0C.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using program = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr program_change() noexcept = default;
@@ -1364,14 +1335,14 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x08.
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using data = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x08.
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using data = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
 
   constexpr channel_pressure() noexcept = default;
@@ -1408,15 +1379,15 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  // 0b1000..0b1110
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using lsb_data = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using msb_data = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  // 0b1000..0b1110
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using lsb_data = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using msb_data = adt::bit_range<0, 7>;
   };
   constexpr pitch_bend() noexcept = default;
   /// Constructs from a raw 32-bit message.
@@ -1467,36 +1438,36 @@ template <std::size_t I, typename T> auto &get(T &t) noexcept {
 
 template <midi2::ump::mt::data64 Status> class midi2::ump::data64::details::sysex7 {
 public:
-  class word0 : public midi2::ump::details::word_base {
+  class word0 : public ump::details::word_base {
   public:
     static constexpr auto message = Status;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field.
-    using mt = midi2::ump::details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field
-    using group = midi2::ump::details::bitfield<24, 4>;
-    using status = midi2::ump::details::bitfield<20, 4>;
-    using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
-    using reserved0 = midi2::ump::details::bitfield<15, 1>;
-    using data0 = midi2::ump::details::bitfield<8, 7>;
-    using reserved1 = midi2::ump::details::bitfield<7, 1>;
-    using data1 = midi2::ump::details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;
+    using number_of_bytes = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using data0 = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using data1 = adt::bit_range<0, 7>;
   };
-  class word1 : public midi2::ump::details::word_base {
+  class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using reserved0 = midi2::ump::details::bitfield<31, 1>;
-    using data2 = midi2::ump::details::bitfield<24, 7>;
-    using reserved1 = midi2::ump::details::bitfield<23, 1>;
-    using data3 = midi2::ump::details::bitfield<16, 7>;
-    using reserved2 = midi2::ump::details::bitfield<15, 1>;
-    using data4 = midi2::ump::details::bitfield<8, 7>;
-    using reserved3 = midi2::ump::details::bitfield<7, 1>;
-    using data5 = midi2::ump::details::bitfield<0, 7>;
+    using reserved0 = adt::bit_range<31, 1>;
+    using data2 = adt::bit_range<24, 7>;
+    using reserved1 = adt::bit_range<23, 1>;
+    using data3 = adt::bit_range<16, 7>;
+    using reserved2 = adt::bit_range<15, 1>;
+    using data4 = adt::bit_range<8, 7>;
+    using reserved3 = adt::bit_range<7, 1>;
+    using data5 = adt::bit_range<0, 7>;
   };
 
   constexpr sysex7() noexcept = default;
@@ -1539,10 +1510,10 @@ struct std::tuple_element<I, midi2::ump::data64::details::sysex7<Status>> { /* N
 /// Defines the C++ types that represent Data 64 Bit messages
 namespace midi2::ump::data64 {
 
-using sysex7_in_1 = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_in_1>;
-using sysex7_start = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_start>;
-using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_continue>;
-using sysex7_end = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_end>;
+using sysex7_in_1 = details::sysex7<mt::data64::sysex7_in_1>;
+using sysex7_start = details::sysex7<mt::data64::sysex7_start>;
+using sysex7_continue = details::sysex7<mt::data64::sysex7_continue>;
+using sysex7_end = details::sysex7<mt::data64::sysex7_end>;
 
 }  // namespace midi2::ump::data64
 
@@ -1603,26 +1574,26 @@ public:
     static constexpr auto message = mt::m2cvm::note_off;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit range of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit range of the group field.
-    using group = details::bitfield<24, 4>;
+    using group = adt::bit_range<24, 4>;
     /// Defines the bit range of the status field. Always 0x8.
-    using status = details::bitfield<20, 4>;
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using attribute_type = details::bitfield<0, 8>;
+    using status = adt::bit_range<20, 4>;
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using attribute_type = adt::bit_range<0, 8>;
   };
   /// \brief The second word of the MIDI 2.0 Note Off Message
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using velocity = details::bitfield<16, 16>;
-    using attribute = details::bitfield<0, 16>;
+    using velocity = adt::bit_range<16, 16>;
+    using attribute = adt::bit_range<0, 16>;
   };
 
   constexpr note_off() noexcept = default;
@@ -1657,24 +1628,24 @@ public:
     static constexpr auto message = mt::m2cvm::note_on;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Note-on=0x9
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using attribute_type = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Note-on=0x9
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using attribute_type = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using velocity = details::bitfield<16, 16>;
-    using attribute = details::bitfield<0, 16>;
+    using velocity = adt::bit_range<16, 16>;
+    using attribute = adt::bit_range<0, 16>;
   };
 
   constexpr note_on() noexcept = default;
@@ -1709,22 +1680,22 @@ public:
     static constexpr auto message = mt::m2cvm::poly_pressure;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0xA
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0xA
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using pressure = details::bitfield<0, 32>;
+    using pressure = adt::bit_range<0, 32>;
   };
 
   constexpr poly_pressure() noexcept = default;
@@ -1757,22 +1728,22 @@ public:
     static constexpr auto message = mt::m2cvm::rpn_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Registered Per-Note Controller=0x0
-    using channel = details::bitfield<16, 4>;
-    using reserved = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using index = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Registered Per-Note Controller=0x0
+    using channel = adt::bit_range<16, 4>;
+    using reserved = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using index = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr rpn_per_note_controller() noexcept = default;
@@ -1807,22 +1778,22 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Assignable Per-Note Controller=0x1
-    using channel = details::bitfield<16, 4>;
-    using reserved = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using index = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Assignable Per-Note Controller=0x1
+    using channel = adt::bit_range<16, 4>;
+    using reserved = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using index = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr nrpn_per_note_controller() noexcept = default;
@@ -1862,23 +1833,23 @@ public:
     static constexpr auto message = mt::m2cvm::rpn;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Registered Control (RPN)=0x2
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using bank = details::bitfield<8, 7>;  ///< Corresponds to RPN MSB
-    using reserved1 = details::bitfield<7, 1>;
-    using index = details::bitfield<0, 7>;  ///< Corresponds to RPN LSB
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Registered Control (RPN)=0x2
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using bank = adt::bit_range<8, 7>;  ///< Corresponds to RPN MSB
+    using reserved1 = adt::bit_range<7, 1>;
+    using index = adt::bit_range<0, 7>;  ///< Corresponds to RPN LSB
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr rpn_controller() noexcept = default;
@@ -1912,23 +1883,23 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Assignable Control (RPN)=0x3
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using bank = details::bitfield<8, 7>;  ///< Corresponds to NRPN MSB
-    using reserved1 = details::bitfield<7, 1>;
-    using index = details::bitfield<0, 7>;  ///< Corresponds to NRPN LSB
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Assignable Control (RPN)=0x3
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using bank = adt::bit_range<8, 7>;  ///< Corresponds to NRPN MSB
+    using reserved1 = adt::bit_range<7, 1>;
+    using index = adt::bit_range<0, 7>;  ///< Corresponds to NRPN LSB
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr nrpn_controller() noexcept = default;
@@ -1962,23 +1933,23 @@ public:
     static constexpr auto message = mt::m2cvm::rpn_relative;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Registered Relative Control (RPN)=0x4
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using bank = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using index = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Registered Relative Control (RPN)=0x4
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using bank = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using index = adt::bit_range<0, 7>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr rpn_relative_controller() noexcept = default;
@@ -2012,23 +1983,23 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn_relative;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Assignable Relative Control (NRPN)=0x5
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using bank = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<7, 1>;
-    using index = details::bitfield<0, 7>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Assignable Relative Control (NRPN)=0x5
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using bank = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<7, 1>;
+    using index = adt::bit_range<0, 7>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr nrpn_relative_controller() noexcept = default;
@@ -2068,21 +2039,21 @@ public:
     constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Per-Note Management=0xF
-    using channel = details::bitfield<16, 4>;
-    using reserved = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using option_flags = details::bitfield<0, 1>;
-    using detach = details::bitfield<1, 1>;          ///< Detach per-note controllers from previously received note(s)
-    using set_to_default = details::bitfield<0, 1>;  ///< Reset (set) per-note controllers to default values
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Per-Note Management=0xF
+    using channel = adt::bit_range<16, 4>;
+    using reserved = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using option_flags = adt::bit_range<0, 1>;
+    using detach = adt::bit_range<1, 1>;          ///< Detach per-note controllers from previously received note(s)
+    using set_to_default = adt::bit_range<0, 1>;  ///< Reset (set) per-note controllers to default values
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr per_note_management() noexcept = default;
@@ -2122,19 +2093,19 @@ public:
     constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0xB
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using controller = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0xB
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using controller = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr control_change() noexcept = default;
@@ -2172,25 +2143,25 @@ public:
     constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0xC
-    using channel = details::bitfield<16, 4>;
-    using reserved = details::bitfield<8, 8>;
-    using option_flags = details::bitfield<1, 7>;  ///< Reserved option flags
-    using bank_valid = details::bitfield<0, 1>;    ///< Bank change is ignored if this bit is zero.
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0xC
+    using channel = adt::bit_range<16, 4>;
+    using reserved = adt::bit_range<8, 8>;
+    using option_flags = adt::bit_range<1, 7>;  ///< Reserved option flags
+    using bank_valid = adt::bit_range<0, 1>;    ///< Bank change is ignored if this bit is zero.
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using program = details::bitfield<24, 8>;
-    using reserved0 = details::bitfield<16, 8>;
-    using reserved1 = details::bitfield<15, 1>;
-    using bank_msb = details::bitfield<8, 7>;
-    using reserved2 = details::bitfield<7, 1>;
-    using bank_lsb = details::bitfield<0, 7>;
+    using program = adt::bit_range<24, 8>;
+    using reserved0 = adt::bit_range<16, 8>;
+    using reserved1 = adt::bit_range<15, 1>;
+    using bank_msb = adt::bit_range<8, 7>;
+    using reserved2 = adt::bit_range<7, 1>;
+    using bank_lsb = adt::bit_range<0, 7>;
   };
 
   constexpr program_change() noexcept = default;
@@ -2229,18 +2200,18 @@ public:
     constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0xD
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0xD
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr channel_pressure() noexcept = default;
@@ -2272,21 +2243,21 @@ public:
     static constexpr auto message = mt::m2cvm::pitch_bend;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0xE
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<8, 8>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0xE
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<8, 8>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr pitch_bend() noexcept = default;
@@ -2318,22 +2289,22 @@ public:
     static constexpr auto message = mt::m2cvm::pitch_bend_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using status = details::bitfield<20, 4>;  ///< Always 0x6
-    using channel = details::bitfield<16, 4>;
-    using reserved0 = details::bitfield<15, 1>;
-    using note = details::bitfield<8, 7>;
-    using reserved1 = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x6
+    using channel = adt::bit_range<16, 4>;
+    using reserved0 = adt::bit_range<15, 1>;
+    using note = adt::bit_range<8, 7>;
+    using reserved1 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value = details::bitfield<0, 32>;
+    using value = adt::bit_range<0, 32>;
   };
 
   constexpr per_note_pitch_bend() noexcept = default;
@@ -2399,30 +2370,30 @@ public:
     static constexpr auto message = mt::stream::endpoint_discovery;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x00
-    using version_major = details::bitfield<8, 8>;
-    using version_minor = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x00
+    using version_major = adt::bit_range<8, 8>;
+    using version_minor = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using reserved = details::bitfield<8, 24>;
-    using filter = details::bitfield<0, 8>;
+    using reserved = adt::bit_range<8, 24>;
+    using filter = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr endpoint_discovery() noexcept = default;
@@ -2457,36 +2428,36 @@ public:
     static constexpr auto message = mt::stream::endpoint_info_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x01
-    using version_major = details::bitfield<8, 8>;
-    using version_minor = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x01
+    using version_major = adt::bit_range<8, 8>;
+    using version_minor = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using static_function_blocks = details::bitfield<31, 1>;
-    using number_function_blocks = details::bitfield<24, 7>;
-    using reserved0 = details::bitfield<10, 14>;
-    using midi2_protocol_capability = details::bitfield<9, 1>;
-    using midi1_protocol_capability = details::bitfield<8, 1>;
-    using reserved1 = details::bitfield<2, 6>;
-    using receive_jr_timestamp_capability = details::bitfield<1, 1>;
-    using transmit_jr_timestamp_capability = details::bitfield<0, 1>;
+    using static_function_blocks = adt::bit_range<31, 1>;
+    using number_function_blocks = adt::bit_range<24, 7>;
+    using reserved0 = adt::bit_range<10, 14>;
+    using midi2_protocol_capability = adt::bit_range<9, 1>;
+    using midi1_protocol_capability = adt::bit_range<8, 1>;
+    using reserved1 = adt::bit_range<2, 6>;
+    using receive_jr_timestamp_capability = adt::bit_range<1, 1>;
+    using transmit_jr_timestamp_capability = adt::bit_range<0, 1>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr endpoint_info_notification() noexcept = default;
@@ -2529,48 +2500,48 @@ public:
     static constexpr auto message = mt::stream::device_identity_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x02
-    using reserved0 = details::bitfield<0, 16>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x02
+    using reserved0 = adt::bit_range<0, 16>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using reserved0 = details::bitfield<24, 8>;
-    using reserved1 = details::bitfield<23, 1>;
-    using dev_manuf_sysex_id_1 = details::bitfield<16, 7>;  // device manufacturer sysex id byte 1
-    using reserved2 = details::bitfield<15, 1>;
-    using dev_manuf_sysex_id_2 = details::bitfield<8, 7>;  // device manufacturer sysex id byte 2
-    using reserved3 = details::bitfield<7, 1>;
-    using dev_manuf_sysex_id_3 = details::bitfield<0, 7>;  // device manufacturer sysex id byte 3
+    using reserved0 = adt::bit_range<24, 8>;
+    using reserved1 = adt::bit_range<23, 1>;
+    using dev_manuf_sysex_id_1 = adt::bit_range<16, 7>;  // device manufacturer sysex id byte 1
+    using reserved2 = adt::bit_range<15, 1>;
+    using dev_manuf_sysex_id_2 = adt::bit_range<8, 7>;  // device manufacturer sysex id byte 2
+    using reserved3 = adt::bit_range<7, 1>;
+    using dev_manuf_sysex_id_3 = adt::bit_range<0, 7>;  // device manufacturer sysex id byte 3
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using reserved0 = details::bitfield<31, 1>;
-    using device_family_lsb = details::bitfield<24, 7>;
-    using reserved1 = details::bitfield<23, 1>;
-    using device_family_msb = details::bitfield<16, 7>;
-    using reserved2 = details::bitfield<15, 1>;
-    using device_family_model_lsb = details::bitfield<8, 7>;
-    using reserved3 = details::bitfield<7, 1>;
-    using device_family_model_msb = details::bitfield<0, 7>;
+    using reserved0 = adt::bit_range<31, 1>;
+    using device_family_lsb = adt::bit_range<24, 7>;
+    using reserved1 = adt::bit_range<23, 1>;
+    using device_family_msb = adt::bit_range<16, 7>;
+    using reserved2 = adt::bit_range<15, 1>;
+    using device_family_model_lsb = adt::bit_range<8, 7>;
+    using reserved3 = adt::bit_range<7, 1>;
+    using device_family_model_msb = adt::bit_range<0, 7>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using reserved0 = details::bitfield<31, 1>;
-    using sw_revision_1 = details::bitfield<24, 7>;  // Software revision level byte 1
-    using reserved1 = details::bitfield<23, 1>;
-    using sw_revision_2 = details::bitfield<16, 7>;  // Software revision level byte 2
-    using reserved2 = details::bitfield<15, 1>;
-    using sw_revision_3 = details::bitfield<8, 7>;  // Software revision level byte 3
-    using reserved3 = details::bitfield<7, 1>;
-    using sw_revision_4 = details::bitfield<0, 7>;  // Software revision level byte 4
+    using reserved0 = adt::bit_range<31, 1>;
+    using sw_revision_1 = adt::bit_range<24, 7>;  // Software revision level byte 1
+    using reserved1 = adt::bit_range<23, 1>;
+    using sw_revision_2 = adt::bit_range<16, 7>;  // Software revision level byte 2
+    using reserved2 = adt::bit_range<15, 1>;
+    using sw_revision_3 = adt::bit_range<8, 7>;  // Software revision level byte 3
+    using reserved3 = adt::bit_range<7, 1>;
+    using sw_revision_4 = adt::bit_range<0, 7>;  // Software revision level byte 4
   };
 
   constexpr device_identity_notification() noexcept = default;
@@ -2614,38 +2585,38 @@ public:
     static constexpr auto message = mt::stream::endpoint_name_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;
-    using status = details::bitfield<16, 10>;  // 0x03
-    using name1 = details::bitfield<8, 8>;
-    using name2 = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;
+    using status = adt::bit_range<16, 10>;  // 0x03
+    using name1 = adt::bit_range<8, 8>;
+    using name2 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using name3 = details::bitfield<24, 8>;
-    using name4 = details::bitfield<16, 8>;
-    using name5 = details::bitfield<8, 8>;
-    using name6 = details::bitfield<0, 8>;
+    using name3 = adt::bit_range<24, 8>;
+    using name4 = adt::bit_range<16, 8>;
+    using name5 = adt::bit_range<8, 8>;
+    using name6 = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using name7 = details::bitfield<24, 8>;
-    using name8 = details::bitfield<16, 8>;
-    using name9 = details::bitfield<8, 8>;
-    using name10 = details::bitfield<0, 8>;
+    using name7 = adt::bit_range<24, 8>;
+    using name8 = adt::bit_range<16, 8>;
+    using name9 = adt::bit_range<8, 8>;
+    using name10 = adt::bit_range<0, 8>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using name11 = details::bitfield<24, 8>;
-    using name12 = details::bitfield<16, 8>;
-    using name13 = details::bitfield<8, 8>;
-    using name14 = details::bitfield<0, 8>;
+    using name11 = adt::bit_range<24, 8>;
+    using name12 = adt::bit_range<16, 8>;
+    using name13 = adt::bit_range<8, 8>;
+    using name14 = adt::bit_range<0, 8>;
   };
 
   constexpr endpoint_name_notification() noexcept = default;
@@ -2692,38 +2663,38 @@ public:
     static constexpr auto message = mt::stream::product_instance_id_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;
-    using status = details::bitfield<16, 10>;
-    using pid1 = details::bitfield<8, 8>;
-    using pid2 = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;
+    using status = adt::bit_range<16, 10>;
+    using pid1 = adt::bit_range<8, 8>;
+    using pid2 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using pid3 = details::bitfield<24, 8>;
-    using pid4 = details::bitfield<16, 8>;
-    using pid5 = details::bitfield<8, 8>;
-    using pid6 = details::bitfield<0, 8>;
+    using pid3 = adt::bit_range<24, 8>;
+    using pid4 = adt::bit_range<16, 8>;
+    using pid5 = adt::bit_range<8, 8>;
+    using pid6 = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using pid7 = details::bitfield<24, 8>;
-    using pid8 = details::bitfield<16, 8>;
-    using pid9 = details::bitfield<8, 8>;
-    using pid10 = details::bitfield<0, 8>;
+    using pid7 = adt::bit_range<24, 8>;
+    using pid8 = adt::bit_range<16, 8>;
+    using pid9 = adt::bit_range<8, 8>;
+    using pid10 = adt::bit_range<0, 8>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using pid11 = details::bitfield<24, 8>;
-    using pid12 = details::bitfield<16, 8>;
-    using pid13 = details::bitfield<8, 8>;
-    using pid14 = details::bitfield<0, 8>;
+    using pid11 = adt::bit_range<24, 8>;
+    using pid12 = adt::bit_range<16, 8>;
+    using pid13 = adt::bit_range<8, 8>;
+    using pid14 = adt::bit_range<0, 8>;
   };
 
   constexpr product_instance_id_notification() noexcept = default;
@@ -2772,31 +2743,31 @@ public:
     static constexpr auto message = mt::stream::jr_configuration_request;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x05
-    using protocol = details::bitfield<8, 8>;
-    using reserved0 = details::bitfield<2, 6>;
-    using rxjr = details::bitfield<1, 1>;
-    using txjr = details::bitfield<0, 1>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x05
+    using protocol = adt::bit_range<8, 8>;
+    using reserved0 = adt::bit_range<2, 6>;
+    using rxjr = adt::bit_range<1, 1>;
+    using txjr = adt::bit_range<0, 1>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr jr_configuration_request() noexcept = default;
@@ -2836,31 +2807,31 @@ public:
     static constexpr auto message = mt::stream::jr_configuration_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x06
-    using protocol = details::bitfield<8, 8>;
-    using reserved0 = details::bitfield<2, 6>;
-    using rxjr = details::bitfield<1, 1>;
-    using txjr = details::bitfield<0, 1>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x06
+    using protocol = adt::bit_range<8, 8>;
+    using reserved0 = adt::bit_range<2, 6>;
+    using rxjr = adt::bit_range<1, 1>;
+    using txjr = adt::bit_range<0, 1>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr jr_configuration_notification() noexcept = default;
@@ -2900,29 +2871,29 @@ public:
     static constexpr auto message = mt::stream::function_block_discovery;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x10
-    using block_num = details::bitfield<8, 8>;
-    using filter = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x10
+    using block_num = adt::bit_range<8, 8>;
+    using filter = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr function_block_discovery() noexcept = default;
@@ -2960,36 +2931,36 @@ public:
     static constexpr auto message = mt::stream::function_block_info_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x11
-    using block_active = details::bitfield<15, 1>;
-    using block_num = details::bitfield<8, 7>;
-    using reserved0 = details::bitfield<6, 2>;
-    using ui_hint = details::bitfield<4, 2>;
-    using midi1 = details::bitfield<2, 2>;
-    using direction = details::bitfield<0, 2>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x11
+    using block_active = adt::bit_range<15, 1>;
+    using block_num = adt::bit_range<8, 7>;
+    using reserved0 = adt::bit_range<6, 2>;
+    using ui_hint = adt::bit_range<4, 2>;
+    using midi1 = adt::bit_range<2, 2>;
+    using direction = adt::bit_range<0, 2>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using first_group = details::bitfield<24, 8>;
-    using num_spanned = details::bitfield<16, 8>;
-    using ci_message_version = details::bitfield<8, 8>;
-    using max_sys8_streams = details::bitfield<0, 8>;
+    using first_group = adt::bit_range<24, 8>;
+    using num_spanned = adt::bit_range<16, 8>;
+    using ci_message_version = adt::bit_range<8, 8>;
+    using max_sys8_streams = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr function_block_info_notification() noexcept = default;
@@ -3033,38 +3004,38 @@ public:
     static constexpr auto message = mt::stream::function_block_name_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x12
-    using block_num = details::bitfield<8, 8>;
-    using name0 = details::bitfield<0, 8>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x12
+    using block_num = adt::bit_range<8, 8>;
+    using name0 = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using name1 = details::bitfield<24, 8>;
-    using name2 = details::bitfield<16, 8>;
-    using name3 = details::bitfield<8, 8>;
-    using name4 = details::bitfield<0, 8>;
+    using name1 = adt::bit_range<24, 8>;
+    using name2 = adt::bit_range<16, 8>;
+    using name3 = adt::bit_range<8, 8>;
+    using name4 = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using name5 = details::bitfield<24, 8>;
-    using name6 = details::bitfield<16, 8>;
-    using name7 = details::bitfield<8, 8>;
-    using name8 = details::bitfield<0, 8>;
+    using name5 = adt::bit_range<24, 8>;
+    using name6 = adt::bit_range<16, 8>;
+    using name7 = adt::bit_range<8, 8>;
+    using name8 = adt::bit_range<0, 8>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using name9 = details::bitfield<24, 8>;
-    using name10 = details::bitfield<16, 8>;
-    using name11 = details::bitfield<8, 8>;
-    using name12 = details::bitfield<0, 8>;
+    using name9 = adt::bit_range<24, 8>;
+    using name10 = adt::bit_range<16, 8>;
+    using name11 = adt::bit_range<8, 8>;
+    using name12 = adt::bit_range<0, 8>;
   };
 
   constexpr function_block_name_notification() noexcept = default;
@@ -3111,28 +3082,28 @@ public:
     static constexpr auto message = mt::stream::start_of_clip;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x20
-    using reserved0 = details::bitfield<0, 16>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x20
+    using reserved0 = adt::bit_range<0, 16>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr start_of_clip() noexcept = default;
@@ -3168,25 +3139,25 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
-    using mt = details::bitfield<28, 4>;
-    using format = details::bitfield<26, 2>;   // 0x00
-    using status = details::bitfield<16, 10>;  // 0x21
-    using reserved0 = details::bitfield<0, 16>;
+    using mt = adt::bit_range<28, 4>;
+    using format = adt::bit_range<26, 2>;   // 0x00
+    using status = adt::bit_range<16, 10>;  // 0x21
+    using reserved0 = adt::bit_range<0, 16>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr end_of_clip() noexcept = default;
@@ -3251,29 +3222,29 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    using status_bank = adt::bit_range<8, 8>;
+    using status = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr set_tempo() noexcept = default;
@@ -3313,33 +3284,33 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    using status_bank = adt::bit_range<8, 8>;
+    using status = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using numerator = details::bitfield<24, 8>;
-    using denominator = details::bitfield<16, 8>;
-    using number_of_32_notes = details::bitfield<8, 8>;
-    using reserved0 = details::bitfield<0, 8>;
+    using numerator = adt::bit_range<24, 8>;
+    using denominator = adt::bit_range<16, 8>;
+    using number_of_32_notes = adt::bit_range<8, 8>;
+    using reserved0 = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr set_time_signature() noexcept = default;
@@ -3381,37 +3352,37 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    using status_bank = adt::bit_range<8, 8>;
+    using status = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using num_clocks_per_primary_click = details::bitfield<24, 8>;
-    using bar_accent_part_1 = details::bitfield<16, 8>;
-    using bar_accent_part_2 = details::bitfield<8, 8>;
-    using bar_accent_part_3 = details::bitfield<0, 8>;
+    using num_clocks_per_primary_click = adt::bit_range<24, 8>;
+    using bar_accent_part_1 = adt::bit_range<16, 8>;
+    using bar_accent_part_2 = adt::bit_range<8, 8>;
+    using bar_accent_part_3 = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using num_subdivision_clicks_1 = details::bitfield<24, 8>;
-    using num_subdivision_clicks_2 = details::bitfield<16, 8>;
-    using reserved0 = details::bitfield<0, 16>;
+    using num_subdivision_clicks_1 = adt::bit_range<24, 8>;
+    using num_subdivision_clicks_2 = adt::bit_range<16, 8>;
+    using reserved0 = adt::bit_range<0, 16>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr set_metronome() noexcept = default;
@@ -3444,72 +3415,6 @@ private:
 UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for flex_data/set_metronome
 SPAN_CTOR(flex_data, set_metronome)  // Define the span constructor for flex_data/set_metronome
 
-// 7.5.7 Set Key Signature Message
-class midi2::ump::flex_data::set_key_signature {
-public:
-  class word0 : public details::word_base {
-  public:
-    using word_base::word_base;
-    static constexpr auto message = ump::mt::flex_data::set_key_signature;
-    constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
-
-    /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
-    /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
-  };
-  class word1 : public details::word_base {
-  public:
-    using word_base::word_base;
-    using sharps_flats = details::bitfield<28, 4>;
-    using tonic_note = details::bitfield<24, 4>;
-    using reserved0 = details::bitfield<0, 24>;
-  };
-  class word2 : public details::word_base {
-  public:
-    using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
-  };
-  class word3 : public details::word_base {
-  public:
-    using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
-  };
-
-  constexpr set_key_signature() noexcept = default;
-  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) noexcept = default;
-
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, sharps_flats)
-  UMP_GETTER_SETTER(word1, tonic_note)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
-
-private:
-  friend struct ::std::tuple_size<set_key_signature>;
-  template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
-
-  std::tuple<word0, word1, word2, word3> words_;
-};
-UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
-SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor for flex_data/set_key_signature
-
-// 7.5.8 Set Chord Name Message
 namespace midi2::ump::flex_data {
 
 enum class sharps_flats : std::int8_t {
@@ -3568,9 +3473,75 @@ enum class chord_type : std::uint8_t {
 
 }  // end namespace midi2::ump::flex_data
 
+// 7.5.7 Set Key Signature Message
+class midi2::ump::flex_data::set_key_signature {
+public:
+  class word0 : public details::word_base {
+  public:
+    using word_base::word_base;
+    static constexpr auto message = ump::mt::flex_data::set_key_signature;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+
+    /// Defines the bit position of the mt (message-type) field. Always 0xD.
+    using mt = adt::bit_range<28, 4>;
+    /// Defines the bit position of the group field.
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    using status_bank = adt::bit_range<8, 8>;
+    using status = adt::bit_range<0, 8>;
+  };
+  class word1 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using sharps_flats = adt::bit_range<28, 4>;
+    using tonic_note = adt::bit_range<24, 4>;
+    using reserved0 = adt::bit_range<0, 24>;
+  };
+  class word2 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value2 = adt::bit_range<0, 32>;
+  };
+  class word3 : public details::word_base {
+  public:
+    using word_base::word_base;
+    using value3 = adt::bit_range<0, 32>;
+  };
+
+  constexpr set_key_signature() noexcept = default;
+  constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept;
+  friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) noexcept = default;
+
+  UMP_GETTER(word0, mt)
+  UMP_GETTER_SETTER(word0, group)
+  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER_SETTER(word0, addrs)
+  UMP_GETTER_SETTER(word0, channel)
+  UMP_GETTER_SETTER(word0, status_bank)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER_ENUM(word1, sharps_flats, midi2::ump::flex_data::sharps_flats)
+  UMP_GETTER_SETTER_ENUM(word1, tonic_note, midi2::ump::flex_data::note)
+  UMP_GETTER_SETTER(word2, value2)
+  UMP_GETTER_SETTER(word3, value3)
+
+private:
+  friend struct ::std::tuple_size<set_key_signature>;
+  template <std::size_t I, typename T> friend struct ::std::tuple_element;
+  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
+  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+
+  std::tuple<word0, word1, word2, word3> words_;
+};
+UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
+SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor for flex_data/set_key_signature
+
+// 7.5.8 Set Chord Name Message
 class midi2::ump::flex_data::set_chord_name {
 public:
-  /// The firs
+  /// Defines the fields of the first word of the set-chord-name message.
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
@@ -3579,48 +3550,53 @@ public:
     constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;  ///< Always 0
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    /// Defines the bit position of the status-back field. Always 0.
+    using status_bank = adt::bit_range<8, 8>;
+    /// Defines the bit position of the status field. Always 6.
+    using status = adt::bit_range<0, 8>;
   };
+  /// Defines the fields of the second word of the set-chord-name message.
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using tonic_sharps_flats = details::bitfield<28, 4>;  // 2's complement
-    using chord_tonic = details::bitfield<24, 4>;
-    using chord_type = details::bitfield<16, 8>;
-    using alter_1_type = details::bitfield<12, 4>;
-    using alter_1_degree = details::bitfield<8, 4>;
-    using alter_2_type = details::bitfield<4, 4>;
-    using alter_2_degree = details::bitfield<0, 4>;
+    using tonic_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
+    using chord_tonic = adt::bit_range<24, 4>;
+    using chord_type = adt::bit_range<16, 8>;
+    using alter_1_type = adt::bit_range<12, 4>;
+    using alter_1_degree = adt::bit_range<8, 4>;
+    using alter_2_type = adt::bit_range<4, 4>;
+    using alter_2_degree = adt::bit_range<0, 4>;
   };
+  /// Defines the fields of the third word of the set-chord-name message.
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using alter_3_type = details::bitfield<28, 4>;
-    using alter_3_degree = details::bitfield<24, 4>;
-    using alter_4_type = details::bitfield<20, 4>;
-    using alter_4_degree = details::bitfield<16, 4>;
-    using reserved = details::bitfield<0, 16>;  // 0x0000
+    using alter_3_type = adt::bit_range<28, 4>;
+    using alter_3_degree = adt::bit_range<24, 4>;
+    using alter_4_type = adt::bit_range<20, 4>;
+    using alter_4_degree = adt::bit_range<16, 4>;
+    using reserved = adt::bit_range<0, 16>;  // 0x0000
   };
+  /// Defines the fields of the fourth word of the set-chord-name message.
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
 
-    using bass_sharps_flats = details::bitfield<28, 4>;  // 2's complement
-    using bass_note = details::bitfield<24, 4>;
-    using bass_chord_type = details::bitfield<16, 8>;
-    using bass_alter_1_type = details::bitfield<12, 4>;
-    using bass_alter_1_degree = details::bitfield<8, 4>;
-    using bass_alter_2_type = details::bitfield<4, 4>;
-    using bass_alter_2_degree = details::bitfield<0, 4>;
+    using bass_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
+    using bass_note = adt::bit_range<24, 4>;
+    using bass_chord_type = adt::bit_range<16, 8>;
+    using bass_alter_1_type = adt::bit_range<12, 4>;
+    using bass_alter_1_degree = adt::bit_range<8, 4>;
+    using bass_alter_2_type = adt::bit_range<4, 4>;
+    using bass_alter_2_degree = adt::bit_range<0, 4>;
   };
 
   constexpr set_chord_name() noexcept = default;
@@ -3629,14 +3605,14 @@ public:
 
   UMP_GETTER(word0, mt)
   UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
+  UMP_GETTER(word0, form)
   UMP_GETTER_SETTER(word0, addrs)
   UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER_SETTER(word0, status)
-  UMP_GETTER_SETTER(word1, tonic_sharps_flats)
-  UMP_GETTER_SETTER(word1, chord_tonic)
-  UMP_GETTER_SETTER(word1, chord_type)
+  UMP_GETTER(word0, status_bank)
+  UMP_GETTER(word0, status)
+  UMP_GETTER_SETTER_ENUM(word1, tonic_sharps_flats, midi2::ump::flex_data::sharps_flats)
+  UMP_GETTER_SETTER_ENUM(word1, chord_tonic, midi2::ump::flex_data::note)
+  UMP_GETTER_SETTER_ENUM(word1, chord_type, midi2::ump::flex_data::chord_type)
   UMP_GETTER_SETTER(word1, alter_1_type)
   UMP_GETTER_SETTER(word1, alter_1_degree)
   UMP_GETTER_SETTER(word1, alter_2_type)
@@ -3645,9 +3621,9 @@ public:
   UMP_GETTER_SETTER(word2, alter_3_degree)
   UMP_GETTER_SETTER(word2, alter_4_type)
   UMP_GETTER_SETTER(word2, alter_4_degree)
-  UMP_GETTER_SETTER(word3, bass_sharps_flats)
-  UMP_GETTER_SETTER(word3, bass_note)
-  UMP_GETTER_SETTER(word3, bass_chord_type)
+  UMP_GETTER_SETTER_ENUM(word3, bass_sharps_flats, midi2::ump::flex_data::sharps_flats)
+  UMP_GETTER_SETTER_ENUM(word3, bass_note, midi2::ump::flex_data::note)
+  UMP_GETTER_SETTER_ENUM(word3, bass_chord_type, midi2::ump::flex_data::chord_type)
   UMP_GETTER_SETTER(word3, bass_alter_1_type)
   UMP_GETTER_SETTER(word3, bass_alter_1_degree)
   UMP_GETTER_SETTER(word3, bass_alter_2_type)
@@ -3676,29 +3652,29 @@ public:
     }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
-    using mt = details::bitfield<28, 4>;
+    using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
-    using group = details::bitfield<24, 4>;
-    using form = details::bitfield<22, 2>;
-    using addrs = details::bitfield<20, 2>;
-    using channel = details::bitfield<16, 4>;
-    using status_bank = details::bitfield<8, 8>;
-    using status = details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using form = adt::bit_range<22, 2>;
+    using addrs = adt::bit_range<20, 2>;
+    using channel = adt::bit_range<16, 4>;
+    using status_bank = adt::bit_range<8, 8>;
+    using status = adt::bit_range<0, 8>;
   };
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    using value1 = details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
-    using value2 = details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    using value3 = details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr text_common() noexcept = default;
@@ -3753,7 +3729,7 @@ namespace details {
 // SysEx8 Start (word 1)
 // SysEx8 Continue (word 1)
 // SysEx8 End (word 1)
-template <::midi2::ump::mt::data128 Status> class sysex8;
+template <ump::mt::data128 Status> class sysex8;
 
 template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
   return get<I>(t.words_);
@@ -3778,40 +3754,40 @@ public:
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
-    using mt = midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
-    using group = midi2::ump::details::bitfield<24, 4>;
-    using status = midi2::ump::details::bitfield<20, 4>;
-    using number_of_bytes = midi2::ump::details::bitfield<16, 4>;
-    using stream_id = midi2::ump::details::bitfield<8, 8>;
-    using data0 = midi2::ump::details::bitfield<0, 8>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;
+    using number_of_bytes = adt::bit_range<16, 4>;
+    using stream_id = adt::bit_range<8, 8>;
+    using data0 = adt::bit_range<0, 8>;
   };
   class word1 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data1 = midi2::ump::details::bitfield<24, 8>;
-    using data2 = midi2::ump::details::bitfield<16, 8>;
-    using data3 = midi2::ump::details::bitfield<8, 8>;
-    using data4 = midi2::ump::details::bitfield<0, 8>;
+    using data1 = adt::bit_range<24, 8>;
+    using data2 = adt::bit_range<16, 8>;
+    using data3 = adt::bit_range<8, 8>;
+    using data4 = adt::bit_range<0, 8>;
   };
   class word2 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data5 = midi2::ump::details::bitfield<24, 8>;
-    using data6 = midi2::ump::details::bitfield<16, 8>;
-    using data7 = midi2::ump::details::bitfield<8, 8>;
-    using data8 = midi2::ump::details::bitfield<0, 8>;
+    using data5 = adt::bit_range<24, 8>;
+    using data6 = adt::bit_range<16, 8>;
+    using data7 = adt::bit_range<8, 8>;
+    using data8 = adt::bit_range<0, 8>;
   };
   class word3 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using data9 = midi2::ump::details::bitfield<24, 8>;
-    using data10 = midi2::ump::details::bitfield<16, 8>;
-    using data11 = midi2::ump::details::bitfield<8, 8>;
-    using data12 = midi2::ump::details::bitfield<0, 8>;
+    using data9 = adt::bit_range<24, 8>;
+    using data10 = adt::bit_range<16, 8>;
+    using data11 = adt::bit_range<8, 8>;
+    using data12 = adt::bit_range<0, 8>;
   };
 
   constexpr sysex8() noexcept = default;
@@ -3848,7 +3824,7 @@ private:
   std::tuple<word0, word1, word2, word3> words_{};
 };
 
-template <::midi2::ump::mt::data128 Status>
+template <midi2::ump::mt::data128 Status>
 struct std::tuple_size<midi2::ump::data128::details::sysex8<Status>> /* NOLINT(cert-dcl58-cpp]*/
     : std::integral_constant<std::size_t,
                              std::tuple_size_v<decltype(midi2::ump::data128::details::sysex8<Status>::words_)>> {};
@@ -3884,37 +3860,37 @@ public:
   class word0 : public ump::details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = midi2::ump::mt::data128::mixed_data_set_header;
+    static constexpr auto message = ump::mt::data128::mixed_data_set_header;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
-    using mt = ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
-    using group = ump::details::bitfield<24, 4>;
-    using status = ump::details::bitfield<20, 4>;  ///< Always 0x08
-    using mds_id = ump::details::bitfield<16, 4>;
-    using bytes_in_chunk = ump::details::bitfield<0, 16>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x08
+    using mds_id = adt::bit_range<16, 4>;
+    using bytes_in_chunk = adt::bit_range<0, 16>;
   };
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using chunks_in_mds = ump::details::bitfield<16, 16>;
-    using chunk_num = ump::details::bitfield<0, 16>;
+    using chunks_in_mds = adt::bit_range<16, 16>;
+    using chunk_num = adt::bit_range<0, 16>;
   };
   class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using manufacturer_id = ump::details::bitfield<16, 16>;
-    using device_id = ump::details::bitfield<0, 16>;
+    using manufacturer_id = adt::bit_range<16, 16>;
+    using device_id = adt::bit_range<0, 16>;
   };
   class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
 
-    using sub_id_1 = ump::details::bitfield<16, 16>;
-    using sub_id_2 = ump::details::bitfield<0, 16>;
+    using sub_id_1 = adt::bit_range<16, 16>;
+    using sub_id_2 = adt::bit_range<0, 16>;
   };
 
   constexpr mds_header() noexcept = default;
@@ -3951,37 +3927,37 @@ SPAN_CTOR(data128, mds_header)  // Define the span constructor for data128/mds_h
 class midi2::ump::data128::mds_payload {
 public:
   /// \brief The first 32-bit word of an MDS payload message
-  class word0 : public ::midi2::ump::details::word_base {
+  class word0 : public ump::details::word_base {
   public:
     using word_base::word_base;
     static constexpr auto message = midi2::ump::mt::data128::mixed_data_set_payload;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
 
-    using mt = ::midi2::ump::details::bitfield<28, 4>;  ///< Always 0x05
+    using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
-    using group = ::midi2::ump::details::bitfield<24, 4>;
-    using status = ::midi2::ump::details::bitfield<20, 4>;  ///< Always 0x09
-    using mds_id = ::midi2::ump::details::bitfield<16, 4>;
-    using value0 = ::midi2::ump::details::bitfield<0, 16>;
+    using group = adt::bit_range<24, 4>;
+    using status = adt::bit_range<20, 4>;  ///< Always 0x09
+    using mds_id = adt::bit_range<16, 4>;
+    using value0 = adt::bit_range<0, 16>;
   };
   /// \brief The second 32-bit word of an MDS payload message
-  class word1 : public ::midi2::ump::details::word_base {
+  class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
-    using value1 = ::midi2::ump::details::bitfield<0, 32>;
+    using value1 = adt::bit_range<0, 32>;
   };
   /// \brief The third 32-bit word of an MDS payload message
-  class word2 : public ::midi2::ump::details::word_base {
+  class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
-    using value2 = ::midi2::ump::details::bitfield<0, 32>;
+    using value2 = adt::bit_range<0, 32>;
   };
   /// \brief The fourth 32-bit word of an MDS payload message
-  class word3 : public ::midi2::ump::details::word_base {
+  class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
-    using value3 = ::midi2::ump::details::bitfield<0, 32>;
+    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr mds_payload() noexcept = default;

@@ -62,8 +62,8 @@ TEST(UMPToMIDI1, M2NoteOn) {
   auto const [w0, w1] =
       midi2::ump::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
   auto const [expected0] = midi2::ump::m1cvm::note_on{}.group(0).channel(0).note(note).velocity(0x60);
-  std::array const input{w0.word(), w1.word()};
-  EXPECT_THAT(convert(input), ElementsAre(expected0.word()));
+  std::array const input{std::uint32_t{w0}, std::uint32_t{w1}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{expected0}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2NoteOff) {
@@ -71,8 +71,8 @@ TEST(UMPToMIDI1, M2NoteOff) {
   auto const [w0, w1] =
       midi2::ump::m2cvm::note_off{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
   auto const [expected] = midi2::ump::m1cvm::note_off{}.group(0).channel(0).note(note).velocity(0x60);
-  std::array const input{w0.word(), w1.word()};
-  EXPECT_THAT(convert(input), ElementsAre(expected.word()));
+  std::array const input{std::uint32_t{w0}, std::uint32_t{w1}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{expected}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2PolyPressure) {
@@ -89,8 +89,8 @@ TEST(UMPToMIDI1, M2PolyPressure) {
   expected.note(note);
   expected.pressure(0x78);
 
-  std::array const input{get<0>(ump).word(), get<1>(ump).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word()));
+  std::array const input{std::uint32_t{get<0>(ump)}, std::uint32_t{get<1>(ump)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2ProgramChangeNoBank) {
@@ -107,9 +107,9 @@ TEST(UMPToMIDI1, M2ProgramChangeNoBank) {
   expected.channel(0);
   expected.program(program);
 
-  std::array const input{get<0>(ump).word(), get<1>(ump).word()};
+  std::array const input{std::uint32_t{get<0>(ump)}, std::uint32_t{get<1>(ump)}};
   auto const actual = convert(input);
-  EXPECT_THAT(actual, ElementsAre(get<0>(expected).word()));
+  EXPECT_THAT(actual, ElementsAre(std::uint32_t{get<0>(expected)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2ProgramChangeWithBank) {
@@ -140,9 +140,9 @@ TEST(UMPToMIDI1, M2ProgramChangeWithBank) {
                                  .value(bank_lsb);
   constexpr auto expected2 = midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(program);
 
-  std::array const input{get<0>(ump).word(), get<1>(ump).word()};
-  EXPECT_THAT(convert(input),
-              ElementsAre(get<0>(expected0).word(), get<0>(expected1).word(), get<0>(expected2).word()));
+  std::array const input{std::uint32_t{get<0>(ump)}, std::uint32_t{get<1>(ump)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected0)}, std::uint32_t{get<0>(expected1)},
+                                          std::uint32_t{get<0>(expected2)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2ChannelPressure) {
@@ -150,8 +150,8 @@ TEST(UMPToMIDI1, M2ChannelPressure) {
 
   constexpr auto expected = midi2::ump::m1cvm::channel_pressure{}.group(0).channel(0).data(0x78);
 
-  std::array const input{get<0>(ump).word(), get<1>(ump).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word()));
+  std::array const input{std::uint32_t{get<0>(ump)}, std::uint32_t{get<1>(ump)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2PerNotePitchBend) {
@@ -161,7 +161,7 @@ TEST(UMPToMIDI1, M2PerNotePitchBend) {
   ump.note(60);
   ump.value(0x80000000);
 
-  std::array const input{get<0>(ump).word(), get<1>(ump).word()};
+  std::array const input{std::uint32_t{get<0>(ump)}, std::uint32_t{get<1>(ump)}};
   EXPECT_THAT(convert(input), ElementsAre());
 }
 
@@ -184,9 +184,9 @@ TEST(UMPToMIDI1, M2RPNController) {
   auto& out2 = cc.at(2).group(group).channel(channel).controller(midi2::ump::control::data_entry_msb).value(hi7(val14));
   auto& out3 = cc.at(3).group(group).channel(channel).controller(midi2::ump::control::data_entry_lsb).value(lo7(val14));
 
-  std::array const input{get<0>(src).word(), get<1>(src).word()};
-  EXPECT_THAT(convert(input),
-              ElementsAre(get<0>(out0).word(), get<0>(out1).word(), get<0>(out2).word(), get<0>(out3).word()));
+  std::array const input{std::uint32_t{get<0>(src)}, std::uint32_t{get<1>(src)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(out0)}, std::uint32_t{get<0>(out1)},
+                                          std::uint32_t{get<0>(out2)}, std::uint32_t{get<0>(out3)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
@@ -347,14 +347,14 @@ TEST(UMPToMIDI1, PitchBend) {
                                 .lsb_data((value >> (32 - 14)) & 0x7F)
                                 .msb_data(((value >> (32 - 14)) >> 7) & 0x7F);
 
-  std::array const input{get<0>(pb).word(), get<1>(pb).word()};
+  std::array const input{std::uint32_t{get<0>(pb)}, std::uint32_t{get<1>(pb)}};
   auto const actual = convert(input);
-  EXPECT_THAT(actual, ElementsAre(get<0>(expected).word()));
+  EXPECT_THAT(actual, ElementsAre(std::uint32_t{get<0>(expected)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOff) {
   midi2::ump::m1cvm::note_off off;
-  auto const ump = get<0>(off).word();
+  auto const ump = std::uint32_t{get<0>(off)};
   std::array const input{ump};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(ump));
@@ -362,7 +362,7 @@ TEST(UMPToMIDI1, M1NoteOff) {
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1NoteOn) {
   midi2::ump::m1cvm::note_on non;
-  auto const ump = get<0>(non).word();
+  auto const ump = std::uint32_t{get<0>(non)};
   std::array const input{ump};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(ump));
@@ -370,7 +370,7 @@ TEST(UMPToMIDI1, M1NoteOn) {
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1PolyPressure) {
   midi2::ump::m1cvm::poly_pressure poly_pressure;
-  auto const ump = get<0>(poly_pressure).word();
+  auto const ump = std::uint32_t{get<0>(poly_pressure)};
   std::array const input{ump};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(ump));
@@ -378,7 +378,7 @@ TEST(UMPToMIDI1, M1PolyPressure) {
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M1ControlChange) {
   midi2::ump::m1cvm::control_change control_change;
-  auto const ump = get<0>(control_change).word();
+  auto const ump = std::uint32_t{get<0>(control_change)};
   std::array const input{ump};
   auto const actual = convert(input);
   EXPECT_THAT(actual, ElementsAre(ump));
@@ -415,7 +415,7 @@ TEST(UMPToMIDI1, SystemMessagePassThrough) {
 
   auto add = [&input]<typename T>(T const& ump) {
     static_assert(std::tuple_size_v<T> == 1);
-    input.emplace_back(get<0>(ump).word());
+    input.emplace_back(std::uint32_t{get<0>(ump)});
   };
 
   add(midi2::ump::system::midi_time_code{});

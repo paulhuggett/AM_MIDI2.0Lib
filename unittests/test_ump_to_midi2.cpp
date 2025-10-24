@@ -48,8 +48,8 @@ TEST(UMPToMidi2, NoteOff) {
   constexpr auto expected =
       midi2::ump::m2cvm::note_off{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{get<0>(in).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
+  std::array const input{static_cast<std::uint32_t>(get<0>(in))};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected)}, std::uint32_t{get<1>(expected)}));
 }
 
 // NOLINTNEXTLINE
@@ -61,8 +61,8 @@ TEST(UMPToMidi2, NoteOn) {
   constexpr auto expected =
       midi2::ump::m2cvm::note_on{}.group(0).channel(0).note(note).attribute_type(0).velocity(0xC104).attribute(0);
 
-  std::array const input{get<0>(in).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
+  std::array const input{std::uint32_t{get<0>(in)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected)}, std::uint32_t{get<1>(expected)}));
 }
 
 // UMPToMidi2
@@ -78,11 +78,11 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
   {
     constexpr auto in_non_1 =
         midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(velocity);
-    input.push_back(get<0>(in_non_1).word());
+    input.push_back(std::uint32_t{get<0>(in_non_1)});
   }
   {
     constexpr auto in_non_2 = midi2::ump::m1cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
-    input.push_back(get<0>(in_non_2).word());
+    input.push_back(std::uint32_t{get<0>(in_non_2)});
   }
 
   std::vector<std::uint32_t> expected;
@@ -92,14 +92,14 @@ TEST(UMPToMidi2, NoteOnImplicitNoteOff) {
                                       .channel(channel)
                                       .note(note_number)
                                       .velocity(midi2::ump::mcm_scale<7, 16>(velocity));
-    expected.push_back(get<0>(expected_non).word());
-    expected.push_back(get<1>(expected_non).word());
+    expected.push_back(std::uint32_t{get<0>(expected_non)});
+    expected.push_back(std::uint32_t{get<1>(expected_non)});
   }
   {
     constexpr auto expected_noff =
         midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note_number).velocity(0);
-    expected.push_back(get<0>(expected_noff).word());
-    expected.push_back(get<1>(expected_noff).word());
+    expected.push_back(std::uint32_t{get<0>(expected_noff)});
+    expected.push_back(std::uint32_t{get<1>(expected_noff)});
   }
 
   auto const actual = convert(input);
@@ -122,8 +122,8 @@ TEST(UMPToMidi2, PolyPressure) {
   expected.note(note);
   expected.pressure(midi2::ump::mcm_scale<7, 32>(in.pressure()));
 
-  std::array const input{get<0>(in).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(expected).word(), get<1>(expected).word()));
+  std::array const input{std::uint32_t{get<0>(in)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(expected)}, std::uint32_t{get<1>(expected)}));
 }
 
 // NOLINTNEXTLINE
@@ -141,8 +141,8 @@ TEST(UMPToMidi2, PitchBend) {
   m2.channel(0);
   m2.value(midi2::ump::mcm_scale<14, 32>(pb14));
 
-  std::array const input{get<0>(m1).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  std::array const input{std::uint32_t{get<0>(m1)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 // NOLINTNEXTLINE
@@ -161,8 +161,8 @@ TEST(UMPToMidi2, ChannelPressure) {
   m2.channel(channel);
   m2.value(midi2::ump::mcm_scale<7, 32>(pressure));
 
-  std::array const input{get<0>(m1).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  std::array const input{std::uint32_t{get<0>(m1)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 // NOLINTNEXTLINE
 TEST(UMPToMidi2, SimpleContinuousController) {
@@ -183,8 +183,8 @@ TEST(UMPToMidi2, SimpleContinuousController) {
   m2.controller(controller);
   m2.value(midi2::ump::mcm_scale<7, 32>(value));
 
-  std::array const input{get<0>(m1).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  std::array const input{std::uint32_t{get<0>(m1)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 // NOLINTNEXTLINE
@@ -207,8 +207,8 @@ TEST(UMPToMidi2, SimpleProgramChange) {
   m2.bank_msb(0);
   m2.bank_lsb(0);
 
-  std::array const input{get<0>(m1).word()};
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  std::array const input{std::uint32_t{get<0>(m1)}};
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 // NOLINTNEXTLINE
@@ -238,7 +238,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
   m2.program(program);
   m2.bank_msb(bank_msb);
   m2.bank_lsb(bank_lsb);
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 TEST(UMPToMidi2, ControlChangeRPN) {
@@ -271,7 +271,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
           .bank(control_msb)
           .index(control_lsb)
           .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 TEST(UMPToMidi2, ControlChangeNRPN) {
@@ -304,7 +304,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
           .bank(control_msb)
           .index(control_lsb)
           .value(midi2::ump::mcm_scale<14, 32>((std::uint32_t{value_msb} << 7) | std::uint32_t{value_lsb}));
-  EXPECT_THAT(convert(input), ElementsAre(get<0>(m2).word(), get<1>(m2).word()));
+  EXPECT_THAT(convert(input), ElementsAre(std::uint32_t{get<0>(m2)}, std::uint32_t{get<1>(m2)}));
 }
 
 template <typename T> class UMPToMidi2PassThrough : public testing::Test {
@@ -423,8 +423,8 @@ TEST(UMPToMidi2PassThroughExtras, Text) {
                                .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
                                .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
 
-  auto input =
-      std::array{get<0>(message).word(), get<1>(message).word(), get<2>(message).word(), get<3>(message).word()};
+  auto input = std::array{std::uint32_t{get<0>(message)}, std::uint32_t{get<1>(message)},
+                          std::uint32_t{get<2>(message)}, std::uint32_t{get<3>(message)}};
   auto const output = convert(input);
   EXPECT_THAT(output, ElementsAreArray(input));
 }

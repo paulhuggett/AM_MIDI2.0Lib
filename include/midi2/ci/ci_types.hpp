@@ -398,7 +398,6 @@ constexpr discovery discovery::make(packed::discovery_v1 const &v1, b7 output_pa
 constexpr discovery discovery::make(packed::discovery_v2 const &v2) noexcept {
   return make(v2.v1, details::from_le7(v2.output_path_id));
 }
-
 constexpr discovery::operator packed::discovery_v1() const noexcept {
   return {.manufacturer = details::to_byte_array(manufacturer),
           .family = details::to_le7(family),
@@ -495,7 +494,6 @@ constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const
 constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v2 const &v2) noexcept {
   return make(v2.v1, details::from_le7(v2.output_path_id), details::from_le7(v2.function_block));
 }
-
 constexpr discovery_reply::operator packed::discovery_reply_v1() const noexcept {
   return packed::discovery_reply_v1{.manufacturer = details::to_byte_array(manufacturer),
                                     .family = details::to_le7(family),
@@ -544,7 +542,6 @@ struct endpoint {
 constexpr endpoint endpoint::make(packed::endpoint_v1 const &other) noexcept {
   return {.status = b7{to_underlying(other.status)}};
 }
-
 constexpr endpoint::operator packed::endpoint_v1() const noexcept {
   return {.status = static_cast<std::byte>(status.get())};
 }
@@ -586,7 +583,6 @@ constexpr endpoint_reply endpoint_reply::make(packed::endpoint_reply_v1 const &o
   return {.status = details::from_le7(other.status),
           .information{std::bit_cast<b7 const *>(&other.data[0]), details::from_le7(other.data_length).get()}};
 }
-
 constexpr endpoint_reply::operator packed::endpoint_reply_v1() const noexcept {
   return {.status = details::to_le7(status),
           .data_length = details::to_le7(static_cast<b14>(information.size())),
@@ -621,7 +617,6 @@ struct invalidate_muid {
 constexpr invalidate_muid invalidate_muid::make(packed::invalidate_muid_v1 const &other) noexcept {
   return {.target_muid = details::from_le7(other.target_muid)};
 }
-
 constexpr invalidate_muid::operator packed::invalidate_muid_v1() const noexcept {
   return {.target_muid = details::to_le7(target_muid)};
 }
@@ -681,7 +676,6 @@ constexpr ack ack::make(packed::ack_v1 const &v1) noexcept {
           .details = details::from_le7(v1.details),
           .message = std::span<b7 const>{std::begin(v1.message), details::from_le7(v1.message_length).get()}};
 }
-
 constexpr ack::operator packed::ack_v1() const noexcept {
   return {.original_id = details::to_le7(original_id),
           .status_code = details::to_le7(status_code),
@@ -690,7 +684,6 @@ constexpr ack::operator packed::ack_v1() const noexcept {
           .message_length = details::to_le7(static_cast<b14>(message.size())),
           .message{b7{}}};
 }
-
 constexpr bool ack::operator==(ack const &other) const noexcept {
   return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
          details == other.details && std::ranges::equal(message, other.message);
@@ -745,7 +738,6 @@ struct nak {
 constexpr nak nak::make(packed::nak_v1 const &) noexcept {
   return {};
 }
-
 constexpr nak nak::make(packed::nak_v2 const &v2) noexcept {
   return nak{.original_id = b7{to_underlying(v2.original_id)},
              .status_code = b7{to_underlying(v2.status_code)},
@@ -753,7 +745,6 @@ constexpr nak nak::make(packed::nak_v2 const &v2) noexcept {
              .details = details::from_le7(v2.details),
              .message = std::span<b7 const>{std::begin(v2.message), details::from_le7(v2.message_length).get()}};
 }
-
 constexpr nak::operator packed::nak_v1() const noexcept {
   return {};
 }
@@ -765,7 +756,6 @@ constexpr nak::operator packed::nak_v2() const noexcept {
           .message_length = details::to_le7(static_cast<b14>(message.size())),
           .message = {b7{0U}}};
 }
-
 constexpr bool nak::operator==(nak const &other) const noexcept {
   return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
          details == other.details && std::ranges::equal(message, other.message);
@@ -967,7 +957,6 @@ constexpr details_reply details_reply::make(packed::details_reply_v1 const &othe
           .target = b7{to_underlying(other.target)},
           .data = std::span<b7 const>{std::begin(other.data), ci::details::from_le7(other.data_length).get()}};
 }
-
 constexpr details_reply::operator packed::details_reply_v1() const noexcept {
   return {
       .pid = pid,
@@ -1530,35 +1519,131 @@ constexpr capabilities_reply::operator packed::capabilities_reply_v2() const noe
 namespace packed {
 
 struct midi_message_report_v2 {
-  union system_message {
-    adt::bitfield<std::uint8_t, 3, 5> reserved0;
-    adt::bitfield<std::uint8_t, 2, 1> song_select;
-    adt::bitfield<std::uint8_t, 1, 1> song_position;
-    adt::bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+  class system_message : private adt::bit_field<std::uint8_t> {
+    using song_select_bits = adt::bit_range<2, 1>;
+    using song_position_bits = adt::bit_range<1, 1>;
+    using mtc_quarter_frame_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto song_select() const noexcept { return get<song_select_bits>(); }
+    [[nodiscard]] constexpr auto song_position() const noexcept { return get<song_position_bits>(); }
+    [[nodiscard]] constexpr auto mtc_quarter_frame() const noexcept { return get<mtc_quarter_frame_bits>(); }
+
+    constexpr auto &song_select(adt::uinteger_t<song_select_bits::bits::value> const v) noexcept {
+      set<song_select_bits>(v);
+      return *this;
+    }
+    constexpr auto &song_position(adt::uinteger_t<song_position_bits::bits::value> const v) noexcept {
+      set<song_position_bits>(v);
+      return *this;
+    }
+    constexpr auto &mtc_quarter_frame(adt::uinteger_t<mtc_quarter_frame_bits::bits::value> const v) noexcept {
+      set<mtc_quarter_frame_bits>(v);
+      return *this;
+    }
   };
-  union channel_controller {
-    adt::bitfield<std::uint8_t, 6, 2> reserved0;
-    adt::bitfield<std::uint8_t, 5, 1> channel_pressure;
-    adt::bitfield<std::uint8_t, 4, 1> program_change;
-    adt::bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
-    adt::bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
-    adt::bitfield<std::uint8_t, 1, 1> control_change;
-    adt::bitfield<std::uint8_t, 0, 1> pitchbend;
+  class channel_controller : private adt::bit_field<std::uint8_t> {
+    using reserved0_bits = adt::bit_range<6, 2>;
+    using channel_pressure_bits = adt::bit_range<5, 1>;
+    using program_change_bits = adt::bit_range<4, 1>;
+    using nrpn_assignable_controller_bits = adt::bit_range<3, 1>;
+    using rpn_registered_controller_bits = adt::bit_range<2, 1>;
+    using control_change_bits = adt::bit_range<1, 1>;
+    using pitchbend_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto reserved0() const noexcept { return get<reserved0_bits>(); }
+    [[nodiscard]] constexpr auto channel_pressure() const noexcept { return get<channel_pressure_bits>(); }
+    [[nodiscard]] constexpr auto program_change() const noexcept { return get<program_change_bits>(); }
+    [[nodiscard]] constexpr auto nrpn_assignable_controller() const noexcept {
+      return get<nrpn_assignable_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto rpn_registered_controller() const noexcept {
+      return get<rpn_registered_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto control_change() const noexcept { return get<control_change_bits>(); }
+    [[nodiscard]] constexpr auto pitchbend() const noexcept { return get<pitchbend_bits>(); }
+
+    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+      set<reserved0_bits>(v);
+      return *this;
+    }
+    constexpr auto &channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
+      set<channel_pressure_bits>(v);
+      return *this;
+    }
+    constexpr auto &program_change(program_change_bits::uinteger const v) noexcept {
+      set<program_change_bits>(v);
+      return *this;
+    }
+    constexpr auto &nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
+      set<nrpn_assignable_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
+      set<rpn_registered_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &control_change(control_change_bits::uinteger const v) noexcept {
+      set<control_change_bits>(v);
+      return *this;
+    }
+    constexpr auto &pitchbend(pitchbend_bits::uinteger const v) noexcept {
+      set<pitchbend_bits>(v);
+      return *this;
+    }
   };
-  union note_data_messages {
-    adt::bitfield<std::uint8_t, 5, 3> reserved0;
-    adt::bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
-    adt::bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
-    adt::bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
-    adt::bitfield<std::uint8_t, 1, 1> poly_pressure;
-    adt::bitfield<std::uint8_t, 0, 1> notes;
+  class note_data_messages : private adt::bit_field<std::uint8_t> {
+    using reserved0_bits = adt::bit_range<5, 3>;
+    using assignable_per_note_controller_bits = adt::bit_range<4, 1>;
+    using registered_per_note_controller_bits = adt::bit_range<3, 1>;
+    using per_note_pitchbend_bits = adt::bit_range<2, 1>;
+    using poly_pressure_bits = adt::bit_range<1, 1>;
+    using notes_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto reserved0() const noexcept { return get<reserved0_bits>(); }
+    [[nodiscard]] constexpr auto assignable_per_note_controller() const noexcept {
+      return get<assignable_per_note_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto registered_per_note_controller() const noexcept {
+      return get<registered_per_note_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto per_note_pitchbend() const noexcept { return get<per_note_pitchbend_bits>(); }
+    [[nodiscard]] constexpr auto poly_pressure() const noexcept { return get<poly_pressure_bits>(); }
+    [[nodiscard]] constexpr auto notes() const noexcept { return get<notes_bits>(); }
+
+    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+      set<reserved0_bits>(v);
+      return *this;
+    }
+    constexpr auto &assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
+      set<assignable_per_note_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
+      set<registered_per_note_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
+      set<per_note_pitchbend_bits>(v);
+      return *this;
+    }
+    constexpr auto &poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
+      set<poly_pressure_bits>(v);
+      return *this;
+    }
+    constexpr auto &notes(notes_bits::uinteger const v) noexcept {
+      set<notes_bits>(v);
+      return *this;
+    }
   };
 
   std::byte message_data_control;
-  union system_message system_message;
+  system_message system_message;
   std::byte reserved;
-  union channel_controller channel_controller;
-  union note_data_messages note_data_messages;
+  channel_controller channel_controller;
+  note_data_messages note_data_messages;
 };
 
 static_assert(offsetof(midi_message_report_v2, message_data_control) == 0);
@@ -1606,44 +1691,44 @@ struct midi_message_report {
 constexpr midi_message_report midi_message_report::make(packed::midi_message_report_v2 const &v2) noexcept {
   return {.message_data_control = static_cast<enum control>(v2.message_data_control),
 
-          .mtc_quarter_frame = v2.system_message.mtc_quarter_frame,
-          .song_position = v2.system_message.song_position,
-          .song_select = v2.system_message.song_select,
+          .mtc_quarter_frame = v2.system_message.mtc_quarter_frame(),
+          .song_position = v2.system_message.song_position(),
+          .song_select = v2.system_message.song_select(),
 
-          .pitchbend = v2.channel_controller.pitchbend,
-          .control_change = v2.channel_controller.control_change,
-          .rpn_registered_controller = v2.channel_controller.rpn_registered_controller,
-          .nrpn_assignable_controller = v2.channel_controller.nrpn_assignable_controller,
-          .program_change = v2.channel_controller.program_change,
-          .channel_pressure = v2.channel_controller.channel_pressure,
+          .pitchbend = v2.channel_controller.pitchbend(),
+          .control_change = v2.channel_controller.control_change(),
+          .rpn_registered_controller = v2.channel_controller.rpn_registered_controller(),
+          .nrpn_assignable_controller = v2.channel_controller.nrpn_assignable_controller(),
+          .program_change = v2.channel_controller.program_change(),
+          .channel_pressure = v2.channel_controller.channel_pressure(),
 
-          .notes = v2.note_data_messages.notes,
-          .poly_pressure = v2.note_data_messages.poly_pressure,
-          .per_note_pitchbend = v2.note_data_messages.per_note_pitchbend,
-          .registered_per_note_controller = v2.note_data_messages.registered_per_note_controller,
-          .assignable_per_note_controller = v2.note_data_messages.assignable_per_note_controller};
+          .notes = v2.note_data_messages.notes(),
+          .poly_pressure = v2.note_data_messages.poly_pressure(),
+          .per_note_pitchbend = v2.note_data_messages.per_note_pitchbend(),
+          .registered_per_note_controller = v2.note_data_messages.registered_per_note_controller(),
+          .assignable_per_note_controller = v2.note_data_messages.assignable_per_note_controller()};
 }
 
 constexpr midi_message_report::operator packed::midi_message_report_v2() const noexcept {
-  union packed::midi_message_report_v2::system_message sm {};
-  sm.mtc_quarter_frame = mtc_quarter_frame;
-  sm.song_position = song_position;
-  sm.song_select = song_select;
+  using sm_type = class packed::midi_message_report_v2::system_message;
+  auto const sm = sm_type{}.mtc_quarter_frame(mtc_quarter_frame).song_position(song_position).song_select(song_select);
 
-  union packed::midi_message_report_v2::channel_controller cc {};
-  cc.pitchbend = pitchbend;
-  cc.control_change = control_change;
-  cc.rpn_registered_controller = rpn_registered_controller;
-  cc.nrpn_assignable_controller = nrpn_assignable_controller;
-  cc.program_change = program_change;
-  cc.channel_pressure = channel_pressure;
+  using cc_type = class packed::midi_message_report_v2::channel_controller;
+  auto const cc = cc_type{}
+                      .pitchbend(pitchbend)
+                      .control_change(control_change)
+                      .rpn_registered_controller(rpn_registered_controller)
+                      .nrpn_assignable_controller(nrpn_assignable_controller)
+                      .program_change(program_change)
+                      .channel_pressure(channel_pressure);
 
-  union packed::midi_message_report_v2::note_data_messages ndm {};
-  ndm.notes = notes;
-  ndm.poly_pressure = poly_pressure;
-  ndm.per_note_pitchbend = per_note_pitchbend;
-  ndm.registered_per_note_controller = registered_per_note_controller;
-  ndm.assignable_per_note_controller = assignable_per_note_controller;
+  using ndm_type = class packed::midi_message_report_v2::note_data_messages;
+  auto const ndm = ndm_type{}
+                       .notes(notes)
+                       .poly_pressure(poly_pressure)
+                       .per_note_pitchbend(per_note_pitchbend)
+                       .registered_per_note_controller(registered_per_note_controller)
+                       .assignable_per_note_controller(assignable_per_note_controller);
 
   return {.message_data_control = static_cast<std::byte>(message_data_control),
           .system_message = sm,
@@ -1655,34 +1740,136 @@ constexpr midi_message_report::operator packed::midi_message_report_v2() const n
 namespace packed {
 
 struct midi_message_report_reply_v2 {
-  union system_message {
-    adt::bitfield<std::uint8_t, 3, 5> reserved0;
-    adt::bitfield<std::uint8_t, 2, 1> song_select;
-    adt::bitfield<std::uint8_t, 1, 1> song_position;
-    adt::bitfield<std::uint8_t, 0, 1> mtc_quarter_frame;
+  class system_message : private adt::bit_field<std::uint8_t> {
+    using reserved0_bits = adt::bit_range<3, 5>;
+    using song_select_bits = adt::bit_range<2, 1>;
+    using song_position_bits = adt::bit_range<1, 1>;
+    using mtc_quarter_frame_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto reserved0() const noexcept { return get<reserved0_bits>(); }
+    [[nodiscard]] constexpr auto song_select() const noexcept { return get<song_select_bits>(); }
+    [[nodiscard]] constexpr auto song_position() const noexcept { return get<song_position_bits>(); }
+    [[nodiscard]] constexpr auto mtc_quarter_frame() const noexcept { return get<mtc_quarter_frame_bits>(); }
+
+    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+      set<reserved0_bits>(v);
+      return *this;
+    }
+    constexpr auto &song_select(song_select_bits::uinteger const v) noexcept {
+      set<song_select_bits>(v);
+      return *this;
+    }
+    constexpr auto &song_position(song_position_bits::uinteger const v) noexcept {
+      set<song_position_bits>(v);
+      return *this;
+    }
+    constexpr auto &mtc_quarter_frame(mtc_quarter_frame_bits::uinteger const v) noexcept {
+      set<mtc_quarter_frame_bits>(v);
+      return *this;
+    }
   };
-  union channel_controller {
-    adt::bitfield<std::uint8_t, 6, 2> reserved0;
-    adt::bitfield<std::uint8_t, 5, 1> channel_pressure;
-    adt::bitfield<std::uint8_t, 4, 1> program_change;
-    adt::bitfield<std::uint8_t, 3, 1> nrpn_assignable_controller;
-    adt::bitfield<std::uint8_t, 2, 1> rpn_registered_controller;
-    adt::bitfield<std::uint8_t, 1, 1> control_change;
-    adt::bitfield<std::uint8_t, 0, 1> pitchbend;
+  class channel_controller : private adt::bit_field<std::uint8_t> {
+    using reserved0_bits = adt::bit_range<6, 2>;
+    using channel_pressure_bits = adt::bit_range<5, 1>;
+    using program_change_bits = adt::bit_range<4, 1>;
+    using nrpn_assignable_controller_bits = adt::bit_range<3, 1>;
+    using rpn_registered_controller_bits = adt::bit_range<2, 1>;
+    using control_change_bits = adt::bit_range<1, 1>;
+    using pitchbend_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto reserved0() const noexcept { return get<reserved0_bits>(); }
+    [[nodiscard]] constexpr auto channel_pressure() const noexcept { return get<channel_pressure_bits>(); }
+    [[nodiscard]] constexpr auto program_change() const noexcept { return get<program_change_bits>(); }
+    [[nodiscard]] constexpr auto nrpn_assignable_controller() const noexcept {
+      return get<nrpn_assignable_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto rpn_registered_controller() const noexcept {
+      return get<rpn_registered_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto control_change() const noexcept { return get<control_change_bits>(); }
+    [[nodiscard]] constexpr auto pitchbend() const noexcept { return get<pitchbend_bits>(); }
+
+    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+      set<reserved0_bits>(v);
+      return *this;
+    }
+    constexpr auto &channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
+      set<channel_pressure_bits>(v);
+      return *this;
+    }
+    constexpr auto &program_change(program_change_bits::uinteger const v) noexcept {
+      set<program_change_bits>(v);
+      return *this;
+    }
+    constexpr auto &nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
+      set<nrpn_assignable_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
+      set<rpn_registered_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &control_change(control_change_bits::uinteger const v) noexcept {
+      set<control_change_bits>(v);
+      return *this;
+    }
+    constexpr auto &pitchbend(pitchbend_bits::uinteger const v) noexcept {
+      set<pitchbend_bits>(v);
+      return *this;
+    }
   };
-  union note_data_messages {
-    adt::bitfield<std::uint8_t, 5, 3> reserved0;
-    adt::bitfield<std::uint8_t, 4, 1> assignable_per_note_controller;
-    adt::bitfield<std::uint8_t, 3, 1> registered_per_note_controller;
-    adt::bitfield<std::uint8_t, 2, 1> per_note_pitchbend;
-    adt::bitfield<std::uint8_t, 1, 1> poly_pressure;
-    adt::bitfield<std::uint8_t, 0, 1> notes;
+  class note_data_messages : private adt::bit_field<std::uint8_t> {
+    using reserved0_bits = adt::bit_range<5, 3>;
+    using assignable_per_note_controller_bits = adt::bit_range<4, 1>;
+    using registered_per_note_controller_bits = adt::bit_range<3, 1>;
+    using per_note_pitchbend_bits = adt::bit_range<2, 1>;
+    using poly_pressure_bits = adt::bit_range<1, 1>;
+    using notes_bits = adt::bit_range<0, 1>;
+
+  public:
+    [[nodiscard]] constexpr auto reserved0() const noexcept { return get<reserved0_bits>(); }
+    [[nodiscard]] constexpr auto assignable_per_note_controller() const noexcept {
+      return get<assignable_per_note_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto registered_per_note_controller() const noexcept {
+      return get<registered_per_note_controller_bits>();
+    }
+    [[nodiscard]] constexpr auto per_note_pitchbend() const noexcept { return get<per_note_pitchbend_bits>(); }
+    [[nodiscard]] constexpr auto poly_pressure() const noexcept { return get<poly_pressure_bits>(); }
+    [[nodiscard]] constexpr auto notes() const noexcept { return get<notes_bits>(); }
+
+    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+      set<reserved0_bits>(v);
+      return *this;
+    }
+    constexpr auto &assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
+      set<assignable_per_note_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
+      set<registered_per_note_controller_bits>(v);
+      return *this;
+    }
+    constexpr auto &per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
+      set<per_note_pitchbend_bits>(v);
+      return *this;
+    }
+    constexpr auto &poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
+      set<poly_pressure_bits>(v);
+      return *this;
+    }
+    constexpr auto &notes(notes_bits::uinteger const v) noexcept {
+      set<notes_bits>(v);
+      return *this;
+    }
   };
 
-  union system_message system_message;
+  class system_message system_message;
   std::byte reserved;
-  union channel_controller channel_controller;
-  union note_data_messages note_data_messages;
+  class channel_controller channel_controller;
+  class note_data_messages note_data_messages;
 };
 
 static_assert(offsetof(midi_message_report_reply_v2, system_message) == 0);
@@ -1723,46 +1910,44 @@ struct midi_message_report_reply {
 constexpr midi_message_report_reply midi_message_report_reply::make(
     packed::midi_message_report_reply_v2 const &v2) noexcept {
   return {
-      .mtc_quarter_frame = v2.system_message.mtc_quarter_frame,
-      .song_position = v2.system_message.song_position,
-      .song_select = v2.system_message.song_select,
+      .mtc_quarter_frame = v2.system_message.mtc_quarter_frame(),
+      .song_position = v2.system_message.song_position(),
+      .song_select = v2.system_message.song_select(),
 
-      .pitchbend = v2.channel_controller.pitchbend,
-      .control_change = v2.channel_controller.control_change,
-      .rpn_registered_controller = v2.channel_controller.rpn_registered_controller,
-      .nrpn_assignable_controller = v2.channel_controller.nrpn_assignable_controller,
-      .program_change = v2.channel_controller.program_change,
-      .channel_pressure = v2.channel_controller.channel_pressure,
+      .pitchbend = v2.channel_controller.pitchbend(),
+      .control_change = v2.channel_controller.control_change(),
+      .rpn_registered_controller = v2.channel_controller.rpn_registered_controller(),
+      .nrpn_assignable_controller = v2.channel_controller.nrpn_assignable_controller(),
+      .program_change = v2.channel_controller.program_change(),
+      .channel_pressure = v2.channel_controller.channel_pressure(),
 
-      .notes = v2.note_data_messages.notes,
-      .poly_pressure = v2.note_data_messages.poly_pressure,
-      .per_note_pitchbend = v2.note_data_messages.per_note_pitchbend,
-      .registered_per_note_controller = v2.note_data_messages.registered_per_note_controller,
-      .assignable_per_note_controller = v2.note_data_messages.assignable_per_note_controller,
+      .notes = v2.note_data_messages.notes(),
+      .poly_pressure = v2.note_data_messages.poly_pressure(),
+      .per_note_pitchbend = v2.note_data_messages.per_note_pitchbend(),
+      .registered_per_note_controller = v2.note_data_messages.registered_per_note_controller(),
+      .assignable_per_note_controller = v2.note_data_messages.assignable_per_note_controller(),
   };
 }
 constexpr midi_message_report_reply::operator packed::midi_message_report_reply_v2() const noexcept {
-  union packed::midi_message_report_reply_v2::system_message sm {};
-  sm.mtc_quarter_frame = mtc_quarter_frame;
-  sm.song_position = song_position;
-  sm.song_select = song_select;
-
-  union packed::midi_message_report_reply_v2::channel_controller cc {};
-  cc.pitchbend = pitchbend;
-  cc.control_change = control_change;
-  cc.rpn_registered_controller = rpn_registered_controller;
-  cc.nrpn_assignable_controller = nrpn_assignable_controller;
-  cc.program_change = program_change;
-  cc.channel_pressure = channel_pressure;
-
-  union packed::midi_message_report_reply_v2::note_data_messages ndm {};
-  ndm.notes = notes;
-  ndm.poly_pressure = poly_pressure;
-  ndm.per_note_pitchbend = per_note_pitchbend;
-  ndm.registered_per_note_controller = registered_per_note_controller;
-  ndm.assignable_per_note_controller = assignable_per_note_controller;
-
-  return {.system_message = sm, .reserved = std::byte{0}, .channel_controller = cc, .note_data_messages = ndm};
+  using sm_type = class packed::midi_message_report_reply_v2::system_message;
+  using cc_type = class packed::midi_message_report_reply_v2::channel_controller;
+  using ndm_type = class packed::midi_message_report_reply_v2::note_data_messages;
+  return {.system_message =
+              sm_type{}.mtc_quarter_frame(mtc_quarter_frame).song_position(song_position).song_select(song_select),
+          .reserved = std::byte{0},
+          .channel_controller = cc_type{}
+                                    .pitchbend(pitchbend)
+                                    .control_change(control_change)
+                                    .rpn_registered_controller(rpn_registered_controller)
+                                    .nrpn_assignable_controller(nrpn_assignable_controller)
+                                    .program_change(program_change)
+                                    .channel_pressure(channel_pressure),
+          .note_data_messages = ndm_type{}
+                                    .notes(notes)
+                                    .poly_pressure(poly_pressure)
+                                    .per_note_pitchbend(per_note_pitchbend)
+                                    .registered_per_note_controller(registered_per_note_controller)
+                                    .assignable_per_note_controller(assignable_per_note_controller)};
 }
 
 //*                                      _                 _  *
