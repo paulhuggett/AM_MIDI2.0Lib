@@ -51,15 +51,16 @@ using assign_test_types = Types<param<std::uint8_t, 0, 1>,  // testing bits [0,1
 TYPED_TEST_SUITE(BitFieldAssignment, assign_test_types, );
 
 TYPED_TEST(BitFieldAssignment, Signed) {
-  using value_type = typename TypeParam::value_type;
-  using br = typename TypeParam::br;
+  using value_type = TypeParam::value_type;
+  using br = TypeParam::br;
   bit_field<value_type> f1{std::numeric_limits<value_type>::max()};
-  EXPECT_EQ(f1.template get_signed<br>(), -1);
+  auto const actual = f1.template get_signed<br>();
+  EXPECT_EQ(actual, -1);
 }
 
 TYPED_TEST(BitFieldAssignment, Signed2) {
-  using value_type = typename TypeParam::value_type;
-  using br = typename TypeParam::br;
+  using value_type = TypeParam::value_type;
+  using br = TypeParam::br;
   bit_field<value_type> f1;
   EXPECT_EQ(f1.template get_signed<br>(), 0);
   f1.template set_signed<br>(-1);

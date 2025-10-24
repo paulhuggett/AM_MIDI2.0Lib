@@ -37,7 +37,7 @@ struct bit_range {
   /// \brief An unsigned integer type with at least \p Bits bits.
   using uinteger = uinteger_t<bits::value>;
   /// \brief An signed integer type with at least \p Bits + 1 bits.
-  using sinteger = std::make_signed_t<uinteger_t<bits::value + 1>>;
+  using sinteger = std::make_signed_t<uinteger_t<bits::value>>;
 };
 
 template <typename T>

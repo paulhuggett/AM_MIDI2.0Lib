@@ -177,32 +177,6 @@ enum class data128 : std::uint8_t {
 
 }  // end namespace mt
 
-/// Calls the supplied function for each of the values held by the tuple-like type
-/// \p T.
-///
-/// \tparam T  A tuple-like type. Normally one of the types defined in the midi2::ump namespace.
-/// \tparam Function  A function which is capable of accepting each of the types held by the
-///   tuple-like type \p T. Since the types are not normally compatible, this is usually a template
-///   function. Returns a value which can be cast to bool.
-/// \tparam Index  The index at which processing should start.
-/// \param message   An instance of one of the UMP message types.
-/// \param function  The function to be called for each member of the UMP message type.
-/// \returns  The result of the calling \p function which was converted to boolean true, or the
-///   last result received.
-template <typename T, typename Function, std::size_t Index = 0>
-  requires(Index < std::tuple_size_v<T> && std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
-constexpr auto apply(T const &message, Function function) {
-  auto const result = function(static_cast<std::uint32_t>(get<Index>(message)));
-  if (bool{result}) {
-    return result;
-  }
-  if constexpr (Index + 1 >= std::tuple_size_v<T>) {
-    return result;
-  } else {
-    return apply<T, Function, Index + 1>(message, std::move(function));
-  }
-}
-
 /// \brief Private implementation details of the UMP types and functions
 namespace details {
 
@@ -289,14 +263,60 @@ protected:
 
   template <adt::bit_range_type MtField, adt::bit_range_type StatusField, typename StatusType>
     requires std::is_enum_v<StatusType>
-  constexpr void check(StatusType const status) const noexcept {
-    (void)status;
-    assert(this->get<MtField>() == underlying_mt(status));
-    assert(this->get<StatusField>() == std::to_underlying(status));
+  [[nodiscard]] constexpr bool check(StatusType const status) const noexcept {
+    return this->get<MtField>() == underlying_mt(status) && this->get<StatusField>() == std::to_underlying(status);
   }
 };
 
 }  // end namespace details
+
+/// Calls the supplied function for each of the words in a UMP message of type \p T.
+///
+/// \tparam T  A message type. One of the types defined in the midi2::ump namespace.
+/// \tparam Function  A function accepting a std::uint32_t message word. Returns a value which can be cast to
+///   bool.
+/// \tparam Index  The index at which processing should start.
+/// \param message   An instance of one of the UMP message types.
+/// \param function  The function to be called for each member of the UMP message type.
+/// \returns  The result of the calling \p function which was converted to boolean true, or the
+///   last result received.
+template <typename T, typename Function, std::size_t Index = 0>
+  requires(Index < std::tuple_size_v<T> &&
+           std::derived_from<std::remove_cvref_t<decltype(get<0>(T{}))>, details::word_base> &&
+           std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
+constexpr auto apply(T const &message, Function function) {
+  auto const result = function(static_cast<std::uint32_t>(get<Index>(message)));
+  if (bool{result}) {
+    return result;
+  }
+  if constexpr (Index + 1 >= std::tuple_size_v<T>) {
+    return result;
+  } else {
+    return apply<T, Function, Index + 1>(message, std::move(function));
+  }
+}
+
+/// Calls the check() method of each word of a UMP message of type \p T.
+///
+/// This can be used to validate the internal consistency of a complete UMP message.
+///
+/// \tparam T  A message type. One of the types defined in the midi2::ump namespace.
+/// \tparam Index  The index at which processing should start.
+/// \param message   An instance of one of the UMP message types.
+/// \returns  True if each of the check() functions returns true, false otherwise.
+template <typename T, std::size_t Index = 0>
+  requires(Index < std::tuple_size_v<T> &&
+           std::derived_from<std::remove_cvref_t<decltype(get<0>(T{}))>, details::word_base>)
+constexpr bool check(T const &message) {
+  if (!get<Index>(message).check()) {
+    return false;
+  }
+  if constexpr (Index + 1 >= std::tuple_size_v<T>) {
+    return true;
+  } else {
+    return check<T, Index + 1>(message);
+  }
+}
 
 }  // end namespace midi2::ump
 
@@ -355,7 +375,7 @@ protected:
   constexpr ::midi2::ump::group::message::message(                                 \
       ::std::span<::std::uint32_t, ::std::tuple_size_v<message>> const m) noexcept \
       : words_{span_to_tuple(m)} {                                                 \
-    get<0>(words_).check();                                                        \
+    assert(get<0>(words_).check());                                                \
   }
 
 namespace midi2::ump {
@@ -401,13 +421,18 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-
-    constexpr word0() noexcept { this->init<mt, status>(ump::mt::utility::noop); }
+    static constexpr auto message = ump::mt::utility::noop;
+    constexpr word0() noexcept { this->init<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return this->word_base::check<mt, status>(message) && this->get<reserved>() == 0;
+    }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the status field for the NOOP message
     using status = adt::bit_range<20, 4>;
+
+    using reserved = adt::bit_range<0, 20>;
   };
 
   constexpr noop() noexcept = default;
@@ -433,7 +458,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::utility::jr_clock;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = adt::bit_range<28, 4>;
@@ -479,7 +504,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::utility::jr_ts;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = adt::bit_range<28, 4>;
@@ -525,7 +550,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::utility::delta_clock_tick;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = adt::bit_range<28, 4>;
@@ -569,7 +594,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::utility::delta_clock_since;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0.
     using mt = adt::bit_range<28, 4>;
@@ -643,7 +668,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::system_crt::timing_code;
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::timing_code); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
     using mt = adt::bit_range<28U, 4U>;
@@ -691,7 +716,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::system_crt::spp;
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::spp); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1
     using mt = adt::bit_range<28, 4>;
@@ -738,7 +763,7 @@ public:
     static constexpr auto message = ump::mt::system_crt::song_select;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -786,7 +811,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = mt::system_crt::tune_request;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -827,7 +852,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = mt::system_crt::timing_clock;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -868,7 +893,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = mt::system_crt::sequence_start;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -909,7 +934,7 @@ public:
     static constexpr auto message = ump::mt::system_crt::sequence_continue;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -949,7 +974,7 @@ public:
     static constexpr auto message = ump::mt::system_crt::sequence_stop;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -990,7 +1015,7 @@ public:
     static constexpr auto message = ump::mt::system_crt::active_sensing;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -1030,7 +1055,7 @@ public:
     static constexpr auto message = ump::mt::system_crt::system_reset;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x1.
     using mt = adt::bit_range<28, 4>;
@@ -1102,7 +1127,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::note_on;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1148,7 +1173,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::note_off;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1194,7 +1219,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::poly_pressure;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1240,7 +1265,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::cc;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1288,7 +1313,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::program_change;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1332,7 +1357,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::channel_pressure;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1376,7 +1401,7 @@ public:
     static constexpr auto message = ump::mt::m1cvm::pitch_bend;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x2 (MIDI 1.0 Channel Voice).
     using mt = adt::bit_range<28, 4>;
@@ -1443,7 +1468,7 @@ public:
     static constexpr auto message = Status;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field.
     using mt = adt::bit_range<28, 4>;
@@ -1459,6 +1484,7 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using reserved0 = adt::bit_range<31, 1>;
     using data2 = adt::bit_range<24, 7>;
@@ -1472,7 +1498,7 @@ public:
 
   constexpr sysex7() noexcept = default;
   constexpr explicit sysex7(std::span<std::uint32_t, 2> const m) noexcept : words_{span_to_tuple(m)} {
-    get<0>(words_).check();
+    assert(get<0>(words_).check());
   }
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
 
@@ -1574,7 +1600,7 @@ public:
     static constexpr auto message = mt::m2cvm::note_off;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit range of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1591,6 +1617,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using velocity = adt::bit_range<16, 16>;
     using attribute = adt::bit_range<0, 16>;
@@ -1628,7 +1655,7 @@ public:
     static constexpr auto message = mt::m2cvm::note_on;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1643,6 +1670,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using velocity = adt::bit_range<16, 16>;
     using attribute = adt::bit_range<0, 16>;
@@ -1680,7 +1708,7 @@ public:
     static constexpr auto message = mt::m2cvm::poly_pressure;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1695,6 +1723,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using pressure = adt::bit_range<0, 32>;
   };
 
@@ -1728,7 +1757,7 @@ public:
     static constexpr auto message = mt::m2cvm::rpn_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1743,6 +1772,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -1778,7 +1808,7 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1793,6 +1823,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -1833,7 +1864,7 @@ public:
     static constexpr auto message = mt::m2cvm::rpn;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1849,6 +1880,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -1883,7 +1915,7 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1899,6 +1931,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -1933,7 +1966,7 @@ public:
     static constexpr auto message = mt::m2cvm::rpn_relative;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1949,6 +1982,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -1983,7 +2017,7 @@ public:
     static constexpr auto message = mt::m2cvm::nrpn_relative;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -1999,6 +2033,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2036,7 +2071,7 @@ public:
     static constexpr auto message = mt::m2cvm::per_note_manage;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2053,6 +2088,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2090,7 +2126,7 @@ public:
     static constexpr auto message = mt::m2cvm::cc;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2105,6 +2141,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2140,7 +2177,7 @@ public:
     static constexpr auto message = mt::m2cvm::program_change;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2155,6 +2192,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using program = adt::bit_range<24, 8>;
     using reserved0 = adt::bit_range<16, 8>;
@@ -2197,7 +2235,7 @@ public:
     static constexpr auto message = mt::m2cvm::channel_pressure;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->midi2::ump::details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2211,6 +2249,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2243,7 +2282,7 @@ public:
     static constexpr auto message = mt::m2cvm::pitch_bend;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2257,6 +2296,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2289,7 +2329,7 @@ public:
     static constexpr auto message = mt::m2cvm::pitch_bend_per_note;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
@@ -2304,6 +2344,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
 
@@ -2370,7 +2411,7 @@ public:
     static constexpr auto message = mt::stream::endpoint_discovery;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2382,17 +2423,20 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using reserved = adt::bit_range<8, 24>;
     using filter = adt::bit_range<0, 8>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -2428,7 +2472,7 @@ public:
     static constexpr auto message = mt::stream::endpoint_info_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2440,6 +2484,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using static_function_blocks = adt::bit_range<31, 1>;
     using number_function_blocks = adt::bit_range<24, 7>;
     using reserved0 = adt::bit_range<10, 14>;
@@ -2452,11 +2498,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -2500,7 +2550,7 @@ public:
     static constexpr auto message = mt::stream::device_identity_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2511,6 +2561,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using reserved0 = adt::bit_range<24, 8>;
     using reserved1 = adt::bit_range<23, 1>;
     using dev_manuf_sysex_id_1 = adt::bit_range<16, 7>;  // device manufacturer sysex id byte 1
@@ -2522,6 +2574,8 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using reserved0 = adt::bit_range<31, 1>;
     using device_family_lsb = adt::bit_range<24, 7>;
     using reserved1 = adt::bit_range<23, 1>;
@@ -2534,6 +2588,8 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using reserved0 = adt::bit_range<31, 1>;
     using sw_revision_1 = adt::bit_range<24, 7>;  // Software revision level byte 1
     using reserved1 = adt::bit_range<23, 1>;
@@ -2585,7 +2641,7 @@ public:
     static constexpr auto message = mt::stream::endpoint_name_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2597,6 +2653,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name3 = adt::bit_range<24, 8>;
     using name4 = adt::bit_range<16, 8>;
     using name5 = adt::bit_range<8, 8>;
@@ -2605,6 +2663,8 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name7 = adt::bit_range<24, 8>;
     using name8 = adt::bit_range<16, 8>;
     using name9 = adt::bit_range<8, 8>;
@@ -2613,6 +2673,8 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name11 = adt::bit_range<24, 8>;
     using name12 = adt::bit_range<16, 8>;
     using name13 = adt::bit_range<8, 8>;
@@ -2663,7 +2725,7 @@ public:
     static constexpr auto message = mt::stream::product_instance_id_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2675,6 +2737,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using pid3 = adt::bit_range<24, 8>;
     using pid4 = adt::bit_range<16, 8>;
     using pid5 = adt::bit_range<8, 8>;
@@ -2683,6 +2747,8 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using pid7 = adt::bit_range<24, 8>;
     using pid8 = adt::bit_range<16, 8>;
     using pid9 = adt::bit_range<8, 8>;
@@ -2691,6 +2757,8 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using pid11 = adt::bit_range<24, 8>;
     using pid12 = adt::bit_range<16, 8>;
     using pid13 = adt::bit_range<8, 8>;
@@ -2743,7 +2811,7 @@ public:
     static constexpr auto message = mt::stream::jr_configuration_request;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2757,16 +2825,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -2807,7 +2881,7 @@ public:
     static constexpr auto message = mt::stream::jr_configuration_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2821,16 +2895,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -2871,7 +2951,7 @@ public:
     static constexpr auto message = mt::stream::function_block_discovery;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2883,16 +2963,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -2931,7 +3017,7 @@ public:
     static constexpr auto message = mt::stream::function_block_info_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -2947,6 +3033,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using first_group = adt::bit_range<24, 8>;
     using num_spanned = adt::bit_range<16, 8>;
     using ci_message_version = adt::bit_range<8, 8>;
@@ -2955,11 +3043,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3004,7 +3096,7 @@ public:
     static constexpr auto message = mt::stream::function_block_name_notification;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -3016,6 +3108,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name1 = adt::bit_range<24, 8>;
     using name2 = adt::bit_range<16, 8>;
     using name3 = adt::bit_range<8, 8>;
@@ -3024,6 +3118,8 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name5 = adt::bit_range<24, 8>;
     using name6 = adt::bit_range<16, 8>;
     using name7 = adt::bit_range<8, 8>;
@@ -3032,6 +3128,8 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using name9 = adt::bit_range<24, 8>;
     using name10 = adt::bit_range<16, 8>;
     using name11 = adt::bit_range<8, 8>;
@@ -3082,7 +3180,7 @@ public:
     static constexpr auto message = mt::stream::start_of_clip;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -3093,16 +3191,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3136,7 +3240,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::stream::end_of_clip;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xF.
     using mt = adt::bit_range<28, 4>;
@@ -3147,16 +3251,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3219,7 +3329,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::flex_data::set_tempo;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = adt::bit_range<28, 4>;
@@ -3234,16 +3344,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3281,7 +3397,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::flex_data::set_time_signature;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = adt::bit_range<28, 4>;
@@ -3296,6 +3412,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using numerator = adt::bit_range<24, 8>;
     using denominator = adt::bit_range<16, 8>;
@@ -3305,11 +3422,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3349,7 +3470,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::flex_data::set_metronome;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = adt::bit_range<28, 4>;
@@ -3364,6 +3485,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using num_clocks_per_primary_click = adt::bit_range<24, 8>;
     using bar_accent_part_1 = adt::bit_range<16, 8>;
@@ -3373,6 +3495,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using num_subdivision_clicks_1 = adt::bit_range<24, 8>;
     using num_subdivision_clicks_2 = adt::bit_range<16, 8>;
@@ -3381,6 +3504,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using value3 = adt::bit_range<0, 32>;
   };
@@ -3481,7 +3605,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::flex_data::set_key_signature;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = adt::bit_range<28, 4>;
@@ -3496,6 +3620,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using sharps_flats = adt::bit_range<28, 4>;
     using tonic_note = adt::bit_range<24, 4>;
     using reserved0 = adt::bit_range<0, 24>;
@@ -3503,11 +3629,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3547,7 +3677,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::flex_data::set_chord_name;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->details::word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
     using mt = adt::bit_range<28, 4>;
@@ -3565,6 +3695,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using tonic_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
     using chord_tonic = adt::bit_range<24, 4>;
@@ -3578,6 +3709,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using alter_3_type = adt::bit_range<28, 4>;
     using alter_3_degree = adt::bit_range<24, 4>;
@@ -3589,6 +3721,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using bass_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
     using bass_note = adt::bit_range<24, 4>;
@@ -3647,8 +3780,8 @@ public:
   public:
     using word_base::word_base;
     constexpr word0() noexcept { this->set<mt>(std::to_underlying(ump::message_type::flex_data)); }
-    constexpr void check() const noexcept {
-      assert(this->get<mt>() == std::to_underlying(ump::message_type::flex_data));
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return this->get<mt>() == std::to_underlying(ump::message_type::flex_data);
     }
 
     /// Defines the bit position of the mt (message-type) field. Always 0xD.
@@ -3664,16 +3797,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3752,7 +3891,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = Status;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
@@ -3765,6 +3904,7 @@ public:
   class word1 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data1 = adt::bit_range<24, 8>;
     using data2 = adt::bit_range<16, 8>;
@@ -3774,6 +3914,7 @@ public:
   class word2 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data5 = adt::bit_range<24, 8>;
     using data6 = adt::bit_range<16, 8>;
@@ -3783,6 +3924,7 @@ public:
   class word3 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data9 = adt::bit_range<24, 8>;
     using data10 = adt::bit_range<16, 8>;
@@ -3792,7 +3934,7 @@ public:
 
   constexpr sysex8() noexcept = default;
   constexpr explicit sysex8(std::span<std::uint32_t, 4> const m) noexcept : words_{span_to_tuple(m)} {
-    get<0>(words_).check();
+    assert(get<0>(words_).check());
   }
   friend constexpr bool operator==(sysex8 const &, sysex8 const &) noexcept = default;
 
@@ -3862,7 +4004,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = ump::mt::data128::mixed_data_set_header;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
@@ -3874,6 +4016,7 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using chunks_in_mds = adt::bit_range<16, 16>;
     using chunk_num = adt::bit_range<0, 16>;
@@ -3881,6 +4024,7 @@ public:
   class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using manufacturer_id = adt::bit_range<16, 16>;
     using device_id = adt::bit_range<0, 16>;
@@ -3888,6 +4032,7 @@ public:
   class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using sub_id_1 = adt::bit_range<16, 16>;
     using sub_id_2 = adt::bit_range<0, 16>;
@@ -3932,7 +4077,7 @@ public:
     using word_base::word_base;
     static constexpr auto message = midi2::ump::mt::data128::mixed_data_set_payload;
     constexpr word0() noexcept { this->init<mt, status>(message); }
-    constexpr void check() const noexcept { this->word_base::check<mt, status>(message); }
+    [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
     using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
@@ -3945,18 +4090,23 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value1 = adt::bit_range<0, 32>;
   };
   /// \brief The third 32-bit word of an MDS payload message
   class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+
     using value2 = adt::bit_range<0, 32>;
   };
   /// \brief The fourth 32-bit word of an MDS payload message
   class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value3 = adt::bit_range<0, 32>;
   };
 

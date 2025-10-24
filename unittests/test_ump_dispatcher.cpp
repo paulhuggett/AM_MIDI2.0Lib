@@ -33,14 +33,7 @@ using testing::ElementsAre;
 using testing::InSequence;
 using testing::StrictMock;
 
-class fake_message {
-public:
-  constexpr explicit fake_message(std::uint32_t v) noexcept : v_{v} {}
-  [[nodiscard]] constexpr explicit operator std::uint32_t() const noexcept { return v_; }
-
-private:
-  std::uint32_t v_;
-};
+using fake_message = midi2::ump::utility::noop::word0;
 
 TEST(UMPApply, AlwaysTrue) {
   std::vector<std::uint32_t> values;
