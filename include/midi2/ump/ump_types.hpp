@@ -41,7 +41,7 @@ template <typename T, std::size_t N> constexpr auto span_to_tuple(std::span<T, N
   return impl(s, std::make_index_sequence<N>{});
 }
 
-#define UMP_MESSAGE_TYPES       \
+#define MIDI2_UMP_MESSAGE_TYPES \
   MIDI2_X(utility, 0x00)        \
   MIDI2_X(system, 0x01)         \
   MIDI2_X(m1cvm, 0x02)          \
@@ -60,7 +60,7 @@ template <typename T, std::size_t N> constexpr auto span_to_tuple(std::span<T, N
   MIDI2_X(stream, 0x0F)
 
 #define MIDI2_X(a, b) a = (b),
-enum class message_type : std::uint8_t { UMP_MESSAGE_TYPES };
+enum class message_type : std::uint8_t { MIDI2_UMP_MESSAGE_TYPES };
 #undef MIDI2_X
 
 /// Collects the enumerations that define the values for the UMP "mt" (message type) field
@@ -321,11 +321,11 @@ constexpr bool check(T const &message) {
 }  // end namespace midi2::ump
 
 /// Creates a "getter" member function for classes derived from midi2::ump::details::word_base.
-#define UMP_GETTER(word, field)                                         \
+#define MIDI2_UMP_GETTER(word, field)                                   \
   constexpr auto field() const noexcept {                               \
     return std::get<word>(words_).template get<typename word::field>(); \
   }
-#define UMP_GETTER_ENUM(word, field, enumeration)                                                   \
+#define MIDI2_UMP_GETTER_ENUM(word, field, enumeration)                                             \
   constexpr auto field##_raw() const noexcept {                                                     \
     return std::get<word>(words_).template get_enum_field_raw<typename word::field, enumeration>(); \
   }                                                                                                 \
@@ -334,31 +334,31 @@ constexpr bool check(T const &message) {
   }
 
 /// Creates a "setter" member function for classes derived from midi2::ump::details::word_base.
-#define UMP_SETTER(word, field)                                                       \
+#define MIDI2_UMP_SETTER(word, field)                                                 \
   constexpr auto &field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
     std::get<word>(words_).template set<typename word::field>(v);                     \
     return *this;                                                                     \
   }
-#define UMP_SETTER_ENUM(word, field, enumeration)                                         \
+#define MIDI2_UMP_SETTER_ENUM(word, field, enumeration)                                   \
   constexpr auto &field(enum enumeration const v) noexcept {                              \
     std::get<word>(words_).template set_enum_field<typename word::field, enumeration>(v); \
     return *this;                                                                         \
   }
 
 /// Creates both "getter" and "setter" member functions for classes derived from midi2::ump::details::word_base.
-#define UMP_GETTER_SETTER(word, field) \
-  UMP_GETTER(word, field)              \
-  UMP_SETTER(word, field)
-#define UMP_GETTER_SETTER_ENUM(word, field, enumeration) \
-  UMP_GETTER_ENUM(word, field, enumeration)              \
-  UMP_SETTER_ENUM(word, field, enumeration)
+#define MIDI2_UMP_GETTER_SETTER(word, field) \
+  MIDI2_UMP_GETTER(word, field)              \
+  MIDI2_UMP_SETTER(word, field)
+#define MIDI2_UMP_GETTER_SETTER_ENUM(word, field, enumeration) \
+  MIDI2_UMP_GETTER_ENUM(word, field, enumeration)              \
+  MIDI2_UMP_SETTER_ENUM(word, field, enumeration)
 
 /// This macro is used to generate boilerplate definitions of three items for the class specified by the \p group
 /// and \p message parameters:
 /// 1. A specialization of std::tuple_size<>
 /// 2. A specialization of std::tuple_element<>
 /// 3. A static assertion that the tuple size for the class matches that of the group as a whole
-#define UMP_TUPLE(group, message)                                                                                    \
+#define MIDI2_UMP_TUPLE(group, message)                                                                              \
   template <>                                                                                                        \
   struct std::tuple_size<::midi2::ump::group::message> /* NOLINT(cert-dcl58-cpp] */                                  \
       : std::integral_constant<std::size_t, std::tuple_size_v<decltype(::midi2::ump::group::message::words_)>> {};   \
@@ -371,7 +371,7 @@ constexpr bool check(T const &message) {
 /// Defines a constructor for the class specified by the \p group and \p message parameters which takes a span of
 /// std::uint32_t with a size equal to the number of words in the message. The constructor initialises the message from
 /// the span and checks that the message type and status fields are correct.
-#define SPAN_CTOR(group, message)                                                  \
+#define MIDI2_SPAN_CTOR(group, message)                                            \
   constexpr ::midi2::ump::group::message::message(                                 \
       ::std::span<::std::uint32_t, ::std::tuple_size_v<message>> const m) noexcept \
       : words_{span_to_tuple(m)} {                                                 \
@@ -446,7 +446,7 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
+MIDI2_UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
 
 // 7.2.2.1 JR Clock Message
 /// \brief The JR Clock message (section 7.2.2.1)
@@ -479,9 +479,9 @@ public:
   constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, sender_clock_time)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, sender_clock_time)
 
 private:
   friend struct ::std::tuple_size<jr_clock>;
@@ -491,8 +491,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_clock
-SPAN_CTOR(utility, jr_clock)  // Define the span constructor for jr_clock
+MIDI2_UMP_TUPLE(utility, jr_clock)  // Define tuple_size and tuple_element for jr_clock
+MIDI2_SPAN_CTOR(utility, jr_clock)  // Define the span constructor for jr_clock
 
 // 7.2.2.2 Jitter-Reduction Timestamp Message
 /// \brief The Jitter-Reduction Timestamp message (section 7.2.2.2)
@@ -525,9 +525,9 @@ public:
   constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, timestamp)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, timestamp)
 
 private:
   friend struct ::std::tuple_size<jr_timestamp>;
@@ -537,8 +537,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(utility, jr_timestamp)  // Define tuple_size and tuple_element for jr_timestamp
-SPAN_CTOR(utility, jr_timestamp)  // Define the span constructor for jr_timestamp
+MIDI2_UMP_TUPLE(utility, jr_timestamp)  // Define tuple_size and tuple_element for jr_timestamp
+MIDI2_SPAN_CTOR(utility, jr_timestamp)  // Define the span constructor for jr_timestamp
 
 // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
 /// \brief The Delta Clockstamp Ticks Per Quarter Note (TPQN) message
@@ -570,9 +570,9 @@ public:
   constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, ticks_pqn)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, ticks_pqn)
 
 private:
   friend struct ::std::tuple_size<delta_clockstamp_tpqn>;
@@ -582,8 +582,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(utility, delta_clockstamp_tpqn)  // Define tuple_size and tuple_element for delta_clockstamp_tpqn
-SPAN_CTOR(utility, delta_clockstamp_tpqn)  // Define the span constructor for delta_clockstamp_tpqn
+MIDI2_UMP_TUPLE(utility, delta_clockstamp_tpqn)  // Define tuple_size and tuple_element for delta_clockstamp_tpqn
+MIDI2_SPAN_CTOR(utility, delta_clockstamp_tpqn)  // Define the span constructor for delta_clockstamp_tpqn
 
 /// \brief The Delta Clockstamp (DC): Ticks Since Last Event message
 class midi2::ump::utility::delta_clockstamp {
@@ -611,9 +611,9 @@ public:
   constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, ticks_per_quarter_note)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, ticks_per_quarter_note)
 
 private:
   friend struct ::std::tuple_size<delta_clockstamp>;
@@ -623,8 +623,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for delta_clockstamp
-SPAN_CTOR(utility, delta_clockstamp)  // Define the span constructor for delta_clockstamp
+MIDI2_UMP_TUPLE(utility, delta_clockstamp)  // Define tuple_size and tuple_element for delta_clockstamp
+MIDI2_SPAN_CTOR(utility, delta_clockstamp)  // Define the span constructor for delta_clockstamp
 
 //*             _              *
 //*  ____  _ __| |_ ___ _ __   *
@@ -692,10 +692,10 @@ public:
   constexpr explicit midi_time_code(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, time_code)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, time_code)
 
 private:
   friend struct ::std::tuple_size<midi_time_code>;
@@ -705,8 +705,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, midi_time_code)  // Define tuple_size and tuple_element for midi_time_code
-SPAN_CTOR(system, midi_time_code)  // Define the span constructor for midi_time_code
+MIDI2_UMP_TUPLE(system, midi_time_code)  // Define tuple_size and tuple_element for midi_time_code
+MIDI2_SPAN_CTOR(system, midi_time_code)  // Define the span constructor for midi_time_code
 
 /// \brief The contents of the MIDI song position pointer message
 class midi2::ump::system::song_position_pointer {
@@ -737,11 +737,11 @@ public:
   constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, position_lsb)
-  UMP_GETTER_SETTER(word0, position_msb)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, position_lsb)
+  MIDI2_UMP_GETTER_SETTER(word0, position_msb)
 
 private:
   friend struct ::std::tuple_size<song_position_pointer>;
@@ -751,8 +751,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, song_position_pointer)  // Define tuple_size and tuple_element for song_position_pointer
-SPAN_CTOR(system, song_position_pointer)  // Define the span constructor for song_position_pointer
+MIDI2_UMP_TUPLE(system, song_position_pointer)  // Define tuple_size and tuple_element for song_position_pointer
+MIDI2_SPAN_CTOR(system, song_position_pointer)  // Define the span constructor for song_position_pointer
 
 /// \brief The contents of the MIDI song select message
 class midi2::ump::system::song_select {
@@ -786,10 +786,10 @@ public:
   constexpr explicit song_select(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_select const &, song_select const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, song)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, song)
 
 private:
   friend struct ::std::tuple_size<song_select>;
@@ -799,8 +799,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, song_select)  // Define tuple_size and tuple_element for song_select
-SPAN_CTOR(system, song_select)  // Define the span constructor for song_select
+MIDI2_UMP_TUPLE(system, song_select)  // Define tuple_size and tuple_element for song_select
+MIDI2_SPAN_CTOR(system, song_select)  // Define the span constructor for song_select
 
 /// \brief The contents of the MIDI tune-request message
 class midi2::ump::system::tune_request {
@@ -828,9 +828,9 @@ public:
   constexpr explicit tune_request(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<tune_request>;
@@ -840,8 +840,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, tune_request)  // Define tuple_size and tuple_element for tune_request
-SPAN_CTOR(system, tune_request)  // Define the span constructor for tune_request
+MIDI2_UMP_TUPLE(system, tune_request)  // Define tuple_size and tuple_element for tune_request
+MIDI2_SPAN_CTOR(system, tune_request)  // Define the span constructor for tune_request
 
 //
 class midi2::ump::system::timing_clock {
@@ -869,9 +869,9 @@ public:
   constexpr explicit timing_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(timing_clock const &, timing_clock const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<timing_clock>;
@@ -881,8 +881,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, timing_clock)  // Define tuple_size and tuple_element for timing_clock
-SPAN_CTOR(system, timing_clock)  // Define the span constructor for timing_clock
+MIDI2_UMP_TUPLE(system, timing_clock)  // Define tuple_size and tuple_element for timing_clock
+MIDI2_SPAN_CTOR(system, timing_clock)  // Define the span constructor for timing_clock
 
 /// \brief Defines the MIDI sequence-start message
 class midi2::ump::system::sequence_start {
@@ -910,9 +910,9 @@ public:
   constexpr explicit sequence_start(std::span<std::uint32_t, 1> w0) noexcept;
   friend constexpr bool operator==(sequence_start const &, sequence_start const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<sequence_start>;
@@ -922,8 +922,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, sequence_start)  // Define tuple_size and tuple_element for sequence_start
-SPAN_CTOR(system, sequence_start)  // Define the span constructor for sequence_start
+MIDI2_UMP_TUPLE(system, sequence_start)  // Define tuple_size and tuple_element for sequence_start
+MIDI2_SPAN_CTOR(system, sequence_start)  // Define the span constructor for sequence_start
 
 /// \brief Defines the MIDI sequence-continue message
 class midi2::ump::system::sequence_continue {
@@ -951,9 +951,9 @@ public:
   constexpr explicit sequence_continue(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<sequence_continue>;
@@ -963,8 +963,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, sequence_continue)  // Define tuple_size and tuple_element for sequence_continue
-SPAN_CTOR(system, sequence_continue)  // Define the span constructor for sequence_continue
+MIDI2_UMP_TUPLE(system, sequence_continue)  // Define tuple_size and tuple_element for sequence_continue
+MIDI2_SPAN_CTOR(system, sequence_continue)  // Define the span constructor for sequence_continue
 
 /// \brief Defines the MIDI sequence-stop message
 class midi2::ump::system::sequence_stop {
@@ -991,9 +991,9 @@ public:
   constexpr explicit sequence_stop(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<sequence_stop>;
@@ -1004,8 +1004,8 @@ private:
   std::tuple<word0> words_;
 };
 
-UMP_TUPLE(system, sequence_stop)  // Define tuple_size and tuple_element for sequence_stop
-SPAN_CTOR(system, sequence_stop)  // Define the span constructor for sequence_stop
+MIDI2_UMP_TUPLE(system, sequence_stop)  // Define tuple_size and tuple_element for sequence_stop
+MIDI2_SPAN_CTOR(system, sequence_stop)  // Define the span constructor for sequence_stop
 
 /// \brief Defines the MIDI active-sensing message
 class midi2::ump::system::active_sensing {
@@ -1032,9 +1032,9 @@ public:
   constexpr explicit active_sensing(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(active_sensing const &, active_sensing const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<active_sensing>;
@@ -1044,8 +1044,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, active_sensing)  // Define tuple_size and tuple_element for active_sensing
-SPAN_CTOR(system, active_sensing)  // Define the span constructor for active_sensing
+MIDI2_UMP_TUPLE(system, active_sensing)  // Define tuple_size and tuple_element for active_sensing
+MIDI2_SPAN_CTOR(system, active_sensing)  // Define the span constructor for active_sensing
 
 /// \brief Defines the MIDI reset message
 class midi2::ump::system::reset {
@@ -1072,9 +1072,9 @@ public:
   constexpr explicit reset(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(reset const &, reset const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
 
 private:
   friend struct ::std::tuple_size<reset>;
@@ -1084,8 +1084,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for system/reset
-SPAN_CTOR(system, reset)  // Define the span constructor for system/reset
+MIDI2_UMP_TUPLE(system, reset)  // Define tuple_size and tuple_element for system/reset
+MIDI2_SPAN_CTOR(system, reset)  // Define the span constructor for system/reset
 
 //*        _                 *
 //*  _ __ / |  ____ ___ __   *
@@ -1147,12 +1147,12 @@ public:
   constexpr explicit note_on(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_on const &, note_on const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, velocity)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, velocity)
 
 private:
   friend struct ::std::tuple_size<note_on>;
@@ -1162,8 +1162,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, note_on)  // Define tuple_size and tuple_element for m1cvm/note_on
-SPAN_CTOR(m1cvm, note_on)  // Define the span constructor for m1cvm/note_on
+MIDI2_UMP_TUPLE(m1cvm, note_on)  // Define tuple_size and tuple_element for m1cvm/note_on
+MIDI2_SPAN_CTOR(m1cvm, note_on)  // Define the span constructor for m1cvm/note_on
 
 // 7.3.1 MIDI 1.0 Note Off Message
 class midi2::ump::m1cvm::note_off {
@@ -1193,12 +1193,12 @@ public:
   constexpr explicit note_off(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, velocity)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, velocity)
 
 private:
   friend struct ::std::tuple_size<note_off>;
@@ -1208,8 +1208,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
-SPAN_CTOR(m1cvm, note_off)  // Define the span constructor for m1cvm/note_off
+MIDI2_UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
+MIDI2_SPAN_CTOR(m1cvm, note_off)  // Define the span constructor for m1cvm/note_off
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
 class midi2::ump::m1cvm::poly_pressure {
@@ -1239,12 +1239,12 @@ public:
   constexpr explicit poly_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, pressure)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, pressure)
 
 private:
   friend struct ::std::tuple_size<poly_pressure>;
@@ -1254,8 +1254,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
-SPAN_CTOR(m1cvm, poly_pressure)  // Define the span constructor for m1cvm/poly_pressure
+MIDI2_UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
+MIDI2_SPAN_CTOR(m1cvm, poly_pressure)  // Define the span constructor for m1cvm/poly_pressure
 
 // 7.3.4 MIDI 1.0 Control Change Message
 class midi2::ump::m1cvm::control_change {
@@ -1285,12 +1285,12 @@ public:
   constexpr explicit control_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, controller)
-  UMP_GETTER_SETTER(word0, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, controller)
+  MIDI2_UMP_GETTER_SETTER(word0, value)
 
   constexpr auto &controller(ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
@@ -1302,8 +1302,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
-SPAN_CTOR(m1cvm, control_change)  // Define the span constructor for m1cvm/control_change
+MIDI2_UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
+MIDI2_SPAN_CTOR(m1cvm, control_change)  // Define the span constructor for m1cvm/control_change
 
 // 7.3.5 MIDI 1.0 Program Change Message
 class midi2::ump::m1cvm::program_change {
@@ -1332,11 +1332,11 @@ public:
   constexpr explicit program_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, program)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, program)
 
 private:
   friend struct ::std::tuple_size<program_change>;
@@ -1346,8 +1346,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, program_change)  // Define tuple_size and tuple_element for m1cvm/program_change
-SPAN_CTOR(m1cvm, program_change)  // Define the span constructor for m1cvm/program_change
+MIDI2_UMP_TUPLE(m1cvm, program_change)  // Define tuple_size and tuple_element for m1cvm/program_change
+MIDI2_SPAN_CTOR(m1cvm, program_change)  // Define the span constructor for m1cvm/program_change
 
 // 7.3.6 MIDI 1.0 Channel Pressure Message
 class midi2::ump::m1cvm::channel_pressure {
@@ -1376,11 +1376,11 @@ public:
   constexpr explicit channel_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, data)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, data)
 
 private:
   friend struct ::std::tuple_size<channel_pressure>;
@@ -1390,8 +1390,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
-SPAN_CTOR(m1cvm, channel_pressure)  // Define the span constructor for m1cvm/channel_pressure
+MIDI2_UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
+MIDI2_SPAN_CTOR(m1cvm, channel_pressure)  // Define the span constructor for m1cvm/channel_pressure
 
 // 7.3.7 MIDI 1.0 Pitch Bend Message
 class midi2::ump::m1cvm::pitch_bend {
@@ -1420,12 +1420,12 @@ public:
   constexpr explicit pitch_bend(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, lsb_data)
-  UMP_GETTER_SETTER(word0, msb_data)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, lsb_data)
+  MIDI2_UMP_GETTER_SETTER(word0, msb_data)
 
 private:
   friend struct ::std::tuple_size<pitch_bend>;
@@ -1435,8 +1435,8 @@ private:
 
   std::tuple<word0> words_;
 };
-UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/pitch_bend
-SPAN_CTOR(m1cvm, pitch_bend)  // Define the span constructor for m1cvm/pitch_bend
+MIDI2_UMP_TUPLE(m1cvm, pitch_bend)  // Define tuple_size and tuple_element for m1cvm/pitch_bend
+MIDI2_SPAN_CTOR(m1cvm, pitch_bend)  // Define the span constructor for m1cvm/pitch_bend
 
 //*     _      _         __ _ _   *
 //*  __| |__ _| |_ __ _ / /| | |  *
@@ -1502,16 +1502,16 @@ public:
   }
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, number_of_bytes)
-  UMP_GETTER_SETTER(word0, data0)
-  UMP_GETTER_SETTER(word0, data1)
-  UMP_GETTER_SETTER(word1, data2)
-  UMP_GETTER_SETTER(word1, data3)
-  UMP_GETTER_SETTER(word1, data4)
-  UMP_GETTER_SETTER(word1, data5)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, number_of_bytes)
+  MIDI2_UMP_GETTER_SETTER(word0, data0)
+  MIDI2_UMP_GETTER_SETTER(word0, data1)
+  MIDI2_UMP_GETTER_SETTER(word1, data2)
+  MIDI2_UMP_GETTER_SETTER(word1, data3)
+  MIDI2_UMP_GETTER_SETTER(word1, data4)
+  MIDI2_UMP_GETTER_SETTER(word1, data5)
 
 private:
   friend struct ::std::tuple_size<sysex7>;
@@ -1627,14 +1627,14 @@ public:
   constexpr explicit note_off(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(note_off const &a, note_off const &b) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, attribute_type)
-  UMP_GETTER_SETTER(word1, velocity)
-  UMP_GETTER_SETTER(word1, attribute)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, attribute_type)
+  MIDI2_UMP_GETTER_SETTER(word1, velocity)
+  MIDI2_UMP_GETTER_SETTER(word1, attribute)
 
 private:
   friend struct ::std::tuple_size<note_off>;
@@ -1644,8 +1644,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, note_off)  // Define tuple_size and tuple_element for m2cvm/note_off
-SPAN_CTOR(m2cvm, note_off)  // Define the span constructor for m2cvm/note_off
+MIDI2_UMP_TUPLE(m2cvm, note_off)  // Define tuple_size and tuple_element for m2cvm/note_off
+MIDI2_SPAN_CTOR(m2cvm, note_off)  // Define the span constructor for m2cvm/note_off
 
 // 7.4.2 MIDI 2.0 Note On Message
 class midi2::ump::m2cvm::note_on {
@@ -1680,14 +1680,14 @@ public:
   constexpr explicit note_on(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(note_on const &a, note_on const &b) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, attribute_type)
-  UMP_GETTER_SETTER(word1, velocity)
-  UMP_GETTER_SETTER(word1, attribute)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, attribute_type)
+  MIDI2_UMP_GETTER_SETTER(word1, velocity)
+  MIDI2_UMP_GETTER_SETTER(word1, attribute)
 
 private:
   friend struct ::std::tuple_size<note_on>;
@@ -1697,8 +1697,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, note_on)  // Define tuple_size and tuple_element for m2cvm/note_on
-SPAN_CTOR(m2cvm, note_on)  // Define the span constructor for m2cvm/note_on
+MIDI2_UMP_TUPLE(m2cvm, note_on)  // Define tuple_size and tuple_element for m2cvm/note_on
+MIDI2_SPAN_CTOR(m2cvm, note_on)  // Define the span constructor for m2cvm/note_on
 
 // 7.4.3 MIDI 2.0 Poly Pressure Message
 class midi2::ump::m2cvm::poly_pressure {
@@ -1731,12 +1731,12 @@ public:
   constexpr explicit poly_pressure(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word1, pressure)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word1, pressure)
 
 private:
   friend struct ::std::tuple_size<poly_pressure>;
@@ -1746,8 +1746,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, poly_pressure)  // Define tuple_size and tuple_element for m2cvm/poly_pressure
-SPAN_CTOR(m2cvm, poly_pressure)  // Define the span constructor for m2cvm/poly_pressure
+MIDI2_UMP_TUPLE(m2cvm, poly_pressure)  // Define tuple_size and tuple_element for m2cvm/poly_pressure
+MIDI2_SPAN_CTOR(m2cvm, poly_pressure)  // Define the span constructor for m2cvm/poly_pressure
 
 // 7.4.4 MIDI 2.0 Registered Per-Note Controller Messages
 class midi2::ump::m2cvm::rpn_per_note_controller {
@@ -1780,14 +1780,14 @@ public:
   constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(rpn_per_note_controller const &, rpn_per_note_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, reserved)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, reserved)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<rpn_per_note_controller>;
@@ -1797,8 +1797,9 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, rpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_per_note_controller
-SPAN_CTOR(m2cvm, rpn_per_note_controller)  // Define the span constructor for m2cvm/rpn_per_note_controller
+MIDI2_UMP_TUPLE(m2cvm,
+                rpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_per_note_controller
+MIDI2_SPAN_CTOR(m2cvm, rpn_per_note_controller)  // Define the span constructor for m2cvm/rpn_per_note_controller
 
 // 7.4.4 MIDI 2.0 Assignable Per-Note Controller Messages
 class midi2::ump::m2cvm::nrpn_per_note_controller {
@@ -1832,14 +1833,14 @@ public:
   friend constexpr bool operator==(nrpn_per_note_controller const &,
                                    nrpn_per_note_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, reserved)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, reserved)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<nrpn_per_note_controller>;
@@ -1849,8 +1850,9 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, nrpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_per_note_controller
-SPAN_CTOR(m2cvm, nrpn_per_note_controller)  // Define the span constructor for m2cvm/nrpn_per_note_controller
+MIDI2_UMP_TUPLE(m2cvm,
+                nrpn_per_note_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_per_note_controller
+MIDI2_SPAN_CTOR(m2cvm, nrpn_per_note_controller)  // Define the span constructor for m2cvm/nrpn_per_note_controller
 
 // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message
 /// "Registered Controllers have specific functions defined by MMA/AMEI specifications. Registered Controllers
@@ -1888,13 +1890,13 @@ public:
   constexpr explicit rpn_controller(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(rpn_controller const &, rpn_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, bank)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, bank)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<rpn_controller>;
@@ -1904,8 +1906,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, rpn_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_controller
-SPAN_CTOR(m2cvm, rpn_controller)  // Define the span constructor for m2cvm/rpn_controller
+MIDI2_UMP_TUPLE(m2cvm, rpn_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_controller
+MIDI2_SPAN_CTOR(m2cvm, rpn_controller)  // Define the span constructor for m2cvm/rpn_controller
 
 // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message
 class midi2::ump::m2cvm::nrpn_controller {
@@ -1939,13 +1941,13 @@ public:
   constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(nrpn_controller const &, nrpn_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, bank)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, bank)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<nrpn_controller>;
@@ -1955,8 +1957,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, nrpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_controller
-SPAN_CTOR(m2cvm, nrpn_controller)  // Define the span constructor for m2cvm/nrpn_controller
+MIDI2_UMP_TUPLE(m2cvm, nrpn_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_controller
+MIDI2_SPAN_CTOR(m2cvm, nrpn_controller)  // Define the span constructor for m2cvm/nrpn_controller
 
 // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message
 class midi2::ump::m2cvm::rpn_relative_controller {
@@ -1990,13 +1992,13 @@ public:
   constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(rpn_relative_controller const &, rpn_relative_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, bank)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, bank)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<rpn_relative_controller>;
@@ -2006,8 +2008,9 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, rpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
-SPAN_CTOR(m2cvm, rpn_relative_controller)  // Define the span constructor for m2cvm/rpn_relative_controller
+MIDI2_UMP_TUPLE(m2cvm,
+                rpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/rpn_relative_controller
+MIDI2_SPAN_CTOR(m2cvm, rpn_relative_controller)  // Define the span constructor for m2cvm/rpn_relative_controller
 
 // 7.4.8 MIDI 2.0 Assignable Controller (NRPN) Message
 class midi2::ump::m2cvm::nrpn_relative_controller {
@@ -2042,15 +2045,15 @@ public:
   friend constexpr bool operator==(nrpn_relative_controller const &,
                                    nrpn_relative_controller const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, reserved0)
-  UMP_GETTER_SETTER(word0, bank)
-  UMP_GETTER_SETTER(word0, reserved1)
-  UMP_GETTER_SETTER(word0, index)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, reserved0)
+  MIDI2_UMP_GETTER_SETTER(word0, bank)
+  MIDI2_UMP_GETTER_SETTER(word0, reserved1)
+  MIDI2_UMP_GETTER_SETTER(word0, index)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<nrpn_relative_controller>;
@@ -2060,8 +2063,9 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, nrpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_relative_controller
-SPAN_CTOR(m2cvm, nrpn_relative_controller)  // Define the span constructor for m2cvm/nrpn_relative_controller
+MIDI2_UMP_TUPLE(m2cvm,
+                nrpn_relative_controller)  // Define tuple_size and tuple_element for m2cvm/nrpn_relative_controller
+MIDI2_SPAN_CTOR(m2cvm, nrpn_relative_controller)  // Define the span constructor for m2cvm/nrpn_relative_controller
 
 // 7.4.5 MIDI 2.0 Per-Note Management Message
 class midi2::ump::m2cvm::per_note_management {
@@ -2096,16 +2100,16 @@ public:
   constexpr explicit per_note_management(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(per_note_management const &, per_note_management const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, reserved)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word0, option_flags)
-  UMP_GETTER_SETTER(word0, detach)
-  UMP_GETTER_SETTER(word0, set_to_default)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, reserved)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word0, option_flags)
+  MIDI2_UMP_GETTER_SETTER(word0, detach)
+  MIDI2_UMP_GETTER_SETTER(word0, set_to_default)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<per_note_management>;
@@ -2115,8 +2119,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, per_note_management)  // Define tuple_size and tuple_element for m2cvm/per_note_management
-SPAN_CTOR(m2cvm, per_note_management)  // Define the span constructor for m2cvm/per_note_management
+MIDI2_UMP_TUPLE(m2cvm, per_note_management)  // Define tuple_size and tuple_element for m2cvm/per_note_management
+MIDI2_SPAN_CTOR(m2cvm, per_note_management)  // Define the span constructor for m2cvm/per_note_management
 
 // 7.4.6 MIDI 2.0 Control Change Message
 class midi2::ump::m2cvm::control_change {
@@ -2149,12 +2153,12 @@ public:
   constexpr explicit control_change(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, controller)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, controller)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
   constexpr auto &controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
@@ -2166,8 +2170,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, control_change)  // Define tuple_size and tuple_element for m2cvm/control_change
-SPAN_CTOR(m2cvm, control_change)  // Define the span constructor for m2cvm/control_change
+MIDI2_UMP_TUPLE(m2cvm, control_change)  // Define tuple_size and tuple_element for m2cvm/control_change
+MIDI2_SPAN_CTOR(m2cvm, control_change)  // Define the span constructor for m2cvm/control_change
 
 // 7.4.9 MIDI 2.0 Program Change Message
 class midi2::ump::m2cvm::program_change {
@@ -2206,15 +2210,15 @@ public:
   constexpr explicit program_change(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, option_flags)
-  UMP_GETTER_SETTER(word0, bank_valid)
-  UMP_GETTER_SETTER(word1, program)
-  UMP_GETTER_SETTER(word1, bank_msb)
-  UMP_GETTER_SETTER(word1, bank_lsb)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, option_flags)
+  MIDI2_UMP_GETTER_SETTER(word0, bank_valid)
+  MIDI2_UMP_GETTER_SETTER(word1, program)
+  MIDI2_UMP_GETTER_SETTER(word1, bank_msb)
+  MIDI2_UMP_GETTER_SETTER(word1, bank_lsb)
 
 private:
   friend struct ::std::tuple_size<program_change>;
@@ -2224,8 +2228,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, program_change)  // Define tuple_size and tuple_element for m2cvm/program_change
-SPAN_CTOR(m2cvm, program_change)  // Define the span constructor for m2cvm/program_change
+MIDI2_UMP_TUPLE(m2cvm, program_change)  // Define tuple_size and tuple_element for m2cvm/program_change
+MIDI2_SPAN_CTOR(m2cvm, program_change)  // Define the span constructor for m2cvm/program_change
 
 // 7.4.10 MIDI 2.0 Channel Pressure Message
 class midi2::ump::m2cvm::channel_pressure {
@@ -2257,11 +2261,11 @@ public:
   constexpr explicit channel_pressure(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<channel_pressure>;
@@ -2271,8 +2275,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, channel_pressure)  // Define tuple_size and tuple_element for m2cvm/channel_pressure
-SPAN_CTOR(m2cvm, channel_pressure)  // Define the span constructor for m2cvm/channel_pressure
+MIDI2_UMP_TUPLE(m2cvm, channel_pressure)  // Define tuple_size and tuple_element for m2cvm/channel_pressure
+MIDI2_SPAN_CTOR(m2cvm, channel_pressure)  // Define the span constructor for m2cvm/channel_pressure
 
 // 7.4.11 MIDI 2.0 Pitch Bend Message
 class midi2::ump::m2cvm::pitch_bend {
@@ -2304,11 +2308,11 @@ public:
   constexpr explicit pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<pitch_bend>;
@@ -2318,8 +2322,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, pitch_bend)  // Define tuple_size and tuple_element for m2cvm/pitch_bend
-SPAN_CTOR(m2cvm, pitch_bend)  // Define the span constructor for m2cvm/channel_pressure
+MIDI2_UMP_TUPLE(m2cvm, pitch_bend)  // Define tuple_size and tuple_element for m2cvm/pitch_bend
+MIDI2_SPAN_CTOR(m2cvm, pitch_bend)  // Define the span constructor for m2cvm/channel_pressure
 
 // 7.4.12 MIDI 2.0 Per-Note Pitch Bend Message
 class midi2::ump::m2cvm::per_note_pitch_bend {
@@ -2352,12 +2356,12 @@ public:
   constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
   friend constexpr bool operator==(per_note_pitch_bend const &, per_note_pitch_bend const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, note)
-  UMP_GETTER_SETTER(word1, value)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, note)
+  MIDI2_UMP_GETTER_SETTER(word1, value)
 
 private:
   friend struct ::std::tuple_size<per_note_pitch_bend>;
@@ -2367,8 +2371,8 @@ private:
 
   std::tuple<word0, word1> words_;
 };
-UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element for m2cvm/per_note_pitch_bend
-SPAN_CTOR(m2cvm, per_note_pitch_bend)  // Define the span constructor for m2cvm/per_note_pitch_bend
+MIDI2_UMP_TUPLE(m2cvm, per_note_pitch_bend)  // Define tuple_size and tuple_element for m2cvm/per_note_pitch_bend
+MIDI2_SPAN_CTOR(m2cvm, per_note_pitch_bend)  // Define the span constructor for m2cvm/per_note_pitch_bend
 
 //*                       _                       *
 //*  _  _ _ __  _ __   __| |_ _ _ ___ __ _ _ __   *
@@ -2444,14 +2448,14 @@ public:
   constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(endpoint_discovery const &, endpoint_discovery const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, version_major)
-  UMP_GETTER_SETTER(word0, version_minor)
-  UMP_GETTER_SETTER(word1, filter)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, version_major)
+  MIDI2_UMP_GETTER_SETTER(word0, version_minor)
+  MIDI2_UMP_GETTER_SETTER(word1, filter)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<endpoint_discovery>;
@@ -2461,8 +2465,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(stream, endpoint_discovery)  // Define tuple_size and tuple_element for stream/endpoint_discovery
-SPAN_CTOR(stream, endpoint_discovery)  // Define the span constructor for stream/endpoint_discovery
+MIDI2_UMP_TUPLE(stream, endpoint_discovery)  // Define tuple_size and tuple_element for stream/endpoint_discovery
+MIDI2_SPAN_CTOR(stream, endpoint_discovery)  // Define the span constructor for stream/endpoint_discovery
 
 // 7.1.2 Endpoint Info Notification Message
 class midi2::ump::stream::endpoint_info_notification {
@@ -2515,19 +2519,19 @@ public:
   friend constexpr bool operator==(endpoint_info_notification const &,
                                    endpoint_info_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, version_major)
-  UMP_GETTER_SETTER(word0, version_minor)
-  UMP_GETTER_SETTER(word1, static_function_blocks)
-  UMP_GETTER_SETTER(word1, number_function_blocks)
-  UMP_GETTER_SETTER(word1, midi2_protocol_capability)
-  UMP_GETTER_SETTER(word1, midi1_protocol_capability)
-  UMP_GETTER_SETTER(word1, receive_jr_timestamp_capability)
-  UMP_GETTER_SETTER(word1, transmit_jr_timestamp_capability)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, version_major)
+  MIDI2_UMP_GETTER_SETTER(word0, version_minor)
+  MIDI2_UMP_GETTER_SETTER(word1, static_function_blocks)
+  MIDI2_UMP_GETTER_SETTER(word1, number_function_blocks)
+  MIDI2_UMP_GETTER_SETTER(word1, midi2_protocol_capability)
+  MIDI2_UMP_GETTER_SETTER(word1, midi1_protocol_capability)
+  MIDI2_UMP_GETTER_SETTER(word1, receive_jr_timestamp_capability)
+  MIDI2_UMP_GETTER_SETTER(word1, transmit_jr_timestamp_capability)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<endpoint_info_notification>;
@@ -2538,9 +2542,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/endpoint_info_notification
-UMP_TUPLE(stream, endpoint_info_notification)
+MIDI2_UMP_TUPLE(stream, endpoint_info_notification)
 // Define the span constructor for stream/endpoint_info_notification
-SPAN_CTOR(stream, endpoint_info_notification)
+MIDI2_SPAN_CTOR(stream, endpoint_info_notification)
 
 // 7.1.3 Device Identity Notification Message
 class midi2::ump::stream::device_identity_notification {
@@ -2605,20 +2609,20 @@ public:
   friend constexpr bool operator==(device_identity_notification const &,
                                    device_identity_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_1)
-  UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_2)
-  UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_3)
-  UMP_GETTER_SETTER(word2, device_family_lsb)
-  UMP_GETTER_SETTER(word2, device_family_msb)
-  UMP_GETTER_SETTER(word2, device_family_model_lsb)
-  UMP_GETTER_SETTER(word2, device_family_model_msb)
-  UMP_GETTER_SETTER(word3, sw_revision_1)
-  UMP_GETTER_SETTER(word3, sw_revision_2)
-  UMP_GETTER_SETTER(word3, sw_revision_3)
-  UMP_GETTER_SETTER(word3, sw_revision_4)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_1)
+  MIDI2_UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_2)
+  MIDI2_UMP_GETTER_SETTER(word1, dev_manuf_sysex_id_3)
+  MIDI2_UMP_GETTER_SETTER(word2, device_family_lsb)
+  MIDI2_UMP_GETTER_SETTER(word2, device_family_msb)
+  MIDI2_UMP_GETTER_SETTER(word2, device_family_model_lsb)
+  MIDI2_UMP_GETTER_SETTER(word2, device_family_model_msb)
+  MIDI2_UMP_GETTER_SETTER(word3, sw_revision_1)
+  MIDI2_UMP_GETTER_SETTER(word3, sw_revision_2)
+  MIDI2_UMP_GETTER_SETTER(word3, sw_revision_3)
+  MIDI2_UMP_GETTER_SETTER(word3, sw_revision_4)
 
 private:
   friend struct ::std::tuple_size<device_identity_notification>;
@@ -2629,9 +2633,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/device_identity_notification
-UMP_TUPLE(stream, device_identity_notification)
+MIDI2_UMP_TUPLE(stream, device_identity_notification)
 // Define the span constructor for stream/device_identity_notification
-SPAN_CTOR(stream, device_identity_notification)
+MIDI2_SPAN_CTOR(stream, device_identity_notification)
 
 // 7.1.4 Endpoint Name Notification
 class midi2::ump::stream::endpoint_name_notification {
@@ -2686,23 +2690,23 @@ public:
   friend constexpr bool operator==(endpoint_name_notification const &,
                                    endpoint_name_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, name1)
-  UMP_GETTER_SETTER(word0, name2)
-  UMP_GETTER_SETTER(word1, name3)
-  UMP_GETTER_SETTER(word1, name4)
-  UMP_GETTER_SETTER(word1, name5)
-  UMP_GETTER_SETTER(word1, name6)
-  UMP_GETTER_SETTER(word2, name7)
-  UMP_GETTER_SETTER(word2, name8)
-  UMP_GETTER_SETTER(word2, name9)
-  UMP_GETTER_SETTER(word2, name10)
-  UMP_GETTER_SETTER(word3, name11)
-  UMP_GETTER_SETTER(word3, name12)
-  UMP_GETTER_SETTER(word3, name13)
-  UMP_GETTER_SETTER(word3, name14)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, name1)
+  MIDI2_UMP_GETTER_SETTER(word0, name2)
+  MIDI2_UMP_GETTER_SETTER(word1, name3)
+  MIDI2_UMP_GETTER_SETTER(word1, name4)
+  MIDI2_UMP_GETTER_SETTER(word1, name5)
+  MIDI2_UMP_GETTER_SETTER(word1, name6)
+  MIDI2_UMP_GETTER_SETTER(word2, name7)
+  MIDI2_UMP_GETTER_SETTER(word2, name8)
+  MIDI2_UMP_GETTER_SETTER(word2, name9)
+  MIDI2_UMP_GETTER_SETTER(word2, name10)
+  MIDI2_UMP_GETTER_SETTER(word3, name11)
+  MIDI2_UMP_GETTER_SETTER(word3, name12)
+  MIDI2_UMP_GETTER_SETTER(word3, name13)
+  MIDI2_UMP_GETTER_SETTER(word3, name14)
 
 private:
   friend struct ::std::tuple_size<endpoint_name_notification>;
@@ -2713,9 +2717,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/endpoint_name_notification
-UMP_TUPLE(stream, endpoint_name_notification)
+MIDI2_UMP_TUPLE(stream, endpoint_name_notification)
 // Define the span constructor for stream/endpoint_name_notification
-SPAN_CTOR(stream, endpoint_name_notification)
+MIDI2_SPAN_CTOR(stream, endpoint_name_notification)
 
 // 7.1.5 Product Instance ID Notification Message
 class midi2::ump::stream::product_instance_id_notification {
@@ -2770,23 +2774,23 @@ public:
   friend constexpr bool operator==(product_instance_id_notification const &,
                                    product_instance_id_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, pid1)
-  UMP_GETTER_SETTER(word0, pid2)
-  UMP_GETTER_SETTER(word1, pid3)
-  UMP_GETTER_SETTER(word1, pid4)
-  UMP_GETTER_SETTER(word1, pid5)
-  UMP_GETTER_SETTER(word1, pid6)
-  UMP_GETTER_SETTER(word2, pid7)
-  UMP_GETTER_SETTER(word2, pid8)
-  UMP_GETTER_SETTER(word2, pid9)
-  UMP_GETTER_SETTER(word2, pid10)
-  UMP_GETTER_SETTER(word3, pid11)
-  UMP_GETTER_SETTER(word3, pid12)
-  UMP_GETTER_SETTER(word3, pid13)
-  UMP_GETTER_SETTER(word3, pid14)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, pid1)
+  MIDI2_UMP_GETTER_SETTER(word0, pid2)
+  MIDI2_UMP_GETTER_SETTER(word1, pid3)
+  MIDI2_UMP_GETTER_SETTER(word1, pid4)
+  MIDI2_UMP_GETTER_SETTER(word1, pid5)
+  MIDI2_UMP_GETTER_SETTER(word1, pid6)
+  MIDI2_UMP_GETTER_SETTER(word2, pid7)
+  MIDI2_UMP_GETTER_SETTER(word2, pid8)
+  MIDI2_UMP_GETTER_SETTER(word2, pid9)
+  MIDI2_UMP_GETTER_SETTER(word2, pid10)
+  MIDI2_UMP_GETTER_SETTER(word3, pid11)
+  MIDI2_UMP_GETTER_SETTER(word3, pid12)
+  MIDI2_UMP_GETTER_SETTER(word3, pid13)
+  MIDI2_UMP_GETTER_SETTER(word3, pid14)
 
 private:
   friend struct ::std::tuple_size<product_instance_id_notification>;
@@ -2797,9 +2801,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/product_instance_id_notification
-UMP_TUPLE(stream, product_instance_id_notification)
+MIDI2_UMP_TUPLE(stream, product_instance_id_notification)
 // Define the span constructor for stream/product_instance_id_notification
-SPAN_CTOR(stream, product_instance_id_notification)
+MIDI2_SPAN_CTOR(stream, product_instance_id_notification)
 
 // 7.1.6 Selecting a MIDI Protocol and Jitter Reduction Timestamps for a UMP Stream
 // 7.1.6.1 Steps to Select Protocol and Jitter Reduction Timestamps
@@ -2849,15 +2853,15 @@ public:
   friend constexpr bool operator==(jr_configuration_request const &,
                                    jr_configuration_request const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, protocol)
-  UMP_GETTER_SETTER(word0, rxjr)
-  UMP_GETTER_SETTER(word0, txjr)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, protocol)
+  MIDI2_UMP_GETTER_SETTER(word0, rxjr)
+  MIDI2_UMP_GETTER_SETTER(word0, txjr)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<jr_configuration_request>;
@@ -2869,9 +2873,9 @@ private:
 };
 
 // Define tuple_size and tuple_element for stream/jr_configuration_request
-UMP_TUPLE(stream, jr_configuration_request)
+MIDI2_UMP_TUPLE(stream, jr_configuration_request)
 // Define the span constructor for stream/jr_configuration_request
-SPAN_CTOR(stream, jr_configuration_request)
+MIDI2_SPAN_CTOR(stream, jr_configuration_request)
 
 // 7.1.6.3 JR Stream Configuration Notification Message
 class midi2::ump::stream::jr_configuration_notification {
@@ -2919,15 +2923,15 @@ public:
   friend constexpr bool operator==(jr_configuration_notification const &,
                                    jr_configuration_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, protocol)
-  UMP_GETTER_SETTER(word0, rxjr)
-  UMP_GETTER_SETTER(word0, txjr)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, protocol)
+  MIDI2_UMP_GETTER_SETTER(word0, rxjr)
+  MIDI2_UMP_GETTER_SETTER(word0, txjr)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<jr_configuration_notification>;
@@ -2939,9 +2943,9 @@ private:
 };
 
 // Define tuple_size and tuple_element for stream/jr_configuration_notification
-UMP_TUPLE(stream, jr_configuration_notification)
+MIDI2_UMP_TUPLE(stream, jr_configuration_notification)
 // Define the span constructor for stream/jr_configuration_notification
-SPAN_CTOR(stream, jr_configuration_notification)
+MIDI2_SPAN_CTOR(stream, jr_configuration_notification)
 
 // 7.1.7 Function Block Discovery Message
 class midi2::ump::stream::function_block_discovery {
@@ -2987,14 +2991,14 @@ public:
   friend constexpr bool operator==(function_block_discovery const &,
                                    function_block_discovery const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, block_num)
-  UMP_GETTER_SETTER(word0, filter)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, block_num)
+  MIDI2_UMP_GETTER_SETTER(word0, filter)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<function_block_discovery>;
@@ -3005,9 +3009,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/function_block_discovery
-UMP_TUPLE(stream, function_block_discovery)
+MIDI2_UMP_TUPLE(stream, function_block_discovery)
 // Define the span constructor for stream/function_block_discovery
-SPAN_CTOR(stream, function_block_discovery)
+MIDI2_SPAN_CTOR(stream, function_block_discovery)
 
 // 7.1.8 Function Block Info Notification
 class midi2::ump::stream::function_block_info_notification {
@@ -3060,20 +3064,20 @@ public:
   friend constexpr bool operator==(function_block_info_notification const &,
                                    function_block_info_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, block_active)
-  UMP_GETTER_SETTER(word0, block_num)
-  UMP_GETTER_SETTER(word0, ui_hint)
-  UMP_GETTER_SETTER(word0, midi1)
-  UMP_GETTER_SETTER(word0, direction)
-  UMP_GETTER_SETTER(word1, first_group)
-  UMP_GETTER_SETTER(word1, num_spanned)
-  UMP_GETTER_SETTER(word1, ci_message_version)
-  UMP_GETTER_SETTER(word1, max_sys8_streams)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, block_active)
+  MIDI2_UMP_GETTER_SETTER(word0, block_num)
+  MIDI2_UMP_GETTER_SETTER(word0, ui_hint)
+  MIDI2_UMP_GETTER_SETTER(word0, midi1)
+  MIDI2_UMP_GETTER_SETTER(word0, direction)
+  MIDI2_UMP_GETTER_SETTER(word1, first_group)
+  MIDI2_UMP_GETTER_SETTER(word1, num_spanned)
+  MIDI2_UMP_GETTER_SETTER(word1, ci_message_version)
+  MIDI2_UMP_GETTER_SETTER(word1, max_sys8_streams)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<function_block_info_notification>;
@@ -3084,9 +3088,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/function_block_info_notification
-UMP_TUPLE(stream, function_block_info_notification)
+MIDI2_UMP_TUPLE(stream, function_block_info_notification)
 // Define the span constructor for stream/function_block_info_notification
-SPAN_CTOR(stream, function_block_info_notification)
+MIDI2_SPAN_CTOR(stream, function_block_info_notification)
 
 // 7.1.9 Function Block Name Notification
 class midi2::ump::stream::function_block_name_notification {
@@ -3141,23 +3145,23 @@ public:
   friend constexpr bool operator==(function_block_name_notification const &,
                                    function_block_name_notification const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, block_num)
-  UMP_GETTER_SETTER(word0, name0)
-  UMP_GETTER_SETTER(word1, name1)
-  UMP_GETTER_SETTER(word1, name2)
-  UMP_GETTER_SETTER(word1, name3)
-  UMP_GETTER_SETTER(word1, name4)
-  UMP_GETTER_SETTER(word2, name5)
-  UMP_GETTER_SETTER(word2, name6)
-  UMP_GETTER_SETTER(word2, name7)
-  UMP_GETTER_SETTER(word2, name8)
-  UMP_GETTER_SETTER(word3, name9)
-  UMP_GETTER_SETTER(word3, name10)
-  UMP_GETTER_SETTER(word3, name11)
-  UMP_GETTER_SETTER(word3, name12)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, block_num)
+  MIDI2_UMP_GETTER_SETTER(word0, name0)
+  MIDI2_UMP_GETTER_SETTER(word1, name1)
+  MIDI2_UMP_GETTER_SETTER(word1, name2)
+  MIDI2_UMP_GETTER_SETTER(word1, name3)
+  MIDI2_UMP_GETTER_SETTER(word1, name4)
+  MIDI2_UMP_GETTER_SETTER(word2, name5)
+  MIDI2_UMP_GETTER_SETTER(word2, name6)
+  MIDI2_UMP_GETTER_SETTER(word2, name7)
+  MIDI2_UMP_GETTER_SETTER(word2, name8)
+  MIDI2_UMP_GETTER_SETTER(word3, name9)
+  MIDI2_UMP_GETTER_SETTER(word3, name10)
+  MIDI2_UMP_GETTER_SETTER(word3, name11)
+  MIDI2_UMP_GETTER_SETTER(word3, name12)
 
 private:
   friend struct ::std::tuple_size<function_block_name_notification>;
@@ -3168,9 +3172,9 @@ private:
   std::tuple<word0, word1, word2, word3> words_;
 };
 // Define tuple_size and tuple_element for stream/function_block_name_notification
-UMP_TUPLE(stream, function_block_name_notification)
+MIDI2_UMP_TUPLE(stream, function_block_name_notification)
 // Define the span constructor for stream/function_block_name_notification
-SPAN_CTOR(stream, function_block_name_notification)
+MIDI2_SPAN_CTOR(stream, function_block_name_notification)
 
 // 7.1.10 Start of Clip Message
 class midi2::ump::stream::start_of_clip {
@@ -3214,12 +3218,12 @@ public:
   constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(start_of_clip const &, start_of_clip const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<start_of_clip>;
@@ -3229,8 +3233,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(stream, start_of_clip)  // Define tuple_size and tuple_element for stream/start_of_clip
-SPAN_CTOR(stream, start_of_clip)  // Define the span constructor for stream/start_of_clip
+MIDI2_UMP_TUPLE(stream, start_of_clip)  // Define tuple_size and tuple_element for stream/start_of_clip
+MIDI2_SPAN_CTOR(stream, start_of_clip)  // Define the span constructor for stream/start_of_clip
 
 // 7.1.11 End of Clip Message
 class midi2::ump::stream::end_of_clip {
@@ -3274,12 +3278,12 @@ public:
   constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(end_of_clip const &, end_of_clip const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, format)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, format)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<end_of_clip>;
@@ -3289,8 +3293,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for stream/end_of_clip
-SPAN_CTOR(stream, end_of_clip)  // Define the span constructor for stream/end_of_clip
+MIDI2_UMP_TUPLE(stream, end_of_clip)  // Define tuple_size and tuple_element for stream/end_of_clip
+MIDI2_SPAN_CTOR(stream, end_of_clip)  // Define the span constructor for stream/end_of_clip
 
 //*   __ _              _      _         *
 //*  / _| |_____ __  __| |__ _| |_ __ _  *
@@ -3367,16 +3371,16 @@ public:
   constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_tempo const &, set_tempo const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, status_bank)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<set_tempo>;
@@ -3386,8 +3390,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, set_tempo)  // Define tuple_size and tuple_element for flex_data/set_tempo
-SPAN_CTOR(flex_data, set_tempo)  // Define the span constructor for flex_data/set_tempo
+MIDI2_UMP_TUPLE(flex_data, set_tempo)  // Define tuple_size and tuple_element for flex_data/set_tempo
+MIDI2_SPAN_CTOR(flex_data, set_tempo)  // Define the span constructor for flex_data/set_tempo
 
 // 7.5.4 Set Time Signature Message
 class midi2::ump::flex_data::set_time_signature {
@@ -3438,18 +3442,18 @@ public:
   constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_time_signature const &, set_time_signature const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, numerator)
-  UMP_GETTER_SETTER(word1, denominator)
-  UMP_GETTER_SETTER(word1, number_of_32_notes)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, status_bank)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, numerator)
+  MIDI2_UMP_GETTER_SETTER(word1, denominator)
+  MIDI2_UMP_GETTER_SETTER(word1, number_of_32_notes)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<set_time_signature>;
@@ -3459,8 +3463,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, set_time_signature)  // Define tuple_size and tuple_element for flex_data/set_time_signature
-SPAN_CTOR(flex_data, set_time_signature)  // Define the span constructor for flex_data/set_time_signature
+MIDI2_UMP_TUPLE(flex_data, set_time_signature)  // Define tuple_size and tuple_element for flex_data/set_time_signature
+MIDI2_SPAN_CTOR(flex_data, set_time_signature)  // Define the span constructor for flex_data/set_time_signature
 
 // 7.5.5 Set Metronome Message
 class midi2::ump::flex_data::set_metronome {
@@ -3513,20 +3517,20 @@ public:
   constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_metronome const &, set_metronome const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word1, num_clocks_per_primary_click)
-  UMP_GETTER_SETTER(word1, bar_accent_part_1)
-  UMP_GETTER_SETTER(word1, bar_accent_part_2)
-  UMP_GETTER_SETTER(word1, bar_accent_part_3)
-  UMP_GETTER_SETTER(word2, num_subdivision_clicks_1)
-  UMP_GETTER_SETTER(word2, num_subdivision_clicks_2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, status_bank)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, num_clocks_per_primary_click)
+  MIDI2_UMP_GETTER_SETTER(word1, bar_accent_part_1)
+  MIDI2_UMP_GETTER_SETTER(word1, bar_accent_part_2)
+  MIDI2_UMP_GETTER_SETTER(word1, bar_accent_part_3)
+  MIDI2_UMP_GETTER_SETTER(word2, num_subdivision_clicks_1)
+  MIDI2_UMP_GETTER_SETTER(word2, num_subdivision_clicks_2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<set_metronome>;
@@ -3536,8 +3540,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for flex_data/set_metronome
-SPAN_CTOR(flex_data, set_metronome)  // Define the span constructor for flex_data/set_metronome
+MIDI2_UMP_TUPLE(flex_data, set_metronome)  // Define tuple_size and tuple_element for flex_data/set_metronome
+MIDI2_SPAN_CTOR(flex_data, set_metronome)  // Define the span constructor for flex_data/set_metronome
 
 namespace midi2::ump::flex_data {
 
@@ -3645,17 +3649,17 @@ public:
   constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER_ENUM(word1, sharps_flats, midi2::ump::flex_data::sharps_flats)
-  UMP_GETTER_SETTER_ENUM(word1, tonic_note, midi2::ump::flex_data::note)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, status_bank)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word1, sharps_flats, midi2::ump::flex_data::sharps_flats)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word1, tonic_note, midi2::ump::flex_data::note)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<set_key_signature>;
@@ -3665,8 +3669,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
-SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor for flex_data/set_key_signature
+MIDI2_UMP_TUPLE(flex_data, set_key_signature)  // Define tuple_size and tuple_element for flex_data/set_key_signature
+MIDI2_SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor for flex_data/set_key_signature
 
 // 7.5.8 Set Chord Name Message
 class midi2::ump::flex_data::set_chord_name {
@@ -3736,31 +3740,31 @@ public:
   constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER(word0, status_bank)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER_ENUM(word1, tonic_sharps_flats, midi2::ump::flex_data::sharps_flats)
-  UMP_GETTER_SETTER_ENUM(word1, chord_tonic, midi2::ump::flex_data::note)
-  UMP_GETTER_SETTER_ENUM(word1, chord_type, midi2::ump::flex_data::chord_type)
-  UMP_GETTER_SETTER(word1, alter_1_type)
-  UMP_GETTER_SETTER(word1, alter_1_degree)
-  UMP_GETTER_SETTER(word1, alter_2_type)
-  UMP_GETTER_SETTER(word1, alter_2_degree)
-  UMP_GETTER_SETTER(word2, alter_3_type)
-  UMP_GETTER_SETTER(word2, alter_3_degree)
-  UMP_GETTER_SETTER(word2, alter_4_type)
-  UMP_GETTER_SETTER(word2, alter_4_degree)
-  UMP_GETTER_SETTER_ENUM(word3, bass_sharps_flats, midi2::ump::flex_data::sharps_flats)
-  UMP_GETTER_SETTER_ENUM(word3, bass_note, midi2::ump::flex_data::note)
-  UMP_GETTER_SETTER_ENUM(word3, bass_chord_type, midi2::ump::flex_data::chord_type)
-  UMP_GETTER_SETTER(word3, bass_alter_1_type)
-  UMP_GETTER_SETTER(word3, bass_alter_1_degree)
-  UMP_GETTER_SETTER(word3, bass_alter_2_type)
-  UMP_GETTER_SETTER(word3, bass_alter_2_degree)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER(word0, status_bank)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word1, tonic_sharps_flats, midi2::ump::flex_data::sharps_flats)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word1, chord_tonic, midi2::ump::flex_data::note)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word1, chord_type, midi2::ump::flex_data::chord_type)
+  MIDI2_UMP_GETTER_SETTER(word1, alter_1_type)
+  MIDI2_UMP_GETTER_SETTER(word1, alter_1_degree)
+  MIDI2_UMP_GETTER_SETTER(word1, alter_2_type)
+  MIDI2_UMP_GETTER_SETTER(word1, alter_2_degree)
+  MIDI2_UMP_GETTER_SETTER(word2, alter_3_type)
+  MIDI2_UMP_GETTER_SETTER(word2, alter_3_degree)
+  MIDI2_UMP_GETTER_SETTER(word2, alter_4_type)
+  MIDI2_UMP_GETTER_SETTER(word2, alter_4_degree)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_sharps_flats, midi2::ump::flex_data::sharps_flats)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_note, midi2::ump::flex_data::note)
+  MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_chord_type, midi2::ump::flex_data::chord_type)
+  MIDI2_UMP_GETTER_SETTER(word3, bass_alter_1_type)
+  MIDI2_UMP_GETTER_SETTER(word3, bass_alter_1_degree)
+  MIDI2_UMP_GETTER_SETTER(word3, bass_alter_2_type)
+  MIDI2_UMP_GETTER_SETTER(word3, bass_alter_2_degree)
 
 private:
   friend struct ::std::tuple_size<set_chord_name>;
@@ -3770,8 +3774,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, set_chord_name)  // Define tuple_size and tuple_element for flex_data/set_chord_name
-SPAN_CTOR(flex_data, set_chord_name)  // Define the span constructor for flex_data/set_chord_name
+MIDI2_UMP_TUPLE(flex_data, set_chord_name)  // Define tuple_size and tuple_element for flex_data/set_chord_name
+MIDI2_SPAN_CTOR(flex_data, set_chord_name)  // Define the span constructor for flex_data/set_chord_name
 
 // 7.5.9 Text Messages Common Format
 class midi2::ump::flex_data::text_common {
@@ -3820,16 +3824,16 @@ public:
   constexpr explicit text_common(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(text_common const &, text_common const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, form)
-  UMP_GETTER_SETTER(word0, addrs)
-  UMP_GETTER_SETTER(word0, channel)
-  UMP_GETTER_SETTER(word0, status_bank)
-  UMP_GETTER_SETTER(word0, status)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, form)
+  MIDI2_UMP_GETTER_SETTER(word0, addrs)
+  MIDI2_UMP_GETTER_SETTER(word0, channel)
+  MIDI2_UMP_GETTER_SETTER(word0, status_bank)
+  MIDI2_UMP_GETTER_SETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<text_common>;
@@ -3839,8 +3843,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for flex_data/text_common
-SPAN_CTOR(flex_data, text_common)  // Define the span constructor for flex_data/text_common
+MIDI2_UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for flex_data/text_common
+MIDI2_SPAN_CTOR(flex_data, text_common)  // Define the span constructor for flex_data/text_common
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
@@ -3938,24 +3942,24 @@ public:
   }
   friend constexpr bool operator==(sysex8 const &, sysex8 const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER_SETTER(word0, number_of_bytes)
-  UMP_GETTER_SETTER(word0, stream_id)
-  UMP_GETTER_SETTER(word0, data0)
-  UMP_GETTER_SETTER(word1, data1)
-  UMP_GETTER_SETTER(word1, data2)
-  UMP_GETTER_SETTER(word1, data3)
-  UMP_GETTER_SETTER(word1, data4)
-  UMP_GETTER_SETTER(word2, data5)
-  UMP_GETTER_SETTER(word2, data6)
-  UMP_GETTER_SETTER(word2, data7)
-  UMP_GETTER_SETTER(word2, data8)
-  UMP_GETTER_SETTER(word3, data9)
-  UMP_GETTER_SETTER(word3, data10)
-  UMP_GETTER_SETTER(word3, data11)
-  UMP_GETTER_SETTER(word3, data12)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER_SETTER(word0, number_of_bytes)
+  MIDI2_UMP_GETTER_SETTER(word0, stream_id)
+  MIDI2_UMP_GETTER_SETTER(word0, data0)
+  MIDI2_UMP_GETTER_SETTER(word1, data1)
+  MIDI2_UMP_GETTER_SETTER(word1, data2)
+  MIDI2_UMP_GETTER_SETTER(word1, data3)
+  MIDI2_UMP_GETTER_SETTER(word1, data4)
+  MIDI2_UMP_GETTER_SETTER(word2, data5)
+  MIDI2_UMP_GETTER_SETTER(word2, data6)
+  MIDI2_UMP_GETTER_SETTER(word2, data7)
+  MIDI2_UMP_GETTER_SETTER(word2, data8)
+  MIDI2_UMP_GETTER_SETTER(word3, data9)
+  MIDI2_UMP_GETTER_SETTER(word3, data10)
+  MIDI2_UMP_GETTER_SETTER(word3, data11)
+  MIDI2_UMP_GETTER_SETTER(word3, data12)
 
 private:
   friend struct ::std::tuple_size<sysex8>;
@@ -4042,17 +4046,17 @@ public:
   constexpr explicit mds_header(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(mds_header const &, mds_header const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, mds_id)
-  UMP_GETTER_SETTER(word0, bytes_in_chunk)
-  UMP_GETTER_SETTER(word1, chunks_in_mds)
-  UMP_GETTER_SETTER(word1, chunk_num)
-  UMP_GETTER_SETTER(word2, manufacturer_id)
-  UMP_GETTER_SETTER(word2, device_id)
-  UMP_GETTER_SETTER(word3, sub_id_1)
-  UMP_GETTER_SETTER(word3, sub_id_2)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, mds_id)
+  MIDI2_UMP_GETTER_SETTER(word0, bytes_in_chunk)
+  MIDI2_UMP_GETTER_SETTER(word1, chunks_in_mds)
+  MIDI2_UMP_GETTER_SETTER(word1, chunk_num)
+  MIDI2_UMP_GETTER_SETTER(word2, manufacturer_id)
+  MIDI2_UMP_GETTER_SETTER(word2, device_id)
+  MIDI2_UMP_GETTER_SETTER(word3, sub_id_1)
+  MIDI2_UMP_GETTER_SETTER(word3, sub_id_2)
 
 private:
   friend struct ::std::tuple_size<mds_header>;
@@ -4062,8 +4066,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(data128, mds_header)  // Define tuple_size and tuple_element for data128/mds_header
-SPAN_CTOR(data128, mds_header)  // Define the span constructor for data128/mds_header
+MIDI2_UMP_TUPLE(data128, mds_header)  // Define tuple_size and tuple_element for data128/mds_header
+MIDI2_SPAN_CTOR(data128, mds_header)  // Define the span constructor for data128/mds_header
 
 /// \brief The payload message for a Mixed Data Set (MDS) sequence.
 ///
@@ -4114,14 +4118,14 @@ public:
   constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(mds_payload const &, mds_payload const &) noexcept = default;
 
-  UMP_GETTER(word0, mt)
-  UMP_GETTER_SETTER(word0, group)
-  UMP_GETTER(word0, status)
-  UMP_GETTER_SETTER(word0, mds_id)
-  UMP_GETTER_SETTER(word0, value0)
-  UMP_GETTER_SETTER(word1, value1)
-  UMP_GETTER_SETTER(word2, value2)
-  UMP_GETTER_SETTER(word3, value3)
+  MIDI2_UMP_GETTER(word0, mt)
+  MIDI2_UMP_GETTER_SETTER(word0, group)
+  MIDI2_UMP_GETTER(word0, status)
+  MIDI2_UMP_GETTER_SETTER(word0, mds_id)
+  MIDI2_UMP_GETTER_SETTER(word0, value0)
+  MIDI2_UMP_GETTER_SETTER(word1, value1)
+  MIDI2_UMP_GETTER_SETTER(word2, value2)
+  MIDI2_UMP_GETTER_SETTER(word3, value3)
 
 private:
   friend struct ::std::tuple_size<mds_payload>;
@@ -4131,8 +4135,8 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-UMP_TUPLE(data128, mds_payload)  // Define tuple_size and tuple_element for data128/mds_payload
-SPAN_CTOR(data128, mds_payload)  // Define the span constructor for data128/mds_payload
+MIDI2_UMP_TUPLE(data128, mds_payload)  // Define tuple_size and tuple_element for data128/mds_payload
+MIDI2_SPAN_CTOR(data128, mds_payload)  // Define the span constructor for data128/mds_payload
 
 /// \brief An integral constant which holds the number of bytes of a UMP reserved32_06 message.
 template <>
@@ -4159,9 +4163,13 @@ struct midi2::ump::message_size<midi2::ump::message_type::reserved96_0c> : std::
 template <>
 struct midi2::ump::message_size<midi2::ump::message_type::reserved128_0e> : std::integral_constant<unsigned, 4> {};
 
-#undef UMP_GETTER
-#undef UMP_SETTER
-#undef UMP_GETTER_SETTER
-#undef UMP_TUPLE
+#undef MIDI2_UMP_GETTER
+#undef MIDI2_UMP_GETTER_ENUM
+#undef MIDI2_UMP_SETTER
+#undef MIDI2_UMP_SETTER_ENUM
+#undef MIDI2_UMP_GETTER_SETTER
+#undef MIDI2_UMP_GETTER_SETTER_ENUM
+#undef MIDI2_UMP_TUPLE
+#undef MIDI2_SPAN_CTOR
 
 #endif  // MIDI2_UMP_TYPES_HPP

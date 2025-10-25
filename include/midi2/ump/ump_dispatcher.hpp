@@ -35,7 +35,7 @@ namespace midi2::ump {
 #define MIDI2_X(a, b) \
   case a: return message_size<a>();
   switch (mt) {
-    UMP_MESSAGE_TYPES
+    MIDI2_UMP_MESSAGE_TYPES
   default: return 0U;
   }
 #undef MIDI2_X
