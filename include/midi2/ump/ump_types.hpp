@@ -3541,59 +3541,95 @@ MIDI2_SPAN_CTOR(flex_data, set_metronome)  // Define the span constructor for fl
 
 namespace midi2::ump::flex_data {
 
-enum class sharps_flats : std::int8_t {
-  double_sharp = 2,
-  sharp = 1,
-  natural = 0,
-  flat = -1,
-  double_flat = -2,
-  /// Indicates that the bass note is the same as the chord tonic note; the
-  /// bass note field is set to note::unknown. Valid only for the bass
-  /// sharps/flats field.
-  chord_tonic = -8,
-};
+#define MIDI2_SHARPS_FLATS \
+  MIDI2_X(double_sharp, 2) \
+  MIDI2_X(sharp, 1)        \
+  MIDI2_X(natural, 0)      \
+  MIDI2_X(flat, -1)        \
+  MIDI2_X(double_flat, -2) \
+  MIDI2_X(chord_tonic, -8)
 
-enum class note : std::uint8_t {
-  unknown = 0x0,
-  a = 0x1,
-  b = 0x2,
-  c = 0x3,
-  d = 0x4,
-  e = 0x5,
-  f = 0x6,
-  g = 0x7,
-};
+#define MIDI2_X(a, b) a = (b),
+enum class sharps_flats : std::int8_t { MIDI2_SHARPS_FLATS };
+#undef MIDI2_X
 
-enum class chord_type : std::uint8_t {
-  no_chord = 0x00,
-  major = 0x01,
-  major_6th = 0x02,
-  major_7th = 0x03,
-  major_9th = 0x04,
-  major_11th = 0x05,
-  major_13th = 0x06,
-  minor = 0x07,
-  minor_6th = 0x08,
-  minor_7th = 0x09,
-  minor_9th = 0x0A,
-  minor_11th = 0x0B,
-  minor_13th = 0x0C,
-  dominant = 0x0D,
-  dominant_ninth = 0x0E,
-  dominant_11th = 0x0F,
-  dominant_13th = 0x10,
-  augmented = 0x11,
-  augmented_seventh = 0x12,
-  diminished = 0x13,
-  diminished_seventh = 0x14,
-  half_diminished = 0x15,
-  major_minor = 0x16,
-  pedal = 0x17,
-  power = 0x18,
-  suspended_2nd = 0x19,
-  suspended_4th = 0x1A,
-  seven_suspended_4th = 0x1B,
-};
+constexpr bool valid_sharps_flats(std::underlying_type_t<sharps_flats> const v) noexcept {
+#define MIDI2_X(a, b) \
+  case b: return true;
+  switch (v) {
+    MIDI2_SHARPS_FLATS
+  default: return false;
+  }
+#undef MIDI2_X
+}
+
+#define MIDI2_NOTE      \
+  MIDI2_X(unknown, 0x0) \
+  MIDI2_X(a, 0x1)       \
+  MIDI2_X(b, 0x2)       \
+  MIDI2_X(c, 0x3)       \
+  MIDI2_X(d, 0x4)       \
+  MIDI2_X(e, 0x5)       \
+  MIDI2_X(f, 0x6)       \
+  MIDI2_X(g, 0x7)
+
+#define MIDI2_X(a, b) a = (b),
+enum class note : std::int8_t { MIDI2_NOTE };
+#undef MIDI2_X
+
+constexpr bool valid_note(std::underlying_type_t<note> const v) noexcept {
+#define MIDI2_X(a, b) \
+  case b: return true;
+  switch (v) {
+    MIDI2_NOTE
+  default: return false;
+  }
+#undef MIDI2_X
+}
+
+#define MIDI2_CHORD_TYPE            \
+  MIDI2_X(no_chord, 0x00)           \
+  MIDI2_X(major, 0x01)              \
+  MIDI2_X(major_6th, 0x02)          \
+  MIDI2_X(major_7th, 0x03)          \
+  MIDI2_X(major_9th, 0x04)          \
+  MIDI2_X(major_11th, 0x05)         \
+  MIDI2_X(major_13th, 0x06)         \
+  MIDI2_X(minor, 0x07)              \
+  MIDI2_X(minor_6th, 0x08)          \
+  MIDI2_X(minor_7th, 0x09)          \
+  MIDI2_X(minor_9th, 0x0A)          \
+  MIDI2_X(minor_11th, 0x0B)         \
+  MIDI2_X(minor_13th, 0x0C)         \
+  MIDI2_X(dominant, 0x0D)           \
+  MIDI2_X(dominant_ninth, 0x0E)     \
+  MIDI2_X(dominant_11th, 0x0F)      \
+  MIDI2_X(dominant_13th, 0x10)      \
+  MIDI2_X(augmented, 0x11)          \
+  MIDI2_X(augmented_seventh, 0x12)  \
+  MIDI2_X(diminished, 0x13)         \
+  MIDI2_X(diminished_seventh, 0x14) \
+  MIDI2_X(half_diminished, 0x15)    \
+  MIDI2_X(major_minor, 0x16)        \
+  MIDI2_X(pedal, 0x17)              \
+  MIDI2_X(power, 0x18)              \
+  MIDI2_X(suspended_2nd, 0x19)      \
+  MIDI2_X(suspended_4th, 0x1A)      \
+  MIDI2_X(seven_suspended_4th, 0x1B)
+
+#define MIDI2_X(a, b) a = (b),
+enum class chord_type : std::uint8_t { MIDI2_CHORD_TYPE };
+#undef MIDI2_X
+
+constexpr bool valid_chord_type(std::underlying_type_t<chord_type> const v) noexcept {
+#define MIDI2_X(a, b) \
+  case b: return true;
+  switch (v) {
+    MIDI2_CHORD_TYPE
+  default: return false;
+  }
+#undef MIDI2_X
+}
 
 }  // end namespace midi2::ump::flex_data
 
@@ -3620,7 +3656,9 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return valid_sharps_flats(get<sharps_flats>()) && valid_note(get<tonic_note>());
+    }
 
     using sharps_flats = adt::bit_range<28, 4>;
     using tonic_note = adt::bit_range<24, 4>;
@@ -3695,7 +3733,10 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
-    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return valid_sharps_flats(get<tonic_sharps_flats>()) && valid_note(get<chord_tonic>()) &&
+             valid_chord_type(get<chord_type>());
+    }
 
     using tonic_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
     using chord_tonic = adt::bit_range<24, 4>;
@@ -3721,7 +3762,10 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
-    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return valid_sharps_flats(get<bass_sharps_flats>()) && valid_note(get<bass_note>()) &&
+             valid_chord_type(get<bass_chord_type>());
+    }
 
     using bass_sharps_flats = adt::bit_range<28, 4>;  // 2's complement
     using bass_note = adt::bit_range<24, 4>;
