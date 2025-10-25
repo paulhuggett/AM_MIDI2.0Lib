@@ -65,13 +65,15 @@ public:
   using input_type = std::byte;
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
-  constexpr explicit ci_dispatcher(Config config) noexcept(std::is_nothrow_move_constructible_v<Config>)
-      : config_{std::move(config)} {
+  template <typename OtherConfig>
+    requires std::convertible_to<OtherConfig, Config>
+  constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
     static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
   }
 
   constexpr void start(std::uint8_t group, b7 device_id) noexcept;
-  constexpr void finish() noexcept { /* here for symmetry with start */ }
+  constexpr void finish() noexcept { /* here for symmetry with start */
+  }
 
   void dispatch(std::byte s7);
 
@@ -259,7 +261,7 @@ void ci_dispatcher<Config>::header() {
   auto& c = this->config();
   auto const first = std::begin(messages);
   auto const last = std::end(messages);
-  auto const pred = [](message_dispatch_info const &a, message_dispatch_info const &b) { return a.type < b.type; };
+  auto const pred = [](message_dispatch_info const& a, message_dispatch_info const& b) { return a.type < b.type; };
   assert(std::is_sorted(first, last, pred));
   if (auto const pos = std::lower_bound(first, last, message_dispatch_info{type_, 0, 0, nullptr}, pred);
       pos == last || pos->type != type_) {
@@ -288,7 +290,7 @@ void ci_dispatcher<Config>::header() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::discovery() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.management.discovery(c.context, header_, discovery::make(*v));
@@ -306,7 +308,7 @@ void ci_dispatcher<Config>::discovery() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::discovery_reply() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.management.discovery_reply(c.context, header_, discovery_reply::make(*v));
@@ -509,7 +511,7 @@ void ci_dispatcher<Config>::profile_details_reply() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_on() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.profile.on(c.context, header_, ci::profile_configuration::on::make(*v));
@@ -527,7 +529,7 @@ void ci_dispatcher<Config>::profile_on() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_off() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.profile.off(c.context, header_, ci::profile_configuration::off::make(*v));
@@ -545,7 +547,7 @@ void ci_dispatcher<Config>::profile_off() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_enabled() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.profile.enabled(c.context, header_, ci::profile_configuration::enabled::make(*v));
@@ -563,7 +565,7 @@ void ci_dispatcher<Config>::profile_enabled() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::profile_disabled() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.profile.disabled(c.context, header_, ci::profile_configuration::disabled::make(*v));
@@ -598,7 +600,7 @@ void ci_dispatcher<Config>::profile_specific_data() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::pe_capabilities() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.property_exchange.capabilities(c.context, header_, ci::property_exchange::capabilities::make(*v));
@@ -616,7 +618,7 @@ void ci_dispatcher<Config>::pe_capabilities() {
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
 void ci_dispatcher<Config>::pe_capabilities_reply() {
-  auto const handler = [this](unaligned_copyable auto const *const v) {
+  auto const handler = [this](unaligned_copyable auto const* const v) {
     assert(pos_ == sizeof(*v));
     auto& c = this->config();
     c.property_exchange.capabilities_reply(c.context, header_, ci::property_exchange::capabilities_reply::make(*v));
@@ -805,7 +807,8 @@ void ci_dispatcher<Config>::dispatch(std::byte const s7) {
 
 template <typename Context, std::size_t BufferSize>
 ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher(Context&& context = Context{}) {
-  return midi2::ci::ci_dispatcher{function_config<Context, BufferSize>{std::forward<Context>(context)}};
+  using config = function_config<Context, BufferSize>;
+  return ci_dispatcher<config>{config{std::forward<Context>(context)}};
 }
 
 }  // end namespace midi2::ci

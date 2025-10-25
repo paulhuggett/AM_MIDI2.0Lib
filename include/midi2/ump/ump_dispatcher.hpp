@@ -87,8 +87,9 @@ public:
   using input_type = std::uint32_t;
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
-  constexpr explicit ump_dispatcher(Config config) noexcept(std::is_nothrow_move_constructible_v<Config>)
-      : config_{std::move(config)} {
+  template <typename OtherConfig>
+    requires std::convertible_to<OtherConfig, Config>
+  constexpr explicit ump_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
     static_assert(midi2::dispatcher<Config, std::uint32_t, decltype(*this)>);
   }
 
