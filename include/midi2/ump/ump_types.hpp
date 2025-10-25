@@ -217,8 +217,7 @@ constexpr message_type status_to_message_type_v = status_to_message_type<T>::val
 
 class word_base : public adt::bit_field<std::uint32_t> {
 public:
-  constexpr word_base() noexcept = default;
-  constexpr explicit word_base(value_type const v) noexcept : adt::bit_field<std::uint32_t>{v} {}
+  using bit_field::bit_field;
 
   friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
 
