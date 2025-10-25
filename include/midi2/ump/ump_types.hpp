@@ -1003,7 +1003,6 @@ private:
 
   std::tuple<word0> words_;
 };
-
 MIDI2_UMP_TUPLE(system, sequence_stop)  // Define tuple_size and tuple_element for sequence_stop
 MIDI2_SPAN_CTOR(system, sequence_stop)  // Define the span constructor for sequence_stop
 
@@ -2871,7 +2870,6 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/jr_configuration_request
 MIDI2_UMP_TUPLE(stream, jr_configuration_request)
 // Define the span constructor for stream/jr_configuration_request
@@ -2941,7 +2939,6 @@ private:
 
   std::tuple<word0, word1, word2, word3> words_;
 };
-
 // Define tuple_size and tuple_element for stream/jr_configuration_notification
 MIDI2_UMP_TUPLE(stream, jr_configuration_notification)
 // Define the span constructor for stream/jr_configuration_notification
