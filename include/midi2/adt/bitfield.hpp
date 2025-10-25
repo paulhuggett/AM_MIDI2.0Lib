@@ -41,7 +41,7 @@ struct bit_range {
 };
 
 template <typename T>
-concept bit_range_type = requires(T) { std::is_same_v<T, bit_range<T::index::value, T::bits::value>>; };
+concept bit_range_type = std::is_same_v<T, bit_range<T::index::value, T::bits::value>>;
 
 /// \returns The maximum value that can be held in \p Bits of type \p T.
 template <std::unsigned_integral T, unsigned Bits>
