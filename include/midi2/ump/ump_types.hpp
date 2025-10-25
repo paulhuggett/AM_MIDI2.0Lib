@@ -3657,7 +3657,7 @@ public:
   public:
     using word_base::word_base;
     [[nodiscard]] constexpr bool check() const noexcept {
-      return valid_sharps_flats(get<sharps_flats>()) && valid_note(get<tonic_note>());
+      return valid_sharps_flats(get_signed<sharps_flats>()) && valid_note(get_signed<tonic_note>());
     }
 
     using sharps_flats = adt::bit_range<28, 4>;
@@ -3734,7 +3734,7 @@ public:
   public:
     using word_base::word_base;
     [[nodiscard]] constexpr bool check() const noexcept {
-      return valid_sharps_flats(get<tonic_sharps_flats>()) && valid_note(get<chord_tonic>()) &&
+      return valid_sharps_flats(get_signed<tonic_sharps_flats>()) && valid_note(get_signed<chord_tonic>()) &&
              valid_chord_type(get<chord_type>());
     }
 
@@ -3763,7 +3763,7 @@ public:
   public:
     using word_base::word_base;
     [[nodiscard]] constexpr bool check() const noexcept {
-      return valid_sharps_flats(get<bass_sharps_flats>()) && valid_note(get<bass_note>()) &&
+      return valid_sharps_flats(get_signed<bass_sharps_flats>()) && valid_note(get_signed<bass_note>()) &&
              valid_chord_type(get<bass_chord_type>());
     }
 
