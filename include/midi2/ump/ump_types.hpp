@@ -3553,7 +3553,7 @@ namespace midi2::ump::flex_data {
 enum class sharps_flats : std::int8_t { MIDI2_SHARPS_FLATS };
 #undef MIDI2_X
 
-constexpr bool valid_sharps_flats(std::underlying_type_t<sharps_flats> const v) noexcept {
+[[nodiscard]] constexpr bool valid_sharps_flats(std::underlying_type_t<sharps_flats> const v) noexcept {
 #define MIDI2_X(a, b) \
   case b: return true;
   switch (v) {
@@ -3577,7 +3577,7 @@ constexpr bool valid_sharps_flats(std::underlying_type_t<sharps_flats> const v) 
 enum class note : std::int8_t { MIDI2_NOTE };
 #undef MIDI2_X
 
-constexpr bool valid_note(std::underlying_type_t<note> const v) noexcept {
+[[nodiscard]] constexpr bool valid_note(std::underlying_type_t<note> const v) noexcept {
 #define MIDI2_X(a, b) \
   case b: return true;
   switch (v) {
@@ -3621,7 +3621,7 @@ constexpr bool valid_note(std::underlying_type_t<note> const v) noexcept {
 enum class chord_type : std::uint8_t { MIDI2_CHORD_TYPE };
 #undef MIDI2_X
 
-constexpr bool valid_chord_type(std::underlying_type_t<chord_type> const v) noexcept {
+[[nodiscard]] constexpr bool valid_chord_type(std::underlying_type_t<chord_type> const v) noexcept {
 #define MIDI2_X(a, b) \
   case b: return true;
   switch (v) {
