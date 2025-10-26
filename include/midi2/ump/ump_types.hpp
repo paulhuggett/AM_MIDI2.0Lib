@@ -4211,5 +4211,8 @@ struct midi2::ump::message_size<midi2::ump::message_type::reserved128_0e> : std:
 #undef MIDI2_UMP_GETTER_SETTER_ENUM
 #undef MIDI2_UMP_TUPLE
 #undef MIDI2_SPAN_CTOR
+#undef MIDI2_SHARPS_FLATS
+#undef MIDI2_NOTE
+#undef MIDI2_CHORD_TYPE
 
 #endif  // MIDI2_UMP_TYPES_HPP
