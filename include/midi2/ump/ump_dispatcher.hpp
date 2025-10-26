@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <functional>
 #include <span>
+#include <type_traits>
 
 #include "midi2/dispatcher.hpp"
 #include "midi2/ump/ump_dispatcher_backend.hpp"
@@ -88,7 +89,8 @@ public:
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
   template <typename OtherConfig>
-    requires std::convertible_to<OtherConfig, Config>
+    requires(std::convertible_to<OtherConfig, Config> &&
+             !std::is_same_v<std::remove_cvref_t<OtherConfig>, ump_dispatcher>)
   constexpr explicit ump_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
     static_assert(midi2::dispatcher<Config, std::uint32_t, decltype(*this)>);
   }

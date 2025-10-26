@@ -66,7 +66,8 @@ public:
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
   template <typename OtherConfig>
-    requires std::convertible_to<OtherConfig, Config>
+    requires(std::convertible_to<OtherConfig, Config> &&
+             !std::is_same_v<std::remove_cvref_t<OtherConfig>, ci_dispatcher>)
   constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
     static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
   }
