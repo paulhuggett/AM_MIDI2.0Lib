@@ -95,9 +95,7 @@ public:
   constexpr explicit tagged_key(Key key) noexcept : v_{static_cast<value_type>(1 | (key >> (SetBits - 1)))} {}
   friend constexpr bool operator==(tagged_key const &, tagged_key const &) noexcept = default;
   [[nodiscard]] constexpr bool valid() const noexcept { return static_cast<bool>(v_ & 1); }
-
-  [[nodiscard]] constexpr value_type &get() noexcept { return v_; }
-  [[nodiscard]] constexpr value_type const &get() const noexcept { return v_; }
+  [[nodiscard]] constexpr decltype(auto) get(this auto &self) noexcept { return self.v_; }
 
 private:
   value_type v_ = 0;

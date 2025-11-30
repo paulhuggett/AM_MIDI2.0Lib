@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file translator.hpp
+/// \brief Concept defining the interface for a translator object.
+
 #ifndef MIDI2_TRANSLATOR_HPP
 #define MIDI2_TRANSLATOR_HPP
 

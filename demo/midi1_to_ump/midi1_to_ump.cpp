@@ -6,6 +6,7 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+// Standard library
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -16,7 +17,8 @@
 #include <iostream>
 #include <utility>
 
-#include "midi2/bytestream/bytestream_to_ump.hpp"
+// Local includes
+#include <midi2/bytestream/bytestream_to_ump.hpp>
 
 namespace {
 

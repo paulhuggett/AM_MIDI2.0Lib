@@ -804,7 +804,7 @@ class UMPDispatcherFlexData : public UMPDispatcher {};
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, SetTempo) {
   constexpr auto message =
-      midi2::ump::flex_data::set_tempo{}.group(0).form(0).addrs(1).channel(0).status_bank(0).value1(0xF0F0F0F0);
+      midi2::ump::flex_data::set_tempo{}.group(0).form(0).address(1).channel(0).status_bank(0).value1(0xF0F0F0F0);
   EXPECT_CALL(config_.flex, set_tempo(config_.context, message)).Times(1);
   this->apply(message);
 }
@@ -813,7 +813,7 @@ TEST_F(UMPDispatcherFlexData, SetTimeSignature) {
   constexpr auto message = midi2::ump::flex_data::set_time_signature{}
                                .group(0)
                                .form(0)
-                               .addrs(1)
+                               .address(1)
                                .channel(3)
                                .status_bank(0)
                                .numerator(1)
@@ -827,7 +827,7 @@ TEST_F(UMPDispatcherFlexData, SetMetronome) {
   constexpr auto message = midi2::ump::flex_data::set_metronome{}
                                .group(0)
                                .form(0)
-                               .addrs(1)
+                               .address(1)
                                .channel(3)
                                .status_bank(0)
                                .num_clocks_per_primary_click(24)
@@ -846,7 +846,7 @@ TEST_F(UMPDispatcherFlexData, SetKeySignature) {
   constexpr auto message = midi2::ump::flex_data::set_key_signature{}
                                .group(0)
                                .form(0)
-                               .addrs(1)
+                               .address(1)
                                .channel(3)
                                .status_bank(0)
                                .sharps_flats(sharps_flats::double_flat)
@@ -867,7 +867,7 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
   using midi2::ump::flex_data::sharps_flats;
   constexpr auto message = midi2::ump::flex_data::set_chord_name{}
                                .group(0x0F)
-                               .addrs(3)
+                               .address(3)
                                .channel(3)
                                .tonic_sharps_flats(sharps_flats::chord_tonic)
                                .chord_tonic(note::e)
@@ -909,7 +909,7 @@ TEST_F(UMPDispatcherFlexData, Text) {
   constexpr auto message = midi2::ump::flex_data::text_common{}
                                .group(0)
                                .form(0)
-                               .addrs(1)
+                               .address(1)
                                .channel(3)
                                .status_bank(1)
                                .status(4)

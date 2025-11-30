@@ -54,4 +54,45 @@ TYPED_TEST(UMPCheckFixture, Check) {
   ASSERT_TRUE(midi2::ump::check(this->value_));
 }
 
+TEST(UMPTypes, Sysex7InOne) {
+  constexpr auto message =
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4);
+  message2[0] = 0x7E;
+  message2[1] = 0x7F;
+  message2[2] = 0x07;
+  message2[3] = 0x0D;
+  EXPECT_EQ(message, message2);
+}
+TEST(UMPTypes, Sysex7InOneReadArray) {
+  constexpr auto message =
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  EXPECT_EQ(message[0], 0x7E);
+  EXPECT_EQ(message[1], 0x7F);
+  EXPECT_EQ(message[2], 0x07);
+  EXPECT_EQ(message[3], 0x0D);
+  EXPECT_EQ(message[4], 0x00);
+  EXPECT_EQ(message[5], 0x00);
+}
+TEST(UMPTypes, Sysex8InOne) {
+  constexpr auto message =
+      midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  auto message2 = midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4);
+  message2[0] = 0x7E;
+  message2[1] = 0x7F;
+  message2[2] = 0x07;
+  message2[3] = 0x0D;
+  EXPECT_EQ(message, message2);
+}
+TEST(UMPTypes, Sysex8InOneReadArray) {
+  constexpr auto message =
+      midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  EXPECT_EQ(message[0], 0x7E);
+  EXPECT_EQ(message[1], 0x7F);
+  EXPECT_EQ(message[2], 0x07);
+  EXPECT_EQ(message[3], 0x0D);
+  EXPECT_EQ(message[4], 0x00);
+  EXPECT_EQ(message[5], 0x00);
+}
+
 }  // end anonymous namespace

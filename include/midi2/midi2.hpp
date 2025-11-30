@@ -13,5 +13,9 @@
 #include "midi2/bytestream/usbm1_to_bytestream.hpp"
 #include "midi2/ci/ci7text.hpp"
 #include "midi2/ci/ci_create_message.hpp"
+#include "midi2/ump/ump_dispatcher.hpp"
+#include "midi2/ump/ump_to_midi1.hpp"
+#include "midi2/ump/ump_to_midi2.hpp"
+#include "midi2/ump/ump_types.hpp"
 
 #endif  // MIDI2_HPP

@@ -158,5 +158,90 @@ midi2::ci::create_message()
 
 ### UMP Messages
 
-Types in the midi2::ump namespace (e.g. midi2::ump::m2cvm::note_on) in
-conjunction with `midi2::ump::apply()`
+Creating a UMP message is a simple matter of instantiating the relevant type. The midi2::ump namespace contains a type that corresponds to each of the possible UMP messages. These are further grouped in namespaces according to the message category. These categories are:
+
+| Message Type           | Namespace               |
+| ---------------------- | ----------------------- |
+| Utility                | `midi2::ump::utility`   |
+| System Common          | `midi2::ump::system`    |
+| System Real Time       | `midi2::ump::system`    |
+| MIDI 1.0 Channel Voice | `midi2::ump::m1cvm`     |
+| Data 64-Bit            | `midi2::ump::data64`    |
+| MIDI 2.0 Channel Voice | `midi2::ump::m2cvm`     |
+| Data 128-Bit           | `midi2::ump::data128`   |
+| UMP Stream             | `midi2::ump::stream`    |
+| Flex Data              | `midi2::ump::flex_data` |
+
+Each type can be default-constructed. This will set all fields, except those that identify the message type, to 0. Accessor functions, whose names generally match those of field in question, allow the individual fields of the message to be read or written. "Getter" accessors take no arguments and return the associated value; "setter" accessor take the value to be set and return `*this` enabling calls to be chained. Note that there is no "setter" method for the fields that identify the message: these are set implicitly when the message instance is created and are read-only.
+
+For example, to create a MIDI 1.0 Note-on message and set its various fields:
+
+```cpp
+auto const non = midi2::ump::m1cvm::note_on{}.group(g).channel(c).note(n).velocity(v);
+```
+
+This approach means that calling code does not need to know which of the message's constituent words contains each field: that is the responsibility of the message type itself. Having said that, the UMP message types are all "tuple-like". This means that, when necessary, the individual words of the message can be accessed as members of the tuple:
+
+```cpp
+auto noff = midi2::ump::m2cvm::note_off{}
+  .group(g)
+  .channel(c)
+  .note(n)
+  .velocity(v)
+  .attribute(a);
+
+// You can use std::tuple_size<> to determine the number of words in the message:
+constexpr auto words = std::tuple_size_v<midi2::ump::m2cvm::note_off>();
+
+// Extract the first (and only) word of the message.
+// We could also use an index (0) as the get() template argument.
+auto w0 = get<midi2::ump::m2cvm::note_off::word0>(non);
+
+// We can also use a structured binding declaration.
+auto const [x0, x1] = noff;
+```
+
+#### Apply
+
+Hello
+
+\example send_ump.cpp
+
+This example demonstrates how to create UMP MIDI 2.0 note-on and note-off messages, to fill in their fields, and how the resulting sequence of 32-bit values can be transmitted. The code uses note-on and note-off, but the same principle applies to all UMP message types. In this example the resulting 32-bit values are simply written to the console, but a real implementation would likely transmit the values using a communications protocol such as USB.
+
+Expected output:
+
+```
+0x40913C00 0x27100000 0x40914000 0x27100000 0x40914300 0x27100000
+0x40813C00 0x27100000 0x40814000 0x27100000 0x40814300 0x27100000
+```
+
+\example ump_dispatcher_function.cpp
+
+This demo program shows the UMP dispatcher being used with the provided "function" backend class.
+
+The dispatcher's backend class determines how each UMP message is handled. The "function" backend uses
+std::function<> to make it simple to use callback functions (be they lambdas or other types of callable object) as
+message handlers.
+
+Be aware that std::function<> is powerful and simple to use but may allocate memory or throw exceptions.
+For resource-constrained applications, one of the other backend options may be more suitable.
+
+Expected output:
+
+```
+note on: #60, velocity 32528
+note off: #60, velocity 32767
+```
+
+\example midi1_to_ump.cpp
+
+Expected output:
+
+```
+Bytestream input: 0x81 0x60 0x50 0x70 0x70
+UMP Packets: 0x20816050 0x20817070
+```
+
+\example ci_dispatcher.cpp
+\example ci_create_discovery.cpp

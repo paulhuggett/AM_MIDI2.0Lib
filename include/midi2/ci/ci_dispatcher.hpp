@@ -98,7 +98,7 @@ private:
   // Note that the struct keyword is necessary to avoid an error from gcc about a conflict with header().
   struct header header_;
 
-  // TODO: replace buffr_/pos_ with inplace_vector<> at some point.
+  // TODO: replace buffer_/pos_ with inplace_vector<> at some point.
   std::array<std::byte, config_type::buffer_size> buffer_{};
   unsigned pos_ = 0;
 

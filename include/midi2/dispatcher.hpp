@@ -6,6 +6,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+/// \file dispatcher.hpp
+/// \brief The dispatcher concept for MIDI message dispatchers.
+
 #ifndef MIDI2_DISPATCHER_HPP
 #define MIDI2_DISPATCHER_HPP
 

@@ -120,6 +120,10 @@ public:
     return (value_ >> index) & mask;
   }
 
+  [[nodiscard]] constexpr value_type get(unsigned index, unsigned bits) const noexcept {
+    return (value_ >> index) & ((1U << bits) - 1U);
+  }
+
   /// Returns the value stored in the bitfield as a signed quantity.
   ///
   /// \tparam BitRange  A bitfield_type which describes a range of bits.

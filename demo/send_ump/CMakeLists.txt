@@ -6,7 +6,7 @@
 #
 #===------------------------------------------------------------------------------------===//
 
-add_executable(demo_ci_dispatcher ci_dispatcher.cpp)
-target_link_libraries(demo_ci_dispatcher PRIVATE midi2)
-setup_target(demo_ci_dispatcher)
-add_test(NAME demo_ci_dispatcher COMMAND demo_ci_dispatcher)
+add_executable(demo_send_ump send_ump.cpp)
+target_link_libraries(demo_send_ump PRIVATE midi2)
+setup_target(demo_send_ump)
+add_test(NAME demo_send_ump COMMAND demo_send_ump)

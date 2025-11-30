@@ -412,16 +412,17 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
   using u32 = std::uint32_t;
-  constexpr auto message = midi2::ump::flex_data::text_common{}
-                               .group(0)
-                               .form(0)
-                               .addrs(1)
-                               .channel(3)
-                               .status_bank(1)
-                               .status(4)
-                               .value1((u32{0xC2} << 24) | (u32{0xA9} << 16) | (u32{'2'} << 8) | (u32{'0'} << 0))
-                               .value2((u32{'2'} << 24) | (u32{'4'} << 16) | (u32{' '} << 8) | (u32{'P'} << 0))
-                               .value3((u32{'B'} << 24) | (u32{'H'} << 16) | (u32{'\0'} << 8) | (u32{'\0'} << 0));
+  auto message = midi2::ump::flex_data::text_common{}.group(0).form(0).address(1).channel(3).status_bank(1).status(4);
+  message[0] = '\xC2';  // u8;
+  message[1] = '\xA9';
+  message[2] = '2';
+  message[3] = '0';
+  message[4] = '2';
+  message[5] = '4';
+  message[6] = ' ';
+  message[7] = 'P';
+  message[8] = 'B';
+  message[9] = 'H';
 
   auto input = std::array{std::uint32_t{get<0>(message)}, std::uint32_t{get<1>(message)},
                           std::uint32_t{get<2>(message)}, std::uint32_t{get<3>(message)}};
