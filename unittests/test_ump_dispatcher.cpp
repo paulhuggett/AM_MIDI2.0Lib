@@ -906,19 +906,19 @@ TEST_F(UMPDispatcherFlexData, SetChordName) {
 }
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherFlexData, Text) {
-  constexpr auto message = midi2::ump::flex_data::text_common{}
-                               .group(0)
-                               .form(0)
-                               .address(1)
-                               .channel(3)
-                               .status_bank(1)
-                               .status(4)
-                               .value1((std::uint32_t{0xC2} << 24) | (std::uint32_t{0xA9} << 16) |
-                                       (std::uint32_t{'2'} << 8) | (std::uint32_t{'0'} << 0))
-                               .value2((std::uint32_t{'2'} << 24) | (std::uint32_t{'4'} << 16) |
-                                       (std::uint32_t{' '} << 8) | (std::uint32_t{'P'} << 0))
-                               .value3((std::uint32_t{'B'} << 24) | (std::uint32_t{'H'} << 16) |
-                                       (std::uint32_t{'\0'} << 8) | (std::uint32_t{'\0'} << 0));
+  auto message = midi2::ump::flex_data::text_common{}.group(0).form(0).address(1).channel(3).status_bank(1).status(4);
+  message[0] = 0xC2;
+  message[1] = 0xA9;
+  message[2] = '2';
+  message[3] = '0';
+  message[4] = '2';
+  message[5] = '5';
+  message[6] = ' ';
+  message[7] = 'P';
+  message[8] = 'B';
+  message[9] = 'H';
+  message[10] = '\0';
+  message[11] = '\0';
   EXPECT_CALL(config_.flex, text(config_.context, message)).Times(1);
   this->apply(message);
 }
