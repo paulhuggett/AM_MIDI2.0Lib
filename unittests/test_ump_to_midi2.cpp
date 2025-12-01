@@ -411,7 +411,6 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
 
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
-  using u32 = std::uint32_t;
   auto message = midi2::ump::flex_data::text_common{}.group(0).form(0).address(1).channel(3).status_bank(1).status(4);
   message[0] = '\xC2';  // u8;
   message[1] = '\xA9';

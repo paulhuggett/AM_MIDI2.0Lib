@@ -1267,16 +1267,6 @@ private:
 MIDI2_UMP_TUPLE(m1cvm, note_on)  // Define tuple_size and tuple_element for m1cvm/note_on
 MIDI2_SPAN_CTOR(m1cvm, note_on)  // Define the span constructor for m1cvm/note_on
 
-/// \fn constexpr auto midi2::ump::m1cvm::note_off::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::note_off.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::note_off.
-
-/// \fn constexpr auto midi2::ump::m1cvm::note_off::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
-
 // 7.3.1 MIDI 1.0 Note Off Message
 class midi2::ump::m1cvm::note_off {
 public:
@@ -1307,8 +1297,16 @@ public:
   constexpr explicit note_off(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
 
+  /// \fn constexpr auto midi2::ump::m1cvm::note_off::mt() const noexcept
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::note_off)
+  /// \fn constexpr auto midi2::ump::m1cvm::note_off::status() const noexcept
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::note_off.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::note_off.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::note_off)
   MIDI2_UMP_GETTER_SETTER(word0, note, ump::m1cvm::note_off)
@@ -1329,16 +1327,6 @@ private:
 /// \brief Specialization of `std::tuple_element<>` for midi2::ump::m1cvm::note_off
 MIDI2_UMP_TUPLE(m1cvm, note_off)  // Define tuple_size and tuple_element for m1cvm/note_off
 MIDI2_SPAN_CTOR(m1cvm, note_off)  // Define the span constructor for m1cvm/note_off
-
-/// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::poly_pressure.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::poly_pressure.
-
-/// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
 
 // 7.3.3 MIDI 1.0 Poly Pressure Message
 class midi2::ump::m1cvm::poly_pressure {
@@ -1369,7 +1357,15 @@ public:
   constexpr explicit poly_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
 
+  /// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::mt() const noexcept
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::status() const noexcept
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::poly_pressure.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::poly_pressure.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::poly_pressure)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::poly_pressure)
@@ -1391,16 +1387,6 @@ private:
 /// \brief Specialization of `std::tuple_element<>` for midi2::ump::m1cvm::poly_pressure
 MIDI2_UMP_TUPLE(m1cvm, poly_pressure)  // Define tuple_size and tuple_element for m1cvm/poly_pressure
 MIDI2_SPAN_CTOR(m1cvm, poly_pressure)  // Define the span constructor for m1cvm/poly_pressure
-
-/// \fn constexpr auto midi2::ump::m1cvm::control_change::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::cc.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::control_change.
-
-/// \fn constexpr auto midi2::ump::m1cvm::control_change::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
 
 // 7.3.4 MIDI 1.0 Control Change Message
 class midi2::ump::m1cvm::control_change {
@@ -1431,8 +1417,16 @@ public:
   constexpr explicit control_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
+  /// \fn constexpr auto midi2::ump::m1cvm::control_change::mt() const noexcept
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::control_change)
+  /// \fn constexpr auto midi2::ump::m1cvm::control_change::status() const noexcept
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::cc.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::control_change.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::control_change)
   MIDI2_UMP_GETTER_SETTER(word0, controller, ump::m1cvm::control_change)
@@ -1455,16 +1449,6 @@ private:
 /// \brief Specialization of `std::tuple_element<>` for midi2::ump::m1cvm::control_change
 MIDI2_UMP_TUPLE(m1cvm, control_change)  // Define tuple_size and tuple_element for m1cvm/control_change
 MIDI2_SPAN_CTOR(m1cvm, control_change)  // Define the span constructor for m1cvm/control_change
-
-/// \fn constexpr auto midi2::ump::m1cvm::program_change::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::program_change.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::program_change.
-
-/// \fn constexpr auto midi2::ump::m1cvm::program_change::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
 
 // 7.3.5 MIDI 1.0 Program Change Message
 class midi2::ump::m1cvm::program_change {
@@ -1494,8 +1478,16 @@ public:
   constexpr explicit program_change(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
+  /// \fn constexpr auto midi2::ump::m1cvm::program_change::mt() const noexcept
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::program_change)
+  /// \fn constexpr auto midi2::ump::m1cvm::program_change::status() const noexcept
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::program_change.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::program_change.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::program_change)
   MIDI2_UMP_GETTER_SETTER(word0, program, ump::m1cvm::program_change)
@@ -1576,16 +1568,6 @@ private:
 MIDI2_UMP_TUPLE(m1cvm, channel_pressure)  // Define tuple_size and tuple_element for m1cvm/channel_pressure
 MIDI2_SPAN_CTOR(m1cvm, channel_pressure)  // Define the span constructor for m1cvm/channel_pressure
 
-/// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::pitch_bend.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::pitch_bend.
-
-/// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
-
 // 7.3.7 MIDI 1.0 Pitch Bend Message
 class midi2::ump::m1cvm::pitch_bend {
 public:
@@ -1614,8 +1596,16 @@ public:
   constexpr explicit pitch_bend(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
 
+  /// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::mt() const noexcept
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::pitch_bend)
+  /// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::status() const noexcept
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::pitch_bend.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::pitch_bend.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::pitch_bend)
   MIDI2_UMP_GETTER_SETTER(word0, lsb_data, ump::m1cvm::pitch_bend)
@@ -4074,240 +4064,6 @@ MIDI2_SPAN_CTOR(flex_data, set_key_signature)  // Define the span constructor fo
 
 /// \class midi2::ump::flex_data::set_chord_name
 /// \brief This message declares the name of a chord.
-//
-/// \fn midi2::ump::flex_data::set_chord_name::mt
-/// \brief Returns the value of the word0::mt (message-type) field. Always mt::flex_data::set_chord_name.
-/// \note This is a read-only field.
-/// \returns The value of the word0::mt (message-type) field. Always mt::flex_data::set_chord_name.
-//
-/// \fn constexpr auto set_chord_name::group() const noexcept
-/// \brief Returns the value of the word0::group field.
-/// \returns The value of the word0::group field.
-//
-/// \fn constexpr auto & set_chord_name::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
-/// \brief Sets the value of the word0::group field to \p v.
-/// \param v  The value to be assigned to the word0::group field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::form() const noexcept
-/// \brief Returns the value of the word0::form field.
-/// \note This is a read-only field.
-/// \returns The value of the word0::form field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::address() const noexcept
-/// \brief Returns the value of the word0::address field.
-/// \returns The value of the word0::address field.
-//
-/// \fn constexpr auto & set_chord_name::address(adt::uinteger_t<word0::address::bits::value> const v) noexcept
-/// \brief Sets the value of the word0::address field to \p v.
-/// \param v  The value to be assigned to the word0::address field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::channel() const noexcept
-/// \brief Returns the value of the word0::channel field.
-/// \returns The value held in the word0::channel field.
-//
-/// \fn constexpr auto & set_chord_name::channel(adt::uinteger_t<word0::channel::bits::value> const v) noexcept
-/// \brief Sets the value of the word0::channel field to \p v.
-/// \param v  The value to be assigned to the word0::channel field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::status_bank() const noexcept
-/// \brief Returns the value of the word0::status_bank field.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status_bank field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::status() const noexcept
-/// \brief Returns the value of the word0::status field.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::tonic_sharps_flats_raw() const noexcept
-/// \brief Returns the raw value of the word1::tonic_sharps_flats field.
-/// \returns The raw value of the word1::tonic_sharps_flats.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::tonic_sharps_flats() const noexcept
-/// \brief Returns the value of the word1::tonic_sharps_flats field as a sharps_flats enumeration.
-/// \returns The value of the word1::tonic_sharps_flats as a sharps_flats enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::tonic_sharps_flats(enum midi2::ump::flex_data::sharps_flats const v) noexcept
-/// \brief Sets the value of the word1::tonic_sharps_flats field.
-/// \param v  The value to be assigned to the word1::tonic_sharps_flats field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_tonic_raw() const noexcept
-/// \brief Returns the raw value of the word1::chord_tonic field.
-/// \returns The raw value of the word1::chord_tonic.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_tonic() const noexcept
-/// \brief Returns the value of the word1::chord_tonic field as a note enumeration.
-/// \returns The value of the word1::chord_tonic as a note enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::chord_tonic(enum midi2::ump::flex_data::note const v) noexcept
-/// \brief Sets the value of the word1::chord_tonic field.
-/// \param v  The value to be assigned to the word1::chord_tonic field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_type_raw() const noexcept
-/// \brief Returns the raw value of the word1::chord_type field.
-/// \returns The raw value of the word1::chord_type field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_type() const noexcept
-/// \brief Returns the value of the word1::chord_type field as a note enumeration.
-/// \returns The value of the word1::chord_type as a note enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::chord_type(enum midi2::ump::flex_data::chord_type const v) noexcept
-/// \brief Sets the value of the word1::chord_type field.
-/// \param v  The value to be assigned to the word1::chord_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_1_type() const noexcept
-/// \brief Returns the value of the word1::alter_1_type field.
-/// \returns The value of word1::alter_1_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_1_type(adt::uinteger_t<word1::alter_1_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word1::alter_1_type field.
-/// \param v  The value to be assigned to the word1::alter_1_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_1_degree() const noexcept
-/// \brief Returns the value of the word1::alter_1_degree field.
-/// \returns The value of word1::alter_1_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_1_degree(adt::uinteger_t<word1::alter_1_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word1::alter_1_degree field.
-/// \param v  The value to be assigned to the word1::alter_1_degree field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_2_type() const noexcept
-/// \brief Returns the value of the word1::alter_2_type field.
-/// \returns The value of word1::alter_2_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_2_type(adt::uinteger_t<word1::alter_2_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word1::alter_2_type field.
-/// \param v  The value to be assigned to the word1::alter_2_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_2_degree() const noexcept
-/// \brief Returns the value of the word1::alter_2_degree field.
-/// \returns The value of word1::alter_2_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_2_degree(adt::uinteger_t<word1::alter_2_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word1::alter_2_degree field.
-/// \param v  The value to be assigned to the word1::alter_2_degree field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_3_type() const noexcept
-/// \brief Returns the value of the word2::alter_3_type field.
-/// \returns The value of word2::alter_3_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_3_type(adt::uinteger_t<word2::alter_3_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word2::alter_3_type field.
-/// \param v  The value to be assigned to the word2::alter_3_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_3_degree() const noexcept
-/// \brief Returns the value of the word2::alter_3_degree field.
-/// \returns The value of word2::alter_3_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_3_degree(adt::uinteger_t<word2::alter_3_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word2::alter_3_degree field.
-/// \param v  The value to be assigned to the word2::alter_3_degree field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_4_type() const noexcept
-/// \brief Returns the value of the word2::alter_4_type field.
-/// \returns The value of word2::alter_4_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_4_type(adt::uinteger_t<word2::alter_4_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word2::alter_4_type field.
-/// \param v  The value to be assigned to the word2::alter_4_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_4_degree() const noexcept
-/// \brief Returns the value of the word2::alter_4_degree field.
-/// \returns The value of word2::alter_4_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_4_degree(adt::uinteger_t<word2::alter_4_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word2::alter_4_degree field.
-/// \param v  The value to be assigned to the word2::alter_4_degree field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_sharps_flats_raw() const noexcept
-/// \brief Returns the raw value of the word3::bass_sharps_flats field.
-/// \returns The raw value of the word3::bass_sharps_flats field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_sharps_flats() const noexcept
-/// \brief Returns the value of the word3::bass_sharps_flats field as a note enumeration.
-/// \returns The value of the word3::bass_sharps_flats as a sharps_flats enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_sharps_flats(enum midi2::ump::flex_data::sharps_flats const v) noexcept
-/// \brief Sets the value of the word3::bass_sharps_flats field.
-/// \param v  The value to be assigned to the word3::bass_sharps_flats field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_note_raw() const noexcept
-/// \brief Returns the raw value of the word3::bass_note field.
-/// \returns The raw value of the word3::bass_note field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_note() const noexcept
-/// \brief Returns the value of the word3::bass_note field as a note enumeration.
-/// \returns The value of the word3::bass_note as a note enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_note(enum midi2::ump::flex_data::note const v) noexcept
-/// \brief Sets the value of the word3::bass_note field.
-/// \param v  The value to be assigned to the word3::bass_note field.
-/// \returns *this
-
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_chord_type_raw() const noexcept
-/// \brief Returns the raw value of the word3::bass_chord_type field.
-/// \returns The raw value of the word3::bass_chord_type field.
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_chord_type() const noexcept
-/// \brief Returns the value of the word3::bass_chord_type field as a chord_type enumeration.
-/// \returns The value of the word3::bass_chord_type as a note enumeration.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_chord_type(enum midi2::ump::flex_data::chord_type const v) noexcept
-/// \brief Sets the value of the word3::bass_chord_type field.
-/// \param v  The value to be assigned to the word3::bass_chord_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_1_type() const noexcept
-/// \brief Returns the value of the word3::bass_alter_1_type field.
-/// \returns The value of word3::bass_alter_1_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_1_type(adt::uinteger_t<word3::bass_alter_1_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word3::bass_alter_1_type field.
-/// \param v  The value to be assigned to the word3::bass_alter_1_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_1_degree() const noexcept
-/// \brief Returns the value of the word3::bass_alter_1_degree field.
-/// \returns The value of word3::bass_alter_1_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_1_degree(adt::uinteger_t<word3::bass_alter_1_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word3::bass_alter_1_degree field.
-/// \param v  The value to be assigned to the word3::bass_alter_1_degree field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_2_type() const noexcept
-/// \brief Returns the value of the word3::bass_alter_2_type field.
-/// \returns The value of word3::bass_alter_2_type.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_2_type(adt::uinteger_t<word3::bass_alter_2_type::bits::value> const v) noexcept
-/// \brief Sets the value of the word3::bass_alter_2_type field.
-/// \param v  The value to be assigned to the word3::bass_alter_2_type field.
-/// \returns *this
-//
-/// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_2_degree() const noexcept
-/// \brief Returns the value of the word3::bass_alter_2_degree field.
-/// \returns The value of word3::bass_alter_2_degree.
-//
-/// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_2_degree(adt::uinteger_t<word3::bass_alter_2_degree::bits::value> const v) noexcept
-/// \brief Sets the value of the word3::bass_alter_2_degree field.
-/// \param v  The value to be assigned to the word3::bass_alter_2_degree field.
-/// \returns *this
-
 class midi2::ump::flex_data::set_chord_name {
 public:
   /// Defines the fields of the first word of the set_chord_name message.
@@ -4414,33 +4170,241 @@ public:
   constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) noexcept;
   friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) noexcept = default;
 
+  /// \fn midi2::ump::flex_data::set_chord_name::mt
+  /// \brief Returns the value of the word0::mt (message-type) field. Always mt::flex_data::set_chord_name.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt (message-type) field. Always mt::flex_data::set_chord_name.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto set_chord_name::group() const noexcept
+  /// \brief Returns the value of the word0::group field.
+  /// \returns The value of the word0::group field.
+  //
+  /// \fn constexpr auto & set_chord_name::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the value of the word0::group field to \p v.
+  /// \param v  The value to be assigned to the word0::group field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::form() const noexcept
+  /// \brief Returns the value of the word0::form field.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::form field.
   MIDI2_UMP_GETTER(word0, form)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::address() const noexcept
+  /// \brief Returns the value of the word0::address field.
+  /// \returns The value of the word0::address field.
+  //
+  /// \fn constexpr auto & set_chord_name::address(adt::uinteger_t<word0::address::bits::value> const v) noexcept
+  /// \brief Sets the value of the word0::address field to \p v.
+  /// \param v  The value to be assigned to the word0::address field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word0, address, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::channel() const noexcept
+  /// \brief Returns the value of the word0::channel field.
+  /// \returns The value held in the word0::channel field.
+  //
+  /// \fn constexpr auto & set_chord_name::channel(adt::uinteger_t<word0::channel::bits::value> const v) noexcept
+  /// \brief Sets the value of the word0::channel field to \p v.
+  /// \param v  The value to be assigned to the word0::channel field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::status_bank() const noexcept
+  /// \brief Returns the value of the word0::status_bank field.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status_bank field.
   MIDI2_UMP_GETTER(word0, status_bank)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::status() const noexcept
+  /// \brief Returns the value of the word0::status field.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field.
   MIDI2_UMP_GETTER(word0, status)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::tonic_sharps_flats_raw() const noexcept
+  /// \brief Returns the raw value of the word1::tonic_sharps_flats field.
+  /// \returns The raw value of the word1::tonic_sharps_flats.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::tonic_sharps_flats() const noexcept
+  /// \brief Returns the value of the word1::tonic_sharps_flats field as a sharps_flats enumeration.
+  /// \returns The value of the word1::tonic_sharps_flats as a sharps_flats enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::tonic_sharps_flats(enum midi2::ump::flex_data::sharps_flats const v) noexcept
+  /// \brief Sets the value of the word1::tonic_sharps_flats field.
+  /// \param v  The value to be assigned to the word1::tonic_sharps_flats field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word1, tonic_sharps_flats, midi2::ump::flex_data::sharps_flats,
                                ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_tonic_raw() const noexcept
+  /// \brief Returns the raw value of the word1::chord_tonic field.
+  /// \returns The raw value of the word1::chord_tonic.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_tonic() const noexcept
+  /// \brief Returns the value of the word1::chord_tonic field as a note enumeration.
+  /// \returns The value of the word1::chord_tonic as a note enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::chord_tonic(enum midi2::ump::flex_data::note const v) noexcept
+  /// \brief Sets the value of the word1::chord_tonic field.
+  /// \param v  The value to be assigned to the word1::chord_tonic field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word1, chord_tonic, midi2::ump::flex_data::note, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_type_raw() const noexcept
+  /// \brief Returns the raw value of the word1::chord_type field.
+  /// \returns The raw value of the word1::chord_type field.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::chord_type() const noexcept
+  /// \brief Returns the value of the word1::chord_type field as a note enumeration.
+  /// \returns The value of the word1::chord_type as a note enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::chord_type(enum midi2::ump::flex_data::chord_type const v) noexcept
+  /// \brief Sets the value of the word1::chord_type field.
+  /// \param v  The value to be assigned to the word1::chord_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word1, chord_type, midi2::ump::flex_data::chord_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_1_type() const noexcept
+  /// \brief Returns the value of the word1::alter_1_type field.
+  /// \returns The value of word1::alter_1_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_1_type(adt::uinteger_t<word1::alter_1_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word1::alter_1_type field.
+  /// \param v  The value to be assigned to the word1::alter_1_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word1, alter_1_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_1_degree() const noexcept
+  /// \brief Returns the value of the word1::alter_1_degree field.
+  /// \returns The value of word1::alter_1_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_1_degree(adt::uinteger_t<word1::alter_1_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word1::alter_1_degree field.
+  /// \param v  The value to be assigned to the word1::alter_1_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word1, alter_1_degree, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_2_type() const noexcept
+  /// \brief Returns the value of the word1::alter_2_type field.
+  /// \returns The value of word1::alter_2_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_2_type(adt::uinteger_t<word1::alter_2_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word1::alter_2_type field.
+  /// \param v  The value to be assigned to the word1::alter_2_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word1, alter_2_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_2_degree() const noexcept
+  /// \brief Returns the value of the word1::alter_2_degree field.
+  /// \returns The value of word1::alter_2_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_2_degree(adt::uinteger_t<word1::alter_2_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word1::alter_2_degree field.
+  /// \param v  The value to be assigned to the word1::alter_2_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word1, alter_2_degree, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_3_type() const noexcept
+  /// \brief Returns the value of the word2::alter_3_type field.
+  /// \returns The value of word2::alter_3_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_3_type(adt::uinteger_t<word2::alter_3_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word2::alter_3_type field.
+  /// \param v  The value to be assigned to the word2::alter_3_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word2, alter_3_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_3_degree() const noexcept
+  /// \brief Returns the value of the word2::alter_3_degree field.
+  /// \returns The value of word2::alter_3_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_3_degree(adt::uinteger_t<word2::alter_3_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word2::alter_3_degree field.
+  /// \param v  The value to be assigned to the word2::alter_3_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word2, alter_3_degree, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_4_type() const noexcept
+  /// \brief Returns the value of the word2::alter_4_type field.
+  /// \returns The value of word2::alter_4_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_4_type(adt::uinteger_t<word2::alter_4_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word2::alter_4_type field.
+  /// \param v  The value to be assigned to the word2::alter_4_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word2, alter_4_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::alter_4_degree() const noexcept
+  /// \brief Returns the value of the word2::alter_4_degree field.
+  /// \returns The value of word2::alter_4_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::alter_4_degree(adt::uinteger_t<word2::alter_4_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word2::alter_4_degree field.
+  /// \param v  The value to be assigned to the word2::alter_4_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word2, alter_4_degree, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_sharps_flats_raw() const noexcept
+  /// \brief Returns the raw value of the word3::bass_sharps_flats field.
+  /// \returns The raw value of the word3::bass_sharps_flats field.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_sharps_flats() const noexcept
+  /// \brief Returns the value of the word3::bass_sharps_flats field as a note enumeration.
+  /// \returns The value of the word3::bass_sharps_flats as a sharps_flats enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_sharps_flats(enum midi2::ump::flex_data::sharps_flats const v) noexcept
+  /// \brief Sets the value of the word3::bass_sharps_flats field.
+  /// \param v  The value to be assigned to the word3::bass_sharps_flats field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_sharps_flats, midi2::ump::flex_data::sharps_flats,
                                ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_note_raw() const noexcept
+  /// \brief Returns the raw value of the word3::bass_note field.
+  /// \returns The raw value of the word3::bass_note field.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_note() const noexcept
+  /// \brief Returns the value of the word3::bass_note field as a note enumeration.
+  /// \returns The value of the word3::bass_note as a note enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_note(enum midi2::ump::flex_data::note const v) noexcept
+  /// \brief Sets the value of the word3::bass_note field.
+  /// \param v  The value to be assigned to the word3::bass_note field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_note, midi2::ump::flex_data::note, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_chord_type_raw() const noexcept
+  /// \brief Returns the raw value of the word3::bass_chord_type field.
+  /// \returns The raw value of the word3::bass_chord_type field.
+  //
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_chord_type() const noexcept
+  /// \brief Returns the value of the word3::bass_chord_type field as a chord_type enumeration.
+  /// \returns The value of the word3::bass_chord_type as a note enumeration.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_chord_type(enum midi2::ump::flex_data::chord_type const v) noexcept
+  /// \brief Sets the value of the word3::bass_chord_type field.
+  /// \param v  The value to be assigned to the word3::bass_chord_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER_ENUM(word3, bass_chord_type, midi2::ump::flex_data::chord_type,
                                ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_1_type() const noexcept
+  /// \brief Returns the value of the word3::bass_alter_1_type field.
+  /// \returns The value of word3::bass_alter_1_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_1_type(adt::uinteger_t<word3::bass_alter_1_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word3::bass_alter_1_type field.
+  /// \param v  The value to be assigned to the word3::bass_alter_1_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word3, bass_alter_1_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_1_degree() const noexcept
+  /// \brief Returns the value of the word3::bass_alter_1_degree field.
+  /// \returns The value of word3::bass_alter_1_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_1_degree(adt::uinteger_t<word3::bass_alter_1_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word3::bass_alter_1_degree field.
+  /// \param v  The value to be assigned to the word3::bass_alter_1_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word3, bass_alter_1_degree, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_2_type() const noexcept
+  /// \brief Returns the value of the word3::bass_alter_2_type field.
+  /// \returns The value of word3::bass_alter_2_type.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_2_type(adt::uinteger_t<word3::bass_alter_2_type::bits::value> const v) noexcept
+  /// \brief Sets the value of the word3::bass_alter_2_type field.
+  /// \param v  The value to be assigned to the word3::bass_alter_2_type field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word3, bass_alter_2_type, ump::flex_data::set_chord_name)
+  /// \fn constexpr auto midi2::ump::flex_data::set_chord_name::bass_alter_2_degree() const noexcept
+  /// \brief Returns the value of the word3::bass_alter_2_degree field.
+  /// \returns The value of word3::bass_alter_2_degree.
+  //
+  /// \fn constexpr auto & midi2::ump::flex_data::set_chord_name::bass_alter_2_degree(adt::uinteger_t<word3::bass_alter_2_degree::bits::value> const v) noexcept
+  /// \brief Sets the value of the word3::bass_alter_2_degree field.
+  /// \param v  The value to be assigned to the word3::bass_alter_2_degree field.
+  /// \returns *this
   MIDI2_UMP_GETTER_SETTER(word3, bass_alter_2_degree, ump::flex_data::set_chord_name)
 
 private:
