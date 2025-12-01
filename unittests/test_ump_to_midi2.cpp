@@ -412,8 +412,8 @@ TEST(UMPToMidi2PassThroughExtras, Unknown) {
 // NOLINTNEXTLINE
 TEST(UMPToMidi2PassThroughExtras, Text) {
   auto message = midi2::ump::flex_data::text_common{}.group(0).form(0).address(1).channel(3).status_bank(1).status(4);
-  message[0] = '\xC2';  // u8;
-  message[1] = '\xA9';
+  message[0] = 0xC2;  // COPYRIGHT SIGN U+00A9
+  message[1] = 0xA9;
   message[2] = '2';
   message[3] = '0';
   message[4] = '2';
