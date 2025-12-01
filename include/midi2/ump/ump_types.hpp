@@ -4593,9 +4593,18 @@ public:
     std::size_t index_;
   };
 
+#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
   }
+#else
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+  }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+  }
+#endif
 
 private:
   friend struct ::std::tuple_size<text_common>;
@@ -4774,9 +4783,18 @@ public:
     std::size_t index_;
   };
 
+#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
   }
+#else
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+  }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+  }
+#endif
 
 private:
   friend struct ::std::tuple_size<sysex8>;
