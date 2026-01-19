@@ -42,7 +42,7 @@ jobs:
 
       - name: Cache the Coverity Build Tool
         id: cache-build-tool
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7
         with:
           key: coverity-${{ runner.os }}-${{ steps.get-cov-md5.outputs.md5 }}
           path: "${{ env.BUILD_TOOL_DIR }}/coverity_tool.tgz"
