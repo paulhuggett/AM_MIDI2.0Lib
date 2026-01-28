@@ -9,7 +9,11 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(midi2)
-cmake_policy(SET CMP0140 NEW)
+if (CMAKE_MAJOR_VERSION GREATER_EQUAL 3 AND
+    CMAKE_MINOR_VERSION GREATER_EQUAL 25 OR
+    CMAKE_MAJOR_VERSION GREATER 3)
+  cmake_policy(SET CMP0140 NEW)
+endif()
 
 option(MIDI2_WERROR    "Enable warnings-as-errors" No )
 option(MIDI2_COVERAGE  "Enable code coverage"      No )
