@@ -44,7 +44,8 @@ This means the overheads for a simple MIDI 2.0 device is down to a compiled size
 ### Example: Creating and Sending UMP Messages
 
 ```C++
-#include <midi2/ump_types.hpp>
+// The midi2 library umbrella include file
+#include <midi2/midi2.hpp>
 
 void send_note_on(std::uint8_t channel, std::uint8_t note, std::uint32_t velocity) {
   // Create an instance of the type that represents the UMP message to be sent. Set
@@ -68,7 +69,8 @@ void send_note_on(std::uint8_t channel, std::uint8_t note, std::uint32_t velocit
 
 ```cpp
 #include <iostream>
-#include <midi2/ump_dispatcher.hpp>
+// The midi2 library umbrella include file
+#include <midi2/midi2.hpp>
 
 int main() {
   // In this scenario, we need to pass a “context” to the dispatcher,
@@ -110,7 +112,8 @@ Here is a quick example
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <midi2/bytestream_to_ump.hpp>
+// The midi2 library umbrella include file
+#include <midi2/midi2.hpp>
 
 namespace {
 consteval std::byte operator""_b(unsigned long long arg) noexcept {
@@ -145,10 +148,8 @@ int main() {
 #include <iostream>
 #include <iterator>
 #include <vector>
-
-#include "midi2/ci_create_message.hpp"
-#include "midi2/ci_types.hpp"
-#include "midi2/utils.hpp"
+// The midi2 library umbrella include file
+#include <midi2/midi2.hpp>
 
 namespace {
 
@@ -183,13 +184,13 @@ int main() {
 MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing MIDI-CI Messages.
 
 ~~~cpp
-#include "midi2/ci_dispatcher.hpp"
-
 #include <array>
 #include <cstdlib>
 #include <format>
 #include <iostream>
 #include <type_traits>
+// The midi2 library umbrella include file
+#include <midi2/midi2.hpp>
 
 using namespace midi2::ci::literals;
 
