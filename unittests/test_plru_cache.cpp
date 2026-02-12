@@ -135,17 +135,18 @@ TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
   auto const value = "str"s;
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
-  auto const key = static_cast<std::uint16_t>(GetParam());
-  EXPECT_CALL(mock_function, Call(key, _)).WillOnce(Return(value)).RetiresOnSaturation();
-  EXPECT_CALL(mock_function, Call(key + 1, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  auto const key1 = static_cast<std::uint16_t>(GetParam());
+  auto const key2 = static_cast<std::uint16_t>(key1 + 1);
+  EXPECT_CALL(mock_function, Call(key1, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(key2, _)).WillOnce(Return(value)).RetiresOnSaturation();
 
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key + 1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key2, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 2U);
 
   // A second call with the same key doesn't create a new member.
-  EXPECT_EQ(cache.access(key + 1, mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key2, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 2U);
 }
 
@@ -156,7 +157,7 @@ TEST_P(PlruCacheParam, Key2x8Uint16TwoValues) {
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key1 = static_cast<std::uint16_t>(GetParam());
-  auto const key2 = key1 + (1 << 3);
+  auto const key2 = static_cast<std::uint16_t>(key1 + (1 << 3));
   EXPECT_CALL(mock_function, Call(key1, _)).WillOnce(Return(value)).RetiresOnSaturation();
   EXPECT_CALL(mock_function, Call(key2, _)).WillOnce(Return(value)).RetiresOnSaturation();
 
@@ -176,9 +177,9 @@ TEST_P(PlruCacheParam, Key4x4Uint32TwoValues) {
   auto const value = "str"s;
   MockFunction<std::string(std::uint32_t, std::size_t)> mock_function;
 
-  auto const key1 = GetParam();
-  auto const key2 = key1 + (1 << 2);
-  auto const key3 = key1 + (1 << 3);
+  auto const key1 = static_cast<std::uint32_t>(GetParam());
+  auto const key2 = static_cast<std::uint32_t>(key1 + (1 << 2));
+  auto const key3 = static_cast<std::uint32_t>(key1 + (1 << 3));
   EXPECT_CALL(mock_function, Call(key1, _)).WillOnce(Return(value)).RetiresOnSaturation();
   EXPECT_CALL(mock_function, Call(key2, _)).WillOnce(Return(value)).RetiresOnSaturation();
   EXPECT_CALL(mock_function, Call(key3, _)).WillOnce(Return(value)).RetiresOnSaturation();
