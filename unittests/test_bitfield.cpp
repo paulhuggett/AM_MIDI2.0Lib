@@ -18,12 +18,11 @@
 // Google Test
 #include <gtest/gtest.h>
 
+namespace {
+
 using midi2::adt::bit_field;
 using midi2::adt::bit_range;
 using midi2::adt::max_value;
-
-namespace {
-
 using testing::Types;
 
 template <typename T> class BitFieldAssignment : public testing::Test {};
