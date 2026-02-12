@@ -111,7 +111,7 @@ public:
   /// \brief Removes the first element of the container and returns it.
   /// If there are no elements in the container, the behavior is undefined.
   /// \returns The first element in the container.
-  constexpr value_type pop_front() {
+  constexpr value_type pop_front() noexcept(std::is_nothrow_move_constructible_v<value_type>) {
     assert(!this->empty());
     auto& v = arr_[read_index_ & mask_].value();
     auto result = std::move(v);
