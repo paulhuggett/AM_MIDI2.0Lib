@@ -193,16 +193,17 @@ template <std::unsigned_integral Key, typename MappedType, unsigned SetBits, std
 
 public:
   template <typename MissFn, typename ValidFn>
-    requires(std::is_invocable_r_v<MappedType, MissFn> && std::is_invocable_r_v<bool, ValidFn, MappedType const &>)
-  MappedType &access(Key key, MissFn miss, ValidFn valid) {
+    requires(std::is_invocable_r_v<MappedType, MissFn, Key, std::size_t> &&
+             std::is_invocable_r_v<bool, ValidFn, MappedType const &>)
+  MappedType &access(Key key, MissFn miss, ValidFn valid, std::size_t index) {
     auto const tag = tagged_key_type{key};
-    if (auto const index = find_matching(tag); index < Ways) {
-      assert(keys_[index].valid());
-      auto &found_result = values_[index].value();
+    if (auto const vi = find_matching(tag); vi < Ways) {
+      assert(keys_[vi].valid());
+      auto &found_result = values_[vi].value();
       if (!valid(found_result)) {
-        found_result = miss();
+        found_result = miss(key, index + vi);
       }
-      plru_.touch(index);
+      plru_.touch(vi);
       return found_result;
     }
 
@@ -211,9 +212,9 @@ public:
     // The key was not found: call miss() to populate it.
     auto &result = values_[victim].value();
     if (keys_[victim].valid()) {
-      result = miss();
+      result = miss(key, index + victim);
     } else {
-      std::construct_at(&result, miss());
+      std::construct_at(&result, miss(key, index + victim));
     }
     keys_[victim] = std::move(tag);
     plru_.touch(victim);
@@ -376,6 +377,23 @@ public:
 
   bool operator==(plru_cache const &) const = delete;
 
+  /// \tparam MissFn  The type of the function called to instantiate a value in the cache.
+  /// \tparam ValidFn  The type of the function called to check the validity of a value in the cache.
+  /// \param key  Key value of the element to search for.
+  /// \param miss  The function that will be called to instantiate the associated value if \p key
+  ///   is not present in the cache. The function must be compatible with the signature T().
+  /// \param valid  The function that will be called to determine whether the cached value remains
+  ///   valid. It must be compatible with the signature bool(T).
+  /// \returns The cached value.
+  template <typename MissFn, typename ValidFn>
+    requires(std::is_invocable_r_v<mapped_type, MissFn, Key, std::size_t> &&
+             std::is_invocable_r_v<bool, ValidFn, mapped_type const &>)
+  mapped_type &access(key_type key, MissFn miss, ValidFn valid) {
+    assert(plru_cache::set(key) < Sets);
+    return sets_[plru_cache::set(key)].access(key, std::move(miss), std::move(valid),
+                                              plru_cache::set(key) * plru_cache::ways);
+  }
+
   /// Searches the cache for the \p key and returns a reference to it if present. If not present
   /// and the cache is fully occupied, the likely least recently used value is evicted from the
   /// cache then the \p miss function is called to instantiate the mapped type associated with
@@ -387,26 +405,9 @@ public:
   ///   is not present in the cache. The function must be compatible with the signature T().
   /// \returns The cached value.
   template <typename MissFn>
-    requires(std::is_invocable_r_v<mapped_type, MissFn>)
-  mapped_type &access(key_type key, MissFn miss) {
-    assert(plru_cache::set(key) < Sets);
-    return sets_[plru_cache::set(key)].access(key, std::move(miss),
-                                              [](mapped_type const &) constexpr noexcept { return true; });
-  }
-
-  /// \tparam MissFn  The type of the function called to instantiate a value in the cache.
-  /// \tparam ValidFn  The type of the function called to check the validity of a value in the cache.
-  /// \param key  Key value of the element to search for.
-  /// \param miss  The function that will be called to instantiate the associated value if \p key
-  ///   is not present in the cache. The function must be compatible with the signature T().
-  /// \param valid  The function that will be called to determine whether the cached value remains
-  ///   valid. It must be compatible with the signature bool(T).
-  /// \returns The cached value.
-  template <typename MissFn, typename ValidFn>
-    requires(std::is_invocable_r_v<mapped_type, MissFn> && std::is_invocable_r_v<bool, ValidFn, mapped_type const &>)
-  mapped_type &access(key_type key, MissFn miss, ValidFn valid) {
-    assert(plru_cache::set(key) < Sets);
-    return sets_[plru_cache::set(key)].access(key, std::move(miss), std::move(valid));
+    requires(std::is_invocable_r_v<mapped_type, MissFn, Key, std::size_t>)
+  mapped_type &access(key_type const key, MissFn const miss) {
+    return this->access(key, miss, [](mapped_type const &) constexpr noexcept { return true; });
   }
 
   /// Checks if there is an element with a key that compares equivalent to \p key

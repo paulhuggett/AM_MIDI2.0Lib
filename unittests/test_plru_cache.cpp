@@ -20,7 +20,9 @@
 #endif
 
 using midi2::adt::plru_cache;
+using namespace std::string_literals;
 
+using testing::_;
 using testing::ElementsAre;
 using testing::MockFunction;
 using testing::Return;
@@ -36,10 +38,10 @@ TEST(PlruCache, Empty) {
 
 TEST(PlruCache, InitialAccess) {
   plru_cache<unsigned, std::string, 4, 2> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
+  auto const value = "str"s;
+  MockFunction<std::string(unsigned, std::size_t)> mock_function;
 
-  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(3U, _)).WillOnce(Return(value)).RetiresOnSaturation();
   {
     std::string const& actual1 = cache.access(3U, mock_function.AsStdFunction());
     EXPECT_EQ(actual1, value);
@@ -55,10 +57,10 @@ TEST(PlruCache, InitialAccess) {
 
 TEST(PlruCache, Dirty) {
   plru_cache<unsigned, std::string, 4, 2> cache;
-  MockFunction<std::string()> miss;
+  MockFunction<std::string(unsigned, std::size_t)> miss;
   MockFunction<bool(std::string const&)> valid;
 
-  EXPECT_CALL(miss, Call()).WillOnce(Return("first")).WillOnce(Return("second")).RetiresOnSaturation();
+  EXPECT_CALL(miss, Call(3U, _)).WillOnce(Return("first")).WillOnce(Return("second")).RetiresOnSaturation();
   EXPECT_CALL(valid, Call("first")).WillOnce(Return(true)).WillOnce(Return(false)).RetiresOnSaturation();
 
   // Key is not in the cache: miss() is called
@@ -72,17 +74,15 @@ TEST(PlruCache, Dirty) {
 TEST(PlruCache, Fill) {
   plru_cache<unsigned, std::string, 4, 2> cache;
 
-  MockFunction<std::string()> mock_function;
-  EXPECT_CALL(mock_function, Call())
-      .WillOnce(Return("first"))
-      .WillOnce(Return("second"))
-      .WillOnce(Return("third"))
-      .WillOnce(Return("fourth"))
-      .WillOnce(Return("fifth"))
-      .WillOnce(Return("sixth"))
-      .WillOnce(Return("seventh"))
-      .WillOnce(Return("eighth"))
-      .RetiresOnSaturation();
+  MockFunction<std::string(unsigned, std::size_t)> mock_function;
+  EXPECT_CALL(mock_function, Call(1, _)).WillOnce(Return("first"));
+  EXPECT_CALL(mock_function, Call(2, _)).WillOnce(Return("second"));
+  EXPECT_CALL(mock_function, Call(3, _)).WillOnce(Return("third"));
+  EXPECT_CALL(mock_function, Call(4, _)).WillOnce(Return("fourth"));
+  EXPECT_CALL(mock_function, Call(5, _)).WillOnce(Return("fifth"));
+  EXPECT_CALL(mock_function, Call(6, _)).WillOnce(Return("sixth"));
+  EXPECT_CALL(mock_function, Call(7, _)).WillOnce(Return("seventh"));
+  EXPECT_CALL(mock_function, Call(8, _)).WillOnce(Return("eighth")).RetiresOnSaturation();
 
   std::string const& first = cache.access(1, mock_function.AsStdFunction());
   EXPECT_EQ(first, "first");
@@ -115,12 +115,12 @@ class PlruCacheParam : public testing::TestWithParam<unsigned> {};
 TEST_P(PlruCacheParam, Key4x4Uint16) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 4, 4> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
-
-  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).RetiresOnSaturation();
+  auto const value = "str"s;
+  MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key = static_cast<std::uint16_t>(GetParam());
+  EXPECT_CALL(mock_function, Call(key, _)).WillOnce(Return(value)).RetiresOnSaturation();
+
   EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 1U);
 
@@ -132,12 +132,13 @@ TEST_P(PlruCacheParam, Key4x4Uint16) {
 TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 4, 4> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
-
-  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).WillOnce(Return(value)).RetiresOnSaturation();
+  auto const value = "str"s;
+  MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key = static_cast<std::uint16_t>(GetParam());
+  EXPECT_CALL(mock_function, Call(key, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(key + 1, _)).WillOnce(Return(value)).RetiresOnSaturation();
+
   EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
   EXPECT_EQ(cache.access(key + 1, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 2U);
@@ -151,39 +152,45 @@ TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
 TEST_P(PlruCacheParam, Key2x8Uint16TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 2, 8> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
+  auto const value = "str"s;
+  MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
-  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).WillOnce(Return(value)).RetiresOnSaturation();
+  auto const key1 = static_cast<std::uint16_t>(GetParam());
+  auto const key2 = key1 + (1 << 3);
+  EXPECT_CALL(mock_function, Call(key1, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(key2, _)).WillOnce(Return(value)).RetiresOnSaturation();
 
-  auto const key = static_cast<std::uint16_t>(GetParam());
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key2, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 2U);
 
   // A second call with the same key doesn't create a new member.
-  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key2, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 2U);
 }
 
 TEST_P(PlruCacheParam, Key4x4Uint32TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint32_t, std::string, 4, 4> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
+  auto const value = "str"s;
+  MockFunction<std::string(std::uint32_t, std::size_t)> mock_function;
 
-  EXPECT_CALL(mock_function, Call()).Times(3).WillRepeatedly(Return(value)).RetiresOnSaturation();
+  auto const key1 = GetParam();
+  auto const key2 = key1 + (1 << 2);
+  auto const key3 = key1 + (1 << 3);
+  EXPECT_CALL(mock_function, Call(key1, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(key2, _)).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(key3, _)).WillOnce(Return(value)).RetiresOnSaturation();
 
-  auto const key = GetParam();
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key + (1 << 2), mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key2, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key3, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 3U);
 
   // A second call with the same key doesn't create a new member.
-  EXPECT_EQ(cache.access(key + (1 << 3), mock_function.AsStdFunction()), value);
-  EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key3, mock_function.AsStdFunction()), value);
+  EXPECT_EQ(cache.access(key1, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 3U);
 }
 INSTANTIATE_TEST_SUITE_P(PlruCacheParam, PlruCacheParam, testing::Range(/*begin=*/0U, /*end=*/32U, /*step=*/4U));
@@ -191,10 +198,10 @@ INSTANTIATE_TEST_SUITE_P(PlruCacheParam, PlruCacheParam, testing::Range(/*begin=
 TEST(PlruCache, Key2x8Uint16) {
   // Check for the NEON SIMD with 8 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 2, 8> cache;
-  std::string const value = "str";
-  MockFunction<std::string()> mock_function;
+  auto const value = "str"s;
+  MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
-  EXPECT_CALL(mock_function, Call()).WillOnce(Return(value)).RetiresOnSaturation();
+  EXPECT_CALL(mock_function, Call(3U, _)).WillOnce(Return(value)).RetiresOnSaturation();
 
   EXPECT_EQ(cache.access(3U, mock_function.AsStdFunction()), value);
   EXPECT_EQ(std::size(cache), 1U);
@@ -213,10 +220,10 @@ TEST(PlruCache, BeginEnd) {
 
 template <unsigned Sets, unsigned Ways> void NeverCrashes(std::vector<std::uint16_t> const& keys) {
   plru_cache<std::uint16_t, std::uint16_t, Sets, Ways> cache;
-  MockFunction<std::uint16_t()> mock_function;
+  MockFunction<std::uint16_t(std::uint16_t, std::size_t)> mock_function;
   for (auto const key : keys) {
     if (!cache.contains(key)) {
-      EXPECT_CALL(mock_function, Call()).WillOnce(Return(key)).RetiresOnSaturation();
+      EXPECT_CALL(mock_function, Call(key, _)).WillOnce(Return(key)).RetiresOnSaturation();
     }
     EXPECT_EQ(cache.access(key, mock_function.AsStdFunction()), key);
   }
@@ -238,7 +245,7 @@ TEST(PlruCache, OverFill) {
   plru_cache<unsigned, unsigned, 4, 2> cache;
 
   auto count = 0U;
-  auto miss = [&count]() { return ++count; };
+  auto miss = [&count](unsigned, std::size_t) { return ++count; };
 
   cache.access(1, miss);
   cache.access(2, miss);
