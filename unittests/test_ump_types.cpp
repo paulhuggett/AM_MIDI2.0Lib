@@ -139,8 +139,8 @@ TEST(UMPTypes, Sysex7InOneIteratorWriteUsingAlgorithm) {
   auto message = midi2::ump::data64::sysex7_in_1{}.group(0);
   constexpr std::array src{0x1, 0x3, 0x5, 0x7};
   std::ranges::copy(src, message.begin());
-  message.number_of_bytes(src.size());
-
+  using count_type = midi2::ump::data64::sysex7_in_1::word0::number_of_bytes::uinteger;
+  message.number_of_bytes(static_cast<count_type>(src.size()));
   EXPECT_THAT(message, ElementsAreArray(src));
 }
 TEST(UMPTypes, Sysex7InOneReadArray) {
