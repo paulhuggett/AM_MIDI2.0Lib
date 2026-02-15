@@ -17,7 +17,7 @@
 
 namespace {
 
-constexpr std::error_code transmit(std::uint32_t word) {
+std::error_code transmit(std::uint32_t word) {
   // ... transmit the 32 bit word ...
   // Here we just print the value but this code could transmit it or record it in
   // a container (e.g. a FIFO) for later use.
