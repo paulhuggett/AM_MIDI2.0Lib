@@ -155,7 +155,7 @@ private:
 
   /// \returns  The number of bits required for value.
   // NOLINTNEXTLINE(misc-no-recursion)
-  static consteval unsigned bits_required(std::size_t const value) noexcept {
+  [[nodiscard]] static consteval unsigned bits_required(std::size_t const value) noexcept {
     return value == 0U ? 0U : 1U + bits_required(value >> 1);
   }
   /// The number of bits required to represent the maximum index in the arr_

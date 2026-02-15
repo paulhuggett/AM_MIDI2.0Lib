@@ -2030,9 +2030,9 @@ public:
     }
 
     using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
-    owner_type const *owner() const noexcept { return owner_; }
-    owner_type *owner() noexcept { return owner_; }
-    std::size_t index() const noexcept { return index_; }
+    [[nodiscard]] constexpr owner_type const *owner() const noexcept { return owner_; }
+    [[nodiscard]] constexpr owner_type *owner() noexcept { return owner_; }
+    [[nodiscard]] constexpr std::size_t index() const noexcept { return index_; }
 
   private:
     friend class sysex7;
@@ -2058,7 +2058,8 @@ public:
     auto index = std::size_t{0};
     for (auto v : vs) {
       assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-      (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+      (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
+      ++index;
     }
     using count_type = word0::number_of_bytes::uinteger;
     return this->number_of_bytes(static_cast<count_type>(index));
@@ -2071,7 +2072,8 @@ public:
         std::forward<Range>(range),
         [this, &index](auto v) constexpr {
           assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-          (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+          (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
+          ++index;
         },
         proj);
     using count_type = word0::number_of_bytes::uinteger;
@@ -2083,7 +2085,8 @@ public:
     auto index = std::size_t{0};
     std::for_each(first, last, [this, &index](auto v) constexpr {
       assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-      (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+      (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
+      ++index;
     });
     using count_type = word0::number_of_bytes::uinteger;
     return this->number_of_bytes(static_cast<count_type>(index));
@@ -2105,6 +2108,7 @@ public:
     constexpr explicit iterator_base(array_subscript_proxy<IsConst> arr) noexcept : arr_{std::move(arr)} {}
     constexpr iterator_base(iterator_base const &other) noexcept : arr_{other.arr_} {}
     constexpr iterator_base(iterator_base &&other) noexcept : arr_{std::move(other.arr_)} {}
+    ~iterator_base() noexcept = default;
 
     template <bool OtherIsConst>
       requires(IsConst == OtherIsConst || !OtherIsConst)
@@ -2220,9 +2224,9 @@ public:
   }
   constexpr auto cend() noexcept { return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}}; }
 
-  constexpr size_type max_size() const noexcept { return 6; }
-  constexpr size_type size() const noexcept { return this->number_of_bytes(); }
-  constexpr bool empty() const noexcept { return this->size() == 0; }
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
+  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
 
 private:
   friend struct ::std::tuple_size<sysex7>;
