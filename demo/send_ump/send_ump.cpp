@@ -39,7 +39,7 @@ constexpr std::error_code send_note_on(std::uint8_t group, std::uint8_t channel,
 
 template <std::ranges::input_range R>
   requires(std::same_as<std::ranges::range_value_t<R>, std::uint8_t>)
-constexpr std::eror_code notes_off(R const& range, std::uint8_t group, std::uint8_t channel, std::uint16_t velocity) {
+constexpr std::error_code notes_off(R const& range, std::uint8_t group, std::uint8_t channel, std::uint16_t velocity) {
   auto noff = midi2::ump::m2cvm::note_off{}.group(group).channel(channel).velocity(velocity);
   for (auto const note : range) {
     // Adjust the value of the note field.
