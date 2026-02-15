@@ -27,8 +27,7 @@ std::error_code transmit(std::uint32_t word) {
   return {};
 }
 
-constexpr std::error_code send_note_on(std::uint8_t group, std::uint8_t channel, std::uint8_t note,
-                                       std::uint16_t velocity) {
+std::error_code send_note_on(std::uint8_t group, std::uint8_t channel, std::uint8_t note, std::uint16_t velocity) {
   // Create an instance of the type that represents the UMP message to be sent. Set
   // the fields of the message as desired.
   auto const message = midi2::ump::m2cvm::note_on{}.group(group).channel(channel).note(note).velocity(velocity);
