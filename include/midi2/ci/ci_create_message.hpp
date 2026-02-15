@@ -220,18 +220,18 @@ template <> struct type_to_packed<process_inquiry::midi_message_report_end> {
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
   requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
-constexpr O safe_copy(O first, S last, T const &t) {
+constexpr O safe_copy(O first, S last, T const& t) {
   auto first2 = first;
   std::ranges::advance(first2, sizeof(T), last);
   if (first2 == last) {
     return first2;
   }
-  return std::ranges::copy(std::bit_cast<std::byte const *>(&t), std::bit_cast<std::byte const *>(&t + 1), first).out;
+  return std::ranges::copy(std::bit_cast<std::byte const*>(&t), std::bit_cast<std::byte const*>(&t + 1), first).out;
 }
 
 template <typename ElementType, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
   requires(std::is_trivially_copyable_v<ElementType> && alignof(ElementType) == 1)
-constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, std::size_t const size,
+constexpr O write_packed_with_tail(O first, S const last, std::byte const* ptr, std::size_t const size,
                                    std::span<ElementType const> const span) {
   auto first2 = first;
   std::ranges::advance(first2, static_cast<std::iter_difference_t<decltype(first)>>(size + span.size_bytes()), last);
@@ -240,20 +240,20 @@ constexpr O write_packed_with_tail(O first, S const last, std::byte const *ptr, 
   }
 
   first = std::ranges::copy(ptr, ptr + size, first).out;
-  return std::ranges::copy(std::span<std::byte const>{std::bit_cast<std::byte const *>(span.data()), span.size_bytes()},
+  return std::ranges::copy(std::span<std::byte const>{std::bit_cast<std::byte const*>(span.data()), span.size_bytes()},
                            first)
       .out;
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O write_header(O first, S const last, struct header const &h, message const id) {
+constexpr O write_header(O first, S const last, struct header const& h, message const id) {
   auto hdr = static_cast<packed::header>(h);
   hdr.sub_id_2 = static_cast<std::byte>(id);
   return details::safe_copy(first, last, hdr);
 }
 
 template <typename ExternalType, typename InternalType, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O write_header_body(O first, S const last, header const &hdr, InternalType const &t) {
+constexpr O write_header_body(O first, S const last, header const& hdr, InternalType const& t) {
   first = write_header(first, last, hdr, details::type_to_packed<InternalType>::id);
   if constexpr (!std::is_same_v<ExternalType, details::empty>) {
     first = safe_copy(first, last, static_cast<ExternalType>(t));
@@ -276,7 +276,7 @@ private:
 };
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S, property_exchange::property_exchange_type Pet>
-constexpr O write_pe(O first, S const last, header const &hdr, property_exchange::property_exchange<Pet> const &pe,
+constexpr O write_pe(O first, S const last, header const& hdr, property_exchange::property_exchange<Pet> const& pe,
                      message const id) {
   first = details::write_header(first, last, hdr, id);
 
@@ -301,7 +301,7 @@ struct trivial_sentinel {
 };
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, T const &t) {
+constexpr O create_message(O first, S const last, header const& hdr, T const& t) {
   if (hdr.version == b7{1U}) {
     using v1_type = details::type_to_packed<T>::v1;
     if constexpr (!std::is_same_v<v1_type, details::not_available>) {
@@ -313,7 +313,7 @@ constexpr O create_message(O first, S const last, header const &hdr, T const &t)
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, endpoint_reply const &reply) {
+constexpr O create_message(O first, S const last, header const& hdr, endpoint_reply const& reply) {
   first = details::write_header(first, last, hdr, details::type_to_packed<endpoint_reply>::id);
   details::byte_array_wrapper const v1{static_cast<packed::endpoint_reply_v1>(reply)};
   return details::write_packed_with_tail(first, last, v1.data(), offsetof(packed::endpoint_reply_v1, data),
@@ -321,14 +321,14 @@ constexpr O create_message(O first, S const last, header const &hdr, endpoint_re
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, struct ack const &ack) {
+constexpr O create_message(O first, S const last, header const& hdr, struct ack const& ack) {
   first = details::write_header(first, last, hdr, details::type_to_packed<struct ack>::id);
   details::byte_array_wrapper const v1{static_cast<packed::ack_v1>(ack)};
   return details::write_packed_with_tail(first, last, v1.data(), offsetof(packed::ack_v1, message), ack.message);
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S last, header const &hdr, struct nak const &nak) {
+constexpr O create_message(O first, S last, header const& hdr, struct nak const& nak) {
   first = details::write_header(first, last, hdr, details::type_to_packed<struct nak>::id);
   if (hdr.version == b7{1U}) {
     return first;
@@ -338,8 +338,8 @@ constexpr O create_message(O first, S last, header const &hdr, struct nak const 
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr,
-                           profile_configuration::details_reply const &reply) {
+constexpr O create_message(O first, S const last, header const& hdr,
+                           profile_configuration::details_reply const& reply) {
   using profile_configuration::packed::details_reply_v1;
   first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::details_reply>::id);
   details::byte_array_wrapper const v1{static_cast<details_reply_v1>(reply)};
@@ -347,8 +347,8 @@ constexpr O create_message(O first, S const last, header const &hdr,
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr,
-                           profile_configuration::inquiry_reply const &reply) {
+constexpr O create_message(O first, S const last, header const& hdr,
+                           profile_configuration::inquiry_reply const& reply) {
   using profile_configuration::packed::inquiry_reply_v1_pt1;
   using profile_configuration::packed::inquiry_reply_v1_pt2;
 
@@ -363,7 +363,7 @@ constexpr O create_message(O first, S const last, header const &hdr,
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, profile_configuration::specific_data const &sd) {
+constexpr O create_message(O first, S const last, header const& hdr, profile_configuration::specific_data const& sd) {
   using profile_configuration::packed::specific_data_v1;
   first = details::write_header(first, last, hdr, details::type_to_packed<profile_configuration::specific_data>::id);
   details::byte_array_wrapper const v1{static_cast<specific_data_v1>(sd)};
@@ -371,31 +371,31 @@ constexpr O create_message(O first, S const last, header const &hdr, profile_con
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::get const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::get const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::get_reply const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::get_reply const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::set const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::set const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::set_reply const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::set_reply const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::subscription const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::subscription const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::subscription_reply const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::subscription_reply const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
-constexpr O create_message(O first, S const last, header const &hdr, property_exchange::notify const &pe) {
+constexpr O create_message(O first, S const last, header const& hdr, property_exchange::notify const& pe) {
   return details::write_pe(first, last, hdr, pe, details::type_to_packed<std::remove_cvref_t<decltype(pe)>>::id);
 }
 

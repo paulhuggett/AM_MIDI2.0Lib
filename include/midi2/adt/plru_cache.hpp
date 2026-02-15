@@ -41,8 +41,8 @@ namespace midi2::adt {
 namespace details {
 
 template <typename T> struct aligned_storage {
-  [[nodiscard]] constexpr T &value() noexcept { return *std::bit_cast<T *>(&v[0]); }
-  [[nodiscard]] constexpr T const &value() const noexcept { return *std::bit_cast<T const *>(&v[0]); }
+  [[nodiscard]] constexpr T& value() noexcept { return *std::bit_cast<T*>(&v[0]); }
+  [[nodiscard]] constexpr T const& value() const noexcept { return *std::bit_cast<T const*>(&v[0]); }
   alignas(T) std::byte v[sizeof(T)];
 };
 
@@ -93,13 +93,13 @@ public:
 
   constexpr tagged_key() noexcept = default;
   constexpr explicit tagged_key(Key key) noexcept : v_{static_cast<value_type>(1 | (key >> (SetBits - 1)))} {}
-  friend constexpr bool operator==(tagged_key const &, tagged_key const &) noexcept = default;
+  friend constexpr bool operator==(tagged_key const&, tagged_key const&) noexcept = default;
   [[nodiscard]] constexpr bool valid() const noexcept { return static_cast<bool>(v_ & 1); }
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  [[nodiscard]] constexpr decltype(auto) get(this auto &self) noexcept { return self.v_; }
+  [[nodiscard]] constexpr decltype(auto) get(this auto& self) noexcept { return self.v_; }
 #else
-  [[nodiscard]] constexpr value_type &get() noexcept { return v_; }
-  [[nodiscard]] constexpr value_type const &get() const noexcept { return v_; }
+  [[nodiscard]] constexpr value_type& get() noexcept { return v_; }
+  [[nodiscard]] constexpr value_type const& get() const noexcept { return v_; }
 #endif
 
 private:
@@ -111,7 +111,7 @@ template <std::unsigned_integral Key, unsigned SetBits, unsigned Ways> struct ma
 
   /// \return The lane index [0..Ways) if a match is found, or Ways if no match
   static constexpr std::size_t find(tagged_key_type const tk,
-                                    std::array<tagged_key_type, Ways> const &values) noexcept {
+                                    std::array<tagged_key_type, Ways> const& values) noexcept {
     auto index = std::size_t{0};
     for (; index < Ways; ++index) {
       if (values[index] == tk) {
@@ -129,9 +129,9 @@ struct match_finder<Key, SetBits, 4> {
   using tagged_key_type = tagged_key<Key, SetBits>;
 
   static constexpr std::size_t find(tagged_key_type const new_tag,
-                                    std::array<tagged_key_type, 4> const &values) noexcept {
+                                    std::array<tagged_key_type, 4> const& values) noexcept {
     uint16x4_t const a = vdup_n_u16(new_tag.get());
-    uint16x4_t const b = vld1_u16(std::bit_cast<std::uint16_t const *>(values.data()));
+    uint16x4_t const b = vld1_u16(std::bit_cast<std::uint16_t const*>(values.data()));
 
     uint16x4_t const cmp = vceq_u16(a, b);  // Compare lanes: 0xFFFF if equal
     std::uint64_t const packed = vget_lane_u64(vreinterpret_u64_u16(cmp), 0);
@@ -146,9 +146,9 @@ struct match_finder<Key, SetBits, 8> {
   using tagged_key_type = tagged_key<Key, SetBits>;
 
   static constexpr std::size_t find(tagged_key_type const new_tag,
-                                    std::array<tagged_key_type, 8> const &values) noexcept {
+                                    std::array<tagged_key_type, 8> const& values) noexcept {
     uint16x8_t const a = vdupq_n_u16(new_tag.get());
-    uint16x8_t const b = vld1q_u16(std::bit_cast<std::uint16_t const *>(values.data()));
+    uint16x8_t const b = vld1q_u16(std::bit_cast<std::uint16_t const*>(values.data()));
 
     uint16x8_t const cmp = vceqq_u16(a, b);   // Compare lanes: 0xFFFF if equal
     uint8x8_t const narrow = vmovn_u16(cmp);  // Narrow to 8-bit: 0xFF if equal, 0x00 if not
@@ -169,9 +169,9 @@ struct match_finder<Key, SetBits, 4> {
   using tagged_key_type = tagged_key<Key, SetBits>;
 
   static constexpr std::size_t find(tagged_key_type const new_tag,
-                                    std::array<tagged_key_type, 4> const &values) noexcept {
+                                    std::array<tagged_key_type, 4> const& values) noexcept {
     uint32x4_t const a = vdupq_n_u32(new_tag.get());
-    uint32x4_t const b = vld1q_u32(std::bit_cast<std::uint32_t const *>(values.data()));
+    uint32x4_t const b = vld1q_u32(std::bit_cast<std::uint32_t const*>(values.data()));
 
     uint32x4_t const cmp = vceqq_u32(a, b);    // Compare lanes: 0xFFFF if equal
     uint16x4_t const narrow = vmovn_u32(cmp);  // Narrow to 8-bit: 0xFF if equal, 0x00 if not
@@ -194,12 +194,12 @@ template <std::unsigned_integral Key, typename MappedType, unsigned SetBits, std
 public:
   template <typename MissFn, typename ValidFn>
     requires(std::is_invocable_r_v<MappedType, MissFn, Key, std::size_t> &&
-             std::is_invocable_r_v<bool, ValidFn, MappedType const &>)
-  MappedType &access(Key key, MissFn miss, ValidFn valid, std::size_t index) {
+             std::is_invocable_r_v<bool, ValidFn, MappedType const&>)
+  MappedType& access(Key key, MissFn miss, ValidFn valid, std::size_t index) {
     auto const tag = tagged_key_type{key};
     if (auto const vi = find_matching(tag); vi < Ways) {
       assert(keys_[vi].valid());
-      auto &found_result = values_[vi].value();
+      auto& found_result = values_[vi].value();
       if (!valid(found_result)) {
         found_result = miss(key, index + vi);
       }
@@ -210,7 +210,7 @@ public:
     // Find the array member that is to be re-used by traversing the tree.
     std::size_t const victim = plru_.oldest();
     // The key was not found: call miss() to populate it.
-    auto &result = values_[victim].value();
+    auto& result = values_[victim].value();
     if (keys_[victim].valid()) {
       result = miss(key, index + victim);
     } else {
@@ -232,7 +232,7 @@ public:
     plru_.reset();
   }
   [[nodiscard]] constexpr std::size_t size() const noexcept {
-    return static_cast<std::size_t>(std::ranges::count_if(keys_, [](tagged_key_type const &v) { return v.valid(); }));
+    return static_cast<std::size_t>(std::ranges::count_if(keys_, [](tagged_key_type const& v) { return v.valid(); }));
   }
 
   [[nodiscard]] constexpr bool valid(std::size_t index) const noexcept {
@@ -243,11 +243,11 @@ public:
     assert(index < keys_.size());
     return (keys_[index].get() & ~0x01U) << (SetBits - 1);  // this not the entire key!
   }
-  [[nodiscard]] constexpr MappedType const &value(std::size_t const index) const noexcept {
+  [[nodiscard]] constexpr MappedType const& value(std::size_t const index) const noexcept {
     assert(index < values_.size());
     return values_[index].value();
   }
-  [[nodiscard]] constexpr MappedType &value(std::size_t const index) noexcept {
+  [[nodiscard]] constexpr MappedType& value(std::size_t const index) noexcept {
     assert(index < values_.size());
     return values_[index].value();
   }
@@ -298,10 +298,10 @@ public:
     requires(std::is_same_v<T, mapped_type> || std::is_same_v<T, mapped_type const>)
   struct proxy {
     Key const first;
-    T &second;
+    T& second;
     constexpr operator std::pair<Key const, std::remove_const_t<T>>() const noexcept { return {first, second}; }
-    constexpr bool operator==(proxy const &) const noexcept = default;
-    constexpr bool operator==(std::pair<Key const, std::remove_const_t<T>> const &other) const noexcept {
+    constexpr bool operator==(proxy const&) const noexcept = default;
+    constexpr bool operator==(std::pair<Key const, std::remove_const_t<T>> const& other) const noexcept {
       return first == other.first && second == other.second;
     }
   };
@@ -314,29 +314,29 @@ public:
 
     using value_type = std::pair<Key const, T>;
     using reference = proxy<T>;
-    using pointer = proxy<T> *;
+    using pointer = proxy<T>*;
     using difference_type = std::ptrdiff_t;
 
     using iterator_category = std::forward_iterator_tag;
 
-    constexpr explicit iterator_type(owner_type *const owner) noexcept : owner_{owner} {}
-    constexpr iterator_type(owner_type *const owner, std::pair<std::size_t, std::size_t> const &indexes) noexcept
+    constexpr explicit iterator_type(owner_type* const owner) noexcept : owner_{owner} {}
+    constexpr iterator_type(owner_type* const owner, std::pair<std::size_t, std::size_t> const& indexes) noexcept
         : owner_{owner}, set_index_{indexes.first}, way_index_{indexes.second} {}
-    constexpr bool operator==(iterator_type const &other) const noexcept = default;
+    constexpr bool operator==(iterator_type const& other) const noexcept = default;
 
     constexpr reference operator*() const
       requires(std::is_const_v<T>)
     {
-      auto const &s = owner_->sets_[set_index_];
+      auto const& s = owner_->sets_[set_index_];
       return proxy<T>{static_cast<Key>(s.key(way_index_) | set_index_), s.value(way_index_)};
     }
     constexpr reference operator*()
       requires(!std::is_const_v<T>)
     {
-      auto &s = owner_->sets_[set_index_];
+      auto& s = owner_->sets_[set_index_];
       return proxy<Mapped>{static_cast<Key>(s.key(way_index_) | set_index_), s.value(way_index_)};
     }
-    constexpr iterator_type &operator++() {
+    constexpr iterator_type& operator++() {
       do {
         ++way_index_;
         if (way_index_ >= plru_cache::ways) {
@@ -353,15 +353,15 @@ public:
     }
 
   private:
-    owner_type *owner_ = nullptr;
+    owner_type* owner_ = nullptr;
     std::size_t set_index_ = sets;
     std::size_t way_index_ = ways;
 
     [[nodiscard]] constexpr bool valid() const { return owner_->sets_[set_index_].valid(way_index_); }
   };
 
-  template <typename T> iterator_type(T *) -> iterator_type<typename T::mapped_type>;
-  template <typename T> iterator_type(T const *) -> iterator_type<typename T::mapped_type const>;
+  template <typename T> iterator_type(T*) -> iterator_type<typename T::mapped_type>;
+  template <typename T> iterator_type(T const*) -> iterator_type<typename T::mapped_type const>;
 
   using iterator = iterator_type<Mapped>;
   using const_iterator = iterator_type<Mapped const>;
@@ -369,13 +369,13 @@ public:
   constexpr plru_cache() noexcept = default;
   // (note that the following member functions aren't provided simply because I don't currently
   // have a need for them.)
-  plru_cache(plru_cache const &) = delete;
-  plru_cache(plru_cache &&) noexcept = delete;
+  plru_cache(plru_cache const&) = delete;
+  plru_cache(plru_cache&&) noexcept = delete;
   ~plru_cache() noexcept { clear(); }
-  plru_cache &operator=(plru_cache const &) noexcept = delete;
-  plru_cache &operator=(plru_cache &&) noexcept = delete;
+  plru_cache& operator=(plru_cache const&) noexcept = delete;
+  plru_cache& operator=(plru_cache&&) noexcept = delete;
 
-  bool operator==(plru_cache const &) const = delete;
+  bool operator==(plru_cache const&) const = delete;
 
   /// \tparam MissFn  The type of the function called to instantiate a value in the cache.
   /// \tparam ValidFn  The type of the function called to check the validity of a value in the cache.
@@ -387,8 +387,8 @@ public:
   /// \returns The cached value.
   template <typename MissFn, typename ValidFn>
     requires(std::is_invocable_r_v<mapped_type, MissFn, Key, std::size_t> &&
-             std::is_invocable_r_v<bool, ValidFn, mapped_type const &>)
-  mapped_type &access(key_type key, MissFn miss, ValidFn valid) {
+             std::is_invocable_r_v<bool, ValidFn, mapped_type const&>)
+  mapped_type& access(key_type key, MissFn miss, ValidFn valid) {
     assert(plru_cache::set(key) < Sets);
     return sets_[plru_cache::set(key)].access(key, std::move(miss), std::move(valid),
                                               plru_cache::set(key) * plru_cache::ways);
@@ -406,8 +406,8 @@ public:
   /// \returns The cached value.
   template <typename MissFn>
     requires(std::is_invocable_r_v<mapped_type, MissFn, Key, std::size_t>)
-  mapped_type &access(key_type const key, MissFn const miss) {
-    return this->access(key, miss, [](mapped_type const &) constexpr noexcept { return true; });
+  mapped_type& access(key_type const key, MissFn const miss) {
+    return this->access(key, miss, [](mapped_type const&) constexpr noexcept { return true; });
   }
 
   /// Checks if there is an element with a key that compares equivalent to \p key
@@ -420,7 +420,7 @@ public:
 
   /// \brief Clears the contents of the cache.
   constexpr void clear() noexcept {
-    for (ways_type &w : sets_) {
+    for (ways_type& w : sets_) {
       w.clear();
     }
   }
@@ -444,7 +444,7 @@ public:
   /// \returns The number of elements held by the cache.
   [[nodiscard]] constexpr std::size_t size() const noexcept {
     return std::ranges::fold_left(sets_, std::size_t{0},
-                                  [](std::size_t acc, auto const &set) { return acc + std::size(set); });
+                                  [](std::size_t acc, auto const& set) { return acc + std::size(set); });
   }
 
   /// \param key  The key

@@ -17,7 +17,7 @@
 namespace {
 
 struct context_type {
-  constexpr bool operator==(context_type const &) const noexcept = default;
+  constexpr bool operator==(context_type const&) const noexcept = default;
   int value = 23;
 };
 

@@ -286,13 +286,13 @@ template <typename Context> struct utility_pure {
   // 7.2.1 NOOP
   virtual void noop(Context) = 0;
   // 7.2.2.1 JR Clock Message
-  virtual void jr_clock(Context, utility::jr_clock const&) = 0;
+  virtual void jr_clock(Context, utility::jr_clock const &) = 0;
   // 7.2.2.2 JR Timestamp Message
-  virtual void jr_timestamp(Context, utility::jr_timestamp const&) = 0;
+  virtual void jr_timestamp(Context, utility::jr_timestamp const &) = 0;
   // 7.2.3.1 Delta Clockstamp Ticks Per Quarter Note (TPQN)
-  virtual void delta_clockstamp_tpqn(Context, utility::delta_clockstamp_tpqn const&) = 0;
+  virtual void delta_clockstamp_tpqn(Context, utility::delta_clockstamp_tpqn const &) = 0;
   // 7.2.3.2 Delta Clockstamp (DC): Ticks Since Last Event
-  virtual void delta_clockstamp(Context, utility::delta_clockstamp const&) = 0;
+  virtual void delta_clockstamp(Context, utility::delta_clockstamp const &) = 0;
 
   virtual void unknown(Context, std::span<std::uint32_t>) = 0;
 };
@@ -309,16 +309,16 @@ template <typename Context> struct system_pure {
   constexpr system_pure &operator=(system_pure &&) noexcept = default;
 
   // 7.6 System Common and System Real Time Messages
-  virtual void midi_time_code(Context, system::midi_time_code const&) = 0;
-  virtual void song_position_pointer(Context, system::song_position_pointer const&) = 0;
-  virtual void song_select(Context, system::song_select const&) = 0;
-  virtual void tune_request(Context, system::tune_request const&) = 0;
-  virtual void timing_clock(Context, system::timing_clock const&) = 0;
-  virtual void seq_start(Context, system::sequence_start const&) = 0;
-  virtual void seq_continue(Context, system::sequence_continue const&) = 0;
-  virtual void seq_stop(Context, system::sequence_stop const&) = 0;
-  virtual void active_sensing(Context, system::active_sensing const&) = 0;
-  virtual void reset(Context, system::reset const&) = 0;
+  virtual void midi_time_code(Context, system::midi_time_code const &) = 0;
+  virtual void song_position_pointer(Context, system::song_position_pointer const &) = 0;
+  virtual void song_select(Context, system::song_select const &) = 0;
+  virtual void tune_request(Context, system::tune_request const &) = 0;
+  virtual void timing_clock(Context, system::timing_clock const &) = 0;
+  virtual void seq_start(Context, system::sequence_start const &) = 0;
+  virtual void seq_continue(Context, system::sequence_continue const &) = 0;
+  virtual void seq_stop(Context, system::sequence_stop const &) = 0;
+  virtual void active_sensing(Context, system::active_sensing const &) = 0;
+  virtual void reset(Context, system::reset const &) = 0;
 };
 
 static_assert(system<system_pure<int>, int>, "system_pure must implement the system concept");
@@ -332,13 +332,13 @@ template <typename Context> struct m1cvm_pure {
   constexpr m1cvm_pure &operator=(m1cvm_pure const &) = default;
   constexpr m1cvm_pure &operator=(m1cvm_pure &&) noexcept = default;
 
-  virtual void note_off(Context, m1cvm::note_off const&) = 0;
-  virtual void note_on(Context, m1cvm::note_on const&) = 0;
-  virtual void poly_pressure(Context, m1cvm::poly_pressure const&) = 0;
-  virtual void control_change(Context, m1cvm::control_change const&) = 0;
-  virtual void program_change(Context, m1cvm::program_change const&) = 0;
-  virtual void channel_pressure(Context, m1cvm::channel_pressure const&) = 0;
-  virtual void pitch_bend(Context, m1cvm::pitch_bend const&) = 0;
+  virtual void note_off(Context, m1cvm::note_off const &) = 0;
+  virtual void note_on(Context, m1cvm::note_on const &) = 0;
+  virtual void poly_pressure(Context, m1cvm::poly_pressure const &) = 0;
+  virtual void control_change(Context, m1cvm::control_change const &) = 0;
+  virtual void program_change(Context, m1cvm::program_change const &) = 0;
+  virtual void channel_pressure(Context, m1cvm::channel_pressure const &) = 0;
+  virtual void pitch_bend(Context, m1cvm::pitch_bend const &) = 0;
 };
 
 static_assert(m1cvm<m1cvm_pure<int>, int>, "m1cvm_pure must implement the m1cvm concept");
@@ -352,10 +352,10 @@ template <typename Context> struct data64_pure {
   constexpr data64_pure &operator=(data64_pure const &) = default;
   constexpr data64_pure &operator=(data64_pure &&) noexcept = default;
 
-  virtual void sysex7_in_1(Context, data64::sysex7_in_1 const&) = 0;
-  virtual void sysex7_start(Context, data64::sysex7_start const&) = 0;
-  virtual void sysex7_continue(Context, data64::sysex7_continue const&) = 0;
-  virtual void sysex7_end(Context, data64::sysex7_end const&) = 0;
+  virtual void sysex7_in_1(Context, data64::sysex7_in_1 const &) = 0;
+  virtual void sysex7_start(Context, data64::sysex7_start const &) = 0;
+  virtual void sysex7_continue(Context, data64::sysex7_continue const &) = 0;
+  virtual void sysex7_end(Context, data64::sysex7_end const &) = 0;
 };
 
 static_assert(data64<data64_pure<int>, int>, "data64_pure must implement the data64 concept");
@@ -369,29 +369,29 @@ template <typename Context> struct m2cvm_pure {
   constexpr m2cvm_pure &operator=(m2cvm_pure const &) = default;
   constexpr m2cvm_pure &operator=(m2cvm_pure &&) noexcept = default;
 
-  virtual void note_off(Context, m2cvm::note_off const&) = 0;
-  virtual void note_on(Context, m2cvm::note_on const&) = 0;
-  virtual void poly_pressure(Context, m2cvm::poly_pressure const&) = 0;
-  virtual void program_change(Context, m2cvm::program_change const&) = 0;
-  virtual void channel_pressure(Context, m2cvm::channel_pressure const&) = 0;
+  virtual void note_off(Context, m2cvm::note_off const &) = 0;
+  virtual void note_on(Context, m2cvm::note_on const &) = 0;
+  virtual void poly_pressure(Context, m2cvm::poly_pressure const &) = 0;
+  virtual void program_change(Context, m2cvm::program_change const &) = 0;
+  virtual void channel_pressure(Context, m2cvm::channel_pressure const &) = 0;
 
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x0)
-  virtual void rpn_per_note_controller(Context, m2cvm::rpn_per_note_controller const&) = 0;
+  virtual void rpn_per_note_controller(Context, m2cvm::rpn_per_note_controller const &) = 0;
   // 7.4.4 MIDI 2.0 Registered Per-Note Controller Message (status=0x1)
-  virtual void nrpn_per_note_controller(Context, m2cvm::nrpn_per_note_controller const&) = 0;
+  virtual void nrpn_per_note_controller(Context, m2cvm::nrpn_per_note_controller const &) = 0;
   // 7.4.7 MIDI 2.0 Registered Controller (RPN) Message (status=0x2)
-  virtual void rpn_controller(Context, m2cvm::rpn_controller const&) = 0;
+  virtual void rpn_controller(Context, m2cvm::rpn_controller const &) = 0;
   // 7.4.7 MIDI 2.0 Assignable Controller (NRPN) Message (status=0x3)
-  virtual void nrpn_controller(Context, m2cvm::nrpn_controller const&) = 0;
+  virtual void nrpn_controller(Context, m2cvm::nrpn_controller const &) = 0;
   // 7.4.8 MIDI 2.0 Relative Registered Controller (RPN) Message (status=0x4)
-  virtual void rpn_relative_controller(Context, m2cvm::rpn_relative_controller const&) = 0;
+  virtual void rpn_relative_controller(Context, m2cvm::rpn_relative_controller const &) = 0;
   // 7.4.8 MIDI 2.0 Relative Assignable Controller (NRPN) Message (status=0x5)
-  virtual void nrpn_relative_controller(Context, m2cvm::nrpn_relative_controller const&) = 0;
+  virtual void nrpn_relative_controller(Context, m2cvm::nrpn_relative_controller const &) = 0;
 
-  virtual void per_note_management(Context, m2cvm::per_note_management const&) = 0;
-  virtual void control_change(Context, m2cvm::control_change const&) = 0;
-  virtual void pitch_bend(Context, m2cvm::pitch_bend const&) = 0;
-  virtual void per_note_pitch_bend(Context, m2cvm::per_note_pitch_bend const&) = 0;
+  virtual void per_note_management(Context, m2cvm::per_note_management const &) = 0;
+  virtual void control_change(Context, m2cvm::control_change const &) = 0;
+  virtual void pitch_bend(Context, m2cvm::pitch_bend const &) = 0;
+  virtual void per_note_pitch_bend(Context, m2cvm::per_note_pitch_bend const &) = 0;
 };
 
 static_assert(m2cvm<m2cvm_pure<int>, int>, "m2cvm_pure must implement the m2cvm concept");
@@ -405,12 +405,12 @@ template <typename Context> struct data128_pure {
   constexpr data128_pure &operator=(data128_pure const &) = default;
   constexpr data128_pure &operator=(data128_pure &&) noexcept = default;
 
-  virtual void sysex8_in_1(Context, data128::sysex8_in_1 const&) = 0;
-  virtual void sysex8_start(Context, data128::sysex8_start const&) = 0;
-  virtual void sysex8_continue(Context, data128::sysex8_continue const&) = 0;
-  virtual void sysex8_end(Context, data128::sysex8_end const&) = 0;
-  virtual void mds_header(Context, data128::mds_header const&) = 0;
-  virtual void mds_payload(Context, data128::mds_payload const&) = 0;
+  virtual void sysex8_in_1(Context, data128::sysex8_in_1 const &) = 0;
+  virtual void sysex8_start(Context, data128::sysex8_start const &) = 0;
+  virtual void sysex8_continue(Context, data128::sysex8_continue const &) = 0;
+  virtual void sysex8_end(Context, data128::sysex8_end const &) = 0;
+  virtual void mds_header(Context, data128::mds_header const &) = 0;
+  virtual void mds_payload(Context, data128::mds_payload const &) = 0;
 };
 
 static_assert(data128<data128_pure<int>, int>, "data128_pure must implement the data128 concept");
@@ -424,20 +424,20 @@ template <typename Context> struct stream_pure {
   constexpr stream_pure &operator=(stream_pure const &) = default;
   constexpr stream_pure &operator=(stream_pure &&) noexcept = default;
 
-  virtual void endpoint_discovery(Context, stream::endpoint_discovery const&) = 0;
-  virtual void endpoint_info_notification(Context, stream::endpoint_info_notification const&) = 0;
-  virtual void device_identity_notification(Context, stream::device_identity_notification const&) = 0;
-  virtual void endpoint_name_notification(Context, stream::endpoint_name_notification const&) = 0;
-  virtual void product_instance_id_notification(Context, stream::product_instance_id_notification const&) = 0;
-  virtual void jr_configuration_request(Context, stream::jr_configuration_request const&) = 0;
-  virtual void jr_configuration_notification(Context, stream::jr_configuration_notification const&) = 0;
+  virtual void endpoint_discovery(Context, stream::endpoint_discovery const &) = 0;
+  virtual void endpoint_info_notification(Context, stream::endpoint_info_notification const &) = 0;
+  virtual void device_identity_notification(Context, stream::device_identity_notification const &) = 0;
+  virtual void endpoint_name_notification(Context, stream::endpoint_name_notification const &) = 0;
+  virtual void product_instance_id_notification(Context, stream::product_instance_id_notification const &) = 0;
+  virtual void jr_configuration_request(Context, stream::jr_configuration_request const &) = 0;
+  virtual void jr_configuration_notification(Context, stream::jr_configuration_notification const &) = 0;
 
-  virtual void function_block_discovery(Context, stream::function_block_discovery const&) = 0;
-  virtual void function_block_info_notification(Context, stream::function_block_info_notification const&) = 0;
-  virtual void function_block_name_notification(Context, stream::function_block_name_notification const&) = 0;
+  virtual void function_block_discovery(Context, stream::function_block_discovery const &) = 0;
+  virtual void function_block_info_notification(Context, stream::function_block_info_notification const &) = 0;
+  virtual void function_block_name_notification(Context, stream::function_block_name_notification const &) = 0;
 
-  virtual void start_of_clip(Context, stream::start_of_clip const&) = 0;
-  virtual void end_of_clip(Context, stream::end_of_clip const&) = 0;
+  virtual void start_of_clip(Context, stream::start_of_clip const &) = 0;
+  virtual void end_of_clip(Context, stream::end_of_clip const &) = 0;
 };
 
 static_assert(stream<stream_pure<int>, int>, "stream_pure must implement the stream concept");
@@ -451,12 +451,12 @@ template <typename Context> struct flex_data_pure {
   constexpr flex_data_pure &operator=(flex_data_pure const &) = default;
   constexpr flex_data_pure &operator=(flex_data_pure &&) noexcept = default;
 
-  virtual void set_tempo(Context, flex_data::set_tempo const&) = 0;
-  virtual void set_time_signature(Context, flex_data::set_time_signature const&) = 0;
-  virtual void set_metronome(Context, flex_data::set_metronome const&) = 0;
-  virtual void set_key_signature(Context, flex_data::set_key_signature const&) = 0;
-  virtual void set_chord_name(Context, flex_data::set_chord_name const&) = 0;
-  virtual void text(Context, flex_data::text_common const&) = 0;
+  virtual void set_tempo(Context, flex_data::set_tempo const &) = 0;
+  virtual void set_time_signature(Context, flex_data::set_time_signature const &) = 0;
+  virtual void set_metronome(Context, flex_data::set_metronome const &) = 0;
+  virtual void set_key_signature(Context, flex_data::set_key_signature const &) = 0;
+  virtual void set_chord_name(Context, flex_data::set_chord_name const &) = 0;
+  virtual void text(Context, flex_data::text_common const &) = 0;
 };
 
 static_assert(flex_data<flex_data_pure<int>, int>, "flex_data_pure must implement the flex_data concept");
@@ -566,10 +566,10 @@ template <typename Context> struct flex_data_base : public flex_data_pure<Contex
 template <typename Context> class utility_function {
 public:
   using noop_fn = std::function<void(Context)>;
-  using jr_clock_fn = std::function<void(Context, utility::jr_clock const&)>;
-  using jr_timestamp_fn = std::function<void(Context, utility::jr_timestamp const&)>;
-  using delta_clockstamp_tpqn_fn = std::function<void(Context, utility::delta_clockstamp_tpqn const&)>;
-  using delta_clockstamp_fn = std::function<void(Context, utility::delta_clockstamp const&)>;
+  using jr_clock_fn = std::function<void(Context, utility::jr_clock const &)>;
+  using jr_timestamp_fn = std::function<void(Context, utility::jr_timestamp const &)>;
+  using delta_clockstamp_tpqn_fn = std::function<void(Context, utility::delta_clockstamp_tpqn const &)>;
+  using delta_clockstamp_fn = std::function<void(Context, utility::delta_clockstamp const &)>;
   using unknown_fn = std::function<void(Context, std::span<std::uint32_t>)>;
 
   // clang-format off
@@ -602,16 +602,16 @@ static_assert(utility<utility_function<int>, int>, "utility_function must implem
 // 7.6 System Common and System Real Time Messages
 template <typename Context> class system_function {
 public:
-  using midi_time_code_fn = std::function<void(Context, system::midi_time_code const&)>;
-  using song_position_pointer_fn = std::function<void(Context, system::song_position_pointer const&)>;
-  using song_select_fn = std::function<void(Context, system::song_select const&)>;
-  using tune_request_fn = std::function<void(Context, system::tune_request const&)>;
-  using timing_clock_fn = std::function<void(Context, system::timing_clock const&)>;
-  using seq_start_fn = std::function<void(Context, system::sequence_start const&)>;
-  using seq_continue_fn = std::function<void(Context, system::sequence_continue const&)>;
-  using seq_stop_fn = std::function<void(Context, system::sequence_stop const&)>;
-  using active_sensing_fn = std::function<void(Context, system::active_sensing const&)>;
-  using reset_fn = std::function<void(Context, system::reset const&)>;
+  using midi_time_code_fn = std::function<void(Context, system::midi_time_code const &)>;
+  using song_position_pointer_fn = std::function<void(Context, system::song_position_pointer const &)>;
+  using song_select_fn = std::function<void(Context, system::song_select const &)>;
+  using tune_request_fn = std::function<void(Context, system::tune_request const &)>;
+  using timing_clock_fn = std::function<void(Context, system::timing_clock const &)>;
+  using seq_start_fn = std::function<void(Context, system::sequence_start const &)>;
+  using seq_continue_fn = std::function<void(Context, system::sequence_continue const &)>;
+  using seq_stop_fn = std::function<void(Context, system::sequence_stop const &)>;
+  using active_sensing_fn = std::function<void(Context, system::active_sensing const &)>;
+  using reset_fn = std::function<void(Context, system::reset const &)>;
 
   // clang-format off
   constexpr system_function &on_midi_time_code(midi_time_code_fn midi_time_code) { midi_time_code_ = std::move(midi_time_code); return *this; }
@@ -654,13 +654,13 @@ static_assert(system<system_function<int>, int>, "system_function must implement
 
 template <typename Context> class m1cvm_function {
 public:
-  using note_off_fn = std::function<void(Context, m1cvm::note_off const&)>;
-  using note_on_fn = std::function<void(Context, m1cvm::note_on const&)>;
-  using poly_pressure_fn = std::function<void(Context, m1cvm::poly_pressure const&)>;
-  using control_change_fn = std::function<void(Context, m1cvm::control_change const&)>;
-  using program_change_fn = std::function<void(Context, m1cvm::program_change const&)>;
-  using channel_pressure_fn = std::function<void(Context, m1cvm::channel_pressure const&)>;
-  using pitch_bend_fn = std::function<void(Context, m1cvm::pitch_bend const&)>;
+  using note_off_fn = std::function<void(Context, m1cvm::note_off const &)>;
+  using note_on_fn = std::function<void(Context, m1cvm::note_on const &)>;
+  using poly_pressure_fn = std::function<void(Context, m1cvm::poly_pressure const &)>;
+  using control_change_fn = std::function<void(Context, m1cvm::control_change const &)>;
+  using program_change_fn = std::function<void(Context, m1cvm::program_change const &)>;
+  using channel_pressure_fn = std::function<void(Context, m1cvm::channel_pressure const &)>;
+  using pitch_bend_fn = std::function<void(Context, m1cvm::pitch_bend const &)>;
 
   // clang-format off
   constexpr m1cvm_function &on_note_off(note_off_fn note_off) noexcept { note_off_ = std::move(note_off); return *this; }
@@ -694,10 +694,10 @@ static_assert(m1cvm<m1cvm_function<int>, int>, "m1cvm_function must implement th
 
 template <typename Context> class data64_function {
 public:
-  using sysex7_in_1_fn = std::function<void(Context, data64::sysex7_in_1 const&)>;
-  using sysex7_start_fn = std::function<void(Context, data64::sysex7_start const&)>;
-  using sysex7_continue_fn = std::function<void(Context, data64::sysex7_continue const&)>;
-  using sysex7_end_fn = std::function<void(Context, data64::sysex7_end const&)>;
+  using sysex7_in_1_fn = std::function<void(Context, data64::sysex7_in_1 const &)>;
+  using sysex7_start_fn = std::function<void(Context, data64::sysex7_start const &)>;
+  using sysex7_continue_fn = std::function<void(Context, data64::sysex7_continue const &)>;
+  using sysex7_end_fn = std::function<void(Context, data64::sysex7_end const &)>;
 
   // clang-format off
   constexpr data64_function &on_sysex7_in_1(sysex7_in_1_fn sysex7_in_1) noexcept { sysex7_in_1_ = std::move(sysex7_in_1); return *this; }
@@ -722,21 +722,21 @@ static_assert(data64<data64_function<int>, int>, "data64_function must implement
 
 template <typename Context> class m2cvm_function {
 public:
-  using note_off_fn = std::function<void(Context, m2cvm::note_off const&)>;
-  using note_on_fn = std::function<void(Context, m2cvm::note_on const&)>;
-  using poly_pressure_fn = std::function<void(Context, m2cvm::poly_pressure const&)>;
-  using program_change_fn = std::function<void(Context, m2cvm::program_change const&)>;
-  using channel_pressure_fn = std::function<void(Context, m2cvm::channel_pressure const&)>;
-  using rpn_per_note_controller_fn = std::function<void(Context, m2cvm::rpn_per_note_controller const&)>;
-  using nrpn_per_note_controller_fn = std::function<void(Context, m2cvm::nrpn_per_note_controller const&)>;
-  using rpn_controller_fn = std::function<void(Context, m2cvm::rpn_controller const&)>;
-  using nrpn_controller_fn = std::function<void(Context, m2cvm::nrpn_controller const&)>;
-  using rpn_relative_controller_fn = std::function<void(Context, m2cvm::rpn_relative_controller const&)>;
-  using nrpn_relative_controller_fn = std::function<void(Context, m2cvm::nrpn_relative_controller const&)>;
-  using per_note_management_fn = std::function<void(Context, m2cvm::per_note_management const&)>;
-  using control_change_fn = std::function<void(Context, m2cvm::control_change const&)>;
-  using pitch_bend_fn = std::function<void(Context, m2cvm::pitch_bend const&)>;
-  using per_note_pitch_bend_fn = std::function<void(Context, m2cvm::per_note_pitch_bend const&)>;
+  using note_off_fn = std::function<void(Context, m2cvm::note_off const &)>;
+  using note_on_fn = std::function<void(Context, m2cvm::note_on const &)>;
+  using poly_pressure_fn = std::function<void(Context, m2cvm::poly_pressure const &)>;
+  using program_change_fn = std::function<void(Context, m2cvm::program_change const &)>;
+  using channel_pressure_fn = std::function<void(Context, m2cvm::channel_pressure const &)>;
+  using rpn_per_note_controller_fn = std::function<void(Context, m2cvm::rpn_per_note_controller const &)>;
+  using nrpn_per_note_controller_fn = std::function<void(Context, m2cvm::nrpn_per_note_controller const &)>;
+  using rpn_controller_fn = std::function<void(Context, m2cvm::rpn_controller const &)>;
+  using nrpn_controller_fn = std::function<void(Context, m2cvm::nrpn_controller const &)>;
+  using rpn_relative_controller_fn = std::function<void(Context, m2cvm::rpn_relative_controller const &)>;
+  using nrpn_relative_controller_fn = std::function<void(Context, m2cvm::nrpn_relative_controller const &)>;
+  using per_note_management_fn = std::function<void(Context, m2cvm::per_note_management const &)>;
+  using control_change_fn = std::function<void(Context, m2cvm::control_change const &)>;
+  using pitch_bend_fn = std::function<void(Context, m2cvm::pitch_bend const &)>;
+  using per_note_pitch_bend_fn = std::function<void(Context, m2cvm::per_note_pitch_bend const &)>;
 
   // clang-format off
   constexpr m2cvm_function &on_note_off(note_off_fn off) noexcept { note_off_ = std::move(off); return *this; }
@@ -794,12 +794,12 @@ static_assert(m2cvm<m2cvm_function<int>, int>, "m2cvm_function must implement th
 
 template <typename Context> class data128_function {
 public:
-  using sysex8_in_1_fn = std::function<void(Context, data128::sysex8_in_1 const&)>;
-  using sysex8_start_fn = std::function<void(Context, data128::sysex8_start const&)>;
-  using sysex8_continue_fn = std::function<void(Context, data128::sysex8_continue const&)>;
-  using sysex8_end_fn = std::function<void(Context, data128::sysex8_end const&)>;
-  using mds_header_fn = std::function<void(Context, data128::mds_header const&)>;
-  using mds_payload_fn = std::function<void(Context, data128::mds_payload const&)>;
+  using sysex8_in_1_fn = std::function<void(Context, data128::sysex8_in_1 const &)>;
+  using sysex8_start_fn = std::function<void(Context, data128::sysex8_start const &)>;
+  using sysex8_continue_fn = std::function<void(Context, data128::sysex8_continue const &)>;
+  using sysex8_end_fn = std::function<void(Context, data128::sysex8_end const &)>;
+  using mds_header_fn = std::function<void(Context, data128::mds_header const &)>;
+  using mds_payload_fn = std::function<void(Context, data128::mds_payload const &)>;
 
   // clang-format off
   constexpr data128_function &on_sysex8_in_1(sysex8_in_1_fn sysex8_in_1) noexcept { sysex8_in_1_ = std::move(sysex8_in_1); return *this; }
@@ -830,21 +830,21 @@ static_assert(data128<data128_function<int>, int>, "data128_function must implem
 
 template <typename Context> class stream_function {
 public:
-  using endpoint_discovery_fn = std::function<void(Context, stream::endpoint_discovery const&)>;
-  using endpoint_info_notification_fn = std::function<void(Context, stream::endpoint_info_notification const&)>;
-  using device_identity_notification_fn = std::function<void(Context, stream::device_identity_notification const&)>;
-  using endpoint_name_notification_fn = std::function<void(Context, stream::endpoint_name_notification const&)>;
+  using endpoint_discovery_fn = std::function<void(Context, stream::endpoint_discovery const &)>;
+  using endpoint_info_notification_fn = std::function<void(Context, stream::endpoint_info_notification const &)>;
+  using device_identity_notification_fn = std::function<void(Context, stream::device_identity_notification const &)>;
+  using endpoint_name_notification_fn = std::function<void(Context, stream::endpoint_name_notification const &)>;
   using product_instance_id_notification_fn =
-      std::function<void(Context, stream::product_instance_id_notification const&)>;
-  using jr_configuration_request_fn = std::function<void(Context, stream::jr_configuration_request const&)>;
-  using jr_configuration_notification_fn = std::function<void(Context, stream::jr_configuration_notification const&)>;
-  using function_block_discovery_fn = std::function<void(Context, stream::function_block_discovery const&)>;
+      std::function<void(Context, stream::product_instance_id_notification const &)>;
+  using jr_configuration_request_fn = std::function<void(Context, stream::jr_configuration_request const &)>;
+  using jr_configuration_notification_fn = std::function<void(Context, stream::jr_configuration_notification const &)>;
+  using function_block_discovery_fn = std::function<void(Context, stream::function_block_discovery const &)>;
   using function_block_info_notification_fn =
-      std::function<void(Context, stream::function_block_info_notification const&)>;
+      std::function<void(Context, stream::function_block_info_notification const &)>;
   using function_block_name_notification_fn =
-      std::function<void(Context, stream::function_block_name_notification const&)>;
-  using start_of_clip_fn = std::function<void(Context, stream::start_of_clip const&)>;
-  using end_of_clip_fn = std::function<void(Context, stream::end_of_clip const&)>;
+      std::function<void(Context, stream::function_block_name_notification const &)>;
+  using start_of_clip_fn = std::function<void(Context, stream::start_of_clip const &)>;
+  using end_of_clip_fn = std::function<void(Context, stream::end_of_clip const &)>;
 
   // clang-format off
   constexpr stream_function &on_endpoint_discovery(endpoint_discovery_fn discovery) noexcept { endpoint_discovery_ = std::move(discovery); return *this; }
@@ -895,12 +895,12 @@ static_assert(stream<stream_function<int>, int>, "stream_function must implement
 
 template <typename Context> class flex_data_function {
 public:
-  using set_tempo_fn = std::function<void(Context, flex_data::set_tempo const&)>;
-  using set_time_signature_fn = std::function<void(Context, flex_data::set_time_signature const&)>;
-  using set_metronome_fn = std::function<void(Context, flex_data::set_metronome const&)>;
-  using set_key_signature_fn = std::function<void(Context, flex_data::set_key_signature const&)>;
-  using set_chord_name_fn = std::function<void(Context, flex_data::set_chord_name const&)>;
-  using text_fn = std::function<void(Context, flex_data::text_common const&)>;
+  using set_tempo_fn = std::function<void(Context, flex_data::set_tempo const &)>;
+  using set_time_signature_fn = std::function<void(Context, flex_data::set_time_signature const &)>;
+  using set_metronome_fn = std::function<void(Context, flex_data::set_metronome const &)>;
+  using set_key_signature_fn = std::function<void(Context, flex_data::set_key_signature const &)>;
+  using set_chord_name_fn = std::function<void(Context, flex_data::set_chord_name const &)>;
+  using text_fn = std::function<void(Context, flex_data::text_common const &)>;
 
   // clang-format off
   constexpr flex_data_function &on_set_tempo(set_tempo_fn set_tempo) noexcept { set_tempo_ = std::move(set_tempo); return *this; }

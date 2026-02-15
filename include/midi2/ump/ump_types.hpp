@@ -221,11 +221,11 @@ class word_base : public adt::bit_field<std::uint32_t> {
 public:
   using bit_field::bit_field;
 
-  friend constexpr bool operator==(word_base const &a, word_base const &b) noexcept = default;
+  friend constexpr bool operator==(word_base const& a, word_base const& b) noexcept = default;
 
   template <adt::bit_range_type Field, typename Enumeration>
     requires(std::is_enum_v<Enumeration>)
-  constexpr auto &set_enum_field(Enumeration const v) noexcept {
+  constexpr auto& set_enum_field(Enumeration const v) noexcept {
     if constexpr (std::is_unsigned_v<std::underlying_type_t<Enumeration>>) {
       this->template set<Field>(std::to_underlying(v));
     } else {
@@ -289,7 +289,7 @@ template <typename T, typename Function, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> &&
            std::derived_from<std::remove_cvref_t<decltype(get<Index>(T{}))>, details::word_base> &&
            std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
-constexpr auto apply(T const &message, Function function) {
+constexpr auto apply(T const& message, Function function) {
   auto const result = function(static_cast<std::uint32_t>(get<Index>(message)));
   if (bool{result}) {
     return result;
@@ -312,7 +312,7 @@ constexpr auto apply(T const &message, Function function) {
 template <typename T, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> &&
            std::derived_from<std::remove_cvref_t<decltype(get<0>(T{}))>, details::word_base>)
-constexpr bool check(T const &message) {
+constexpr bool check(T const& message) {
   if (!get<Index>(message).check()) {
     return false;
   }
@@ -340,12 +340,12 @@ constexpr bool check(T const &message) {
 
 /// Creates a "setter" member function for classes derived from midi2::ump::details::word_base.
 #define MIDI2_UMP_SETTER(word, field, result_type)                                           \
-  constexpr result_type &field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
+  constexpr result_type& field(adt::uinteger_t<word::field::bits::value> const v) noexcept { \
     std::get<word>(words_).template set<typename word::field>(v);                            \
     return *this;                                                                            \
   }
 #define MIDI2_UMP_SETTER_ENUM(word, field, enumeration, result_type)                      \
-  constexpr result_type &field(enum enumeration const v) noexcept {                       \
+  constexpr result_type& field(enum enumeration const v) noexcept {                       \
     std::get<word>(words_).template set_enum_field<typename word::field, enumeration>(v); \
     return *this;                                                                         \
   }
@@ -401,10 +401,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::utility> :
 /// Defines the C++ types that represent Utility type messages
 namespace midi2::ump::utility {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return std::get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return std::get<I>(t.words_);
 }
 
@@ -441,7 +441,7 @@ public:
   };
 
   constexpr noop() noexcept = default;
-  friend constexpr bool operator==(noop const &, noop const &) noexcept = default;
+  friend constexpr bool operator==(noop const&, noop const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::utility.
   /// \note This is a read-only field.
@@ -455,8 +455,8 @@ public:
 private:
   friend struct ::std::tuple_size<noop>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -498,7 +498,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
+  friend constexpr bool operator==(jr_clock const&, jr_clock const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::utility.
   /// \note This is a read-only field.
@@ -521,8 +521,8 @@ public:
 private:
   friend struct ::std::tuple_size<jr_clock>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -563,7 +563,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
+  friend constexpr bool operator==(jr_timestamp const&, jr_timestamp const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::utility.
   /// \note This is a read-only field.
@@ -587,8 +587,8 @@ public:
 private:
   friend struct ::std::tuple_size<jr_timestamp>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -628,7 +628,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
+  friend constexpr bool operator==(delta_clockstamp_tpqn const&, delta_clockstamp_tpqn const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::utility.
   /// \note This is a read-only field.
@@ -651,8 +651,8 @@ public:
 private:
   friend struct ::std::tuple_size<delta_clockstamp_tpqn>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -692,7 +692,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) noexcept = default;
+  friend constexpr bool operator==(delta_clockstamp const&, delta_clockstamp const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::utility.
   /// \note This is a read-only field.
@@ -712,8 +712,8 @@ public:
 private:
   friend struct ::std::tuple_size<delta_clockstamp>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -738,10 +738,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::system> : 
 /// Defines the C++ types that represent System type messages
 namespace midi2::ump::system {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -789,7 +789,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit midi_time_code(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
+  friend constexpr bool operator==(midi_time_code const&, midi_time_code const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -813,8 +813,8 @@ public:
 private:
   friend struct ::std::tuple_size<midi_time_code>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -853,7 +853,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) noexcept = default;
+  friend constexpr bool operator==(song_position_pointer const&, song_position_pointer const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -877,8 +877,8 @@ public:
 private:
   friend struct ::std::tuple_size<song_position_pointer>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -920,7 +920,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit song_select(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(song_select const &, song_select const &) noexcept = default;
+  friend constexpr bool operator==(song_select const&, song_select const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -943,8 +943,8 @@ public:
 private:
   friend struct ::std::tuple_size<song_select>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -980,7 +980,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit tune_request(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
+  friend constexpr bool operator==(tune_request const&, tune_request const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1002,8 +1002,8 @@ public:
 private:
   friend struct ::std::tuple_size<tune_request>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1039,7 +1039,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit timing_clock(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(timing_clock const &, timing_clock const &) noexcept = default;
+  friend constexpr bool operator==(timing_clock const&, timing_clock const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1061,8 +1061,8 @@ public:
 private:
   friend struct ::std::tuple_size<timing_clock>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1098,7 +1098,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit sequence_start(std::span<std::uint32_t, 1> w0) noexcept;
-  friend constexpr bool operator==(sequence_start const &, sequence_start const &) noexcept = default;
+  friend constexpr bool operator==(sequence_start const&, sequence_start const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1120,8 +1120,8 @@ public:
 private:
   friend struct ::std::tuple_size<sequence_start>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1157,7 +1157,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit sequence_continue(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) noexcept = default;
+  friend constexpr bool operator==(sequence_continue const&, sequence_continue const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1179,8 +1179,8 @@ public:
 private:
   friend struct ::std::tuple_size<sequence_continue>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1215,7 +1215,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit sequence_stop(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) noexcept = default;
+  friend constexpr bool operator==(sequence_stop const&, sequence_stop const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1237,8 +1237,8 @@ public:
 private:
   friend struct ::std::tuple_size<sequence_stop>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1273,7 +1273,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit active_sensing(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(active_sensing const &, active_sensing const &) noexcept = default;
+  friend constexpr bool operator==(active_sensing const&, active_sensing const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1295,8 +1295,8 @@ public:
 private:
   friend struct ::std::tuple_size<active_sensing>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1331,7 +1331,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit reset(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(reset const &, reset const &) noexcept = default;
+  friend constexpr bool operator==(reset const&, reset const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
   /// \note This is a read-only field.
@@ -1353,8 +1353,8 @@ public:
 private:
   friend struct ::std::tuple_size<reset>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1381,10 +1381,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::m1cvm> : s
 /// Defines the C++ types that represent MIDI 1.0 Channel Voice type messages
 namespace midi2::ump::m1cvm {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -1431,7 +1431,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit note_on(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(note_on const &, note_on const &) noexcept = default;
+  friend constexpr bool operator==(note_on const&, note_on const&) noexcept = default;
 
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
   /// \note This is a read-only field.
@@ -1456,8 +1456,8 @@ public:
 private:
   friend struct ::std::tuple_size<note_on>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1497,7 +1497,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit note_off(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
+  friend constexpr bool operator==(note_off const&, note_off const&) noexcept = default;
 
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
   /// \note This is a read-only field.
@@ -1522,8 +1522,8 @@ public:
 private:
   friend struct ::std::tuple_size<note_off>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1562,7 +1562,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit poly_pressure(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(poly_pressure const &, poly_pressure const &) noexcept = default;
+  friend constexpr bool operator==(poly_pressure const&, poly_pressure const&) noexcept = default;
 
   /// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::mt() const noexcept
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
@@ -1589,8 +1589,8 @@ public:
 private:
   friend struct ::std::tuple_size<poly_pressure>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1629,7 +1629,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit control_change(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
+  friend constexpr bool operator==(control_change const&, control_change const&) noexcept = default;
 
   /// \fn constexpr auto midi2::ump::m1cvm::control_change::mt() const noexcept
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
@@ -1653,13 +1653,13 @@ public:
   MIDI2_UMP_GETTER_SETTER(word0, controller, ump::m1cvm::control_change)
   MIDI2_UMP_GETTER_SETTER(word0, value, ump::m1cvm::control_change)
 
-  constexpr auto &controller(ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
+  constexpr auto& controller(ump::control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1697,7 +1697,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit program_change(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
+  friend constexpr bool operator==(program_change const&, program_change const&) noexcept = default;
 
   /// \fn constexpr auto midi2::ump::m1cvm::program_change::mt() const noexcept
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
@@ -1723,8 +1723,8 @@ public:
 private:
   friend struct ::std::tuple_size<program_change>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1772,7 +1772,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit channel_pressure(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
+  friend constexpr bool operator==(channel_pressure const&, channel_pressure const&) noexcept = default;
 
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
   /// \note This is a read-only field.
@@ -1793,8 +1793,8 @@ public:
 private:
   friend struct ::std::tuple_size<channel_pressure>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1832,7 +1832,7 @@ public:
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
   constexpr explicit pitch_bend(std::span<std::uint32_t, 1> m) noexcept;
-  friend constexpr bool operator==(pitch_bend const &, pitch_bend const &) noexcept = default;
+  friend constexpr bool operator==(pitch_bend const&, pitch_bend const&) noexcept = default;
 
   /// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::mt() const noexcept
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
@@ -1859,8 +1859,8 @@ public:
 private:
   friend struct ::std::tuple_size<pitch_bend>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0> words_;
 };
@@ -1886,10 +1886,10 @@ namespace midi2::ump::data64::details {
 // 7.7 System Exclusive (7-Bit) Messages
 template <midi2::ump::mt::data64 Status> class sysex7;
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -1935,7 +1935,7 @@ public:
   constexpr explicit sysex7(std::span<std::uint32_t, 2> const m) noexcept : words_{span_to_tuple(m)} {
     assert(get<0>(words_).check());
   }
-  friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
+  friend constexpr bool operator==(sysex7 const&, sysex7 const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   /// \fn constexpr auto midi2::ump::data64::details::sysex7<Status>::group() const noexcept
@@ -1958,12 +1958,12 @@ public:
   template <bool IsConst> class array_subscript_proxy {
   public:
     template <bool OtherIsConst>
-    friend bool operator==(array_subscript_proxy const &lhs, array_subscript_proxy<OtherIsConst> const &rhs) {
+    friend bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<OtherIsConst> const& rhs) {
       return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
     }
     template <bool OtherIsConst>
-    friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const &lhs,
-                                                       array_subscript_proxy<OtherIsConst> const &rhs) noexcept {
+    friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const& lhs,
+                                                       array_subscript_proxy<OtherIsConst> const& rhs) noexcept {
       if (lhs.index_ < rhs.index_) {
         return std::partial_ordering::less;
       } else if (lhs.index_ == rhs.index_) {
@@ -1972,7 +1972,7 @@ public:
         return std::partial_ordering::greater;
       }
     }
-    constexpr array_subscript_proxy &operator=(adt::uinteger_t<7> const v) noexcept
+    constexpr array_subscript_proxy& operator=(adt::uinteger_t<7> const v) noexcept
       requires(!IsConst)
     {
       switch (index_) {
@@ -1998,7 +1998,7 @@ public:
       }
     }
 
-    constexpr array_subscript_proxy &operator++() noexcept {
+    constexpr array_subscript_proxy& operator++() noexcept {
       ++index_;
       assert(index_ < 6 && "Index out of range");
       return *this;
@@ -2008,7 +2008,7 @@ public:
       ++*this;
       return result;
     }
-    constexpr array_subscript_proxy &operator--() noexcept {
+    constexpr array_subscript_proxy& operator--() noexcept {
       assert(index_ > 0 && "Index out of range");
       --index_;
       return *this;
@@ -2019,34 +2019,34 @@ public:
       return result;
     }
 
-    template <std::integral U> constexpr auto &operator+=(U const n) noexcept {
+    template <std::integral U> constexpr auto& operator+=(U const n) noexcept {
       index_ += n;
       assert(index_ < 6 && "Index out of range");
       return *this;
     }
-    template <std::integral U> constexpr auto &operator-=(U const n) noexcept {
+    template <std::integral U> constexpr auto& operator-=(U const n) noexcept {
       assert(n <= index_ && "Index out of range");
       index_ -= n;
       return *this;
     }
 
     using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
-    [[nodiscard]] constexpr owner_type const *owner() const noexcept { return owner_; }
-    [[nodiscard]] constexpr owner_type *owner() noexcept { return owner_; }
+    [[nodiscard]] constexpr owner_type const* owner() const noexcept { return owner_; }
+    [[nodiscard]] constexpr owner_type* owner() noexcept { return owner_; }
     [[nodiscard]] constexpr std::size_t index() const noexcept { return index_; }
 
   private:
     friend class sysex7;
-    constexpr array_subscript_proxy(owner_type *owner, std::size_t const index) noexcept
+    constexpr array_subscript_proxy(owner_type* owner, std::size_t const index) noexcept
         : owner_{owner}, index_{index} {
       assert(owner != nullptr);
     }
-    owner_type *owner_;
+    owner_type* owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
+  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
@@ -2054,7 +2054,7 @@ public:
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept { return array_subscript_proxy<true>{this, idx}; }
 #endif
 
-  template <std::integral T> constexpr sysex7 &data(std::initializer_list<T> vs) {
+  template <std::integral T> constexpr sysex7& data(std::initializer_list<T> vs) {
     assert(vs.size() <= this->max_size() && "initializer list has too many members");
     auto index = std::size_t{0};
     for (auto v : vs) {
@@ -2067,7 +2067,7 @@ public:
   }
   template <std::ranges::input_range Range, typename Proj = std::identity>
     requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
-  constexpr sysex7 &data(Range &&range, Proj proj = {}) {
+  constexpr sysex7& data(Range&& range, Proj proj = {}) {
     auto index = std::size_t{0};
     std::ranges::for_each(
         std::forward<Range>(range),
@@ -2082,7 +2082,7 @@ public:
   }
   template <std::input_iterator I, std::sentinel_for<I> S>
     requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
-  constexpr sysex7 &data(I first, S last) {
+  constexpr sysex7& data(I first, S last) {
     auto index = std::size_t{0};
     std::for_each(first, last, [this, &index](auto v) constexpr {
       assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
@@ -2102,24 +2102,24 @@ public:
     /// A type that can be used to identify distance between iterators.
     using difference_type = std::ptrdiff_t;
     /// Defines a pointer to the type iterated over.
-    using pointer = value_type *;
+    using pointer = value_type*;
     /// Defines a reference to the type iterated over.
-    using reference = value_type &;
+    using reference = value_type&;
 
     constexpr explicit iterator_base(array_subscript_proxy<IsConst> arr) noexcept : arr_{std::move(arr)} {}
-    constexpr iterator_base(iterator_base const &other) noexcept : arr_{other.arr_} {}
-    constexpr iterator_base(iterator_base &&other) noexcept : arr_{std::move(other.arr_)} {}
+    constexpr iterator_base(iterator_base const& other) noexcept : arr_{other.arr_} {}
+    constexpr iterator_base(iterator_base&& other) noexcept : arr_{std::move(other.arr_)} {}
     ~iterator_base() noexcept = default;
 
     template <bool OtherIsConst>
       requires(IsConst == OtherIsConst || !OtherIsConst)
-    iterator_base &operator=(iterator_base<OtherIsConst> const &other) noexcept {
+    iterator_base& operator=(iterator_base<OtherIsConst> const& other) noexcept {
       arr_ = other.arr_;
       return *this;
     }
     template <bool OtherIsConst>
       requires(IsConst == OtherIsConst || !OtherIsConst)
-    iterator_base &operator=(iterator_base<OtherIsConst> &&other) noexcept {
+    iterator_base& operator=(iterator_base<OtherIsConst>&& other) noexcept {
       arr_ = std::move(other.arr_);
       return *this;
     }
@@ -2136,7 +2136,7 @@ public:
     constexpr pointer operator->() noexcept { return &arr_; }
     constexpr reference operator*() noexcept { return arr_; }
 
-    constexpr iterator_base &operator++() noexcept {
+    constexpr iterator_base& operator++() noexcept {
       ++arr_;
       return *this;
     }
@@ -2145,7 +2145,7 @@ public:
       ++*this;
       return prev;
     }
-    constexpr iterator_base &operator--() noexcept {
+    constexpr iterator_base& operator--() noexcept {
       --arr_;
       return *this;
     }
@@ -2155,11 +2155,11 @@ public:
       return prev;
     }
 
-    template <std::integral U> constexpr iterator_base &operator+=(U const n) noexcept {
+    template <std::integral U> constexpr iterator_base& operator+=(U const n) noexcept {
       arr_ += n;
       return *this;
     }
-    template <std::integral U> constexpr iterator_base &operator-=(U const n) noexcept {
+    template <std::integral U> constexpr iterator_base& operator-=(U const n) noexcept {
       arr_ -= n;
       return *this;
     }
@@ -2236,8 +2236,8 @@ public:
 private:
   friend struct ::std::tuple_size<sysex7>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_{};
 };
@@ -2292,10 +2292,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::m2cvm> : s
 /// Defines the C++ types that represent MIDI 2.0 Channel Voice messages
 namespace midi2::ump::m2cvm {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -2351,7 +2351,7 @@ public:
 
   constexpr note_off() noexcept = default;
   constexpr explicit note_off(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(note_off const &a, note_off const &b) noexcept = default;
+  friend constexpr bool operator==(note_off const& a, note_off const& b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::note_off)
@@ -2365,8 +2365,8 @@ public:
 private:
   friend struct ::std::tuple_size<note_off>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2408,7 +2408,7 @@ public:
 
   constexpr note_on() noexcept = default;
   constexpr explicit note_on(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(note_on const &a, note_on const &b) noexcept = default;
+  friend constexpr bool operator==(note_on const& a, note_on const& b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::note_on)
@@ -2422,8 +2422,8 @@ public:
 private:
   friend struct ::std::tuple_size<note_on>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2465,7 +2465,7 @@ public:
 
   constexpr poly_pressure() noexcept = default;
   constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) noexcept = default;
+  friend constexpr bool operator==(poly_pressure const& a, poly_pressure const& b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::poly_pressure)
@@ -2477,8 +2477,8 @@ public:
 private:
   friend struct ::std::tuple_size<poly_pressure>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2520,7 +2520,7 @@ public:
 
   constexpr rpn_per_note_controller() noexcept = default;
   constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(rpn_per_note_controller const &, rpn_per_note_controller const &) noexcept = default;
+  friend constexpr bool operator==(rpn_per_note_controller const&, rpn_per_note_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::rpn_per_note_controller)
@@ -2534,8 +2534,8 @@ public:
 private:
   friend struct ::std::tuple_size<rpn_per_note_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2578,8 +2578,7 @@ public:
 
   constexpr nrpn_per_note_controller() noexcept = default;
   constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(nrpn_per_note_controller const &,
-                                   nrpn_per_note_controller const &) noexcept = default;
+  friend constexpr bool operator==(nrpn_per_note_controller const&, nrpn_per_note_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::nrpn_per_note_controller)
@@ -2593,8 +2592,8 @@ public:
 private:
   friend struct ::std::tuple_size<nrpn_per_note_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2642,7 +2641,7 @@ public:
 
   constexpr rpn_controller() noexcept = default;
   constexpr explicit rpn_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(rpn_controller const &, rpn_controller const &) noexcept = default;
+  friend constexpr bool operator==(rpn_controller const&, rpn_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER(word0, status)
@@ -2655,8 +2654,8 @@ public:
 private:
   friend struct ::std::tuple_size<rpn_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2699,7 +2698,7 @@ public:
 
   constexpr nrpn_controller() noexcept = default;
   constexpr explicit nrpn_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(nrpn_controller const &, nrpn_controller const &) noexcept = default;
+  friend constexpr bool operator==(nrpn_controller const&, nrpn_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::nrpn_controller)
@@ -2712,8 +2711,8 @@ public:
 private:
   friend struct ::std::tuple_size<nrpn_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2756,7 +2755,7 @@ public:
 
   constexpr rpn_relative_controller() noexcept = default;
   constexpr explicit rpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(rpn_relative_controller const &, rpn_relative_controller const &) noexcept = default;
+  friend constexpr bool operator==(rpn_relative_controller const&, rpn_relative_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::rpn_relative_controller)
@@ -2769,8 +2768,8 @@ public:
 private:
   friend struct ::std::tuple_size<rpn_relative_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2814,8 +2813,7 @@ public:
 
   constexpr nrpn_relative_controller() noexcept = default;
   constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(nrpn_relative_controller const &,
-                                   nrpn_relative_controller const &) noexcept = default;
+  friend constexpr bool operator==(nrpn_relative_controller const&, nrpn_relative_controller const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::nrpn_relative_controller)
@@ -2830,8 +2828,8 @@ public:
 private:
   friend struct ::std::tuple_size<nrpn_relative_controller>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2876,7 +2874,7 @@ public:
 
   constexpr per_note_management() noexcept = default;
   constexpr explicit per_note_management(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(per_note_management const &, per_note_management const &) noexcept = default;
+  friend constexpr bool operator==(per_note_management const&, per_note_management const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::per_note_management)
@@ -2892,8 +2890,8 @@ public:
 private:
   friend struct ::std::tuple_size<per_note_management>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2935,7 +2933,7 @@ public:
 
   constexpr control_change() noexcept = default;
   constexpr explicit control_change(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
+  friend constexpr bool operator==(control_change const&, control_change const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::control_change)
@@ -2944,13 +2942,13 @@ public:
   MIDI2_UMP_GETTER_SETTER(word0, controller, ump::m2cvm::control_change)
   MIDI2_UMP_GETTER_SETTER(word1, value, ump::m2cvm::control_change)
 
-  constexpr auto &controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
+  constexpr auto& controller(control const c) noexcept { return this->controller(std::to_underlying(c)); }
 
 private:
   friend struct ::std::tuple_size<control_change>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -2998,7 +2996,7 @@ public:
 
   constexpr program_change() noexcept = default;
   constexpr explicit program_change(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
+  friend constexpr bool operator==(program_change const&, program_change const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::program_change)
@@ -3013,8 +3011,8 @@ public:
 private:
   friend struct ::std::tuple_size<program_change>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -3055,7 +3053,7 @@ public:
 
   constexpr channel_pressure() noexcept = default;
   constexpr explicit channel_pressure(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
+  friend constexpr bool operator==(channel_pressure const&, channel_pressure const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::channel_pressure)
@@ -3066,8 +3064,8 @@ public:
 private:
   friend struct ::std::tuple_size<channel_pressure>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -3108,7 +3106,7 @@ public:
 
   constexpr pitch_bend() noexcept = default;
   constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) noexcept = default;
+  friend constexpr bool operator==(pitch_bend const& a, pitch_bend const& b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::pitch_bend)
@@ -3119,8 +3117,8 @@ public:
 private:
   friend struct ::std::tuple_size<pitch_bend>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -3162,7 +3160,7 @@ public:
 
   constexpr per_note_pitch_bend() noexcept = default;
   constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) noexcept;
-  friend constexpr bool operator==(per_note_pitch_bend const &, per_note_pitch_bend const &) noexcept = default;
+  friend constexpr bool operator==(per_note_pitch_bend const&, per_note_pitch_bend const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m2cvm::per_note_pitch_bend)
@@ -3174,8 +3172,8 @@ public:
 private:
   friend struct ::std::tuple_size<per_note_pitch_bend>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1> words_;
 };
@@ -3198,10 +3196,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::stream> : 
 /// Defines the C++ types that represent UMP Stream messages
 namespace midi2::ump::stream {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -3262,7 +3260,7 @@ public:
 
   constexpr endpoint_discovery() noexcept = default;
   constexpr explicit endpoint_discovery(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(endpoint_discovery const &, endpoint_discovery const &) noexcept = default;
+  friend constexpr bool operator==(endpoint_discovery const&, endpoint_discovery const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::endpoint_discovery)
@@ -3276,8 +3274,8 @@ public:
 private:
   friend struct ::std::tuple_size<endpoint_discovery>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3337,8 +3335,8 @@ public:
 
   constexpr endpoint_info_notification() noexcept = default;
   constexpr explicit endpoint_info_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(endpoint_info_notification const &,
-                                   endpoint_info_notification const &) noexcept = default;
+  friend constexpr bool operator==(endpoint_info_notification const&,
+                                   endpoint_info_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::endpoint_info_notification)
@@ -3357,8 +3355,8 @@ public:
 private:
   friend struct ::std::tuple_size<endpoint_info_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3435,8 +3433,8 @@ public:
 
   constexpr device_identity_notification() noexcept = default;
   constexpr explicit device_identity_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(device_identity_notification const &,
-                                   device_identity_notification const &) noexcept = default;
+  friend constexpr bool operator==(device_identity_notification const&,
+                                   device_identity_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::device_identity_notification)
@@ -3456,8 +3454,8 @@ public:
 private:
   friend struct ::std::tuple_size<device_identity_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3524,8 +3522,8 @@ public:
 
   constexpr endpoint_name_notification() noexcept = default;
   constexpr explicit endpoint_name_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(endpoint_name_notification const &,
-                                   endpoint_name_notification const &) noexcept = default;
+  friend constexpr bool operator==(endpoint_name_notification const&,
+                                   endpoint_name_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::endpoint_name_notification)
@@ -3548,8 +3546,8 @@ public:
 private:
   friend struct ::std::tuple_size<endpoint_name_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3616,8 +3614,8 @@ public:
 
   constexpr product_instance_id_notification() noexcept = default;
   constexpr explicit product_instance_id_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(product_instance_id_notification const &,
-                                   product_instance_id_notification const &) noexcept = default;
+  friend constexpr bool operator==(product_instance_id_notification const&,
+                                   product_instance_id_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::product_instance_id_notification)
@@ -3640,8 +3638,8 @@ public:
 private:
   friend struct ::std::tuple_size<product_instance_id_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3695,8 +3693,7 @@ public:
 
   constexpr jr_configuration_request() noexcept = default;
   constexpr explicit jr_configuration_request(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(jr_configuration_request const &,
-                                   jr_configuration_request const &) noexcept = default;
+  friend constexpr bool operator==(jr_configuration_request const&, jr_configuration_request const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::jr_configuration_request)
@@ -3711,8 +3708,8 @@ public:
 private:
   friend struct ::std::tuple_size<jr_configuration_request>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3764,8 +3761,8 @@ public:
 
   constexpr jr_configuration_notification() noexcept = default;
   constexpr explicit jr_configuration_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(jr_configuration_notification const &,
-                                   jr_configuration_notification const &) noexcept = default;
+  friend constexpr bool operator==(jr_configuration_notification const&,
+                                   jr_configuration_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::jr_configuration_notification)
@@ -3780,8 +3777,8 @@ public:
 private:
   friend struct ::std::tuple_size<jr_configuration_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3831,8 +3828,7 @@ public:
 
   constexpr function_block_discovery() noexcept = default;
   constexpr explicit function_block_discovery(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(function_block_discovery const &,
-                                   function_block_discovery const &) noexcept = default;
+  friend constexpr bool operator==(function_block_discovery const&, function_block_discovery const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::function_block_discovery)
@@ -3846,8 +3842,8 @@ public:
 private:
   friend struct ::std::tuple_size<function_block_discovery>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3904,8 +3900,8 @@ public:
 
   constexpr function_block_info_notification() noexcept = default;
   constexpr explicit function_block_info_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(function_block_info_notification const &,
-                                   function_block_info_notification const &) noexcept = default;
+  friend constexpr bool operator==(function_block_info_notification const&,
+                                   function_block_info_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::function_block_info_notification)
@@ -3925,8 +3921,8 @@ public:
 private:
   friend struct ::std::tuple_size<function_block_info_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -3988,8 +3984,8 @@ public:
 
   constexpr function_block_name_notification() noexcept = default;
   constexpr explicit function_block_name_notification(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(function_block_name_notification const &,
-                                   function_block_name_notification const &) noexcept = default;
+  friend constexpr bool operator==(function_block_name_notification const&,
+                                   function_block_name_notification const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::function_block_name_notification)
@@ -4012,8 +4008,8 @@ public:
 private:
   friend struct ::std::tuple_size<function_block_name_notification>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4062,7 +4058,7 @@ public:
 
   constexpr start_of_clip() noexcept = default;
   constexpr explicit start_of_clip(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(start_of_clip const &, start_of_clip const &) noexcept = default;
+  friend constexpr bool operator==(start_of_clip const&, start_of_clip const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::start_of_clip)
@@ -4074,8 +4070,8 @@ public:
 private:
   friend struct ::std::tuple_size<start_of_clip>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4122,7 +4118,7 @@ public:
 
   constexpr end_of_clip() noexcept = default;
   constexpr explicit end_of_clip(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(end_of_clip const &, end_of_clip const &) noexcept = default;
+  friend constexpr bool operator==(end_of_clip const&, end_of_clip const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, format, ump::stream::end_of_clip)
@@ -4134,8 +4130,8 @@ public:
 private:
   friend struct ::std::tuple_size<end_of_clip>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4155,10 +4151,10 @@ struct midi2::ump::message_size<midi2::ump::message_type::flex_data> : std::inte
 /// Defines the C++ types that represent Flex Data messages
 namespace midi2::ump::flex_data {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -4215,7 +4211,7 @@ public:
 
   constexpr set_tempo() noexcept = default;
   constexpr explicit set_tempo(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_tempo const &, set_tempo const &) noexcept = default;
+  friend constexpr bool operator==(set_tempo const&, set_tempo const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::set_tempo)
@@ -4231,8 +4227,8 @@ public:
 private:
   friend struct ::std::tuple_size<set_tempo>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4286,7 +4282,7 @@ public:
 
   constexpr set_time_signature() noexcept = default;
   constexpr explicit set_time_signature(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_time_signature const &, set_time_signature const &) noexcept = default;
+  friend constexpr bool operator==(set_time_signature const&, set_time_signature const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::set_time_signature)
@@ -4304,8 +4300,8 @@ public:
 private:
   friend struct ::std::tuple_size<set_time_signature>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4361,7 +4357,7 @@ public:
 
   constexpr set_metronome() noexcept = default;
   constexpr explicit set_metronome(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_metronome const &, set_metronome const &) noexcept = default;
+  friend constexpr bool operator==(set_metronome const&, set_metronome const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::set_metronome)
@@ -4381,8 +4377,8 @@ public:
 private:
   friend struct ::std::tuple_size<set_metronome>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4545,7 +4541,7 @@ public:
 
   constexpr set_key_signature() noexcept = default;
   constexpr explicit set_key_signature(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_key_signature const &, set_key_signature const &) noexcept = default;
+  friend constexpr bool operator==(set_key_signature const&, set_key_signature const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::set_key_signature)
@@ -4562,8 +4558,8 @@ public:
 private:
   friend struct ::std::tuple_size<set_key_signature>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4677,7 +4673,7 @@ public:
   constexpr set_chord_name() noexcept = default;
   /// Constructs a set_chord_name message from a raw span of four uint32_t words.
   constexpr explicit set_chord_name(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(set_chord_name const &, set_chord_name const &) noexcept = default;
+  friend constexpr bool operator==(set_chord_name const&, set_chord_name const&) noexcept = default;
 
   /// \fn midi2::ump::flex_data::set_chord_name::mt
   /// \brief Returns the value of the word0::mt (message-type) field. Always mt::flex_data::set_chord_name.
@@ -4919,8 +4915,8 @@ public:
 private:
   friend struct ::std::tuple_size<set_chord_name>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -4997,7 +4993,7 @@ public:
 
   constexpr text_common() noexcept = default;
   constexpr explicit text_common(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(text_common const &, text_common const &) noexcept = default;
+  friend constexpr bool operator==(text_common const&, text_common const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::flex_data::text_common)
@@ -5022,7 +5018,7 @@ public:
 
   template <bool IsConst> class array_subscript_proxy {
   public:
-    constexpr array_subscript_proxy &operator=(adt::uinteger_t<8> const v) noexcept
+    constexpr array_subscript_proxy& operator=(adt::uinteger_t<8> const v) noexcept
       requires(!IsConst)
     {
       switch (index_) {
@@ -5063,16 +5059,16 @@ public:
   private:
     friend class text_common;
     using owner_type = std::conditional_t<IsConst, text_common const, text_common>;
-    constexpr array_subscript_proxy(owner_type *const owner, std::size_t const index) noexcept
+    constexpr array_subscript_proxy(owner_type* const owner, std::size_t const index) noexcept
         : owner_{owner}, index_{index} {
       assert(owner != nullptr);
     }
-    owner_type *owner_;
+    owner_type* owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
+  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
@@ -5087,8 +5083,8 @@ public:
 private:
   friend struct ::std::tuple_size<text_common>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -5107,10 +5103,10 @@ template <> struct midi2::ump::message_size<midi2::ump::message_type::data128> :
 /// Defines the C++ types that represent Data 128 messages
 namespace midi2::ump::data128 {
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -5123,10 +5119,10 @@ namespace details {
 // SysEx8 End (word 1)
 template <ump::mt::data128 Status> class sysex8;
 
-template <std::size_t I, typename T> auto const &get(T const &t) noexcept {
+template <std::size_t I, typename T> auto const& get(T const& t) noexcept {
   return get<I>(t.words_);
 }
-template <std::size_t I, typename T> auto &get(T &t) noexcept {
+template <std::size_t I, typename T> auto& get(T& t) noexcept {
   return get<I>(t.words_);
 }
 
@@ -5188,7 +5184,7 @@ public:
   constexpr explicit sysex8(std::span<std::uint32_t, 4> const m) noexcept : words_{span_to_tuple(m)} {
     assert(get<0>(words_).check());
   }
-  friend constexpr bool operator==(sysex8 const &, sysex8 const &) noexcept = default;
+  friend constexpr bool operator==(sysex8 const&, sysex8 const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER(word0, status)
@@ -5211,7 +5207,7 @@ public:
 
   template <bool IsConst> class array_subscript_proxy {
   public:
-    constexpr array_subscript_proxy &operator=(adt::uinteger_t<8> const v) noexcept
+    constexpr array_subscript_proxy& operator=(adt::uinteger_t<8> const v) noexcept
       requires(!IsConst)
     {
       switch (index_) {
@@ -5254,14 +5250,14 @@ public:
   private:
     friend class sysex8;
     using owner_type = std::conditional_t<IsConst, sysex8 const, sysex8>;
-    constexpr array_subscript_proxy(owner_type *const owner, std::size_t const index) noexcept
+    constexpr array_subscript_proxy(owner_type* const owner, std::size_t const index) noexcept
         : owner_{owner}, index_{index} {}
-    owner_type *owner_;
+    owner_type* owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
+  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
@@ -5276,8 +5272,8 @@ public:
 private:
   friend struct ::std::tuple_size<sysex8>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_{};
 };
@@ -5359,7 +5355,7 @@ public:
 
   constexpr mds_header() noexcept = default;
   constexpr explicit mds_header(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(mds_header const &, mds_header const &) noexcept = default;
+  friend constexpr bool operator==(mds_header const&, mds_header const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::data128::mds_header)
@@ -5376,8 +5372,8 @@ public:
 private:
   friend struct ::std::tuple_size<mds_header>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };
@@ -5434,7 +5430,7 @@ public:
 
   constexpr mds_payload() noexcept = default;
   constexpr explicit mds_payload(std::span<std::uint32_t, 4> m) noexcept;
-  friend constexpr bool operator==(mds_payload const &, mds_payload const &) noexcept = default;
+  friend constexpr bool operator==(mds_payload const&, mds_payload const&) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::data128::mds_payload)
@@ -5448,8 +5444,8 @@ public:
 private:
   friend struct ::std::tuple_size<mds_payload>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
-  template <std::size_t I, typename T> friend auto const &get(T const &) noexcept;
-  template <std::size_t I, typename T> friend auto &get(T &) noexcept;
+  template <std::size_t I, typename T> friend auto const& get(T const&) noexcept;
+  template <std::size_t I, typename T> friend auto& get(T&) noexcept;
 
   std::tuple<word0, word1, word2, word3> words_;
 };

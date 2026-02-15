@@ -39,8 +39,8 @@ public:
   static constexpr auto bits = Bits;
 
   constexpr bn() noexcept = default;
-  constexpr bn(bn const &rhs) noexcept = default;
-  constexpr bn(bn &&rhs) noexcept = default;
+  constexpr bn(bn const& rhs) noexcept = default;
+  constexpr bn(bn&& rhs) noexcept = default;
   template <std::unsigned_integral UInt>
   constexpr explicit bn(UInt const v) noexcept : value_{static_cast<Underlying>(v)} {
     assert((v <= adt::max_value<Underlying, Bits>()) && "Value is too large");
@@ -48,11 +48,11 @@ public:
 
   constexpr explicit operator Underlying() const noexcept { return value_; }
 
-  constexpr std::strong_ordering operator<=>(bn const &rhs) const noexcept = default;
+  constexpr std::strong_ordering operator<=>(bn const& rhs) const noexcept = default;
 
-  constexpr bn &operator=(bn const &rhs) noexcept = default;
-  constexpr bn &operator=(bn &&rhs) noexcept = default;
-  constexpr bn &operator=(Underlying const rhs) noexcept {
+  constexpr bn& operator=(bn const& rhs) noexcept = default;
+  constexpr bn& operator=(bn&& rhs) noexcept = default;
+  constexpr bn& operator=(Underlying const rhs) noexcept {
     assert((rhs <= adt::max_value<Underlying, Bits>()) && "Value is too large");
     value_ = rhs;
     return *this;
@@ -97,7 +97,7 @@ namespace literals {
 
 template <unsigned Bits, std::unsigned_integral Underlying, typename CharT>
 struct std::formatter<midi2::ci::details::bn<Bits, Underlying>, CharT> : public std::formatter<Underlying, CharT> {
-  auto format(midi2::ci::details::bn<Bits, Underlying> value, auto &format_ctx) const {
+  auto format(midi2::ci::details::bn<Bits, Underlying> value, auto& format_ctx) const {
     return std::formatter<Underlying, CharT>::format(Underlying{value}, format_ctx);
   }
 };
@@ -201,7 +201,7 @@ namespace details {
 
 constexpr auto mask7b = std::byte{(1 << 7) - 1};
 
-[[nodiscard]] constexpr b28 from_le7(byte_array<4> const &v) noexcept {
+[[nodiscard]] constexpr b28 from_le7(byte_array<4> const& v) noexcept {
   assert(((v[0] | v[1] | v[2] | v[3]) & std::byte{0x80}) == std::byte{0});
   using ut = b28::underlying_type;
   return b28{(static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
@@ -209,7 +209,7 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
              (static_cast<ut>(to_underlying(v[2] & mask7b)) << (7 * 2)) |
              (static_cast<ut>(to_underlying(v[3] & mask7b)) << (7 * 3))};
 }
-[[nodiscard]] constexpr b14 from_le7(byte_array<2> const &v) noexcept {
+[[nodiscard]] constexpr b14 from_le7(byte_array<2> const& v) noexcept {
   assert(((v[0] | v[1]) & std::byte{0x80}) == std::byte{0});
   using ut = b14::underlying_type;
   return b14{static_cast<ut>((static_cast<ut>(to_underlying(v[0] & mask7b)) << (7 * 0)) |
@@ -219,7 +219,7 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
   assert((v & std::byte{0x80}) == std::byte{0});
   return b7{to_underlying(v)};
 }
-[[nodiscard]] constexpr b7_array<5> from_le7(byte_array<5> const &v) noexcept {
+[[nodiscard]] constexpr b7_array<5> from_le7(byte_array<5> const& v) noexcept {
   b7_array<5> result;
   std::ranges::transform(v, std::begin(result), [](std::byte const b) { return from_le7(b); });
   return result;
@@ -240,21 +240,21 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
   assert(v.get() < (std::uint8_t{1} << 7));
   return static_cast<std::byte>(v.get());
 }
-[[nodiscard]] constexpr byte_array<5> to_le7(b7_array<5> const &v) noexcept {
+[[nodiscard]] constexpr byte_array<5> to_le7(b7_array<5> const& v) noexcept {
   byte_array<5> result;
   std::ranges::transform(v, std::begin(result), [](b7 const b) { return to_le7(b); });
   return result;
 }
 
 template <std::size_t Size>
-[[nodiscard]] constexpr b7_array<Size> from_byte_array(byte_array<Size> const &other) noexcept {
+[[nodiscard]] constexpr b7_array<Size> from_byte_array(byte_array<Size> const& other) noexcept {
   b7_array<Size> result{};
   std::ranges::transform(other, std::begin(result), [](std::byte const v) { return from_le7(v); });
   return result;
 }
 
 template <std::size_t Size>
-[[nodiscard]] constexpr byte_array<Size> to_byte_array(b7_array<Size> const &other) noexcept {
+[[nodiscard]] constexpr byte_array<Size> to_byte_array(b7_array<Size> const& other) noexcept {
   byte_array<Size> result{};
   std::ranges::transform(other, std::begin(result), [](b7 const v) { return std::byte{v.get()}; });
   return result;
@@ -297,7 +297,7 @@ static_assert(std::is_trivially_copyable_v<header>);
 }  // end namespace packed
 
 struct header {
-  constexpr bool operator==(header const &) const noexcept = default;
+  constexpr bool operator==(header const&) const noexcept = default;
   explicit constexpr operator packed::header() const noexcept;
 
   /// \brief Source or Destination (depending on type of message):
@@ -364,11 +364,11 @@ static_assert(sizeof(discovery_v2) > sizeof(discovery_v1));
 /// \brief The fields of a CI discovery message.
 /// An Initiator shall establish connections to MIDI-CI Responders by sending a Discovery message.
 struct discovery {
-  [[nodiscard]] static constexpr discovery make(packed::discovery_v1 const &v1, b7 output_path_id = b7{}) noexcept;
-  [[nodiscard]] static constexpr discovery make(packed::discovery_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr discovery make(packed::discovery_v1 const& v1, b7 output_path_id = b7{}) noexcept;
+  [[nodiscard]] static constexpr discovery make(packed::discovery_v2 const& v2) noexcept;
   explicit constexpr operator packed::discovery_v1() const noexcept;
   explicit constexpr operator packed::discovery_v2() const noexcept;
-  constexpr bool operator==(discovery const &) const noexcept = default;
+  constexpr bool operator==(discovery const&) const noexcept = default;
 
   /// Device Manufacturer (System Exclusive ID Number)
   b7_array<3> manufacturer{};
@@ -386,7 +386,7 @@ struct discovery {
   b7 output_path_id;
 };
 
-constexpr discovery discovery::make(packed::discovery_v1 const &v1, b7 output_path_id) noexcept {
+constexpr discovery discovery::make(packed::discovery_v1 const& v1, b7 output_path_id) noexcept {
   return discovery{.manufacturer = details::from_byte_array(v1.manufacturer),
                    .family = details::from_le7(v1.family),
                    .model = details::from_le7(v1.model),
@@ -395,7 +395,7 @@ constexpr discovery discovery::make(packed::discovery_v1 const &v1, b7 output_pa
                    .max_sysex_size = details::from_le7(v1.max_sysex_size),
                    .output_path_id = output_path_id};
 }
-constexpr discovery discovery::make(packed::discovery_v2 const &v2) noexcept {
+constexpr discovery discovery::make(packed::discovery_v2 const& v2) noexcept {
   return make(v2.v1, details::from_le7(v2.output_path_id));
 }
 constexpr discovery::operator packed::discovery_v1() const noexcept {
@@ -456,12 +456,12 @@ static_assert(sizeof(discovery_reply_v1) <= sizeof(discovery_reply_v2));
 /// When a MIDI-CI Device receives a Discovery message it shall become a Responder and send this
 /// Reply to Discovery message. This message declares the MUID of the Responder.
 struct discovery_reply {
-  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v1 const &v1, b7 output_path_id = b7{},
+  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v1 const& v1, b7 output_path_id = b7{},
                                                       b7 function_block = b7{}) noexcept;
-  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr discovery_reply make(packed::discovery_reply_v2 const& v2) noexcept;
   explicit constexpr operator packed::discovery_reply_v1() const noexcept;
   explicit constexpr operator packed::discovery_reply_v2() const noexcept;
-  constexpr bool operator==(discovery_reply const &) const noexcept = default;
+  constexpr bool operator==(discovery_reply const&) const noexcept = default;
 
   /// Device Manufacturer (System Exclusive ID Number)
   b7_array<3> manufacturer{};
@@ -480,7 +480,7 @@ struct discovery_reply {
   /// Function Block
   b7 function_block;
 };
-constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const &v1, b7 output_path_id,
+constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const& v1, b7 output_path_id,
                                                 b7 function_block) noexcept {
   return {.manufacturer = details::from_byte_array(v1.manufacturer),
           .family = details::from_le7(v1.family),
@@ -491,7 +491,7 @@ constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v1 const
           .output_path_id = output_path_id,
           .function_block = function_block};
 }
-constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v2 const &v2) noexcept {
+constexpr discovery_reply discovery_reply::make(packed::discovery_reply_v2 const& v2) noexcept {
   return make(v2.v1, details::from_le7(v2.output_path_id), details::from_le7(v2.function_block));
 }
 constexpr discovery_reply::operator packed::discovery_reply_v1() const noexcept {
@@ -531,15 +531,15 @@ static_assert(std::is_trivially_copyable_v<endpoint_v1>);
 /// information about the UMP Endpoint which has the Function Block. A Status field selects the
 /// target data.
 struct endpoint {
-  [[nodiscard]] static constexpr endpoint make(packed::endpoint_v1 const &) noexcept;
+  [[nodiscard]] static constexpr endpoint make(packed::endpoint_v1 const&) noexcept;
   explicit constexpr operator packed::endpoint_v1() const noexcept;
-  constexpr bool operator==(endpoint const &) const noexcept = default;
+  constexpr bool operator==(endpoint const&) const noexcept = default;
 
   /// The Status field defines which information to retrieve from the Responder.
   b7 status;
 };
 
-constexpr endpoint endpoint::make(packed::endpoint_v1 const &other) noexcept {
+constexpr endpoint endpoint::make(packed::endpoint_v1 const& other) noexcept {
   return {.status = b7{to_underlying(other.status)}};
 }
 constexpr endpoint::operator packed::endpoint_v1() const noexcept {
@@ -569,9 +569,9 @@ static_assert(std::is_trivially_copyable_v<endpoint_reply_v1>);
 }  // end namespace packed
 
 struct endpoint_reply {
-  [[nodiscard]] static constexpr endpoint_reply make(packed::endpoint_reply_v1 const &) noexcept;
+  [[nodiscard]] static constexpr endpoint_reply make(packed::endpoint_reply_v1 const&) noexcept;
   explicit constexpr operator packed::endpoint_reply_v1() const noexcept;
-  constexpr bool operator==(endpoint_reply const &other) const noexcept {
+  constexpr bool operator==(endpoint_reply const& other) const noexcept {
     return status == other.status && std::ranges::equal(information, other.information);
   }
 
@@ -579,9 +579,9 @@ struct endpoint_reply {
   std::span<b7 const> information;
 };
 
-constexpr endpoint_reply endpoint_reply::make(packed::endpoint_reply_v1 const &other) noexcept {
+constexpr endpoint_reply endpoint_reply::make(packed::endpoint_reply_v1 const& other) noexcept {
   return {.status = details::from_le7(other.status),
-          .information{std::bit_cast<b7 const *>(&other.data[0]), details::from_le7(other.data_length).get()}};
+          .information{std::bit_cast<b7 const*>(&other.data[0]), details::from_le7(other.data_length).get()}};
 }
 constexpr endpoint_reply::operator packed::endpoint_reply_v1() const noexcept {
   return {.status = details::to_le7(status),
@@ -607,14 +607,14 @@ static_assert(std::is_trivially_copyable_v<invalidate_muid_v1>);
 }  // end namespace packed
 
 struct invalidate_muid {
-  [[nodiscard]] static constexpr invalidate_muid make(packed::invalidate_muid_v1 const &) noexcept;
+  [[nodiscard]] static constexpr invalidate_muid make(packed::invalidate_muid_v1 const&) noexcept;
   explicit constexpr operator packed::invalidate_muid_v1() const noexcept;
-  constexpr bool operator==(invalidate_muid const &) const noexcept = default;
+  constexpr bool operator==(invalidate_muid const&) const noexcept = default;
 
   muid target_muid;
 };
 
-constexpr invalidate_muid invalidate_muid::make(packed::invalidate_muid_v1 const &other) noexcept {
+constexpr invalidate_muid invalidate_muid::make(packed::invalidate_muid_v1 const& other) noexcept {
   return {.target_muid = details::from_le7(other.target_muid)};
 }
 constexpr invalidate_muid::operator packed::invalidate_muid_v1() const noexcept {
@@ -653,9 +653,9 @@ static_assert(alignof(ack_v1) == 1);
 /// The MIDI-CI ACK Message is a message for dealing with positive acknowledgement of an action, or
 /// to provide a notice of ongoing activity, such as timeout wait messages.
 struct ack {
-  [[nodiscard]] static constexpr ack make(packed::ack_v1 const &) noexcept;
+  [[nodiscard]] static constexpr ack make(packed::ack_v1 const&) noexcept;
   explicit constexpr operator packed::ack_v1() const noexcept;
-  constexpr bool operator==(ack const &other) const noexcept;
+  constexpr bool operator==(ack const& other) const noexcept;
 
   /// Original Transaction Sub-ID#2 Classification
   b7 original_id;
@@ -669,7 +669,7 @@ struct ack {
   std::span<b7 const> message;
 };
 
-constexpr ack ack::make(packed::ack_v1 const &v1) noexcept {
+constexpr ack ack::make(packed::ack_v1 const& v1) noexcept {
   return {.original_id = details::from_le7(v1.original_id),
           .status_code = details::from_le7(v1.status_code),
           .status_data = details::from_le7(v1.status_data),
@@ -684,7 +684,7 @@ constexpr ack::operator packed::ack_v1() const noexcept {
           .message_length = details::to_le7(static_cast<b14>(message.size())),
           .message{b7{}}};
 }
-constexpr bool ack::operator==(ack const &other) const noexcept {
+constexpr bool ack::operator==(ack const& other) const noexcept {
   return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
          details == other.details && std::ranges::equal(message, other.message);
 }
@@ -722,11 +722,11 @@ static_assert(sizeof(nak_v1) <= sizeof(nak_v2));
 }  // end namespace packed
 
 struct nak {
-  [[nodiscard]] static constexpr nak make(packed::nak_v1 const &) noexcept;
-  [[nodiscard]] static constexpr nak make(packed::nak_v2 const &) noexcept;
+  [[nodiscard]] static constexpr nak make(packed::nak_v1 const&) noexcept;
+  [[nodiscard]] static constexpr nak make(packed::nak_v2 const&) noexcept;
   explicit constexpr operator packed::nak_v1() const noexcept;
   explicit constexpr operator packed::nak_v2() const noexcept;
-  constexpr bool operator==(nak const &) const noexcept;
+  constexpr bool operator==(nak const&) const noexcept;
 
   b7 original_id;         ///< Original transaction sub-ID#2 classification
   b7 status_code;         ///< NAK Status Code
@@ -735,10 +735,10 @@ struct nak {
   std::span<b7 const> message;
 };
 
-constexpr nak nak::make(packed::nak_v1 const &) noexcept {
+constexpr nak nak::make(packed::nak_v1 const&) noexcept {
   return {};
 }
-constexpr nak nak::make(packed::nak_v2 const &v2) noexcept {
+constexpr nak nak::make(packed::nak_v2 const& v2) noexcept {
   return nak{.original_id = b7{to_underlying(v2.original_id)},
              .status_code = b7{to_underlying(v2.status_code)},
              .status_data = b7{to_underlying(v2.status_data)},
@@ -756,7 +756,7 @@ constexpr nak::operator packed::nak_v2() const noexcept {
           .message_length = details::to_le7(static_cast<b14>(message.size())),
           .message = {b7{0U}}};
 }
-constexpr bool nak::operator==(nak const &other) const noexcept {
+constexpr bool nak::operator==(nak const& other) const noexcept {
   return original_id == other.original_id && status_code == other.status_code && status_data == other.status_data &&
          details == other.details && std::ranges::equal(message, other.message);
 }
@@ -808,11 +808,11 @@ static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt2>);
 }  // end namespace packed
 
 struct inquiry_reply {
-  [[nodiscard]] static constexpr inquiry_reply make(packed::inquiry_reply_v1_pt1 const &,
-                                                    packed::inquiry_reply_v1_pt2 const &) noexcept;
+  [[nodiscard]] static constexpr inquiry_reply make(packed::inquiry_reply_v1_pt1 const&,
+                                                    packed::inquiry_reply_v1_pt2 const&) noexcept;
   explicit constexpr operator packed::inquiry_reply_v1_pt1() const noexcept;
   explicit constexpr operator packed::inquiry_reply_v1_pt2() const noexcept;
-  constexpr bool operator==(inquiry_reply const &other) const noexcept {
+  constexpr bool operator==(inquiry_reply const& other) const noexcept {
     return std::ranges::equal(enabled, other.enabled) && std::ranges::equal(disabled, other.disabled);
   }
 
@@ -820,8 +820,8 @@ struct inquiry_reply {
   std::span<profile const> disabled;
 };
 
-constexpr inquiry_reply inquiry_reply::make(packed::inquiry_reply_v1_pt1 const &v1_pt1,
-                                            packed::inquiry_reply_v1_pt2 const &v1_pt2) noexcept {
+constexpr inquiry_reply inquiry_reply::make(packed::inquiry_reply_v1_pt1 const& v1_pt1,
+                                            packed::inquiry_reply_v1_pt2 const& v1_pt2) noexcept {
   return {
       .enabled = std::span<profile const>{std::begin(v1_pt1.ids), details::from_le7(v1_pt1.num_enabled).get()},
       .disabled = std::span<profile const>{std::begin(v1_pt2.ids), details::from_le7(v1_pt2.num_disabled).get()},
@@ -854,9 +854,9 @@ static_assert(std::is_trivially_copyable_v<added_v1>);
 }  // end namespace packed
 
 struct added {
-  [[nodiscard]] static constexpr added make(packed::added_v1 const &other) noexcept { return {.pid = other.pid}; }
+  [[nodiscard]] static constexpr added make(packed::added_v1 const& other) noexcept { return {.pid = other.pid}; }
   explicit constexpr operator packed::added_v1() const noexcept { return {.pid = pid}; }
-  constexpr bool operator==(added const &) const noexcept = default;
+  constexpr bool operator==(added const&) const noexcept = default;
 
   profile pid{};  ///< Profile ID of profile being added
 };
@@ -880,9 +880,9 @@ static_assert(std::is_trivially_copyable_v<removed_v1>);
 }  // end namespace packed
 
 struct removed {
-  [[nodiscard]] static constexpr removed make(packed::removed_v1 const &other) noexcept { return {.pid = other.pid}; }
+  [[nodiscard]] static constexpr removed make(packed::removed_v1 const& other) noexcept { return {.pid = other.pid}; }
   explicit constexpr operator packed::removed_v1() const noexcept { return {.pid = pid}; }
-  constexpr bool operator==(removed const &) const noexcept = default;
+  constexpr bool operator==(removed const&) const noexcept = default;
 
   profile pid{};  ///< Profile ID of profile being removed
 };
@@ -908,13 +908,13 @@ static_assert(std::is_trivially_copyable_v<details_v1>);
 }  // end namespace packed
 
 struct details {
-  [[nodiscard]] static constexpr details make(packed::details_v1 const &other) noexcept {
+  [[nodiscard]] static constexpr details make(packed::details_v1 const& other) noexcept {
     return {.pid = other.pid, .target = b7{to_underlying(other.target)}};
   }
   explicit constexpr operator packed::details_v1() const noexcept {
     return {.pid = pid, .target = ci::details::to_le7(target)};
   }
-  constexpr bool operator==(details const &) const noexcept = default;
+  constexpr bool operator==(details const&) const noexcept = default;
 
   profile pid{};
   b7 target{};
@@ -941,9 +941,9 @@ static_assert(std::is_trivially_copyable_v<details_reply_v1>);
 }  // end namespace packed
 
 struct details_reply {
-  [[nodiscard]] static constexpr details_reply make(packed::details_reply_v1 const &) noexcept;
+  [[nodiscard]] static constexpr details_reply make(packed::details_reply_v1 const&) noexcept;
   explicit constexpr operator packed::details_reply_v1() const noexcept;
-  constexpr bool operator==(details_reply const &other) const noexcept {
+  constexpr bool operator==(details_reply const& other) const noexcept {
     return pid == other.pid && target == other.target && std::ranges::equal(data, other.data);
   }
 
@@ -952,7 +952,7 @@ struct details_reply {
   std::span<b7 const> data;
 };
 
-constexpr details_reply details_reply::make(packed::details_reply_v1 const &other) noexcept {
+constexpr details_reply details_reply::make(packed::details_reply_v1 const& other) noexcept {
   return {.pid = other.pid,
           .target = b7{to_underlying(other.target)},
           .data = std::span<b7 const>{std::begin(other.data), ci::details::from_le7(other.data_length).get()}};
@@ -1000,20 +1000,20 @@ static_assert(sizeof(on_v1) <= sizeof(on_v2));
 }  // end namespace packed
 
 struct on {
-  [[nodiscard]] static constexpr on make(packed::on_v1 const &, b14 num_channels = b14{}) noexcept;
-  [[nodiscard]] static constexpr on make(packed::on_v2 const &) noexcept;
+  [[nodiscard]] static constexpr on make(packed::on_v1 const&, b14 num_channels = b14{}) noexcept;
+  [[nodiscard]] static constexpr on make(packed::on_v2 const&) noexcept;
   explicit constexpr operator packed::on_v1() const noexcept;
   explicit constexpr operator packed::on_v2() const noexcept;
-  constexpr bool operator==(on const &) const noexcept = default;
+  constexpr bool operator==(on const&) const noexcept = default;
 
   profile pid{};
   b14 num_channels;
 };
 
-constexpr on on::make(packed::on_v1 const &other, b14 num_channels) noexcept {
+constexpr on on::make(packed::on_v1 const& other, b14 num_channels) noexcept {
   return {.pid = other.pid, .num_channels = num_channels};
 }
-constexpr on on::make(packed::on_v2 const &other) noexcept {
+constexpr on on::make(packed::on_v2 const& other) noexcept {
   return make(other.v1, ci::details::from_le7(other.num_channels));
 }
 constexpr on::operator packed::on_v1() const noexcept {
@@ -1055,20 +1055,20 @@ static_assert(sizeof(off_v1) <= sizeof(off_v2));
 }  // end namespace packed
 
 struct off {
-  [[nodiscard]] static constexpr off make(packed::off_v1 const &) noexcept;
-  [[nodiscard]] static constexpr off make(packed::off_v2 const &) noexcept;
+  [[nodiscard]] static constexpr off make(packed::off_v1 const&) noexcept;
+  [[nodiscard]] static constexpr off make(packed::off_v2 const&) noexcept;
   explicit constexpr operator packed::off_v1() const noexcept;
   explicit constexpr operator packed::off_v2() const noexcept;
-  constexpr bool operator==(off const &) const noexcept = default;
+  constexpr bool operator==(off const&) const noexcept = default;
 
   profile pid{};
   // There's a 14 bit field in the specification that's "reserved"
 };
 
-constexpr off off::make(packed::off_v1 const &other) noexcept {
+constexpr off off::make(packed::off_v1 const& other) noexcept {
   return {.pid = other.pid};
 }
-constexpr off off::make(packed::off_v2 const &other) noexcept {
+constexpr off off::make(packed::off_v2 const& other) noexcept {
   return make(static_cast<packed::off_v1>(other.v1));
 }
 constexpr off::operator packed::off_v1() const noexcept {
@@ -1110,20 +1110,20 @@ static_assert(sizeof(enabled_v1) <= sizeof(enabled_v2));
 }  // end namespace packed
 
 struct enabled {
-  [[nodiscard]] static constexpr enabled make(packed::enabled_v1 const &, b14 num_channels = b14{}) noexcept;
-  [[nodiscard]] static constexpr enabled make(packed::enabled_v2 const &) noexcept;
+  [[nodiscard]] static constexpr enabled make(packed::enabled_v1 const&, b14 num_channels = b14{}) noexcept;
+  [[nodiscard]] static constexpr enabled make(packed::enabled_v2 const&) noexcept;
   explicit constexpr operator packed::enabled_v1() const noexcept;
   explicit constexpr operator packed::enabled_v2() const noexcept;
-  constexpr bool operator==(enabled const &) const noexcept = default;
+  constexpr bool operator==(enabled const&) const noexcept = default;
 
   profile pid{};
   b14 num_channels;
 };
 
-constexpr enabled enabled::make(packed::enabled_v1 const &other, b14 num_channels) noexcept {
+constexpr enabled enabled::make(packed::enabled_v1 const& other, b14 num_channels) noexcept {
   return {.pid = other.pid, .num_channels = num_channels};
 }
-constexpr enabled enabled::make(packed::enabled_v2 const &other) noexcept {
+constexpr enabled enabled::make(packed::enabled_v2 const& other) noexcept {
   return make(other.v1, ci::details::from_le7(other.num_channels));
 }
 constexpr enabled::operator packed::enabled_v1() const noexcept {
@@ -1168,21 +1168,21 @@ static_assert(sizeof(disabled_v1) <= sizeof(disabled_v2));
 }  // end namespace packed
 
 struct disabled {
-  [[nodiscard]] static constexpr disabled make(packed::disabled_v1 const &) noexcept;
-  [[nodiscard]] static constexpr disabled make(packed::disabled_v2 const &) noexcept;
+  [[nodiscard]] static constexpr disabled make(packed::disabled_v1 const&) noexcept;
+  [[nodiscard]] static constexpr disabled make(packed::disabled_v2 const&) noexcept;
   explicit constexpr operator packed::disabled_v1() const noexcept;
   explicit constexpr operator packed::disabled_v2() const noexcept;
 
-  constexpr bool operator==(disabled const &) const noexcept = default;
+  constexpr bool operator==(disabled const&) const noexcept = default;
 
   profile pid{};
   b14 num_channels;
 };
 
-constexpr disabled disabled::make(packed::disabled_v1 const &other) noexcept {
+constexpr disabled disabled::make(packed::disabled_v1 const& other) noexcept {
   return {.pid = other.pid, .num_channels = b14{}};
 }
-constexpr disabled disabled::make(packed::disabled_v2 const &other) noexcept {
+constexpr disabled disabled::make(packed::disabled_v2 const& other) noexcept {
   return {.pid = other.v1.pid, .num_channels = ci::details::from_le7(other.num_channels)};
 }
 constexpr disabled::operator packed::disabled_v1() const noexcept {
@@ -1215,9 +1215,9 @@ static_assert(std::is_trivially_copyable_v<specific_data_v1>);
 }  // end namespace packed
 
 struct specific_data {
-  [[nodiscard]] static constexpr specific_data make(packed::specific_data_v1 const &) noexcept;
+  [[nodiscard]] static constexpr specific_data make(packed::specific_data_v1 const&) noexcept;
   explicit constexpr operator packed::specific_data_v1() const noexcept;
-  constexpr bool operator==(specific_data const &other) const noexcept {
+  constexpr bool operator==(specific_data const& other) const noexcept {
     return pid == other.pid && std::ranges::equal(data, other.data);
   }
 
@@ -1225,7 +1225,7 @@ struct specific_data {
   std::span<b7 const> data;  ///< Profile specific data
 };
 
-constexpr specific_data specific_data::make(packed::specific_data_v1 const &other) noexcept {
+constexpr specific_data specific_data::make(packed::specific_data_v1 const& other) noexcept {
   return {
       .pid = other.pid,
       .data = std::span<b7 const>{std::begin(other.data), ci::details::from_le7(other.data_length).get()},
@@ -1276,25 +1276,25 @@ static_assert(std::is_trivially_copyable_v<capabilities_v2>);
 }  // end namespace packed
 
 struct capabilities {
-  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v1 const &other) noexcept;
-  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v2 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v1 const& other) noexcept;
+  [[nodiscard]] static constexpr capabilities make(packed::capabilities_v2 const& other) noexcept;
   explicit constexpr operator packed::capabilities_v1() const noexcept;
   explicit constexpr operator packed::capabilities_v2() const noexcept;
-  constexpr bool operator==(capabilities const &) const noexcept = default;
+  constexpr bool operator==(capabilities const&) const noexcept = default;
 
   b7 num_simultaneous;
   b7 major_version;
   b7 minor_version;
 };
 
-constexpr capabilities capabilities::make(packed::capabilities_v1 const &other) noexcept {
+constexpr capabilities capabilities::make(packed::capabilities_v1 const& other) noexcept {
   return {
       .num_simultaneous = b7{to_underlying(other.num_simultaneous)},
       .major_version = b7{},
       .minor_version = b7{},
   };
 }
-constexpr capabilities capabilities::make(packed::capabilities_v2 const &other) noexcept {
+constexpr capabilities capabilities::make(packed::capabilities_v2 const& other) noexcept {
   return {
       .num_simultaneous = b7{to_underlying(other.v1.num_simultaneous)},
       .major_version = b7{to_underlying(other.major_version)},
@@ -1344,25 +1344,25 @@ static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 }  // end namespace packed
 
 struct capabilities_reply {
-  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v1 const &other) noexcept;
-  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &other) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v1 const& other) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const& other) noexcept;
   explicit constexpr operator packed::capabilities_reply_v1() const noexcept;
   explicit constexpr operator packed::capabilities_reply_v2() const noexcept;
-  constexpr bool operator==(capabilities_reply const &) const noexcept = default;
+  constexpr bool operator==(capabilities_reply const&) const noexcept = default;
 
   b7 num_simultaneous;
   b7 major_version;
   b7 minor_version;
 };
 
-constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v1 const &other) noexcept {
+constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v1 const& other) noexcept {
   return {
       .num_simultaneous = b7{to_underlying(other.num_simultaneous)},
       .major_version = b7{},
       .minor_version = b7{},
   };
 }
-constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v2 const &other) noexcept {
+constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v2 const& other) noexcept {
   return {
       .num_simultaneous = b7{to_underlying(other.v1.num_simultaneous)},
       .major_version = b7{to_underlying(other.major_version)},
@@ -1420,7 +1420,7 @@ static_assert(std::is_trivially_copyable_v<property_exchange_pt2>);
 }  // end namespace packed
 
 struct chunk_info {
-  constexpr bool operator==(chunk_info const &) const noexcept = default;
+  constexpr bool operator==(chunk_info const&) const noexcept = default;
   b14 number_of_chunks;
   b14 chunk_number;
 };
@@ -1428,7 +1428,7 @@ struct chunk_info {
 enum class property_exchange_type { get, get_reply, set, set_reply, subscription, subscription_reply, notify };
 template <property_exchange_type Pet> class property_exchange {
 public:
-  [[nodiscard]] static constexpr property_exchange make(chunk_info const &chunk, b7 const request,
+  [[nodiscard]] static constexpr property_exchange make(chunk_info const& chunk, b7 const request,
                                                         std::span<char const> const header,
                                                         std::span<char const> const data = {}) noexcept {
     return {.chunk = chunk, .request = request, .header = header, .data = data};
@@ -1448,7 +1448,7 @@ public:
         .data = {'\0'},
     };
   }
-  constexpr bool operator==(property_exchange const &other) const noexcept {
+  constexpr bool operator==(property_exchange const& other) const noexcept {
     return chunk == other.chunk && request == other.request && std::ranges::equal(header, other.header) &&
            std::ranges::equal(data, other.data);
   }
@@ -1497,14 +1497,14 @@ static_assert(std::is_trivially_copyable_v<capabilities_reply_v2>);
 }  // end namespace packed
 
 struct capabilities_reply {
-  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr capabilities_reply make(packed::capabilities_reply_v2 const& v2) noexcept;
   explicit constexpr operator packed::capabilities_reply_v2() const noexcept;
-  constexpr bool operator==(capabilities_reply const &) const noexcept = default;
+  constexpr bool operator==(capabilities_reply const&) const noexcept = default;
 
   b7 features;
 };
 
-constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v2 const &v2) noexcept {
+constexpr capabilities_reply capabilities_reply::make(packed::capabilities_reply_v2 const& v2) noexcept {
   return {.features = b7{to_underlying(v2.features)}};
 }
 constexpr capabilities_reply::operator packed::capabilities_reply_v2() const noexcept {
@@ -1529,15 +1529,15 @@ struct midi_message_report_v2 {
     [[nodiscard]] constexpr auto song_position() const noexcept { return get<song_position_bits>(); }
     [[nodiscard]] constexpr auto mtc_quarter_frame() const noexcept { return get<mtc_quarter_frame_bits>(); }
 
-    constexpr auto &song_select(adt::uinteger_t<song_select_bits::bits::value> const v) noexcept {
+    constexpr auto& song_select(adt::uinteger_t<song_select_bits::bits::value> const v) noexcept {
       set<song_select_bits>(v);
       return *this;
     }
-    constexpr auto &song_position(adt::uinteger_t<song_position_bits::bits::value> const v) noexcept {
+    constexpr auto& song_position(adt::uinteger_t<song_position_bits::bits::value> const v) noexcept {
       set<song_position_bits>(v);
       return *this;
     }
-    constexpr auto &mtc_quarter_frame(adt::uinteger_t<mtc_quarter_frame_bits::bits::value> const v) noexcept {
+    constexpr auto& mtc_quarter_frame(adt::uinteger_t<mtc_quarter_frame_bits::bits::value> const v) noexcept {
       set<mtc_quarter_frame_bits>(v);
       return *this;
     }
@@ -1564,31 +1564,31 @@ struct midi_message_report_v2 {
     [[nodiscard]] constexpr auto control_change() const noexcept { return get<control_change_bits>(); }
     [[nodiscard]] constexpr auto pitchbend() const noexcept { return get<pitchbend_bits>(); }
 
-    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+    constexpr auto& reserved0(reserved0_bits::uinteger const v) noexcept {
       set<reserved0_bits>(v);
       return *this;
     }
-    constexpr auto &channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
+    constexpr auto& channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
       set<channel_pressure_bits>(v);
       return *this;
     }
-    constexpr auto &program_change(program_change_bits::uinteger const v) noexcept {
+    constexpr auto& program_change(program_change_bits::uinteger const v) noexcept {
       set<program_change_bits>(v);
       return *this;
     }
-    constexpr auto &nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
+    constexpr auto& nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
       set<nrpn_assignable_controller_bits>(v);
       return *this;
     }
-    constexpr auto &rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
+    constexpr auto& rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
       set<rpn_registered_controller_bits>(v);
       return *this;
     }
-    constexpr auto &control_change(control_change_bits::uinteger const v) noexcept {
+    constexpr auto& control_change(control_change_bits::uinteger const v) noexcept {
       set<control_change_bits>(v);
       return *this;
     }
-    constexpr auto &pitchbend(pitchbend_bits::uinteger const v) noexcept {
+    constexpr auto& pitchbend(pitchbend_bits::uinteger const v) noexcept {
       set<pitchbend_bits>(v);
       return *this;
     }
@@ -1613,27 +1613,27 @@ struct midi_message_report_v2 {
     [[nodiscard]] constexpr auto poly_pressure() const noexcept { return get<poly_pressure_bits>(); }
     [[nodiscard]] constexpr auto notes() const noexcept { return get<notes_bits>(); }
 
-    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+    constexpr auto& reserved0(reserved0_bits::uinteger const v) noexcept {
       set<reserved0_bits>(v);
       return *this;
     }
-    constexpr auto &assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
+    constexpr auto& assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
       set<assignable_per_note_controller_bits>(v);
       return *this;
     }
-    constexpr auto &registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
+    constexpr auto& registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
       set<registered_per_note_controller_bits>(v);
       return *this;
     }
-    constexpr auto &per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
+    constexpr auto& per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
       set<per_note_pitchbend_bits>(v);
       return *this;
     }
-    constexpr auto &poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
+    constexpr auto& poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
       set<poly_pressure_bits>(v);
       return *this;
     }
-    constexpr auto &notes(notes_bits::uinteger const v) noexcept {
+    constexpr auto& notes(notes_bits::uinteger const v) noexcept {
       set<notes_bits>(v);
       return *this;
     }
@@ -1658,9 +1658,9 @@ static_assert(std::is_trivially_copyable_v<midi_message_report_v2>);
 }  // end namespace packed
 
 struct midi_message_report {
-  [[nodiscard]] static constexpr midi_message_report make(packed::midi_message_report_v2 const &v2) noexcept;
+  [[nodiscard]] static constexpr midi_message_report make(packed::midi_message_report_v2 const& v2) noexcept;
   constexpr explicit operator packed::midi_message_report_v2() const noexcept;
-  constexpr bool operator==(midi_message_report const &) const noexcept = default;
+  constexpr bool operator==(midi_message_report const&) const noexcept = default;
 
   enum class control : std::uint8_t {
     no_data = 0x00,
@@ -1688,7 +1688,7 @@ struct midi_message_report {
   unsigned assignable_per_note_controller : 1 = 0;
 };
 
-constexpr midi_message_report midi_message_report::make(packed::midi_message_report_v2 const &v2) noexcept {
+constexpr midi_message_report midi_message_report::make(packed::midi_message_report_v2 const& v2) noexcept {
   return {.message_data_control = static_cast<enum control>(v2.message_data_control),
 
           .mtc_quarter_frame = v2.system_message.mtc_quarter_frame(),
@@ -1752,19 +1752,19 @@ struct midi_message_report_reply_v2 {
     [[nodiscard]] constexpr auto song_position() const noexcept { return get<song_position_bits>(); }
     [[nodiscard]] constexpr auto mtc_quarter_frame() const noexcept { return get<mtc_quarter_frame_bits>(); }
 
-    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+    constexpr auto& reserved0(reserved0_bits::uinteger const v) noexcept {
       set<reserved0_bits>(v);
       return *this;
     }
-    constexpr auto &song_select(song_select_bits::uinteger const v) noexcept {
+    constexpr auto& song_select(song_select_bits::uinteger const v) noexcept {
       set<song_select_bits>(v);
       return *this;
     }
-    constexpr auto &song_position(song_position_bits::uinteger const v) noexcept {
+    constexpr auto& song_position(song_position_bits::uinteger const v) noexcept {
       set<song_position_bits>(v);
       return *this;
     }
-    constexpr auto &mtc_quarter_frame(mtc_quarter_frame_bits::uinteger const v) noexcept {
+    constexpr auto& mtc_quarter_frame(mtc_quarter_frame_bits::uinteger const v) noexcept {
       set<mtc_quarter_frame_bits>(v);
       return *this;
     }
@@ -1791,31 +1791,31 @@ struct midi_message_report_reply_v2 {
     [[nodiscard]] constexpr auto control_change() const noexcept { return get<control_change_bits>(); }
     [[nodiscard]] constexpr auto pitchbend() const noexcept { return get<pitchbend_bits>(); }
 
-    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+    constexpr auto& reserved0(reserved0_bits::uinteger const v) noexcept {
       set<reserved0_bits>(v);
       return *this;
     }
-    constexpr auto &channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
+    constexpr auto& channel_pressure(channel_pressure_bits::uinteger const v) noexcept {
       set<channel_pressure_bits>(v);
       return *this;
     }
-    constexpr auto &program_change(program_change_bits::uinteger const v) noexcept {
+    constexpr auto& program_change(program_change_bits::uinteger const v) noexcept {
       set<program_change_bits>(v);
       return *this;
     }
-    constexpr auto &nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
+    constexpr auto& nrpn_assignable_controller(nrpn_assignable_controller_bits::uinteger const v) noexcept {
       set<nrpn_assignable_controller_bits>(v);
       return *this;
     }
-    constexpr auto &rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
+    constexpr auto& rpn_registered_controller(rpn_registered_controller_bits::uinteger const v) noexcept {
       set<rpn_registered_controller_bits>(v);
       return *this;
     }
-    constexpr auto &control_change(control_change_bits::uinteger const v) noexcept {
+    constexpr auto& control_change(control_change_bits::uinteger const v) noexcept {
       set<control_change_bits>(v);
       return *this;
     }
-    constexpr auto &pitchbend(pitchbend_bits::uinteger const v) noexcept {
+    constexpr auto& pitchbend(pitchbend_bits::uinteger const v) noexcept {
       set<pitchbend_bits>(v);
       return *this;
     }
@@ -1840,27 +1840,27 @@ struct midi_message_report_reply_v2 {
     [[nodiscard]] constexpr auto poly_pressure() const noexcept { return get<poly_pressure_bits>(); }
     [[nodiscard]] constexpr auto notes() const noexcept { return get<notes_bits>(); }
 
-    constexpr auto &reserved0(reserved0_bits::uinteger const v) noexcept {
+    constexpr auto& reserved0(reserved0_bits::uinteger const v) noexcept {
       set<reserved0_bits>(v);
       return *this;
     }
-    constexpr auto &assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
+    constexpr auto& assignable_per_note_controller(assignable_per_note_controller_bits::uinteger const v) noexcept {
       set<assignable_per_note_controller_bits>(v);
       return *this;
     }
-    constexpr auto &registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
+    constexpr auto& registered_per_note_controller(registered_per_note_controller_bits::uinteger const v) noexcept {
       set<registered_per_note_controller_bits>(v);
       return *this;
     }
-    constexpr auto &per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
+    constexpr auto& per_note_pitchbend(per_note_pitchbend_bits::uinteger const v) noexcept {
       set<per_note_pitchbend_bits>(v);
       return *this;
     }
-    constexpr auto &poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
+    constexpr auto& poly_pressure(poly_pressure_bits::uinteger const v) noexcept {
       set<poly_pressure_bits>(v);
       return *this;
     }
-    constexpr auto &notes(notes_bits::uinteger const v) noexcept {
+    constexpr auto& notes(notes_bits::uinteger const v) noexcept {
       set<notes_bits>(v);
       return *this;
     }
@@ -1884,9 +1884,9 @@ static_assert(std::is_trivially_copyable_v<midi_message_report_reply_v2>);
 
 struct midi_message_report_reply {
   [[nodiscard]] static constexpr midi_message_report_reply make(
-      packed::midi_message_report_reply_v2 const &v2) noexcept;
+      packed::midi_message_report_reply_v2 const& v2) noexcept;
   constexpr explicit operator packed::midi_message_report_reply_v2() const noexcept;
-  constexpr bool operator==(midi_message_report_reply const &) const noexcept = default;
+  constexpr bool operator==(midi_message_report_reply const&) const noexcept = default;
 
   // system messages
   unsigned mtc_quarter_frame : 1 = 0;
@@ -1908,7 +1908,7 @@ struct midi_message_report_reply {
 };
 
 constexpr midi_message_report_reply midi_message_report_reply::make(
-    packed::midi_message_report_reply_v2 const &v2) noexcept {
+    packed::midi_message_report_reply_v2 const& v2) noexcept {
   return {
       .mtc_quarter_frame = v2.system_message.mtc_quarter_frame(),
       .song_position = v2.system_message.song_position(),

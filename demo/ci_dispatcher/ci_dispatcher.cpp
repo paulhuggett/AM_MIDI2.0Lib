@@ -29,7 +29,7 @@ using namespace std::string_view_literals;
 // comma-separated hex values.
 template <std::size_t Size, typename CharT> struct std::formatter<std::array<midi2::ci::b7, Size>, CharT> {
   constexpr auto parse(auto& parse_ctx) const { return std::begin(parse_ctx); }
-  auto format(std::array<midi2::ci::b7, Size> const &arr, auto &format_ctx) const {
+  auto format(std::array<midi2::ci::b7, Size> const& arr, auto& format_ctx) const {
     auto separator = ""sv;
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto out = std::format_to(format_ctx.out(), "[");
@@ -43,12 +43,12 @@ template <std::size_t Size, typename CharT> struct std::formatter<std::array<mid
 
 namespace {
 // Display the header fields
-void print_header(std::ostream &os, midi2::ci::header const &h) {
+void print_header(std::ostream& os, midi2::ci::header const& h) {
   os << std::format("device-id=0x{:X}, version=0x{:X}, ", h.device_id, h.version)
      << std::format("remote-MUID=0x{:X}, local-MUID=0x{:X}\n", h.remote_muid, h.local_muid);
 }
 // Display the discovery data fields
-void print_discovery(std::ostream &os, midi2::ci::discovery const &d) {
+void print_discovery(std::ostream& os, midi2::ci::discovery const& d) {
   os << std::format("manufacturer={}, family=0x{:X}, model=0x{:X}, ", d.manufacturer, d.family, d.model)
      << std::format("version={}, capability=0x{:X}, ", d.version, d.capability)
      << std::format("max-sysex-size=0x{:X}, output-path-id=0x{:X}\n", d.max_sysex_size, d.output_path_id);
@@ -68,7 +68,7 @@ using dispatcher = midi2::ci::ci_dispatcher<function_config>;
 dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
   // Create a CI dispatcher instance using std::function<> for all of its handler functions.
   auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>();
-  auto &config = dispatcher.config();
+  auto& config = dispatcher.config();
 
   // Register a handler for checking whether a message is addressed to this receiver. The default
   // handler simply rejects all incoming messages!
@@ -76,7 +76,7 @@ dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
       [my_muid](context, std::uint8_t /*group*/, midi2::ci::muid const m) { return m == my_muid; });
 
   // Register a handler for Discovery messages.
-  config.management.on_discovery([](context, midi2::ci::header const &h, midi2::ci::discovery const &d) {
+  config.management.on_discovery([](context, midi2::ci::header const& h, midi2::ci::discovery const& d) {
     print_header(std::cout, h);
     print_discovery(std::cout, d);
     // Send a reply to this message...

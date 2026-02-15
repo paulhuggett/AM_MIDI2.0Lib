@@ -31,9 +31,9 @@
 #endif
 
 namespace {
-std::ostream &write_bytes(std::ostream &os, std::span<midi2::ci::b7 const> const &arr) {
+std::ostream& write_bytes(std::ostream& os, std::span<midi2::ci::b7 const> const& arr) {
   os << '[';
-  auto const *separator = "";
+  auto const* separator = "";
   for (auto const v : arr) {
     os << separator << unsigned{v.get()};
     separator = ",";
@@ -45,20 +45,20 @@ std::ostream &write_bytes(std::ostream &os, std::span<midi2::ci::b7 const> const
 
 namespace midi2::ci {
 
-std::ostream &operator<<(std::ostream &os, header const &ci);
-std::ostream &operator<<(std::ostream &os, header const &ci) {
+std::ostream& operator<<(std::ostream& os, header const& ci);
+std::ostream& operator<<(std::ostream& os, header const& ci) {
   return os << "{ device_id=" << static_cast<unsigned>(ci.device_id.get())
             << ", version=" << static_cast<unsigned>(ci.version.get()) << ", remote_muid=" << ci.remote_muid.get()
             << ", local_muid=" << ci.local_muid.get() << " }";
 }
 
-std::ostream &operator<<(std::ostream &os, property_exchange::chunk_info const &ci);
-std::ostream &operator<<(std::ostream &os, property_exchange::chunk_info const &ci) {
+std::ostream& operator<<(std::ostream& os, property_exchange::chunk_info const& ci);
+std::ostream& operator<<(std::ostream& os, property_exchange::chunk_info const& ci) {
   return os << "{ number_of_chunks=" << ci.number_of_chunks.get() << ", chunk_number=" << ci.chunk_number.get() << " }";
 }
 
-std::ostream &operator<<(std::ostream &os, ci::discovery const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery const &d) {
+std::ostream& operator<<(std::ostream& os, ci::discovery const& d);
+std::ostream& operator<<(std::ostream& os, ci::discovery const& d) {
   os << "{ manufacturer=";
   write_bytes(os, std::span{d.manufacturer});
   os << ", family=" << d.family.get() << ", model=" << d.model.get() << ", version=";
@@ -68,8 +68,8 @@ std::ostream &operator<<(std::ostream &os, ci::discovery const &d) {
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d);
-std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d) {
+std::ostream& operator<<(std::ostream& os, ci::discovery_reply const& d);
+std::ostream& operator<<(std::ostream& os, ci::discovery_reply const& d) {
   os << "{ manufacturer=";
   write_bytes(os, d.manufacturer);
   os << ", family=" << d.family.get() << ", model=" << d.model.get() << ", version=";
@@ -79,8 +79,8 @@ std::ostream &operator<<(std::ostream &os, ci::discovery_reply const &d) {
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, ci::nak const &nak);
-std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
+std::ostream& operator<<(std::ostream& os, ci::nak const& nak);
+std::ostream& operator<<(std::ostream& os, ci::nak const& nak) {
   os << "{ original_id=" << static_cast<unsigned>(nak.original_id.get())
      << ", status_code=" << static_cast<unsigned>(nak.status_code.get())
      << ", status_data=" << static_cast<unsigned>(nak.status_data.get()) << ", details=";
@@ -91,8 +91,8 @@ std::ostream &operator<<(std::ostream &os, ci::nak const &nak) {
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, ci::profile_configuration::disabled const &pds);
-std::ostream &operator<<(std::ostream &os, ci::profile_configuration::disabled const &pd) {
+std::ostream& operator<<(std::ostream& os, ci::profile_configuration::disabled const& pds);
+std::ostream& operator<<(std::ostream& os, ci::profile_configuration::disabled const& pd) {
   os << "{ pid=";
   write_bytes(os, pd.pid);
   os << ", num_channels=" << pd.num_channels.get() << " }";
@@ -123,80 +123,79 @@ consteval std::uint8_t operator""_u8(unsigned long long arg) noexcept {
 }
 
 struct context_type {
-  constexpr bool operator==(context_type const &) const noexcept = default;
+  constexpr bool operator==(context_type const&) const noexcept = default;
 };
 
 class mock_system_callbacks : public midi2::ci::dispatcher_backend::system_pure<context_type> {
 public:
   MOCK_METHOD(bool, check_muid, (context_type, std::uint8_t group, midi2::ci::muid muid), (override));
   MOCK_METHOD(void, buffer_overflow, (context_type), (override));
-  MOCK_METHOD(void, unknown_midici, (context_type, header const &), (override));
+  MOCK_METHOD(void, unknown_midici, (context_type, header const&), (override));
 };
 
 class mock_management_callbacks : public midi2::ci::dispatcher_backend::management_pure<context_type> {
 public:
-  MOCK_METHOD(void, discovery, (context_type, header const &, midi2::ci::discovery const &), (override));
-  MOCK_METHOD(void, discovery_reply, (context_type, header const &, midi2::ci::discovery_reply const &), (override));
-  MOCK_METHOD(void, endpoint, (context_type, header const &, midi2::ci::endpoint const &), (override));
-  MOCK_METHOD(void, endpoint_reply, (context_type, header const &, midi2::ci::endpoint_reply const &), (override));
-  MOCK_METHOD(void, invalidate_muid, (context_type, header const &, midi2::ci::invalidate_muid const &), (override));
-  MOCK_METHOD(void, ack, (context_type, header const &, midi2::ci::ack const &), (override));
-  MOCK_METHOD(void, nak, (context_type, header const &, midi2::ci::nak const &), (override));
+  MOCK_METHOD(void, discovery, (context_type, header const&, midi2::ci::discovery const&), (override));
+  MOCK_METHOD(void, discovery_reply, (context_type, header const&, midi2::ci::discovery_reply const&), (override));
+  MOCK_METHOD(void, endpoint, (context_type, header const&, midi2::ci::endpoint const&), (override));
+  MOCK_METHOD(void, endpoint_reply, (context_type, header const&, midi2::ci::endpoint_reply const&), (override));
+  MOCK_METHOD(void, invalidate_muid, (context_type, header const&, midi2::ci::invalidate_muid const&), (override));
+  MOCK_METHOD(void, ack, (context_type, header const&, midi2::ci::ack const&), (override));
+  MOCK_METHOD(void, nak, (context_type, header const&, midi2::ci::nak const&), (override));
 };
 
 class mock_profile_callbacks : public midi2::ci::dispatcher_backend::profile_pure<context_type> {
 public:
-  MOCK_METHOD(void, inquiry, (context_type, header const &), (override));
+  MOCK_METHOD(void, inquiry, (context_type, header const&), (override));
   MOCK_METHOD(void, inquiry_reply,
-              (context_type, header const &, midi2::ci::profile_configuration::inquiry_reply const &), (override));
-  MOCK_METHOD(void, added, (context_type, header const &, midi2::ci::profile_configuration::added const &), (override));
-  MOCK_METHOD(void, removed, (context_type, header const &, midi2::ci::profile_configuration::removed const &),
+              (context_type, header const&, midi2::ci::profile_configuration::inquiry_reply const&), (override));
+  MOCK_METHOD(void, added, (context_type, header const&, midi2::ci::profile_configuration::added const&), (override));
+  MOCK_METHOD(void, removed, (context_type, header const&, midi2::ci::profile_configuration::removed const&),
               (override));
-  MOCK_METHOD(void, details, (context_type, header const &, midi2::ci::profile_configuration::details const &),
+  MOCK_METHOD(void, details, (context_type, header const&, midi2::ci::profile_configuration::details const&),
               (override));
   MOCK_METHOD(void, details_reply,
-              (context_type, header const &, midi2::ci::profile_configuration::details_reply const &), (override));
-  MOCK_METHOD(void, on, (context_type, header const &, midi2::ci::profile_configuration::on const &), (override));
-  MOCK_METHOD(void, off, (context_type, header const &, midi2::ci::profile_configuration::off const &), (override));
-  MOCK_METHOD(void, enabled, (context_type, header const &, midi2::ci::profile_configuration::enabled const &),
+              (context_type, header const&, midi2::ci::profile_configuration::details_reply const&), (override));
+  MOCK_METHOD(void, on, (context_type, header const&, midi2::ci::profile_configuration::on const&), (override));
+  MOCK_METHOD(void, off, (context_type, header const&, midi2::ci::profile_configuration::off const&), (override));
+  MOCK_METHOD(void, enabled, (context_type, header const&, midi2::ci::profile_configuration::enabled const&),
               (override));
-  MOCK_METHOD(void, disabled, (context_type, header const &, midi2::ci::profile_configuration::disabled const &),
+  MOCK_METHOD(void, disabled, (context_type, header const&, midi2::ci::profile_configuration::disabled const&),
               (override));
   MOCK_METHOD(void, specific_data,
-              (context_type, header const &, midi2::ci::profile_configuration::specific_data const &), (override));
+              (context_type, header const&, midi2::ci::profile_configuration::specific_data const&), (override));
 };
 
 class mock_property_exchange_callbacks : public midi2::ci::dispatcher_backend::property_exchange_pure<context_type> {
 public:
-  MOCK_METHOD(void, capabilities, (context_type, header const &, midi2::ci::property_exchange::capabilities const &),
+  MOCK_METHOD(void, capabilities, (context_type, header const&, midi2::ci::property_exchange::capabilities const&),
               (override));
   MOCK_METHOD(void, capabilities_reply,
-              (context_type, header const &, midi2::ci::property_exchange::capabilities_reply const &), (override));
+              (context_type, header const&, midi2::ci::property_exchange::capabilities_reply const&), (override));
 
-  MOCK_METHOD(void, get, (context_type, header const &, midi2::ci::property_exchange::get const &), (override));
-  MOCK_METHOD(void, get_reply, (context_type, header const &, midi2::ci::property_exchange::get_reply const &),
+  MOCK_METHOD(void, get, (context_type, header const&, midi2::ci::property_exchange::get const&), (override));
+  MOCK_METHOD(void, get_reply, (context_type, header const&, midi2::ci::property_exchange::get_reply const&),
               (override));
-  MOCK_METHOD(void, set, (context_type, header const &, midi2::ci::property_exchange::set const &), (override));
-  MOCK_METHOD(void, set_reply, (context_type, header const &, midi2::ci::property_exchange::set_reply const &),
+  MOCK_METHOD(void, set, (context_type, header const&, midi2::ci::property_exchange::set const&), (override));
+  MOCK_METHOD(void, set_reply, (context_type, header const&, midi2::ci::property_exchange::set_reply const&),
               (override));
-  MOCK_METHOD(void, subscription, (context_type, header const &, midi2::ci::property_exchange::subscription const &),
+  MOCK_METHOD(void, subscription, (context_type, header const&, midi2::ci::property_exchange::subscription const&),
               (override));
   MOCK_METHOD(void, subscription_reply,
-              (context_type, header const &, midi2::ci::property_exchange::subscription_reply const &), (override));
-  MOCK_METHOD(void, notify, (context_type, header const &, midi2::ci::property_exchange::notify const &), (override));
+              (context_type, header const&, midi2::ci::property_exchange::subscription_reply const&), (override));
+  MOCK_METHOD(void, notify, (context_type, header const&, midi2::ci::property_exchange::notify const&), (override));
 };
 
 class mock_process_inquiry_callbacks : public midi2::ci::dispatcher_backend::process_inquiry_pure<context_type> {
 public:
-  MOCK_METHOD(void, capabilities, (context_type, header const &), (override));
+  MOCK_METHOD(void, capabilities, (context_type, header const&), (override));
   MOCK_METHOD(void, capabilities_reply,
-              (context_type, header const &, midi2::ci::process_inquiry::capabilities_reply const &), (override));
+              (context_type, header const&, midi2::ci::process_inquiry::capabilities_reply const&), (override));
   MOCK_METHOD(void, midi_message_report,
-              (context_type, header const &, midi2::ci::process_inquiry::midi_message_report const &), (override));
+              (context_type, header const&, midi2::ci::process_inquiry::midi_message_report const&), (override));
   MOCK_METHOD(void, midi_message_report_reply,
-              (context_type, header const &, midi2::ci::process_inquiry::midi_message_report_reply const &),
-              (override));
-  MOCK_METHOD(void, midi_message_report_end, (context_type, header const &), (override));
+              (context_type, header const&, midi2::ci::process_inquiry::midi_message_report_reply const&), (override));
+  MOCK_METHOD(void, midi_message_report_end, (context_type, header const&), (override));
 };
 
 constexpr auto broadcast_muid = midi2::ci::broadcast_muid;
@@ -221,14 +220,14 @@ protected:
   static constexpr auto sender_muid_ = midi2::ci::muid{from_le7(std::array{0x7F_b, 0x7E_b, 0x7D_b, 0x7C_b})};
   static constexpr auto destination_muid_ = midi2::ci::muid{from_le7(std::array{0x62_b, 0x16_b, 0x63_b, 0x26_b})};
 
-  template <typename Content> static std::vector<std::byte> make_message(header const &hdr, Content const &content) {
+  template <typename Content> static std::vector<std::byte> make_message(header const& hdr, Content const& content) {
     std::vector<std::byte> message;
     midi2::ci::create_message(std::back_inserter(message), midi2::ci::trivial_sentinel{}, hdr, content);
     message.push_back(0_b);  // a stray extra byte
     return message;
   }
 
-  template <typename Content> void dispatch_ci(std::uint8_t group, header const &hdr, Content const &content) {
+  template <typename Content> void dispatch_ci(std::uint8_t group, header const& hdr, Content const& content) {
     processor_.start(group, hdr.device_id);
     std::ranges::for_each(make_message(hdr, content), [this](std::byte const b) { processor_.dispatch(b); });
     processor_.finish();
@@ -951,7 +950,7 @@ TEST_F(CIDispatcher, ProcessInquiryMidiMessageReportEnd) {
 }
 
 // This test simply gets ci_dispatcher to consume a random buffer.
-void NeverCrashes(std::vector<std::byte> const &message) {
+void NeverCrashes(std::vector<std::byte> const& message) {
   // Ensure the top bit of each byte of the incoming message stream is clear.
   std::vector<std::byte> message2;
   message2.reserve(message.size());

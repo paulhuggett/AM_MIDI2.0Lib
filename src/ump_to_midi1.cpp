@@ -20,7 +20,7 @@ namespace midi2::ump {
 
 // note off
 // ~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt, ump::m2cvm::note_off const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type* const ctxt, ump::m2cvm::note_off const& in) {
   constexpr auto m2v = ump::m2cvm::note_off::word1::velocity::bits();
   constexpr auto m1v = ump::m1cvm::note_off::word0::velocity::bits();
   ctxt->push(ump::m1cvm::note_off{}
@@ -32,7 +32,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_off(context_type *const ctxt, um
 
 // note on
 // ~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, ump::m2cvm::note_on const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type* const ctxt, ump::m2cvm::note_on const& in) {
   constexpr auto m2v = ump::m2cvm::note_on::word1::velocity::bits();
   constexpr auto m1v = ump::m1cvm::note_on::word0::velocity::bits();
   ctxt->push(ump::m1cvm::note_on{}
@@ -44,8 +44,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::note_on(context_type *const ctxt, ump
 
 // poly pressure
 // ~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctxt,
-                                                         ump::m2cvm::poly_pressure const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type* const ctxt,
+                                                         ump::m2cvm::poly_pressure const& in) {
   constexpr auto m2v = ump::m2cvm::poly_pressure::word1::pressure::bits();
   constexpr auto m1v = ump::m1cvm::poly_pressure::word0::pressure::bits();
 
@@ -58,8 +58,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::poly_pressure(context_type *const ctx
 
 // program change
 // ~~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ctxt,
-                                                          ump::m2cvm::program_change const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type* const ctxt,
+                                                          ump::m2cvm::program_change const& in) {
   auto const group = in.group();
   auto const channel = in.channel();
   if (in.bank_valid()) {
@@ -82,8 +82,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type *const ct
 
 // channel pressure
 // ~~~~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const ctxt,
-                                                            ump::m2cvm::channel_pressure const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type* const ctxt,
+                                                            ump::m2cvm::channel_pressure const& in) {
   constexpr auto m2p = ump::m2cvm::channel_pressure::word1::value::bits();
   constexpr auto m1p = ump::m1cvm::channel_pressure::word0::data::bits();
 
@@ -94,23 +94,23 @@ void ump_to_midi1::to_midi1_config::m2cvm::channel_pressure(context_type *const 
 
 // rpn controller
 // ~~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type *const ctxt,
-                                                          ump::m2cvm::rpn_controller const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::rpn_controller(context_type* const ctxt,
+                                                          ump::m2cvm::rpn_controller const& in) {
   pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), /*.is_rpn =*/true},
              std::make_pair(in.bank(), in.index()), in.value());
 }
 
 // nrpn controller
 // ~~~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type *const ctxt,
-                                                           ump::m2cvm::nrpn_controller const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::nrpn_controller(context_type* const ctxt,
+                                                           ump::m2cvm::nrpn_controller const& in) {
   pn_message(ctxt, context_type::pn_cache_key{in.group(), in.channel(), /*.is_rpn=*/false},
              std::make_pair(in.bank(), in.index()), in.value());
 }
 
 void ump_to_midi1::to_midi1_config::m2cvm::send_controller_number(
-    context_type *const ctxt, context_type::pn_cache_key const &key,
-    std::pair<std::uint8_t, std::uint8_t> const &controller_number) {
+    context_type* const ctxt, context_type::pn_cache_key const& key,
+    std::pair<std::uint8_t, std::uint8_t> const& controller_number) {
   auto const cc = [&key]() constexpr { return ump::m1cvm::control_change{}.group(key.group()).channel(key.channel()); };
   using enum control;
   // Controller number MSB/LSB
@@ -118,8 +118,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::send_controller_number(
   ctxt->push(cc().controller(std::to_underlying(key.is_rpn() ? rpn_lsb : nrpn_lsb)).value(controller_number.second));
 }
 
-void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, context_type::pn_cache_key const &key,
-                                                      context_type::pn_cache_value const &controller_number,
+void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type* const ctxt, context_type::pn_cache_key const& key,
+                                                      context_type::pn_cache_value const& controller_number,
                                                       std::uint32_t const value) {
   // The basic procedure for altering a parameter value is to first send the Registered or Non-Registered Parameter
   // Number corresponding to the parameter to be modified, followed by the Data Entry value to be applied to the
@@ -131,7 +131,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
     m2cvm::send_controller_number(ctxt, key, controller_number);
     return controller_number;
   };
-  auto const stale_fn = [controller_number](context_type::pn_cache_value const &in_cache) {
+  auto const stale_fn = [controller_number](context_type::pn_cache_value const& in_cache) {
     // We've got the key in the cache. Does the cached value match the desired?
     return in_cache == controller_number;
   };
@@ -146,8 +146,8 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type *const ctxt, 
 
 // control change
 // ~~~~~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ctxt,
-                                                          ump::m2cvm::control_change const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type* const ctxt,
+                                                          ump::m2cvm::control_change const& in) {
   constexpr auto m1v = ump::m1cvm::control_change::word0::value::bits();
   constexpr auto m2v = ump::m2cvm::control_change::word1::value::bits();
   ctxt->push(ump::m1cvm::control_change{}
@@ -159,7 +159,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::control_change(context_type *const ct
 
 // pitch bend
 // ~~~~~~~~~~
-void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type *const ctxt, ump::m2cvm::pitch_bend const &in) {
+void ump_to_midi1::to_midi1_config::m2cvm::pitch_bend(context_type* const ctxt, ump::m2cvm::pitch_bend const& in) {
   auto const scaled_value = mcm_scale<32, 14>(in.value());
   ctxt->push(ump::m1cvm::pitch_bend{}
                  .group(in.group())

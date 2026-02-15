@@ -211,7 +211,7 @@ template <typename Context> struct system_pure {
   ///
   /// \param c  The context object passed to all message handlers.
   /// \param h  The header that for the unrecognized message.
-  virtual void unknown_midici(Context c, header const& h) = 0;
+  virtual void unknown_midici(Context c, header const &h) = 0;
   /// Called when a message has overflowed the capacity of the internal buffer.
   ///
   /// \param c  The context object passed to all message handlers.
@@ -226,13 +226,13 @@ template <typename Context> struct management_pure {
   constexpr management_pure &operator=(management_pure const &) noexcept = default;
   constexpr management_pure &operator=(management_pure &&) noexcept = default;
 
-  virtual void discovery(Context, header const&, discovery const&) = 0;
-  virtual void discovery_reply(Context, header const&, discovery_reply const&) = 0;
-  virtual void endpoint(Context, header const&, endpoint const&) = 0;
-  virtual void endpoint_reply(Context, header const&, endpoint_reply const&) = 0;
-  virtual void invalidate_muid(Context, header const&, invalidate_muid const&) = 0;
-  virtual void ack(Context, header const&, ack const&) = 0;
-  virtual void nak(Context, header const&, nak const&) = 0;
+  virtual void discovery(Context, header const &, discovery const &) = 0;
+  virtual void discovery_reply(Context, header const &, discovery_reply const &) = 0;
+  virtual void endpoint(Context, header const &, endpoint const &) = 0;
+  virtual void endpoint_reply(Context, header const &, endpoint_reply const &) = 0;
+  virtual void invalidate_muid(Context, header const &, invalidate_muid const &) = 0;
+  virtual void ack(Context, header const &, ack const &) = 0;
+  virtual void nak(Context, header const &, nak const &) = 0;
 };
 template <typename Context> struct profile_pure {
   constexpr profile_pure() = default;
@@ -244,16 +244,16 @@ template <typename Context> struct profile_pure {
   constexpr profile_pure &operator=(profile_pure &&) noexcept = default;
 
   virtual void inquiry(Context, header const &) = 0;
-  virtual void inquiry_reply(Context, header const&, profile_configuration::inquiry_reply const&) = 0;
-  virtual void added(Context, header const&, profile_configuration::added const&) = 0;
-  virtual void removed(Context, header const&, profile_configuration::removed const&) = 0;
-  virtual void details(Context, header const&, profile_configuration::details const&) = 0;
-  virtual void details_reply(Context, header const&, profile_configuration::details_reply const&) = 0;
-  virtual void on(Context, header const&, profile_configuration::on const&) = 0;
-  virtual void off(Context, header const&, profile_configuration::off const&) = 0;
-  virtual void enabled(Context, header const&, profile_configuration::enabled const&) = 0;
-  virtual void disabled(Context, header const&, profile_configuration::disabled const&) = 0;
-  virtual void specific_data(Context, header const&, profile_configuration::specific_data const&) = 0;
+  virtual void inquiry_reply(Context, header const &, profile_configuration::inquiry_reply const &) = 0;
+  virtual void added(Context, header const &, profile_configuration::added const &) = 0;
+  virtual void removed(Context, header const &, profile_configuration::removed const &) = 0;
+  virtual void details(Context, header const &, profile_configuration::details const &) = 0;
+  virtual void details_reply(Context, header const &, profile_configuration::details_reply const &) = 0;
+  virtual void on(Context, header const &, profile_configuration::on const &) = 0;
+  virtual void off(Context, header const &, profile_configuration::off const &) = 0;
+  virtual void enabled(Context, header const &, profile_configuration::enabled const &) = 0;
+  virtual void disabled(Context, header const &, profile_configuration::disabled const &) = 0;
+  virtual void specific_data(Context, header const &, profile_configuration::specific_data const &) = 0;
 };
 template <typename Context> struct property_exchange_pure {
   constexpr property_exchange_pure() = default;
@@ -264,17 +264,17 @@ template <typename Context> struct property_exchange_pure {
   constexpr property_exchange_pure &operator=(property_exchange_pure const &) = default;
   constexpr property_exchange_pure &operator=(property_exchange_pure &&) noexcept = default;
 
-  virtual void capabilities(Context, header const&, property_exchange::capabilities const&) = 0;
-  virtual void capabilities_reply(Context, header const&, property_exchange::capabilities_reply const&) = 0;
+  virtual void capabilities(Context, header const &, property_exchange::capabilities const &) = 0;
+  virtual void capabilities_reply(Context, header const &, property_exchange::capabilities_reply const &) = 0;
 
-  virtual void get(Context, header const&, property_exchange::get const&) = 0;
-  virtual void get_reply(Context, header const&, property_exchange::get_reply const&) = 0;
-  virtual void set(Context, header const&, property_exchange::set const&) = 0;
-  virtual void set_reply(Context, header const&, property_exchange::set_reply const&) = 0;
+  virtual void get(Context, header const &, property_exchange::get const &) = 0;
+  virtual void get_reply(Context, header const &, property_exchange::get_reply const &) = 0;
+  virtual void set(Context, header const &, property_exchange::set const &) = 0;
+  virtual void set_reply(Context, header const &, property_exchange::set_reply const &) = 0;
 
-  virtual void subscription(Context, header const&, property_exchange::subscription const&) = 0;
-  virtual void subscription_reply(Context, header const&, property_exchange::subscription_reply const&) = 0;
-  virtual void notify(Context, header const&, property_exchange::notify const&) = 0;
+  virtual void subscription(Context, header const &, property_exchange::subscription const &) = 0;
+  virtual void subscription_reply(Context, header const &, property_exchange::subscription_reply const &) = 0;
+  virtual void notify(Context, header const &, property_exchange::notify const &) = 0;
 };
 template <typename Context> struct process_inquiry_pure {
   process_inquiry_pure() = default;
@@ -286,9 +286,10 @@ template <typename Context> struct process_inquiry_pure {
   process_inquiry_pure &operator=(process_inquiry_pure &&) noexcept = default;
 
   virtual void capabilities(Context, header const &) = 0;
-  virtual void capabilities_reply(Context, header const&, process_inquiry::capabilities_reply const&) = 0;
-  virtual void midi_message_report(Context, header const&, process_inquiry::midi_message_report const&) = 0;
-  virtual void midi_message_report_reply(Context, header const&, process_inquiry::midi_message_report_reply const&) = 0;
+  virtual void capabilities_reply(Context, header const &, process_inquiry::capabilities_reply const &) = 0;
+  virtual void midi_message_report(Context, header const &, process_inquiry::midi_message_report const &) = 0;
+  virtual void midi_message_report_reply(Context, header const &,
+                                         process_inquiry::midi_message_report_reply const &) = 0;
   virtual void midi_message_report_end(Context, header const &) = 0;
 };
 
