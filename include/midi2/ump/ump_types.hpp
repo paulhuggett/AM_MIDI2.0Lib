@@ -2028,9 +2028,13 @@ public:
       return *this;
     }
 
+    using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
+    owner_type const *owner() const noexcept { return &owner_; }
+    owner_type *owner() noexcept { return &owner_; }
+    std::size_t index() const noexcept { return index_; }
+
   private:
     friend class sysex7;
-    using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
     constexpr array_subscript_proxy(owner_type &owner, std::size_t const index) noexcept
         : owner_{owner}, index_{index} {}
     owner_type &owner_;
@@ -2160,8 +2164,8 @@ public:
     /// \param a  The second iterator.
     /// \returns  distance between two iterators \p b - \p a.
     friend constexpr difference_type operator-(iterator_base b, iterator_base a) noexcept {
-      assert(a.arr_.owner_ == b.arr_.owner_ && "Cannot get the distance between iterators with different owners");
-      return static_cast<difference_type>(b.arr_.index_) - static_cast<difference_type>(a.arr_.index_);
+      assert(a.arr_.owner() == b.arr_.owner() && "Cannot get the distance between iterators with different owners");
+      return static_cast<difference_type>(b.arr_.index()) - static_cast<difference_type>(a.arr_.index());
     }
 
     /// @{

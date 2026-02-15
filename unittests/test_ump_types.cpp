@@ -143,6 +143,14 @@ TEST(UMPTypes, Sysex7InOneIteratorWriteUsingAlgorithm) {
   message.number_of_bytes(static_cast<count_type>(src.size()));
   EXPECT_THAT(message, ElementsAreArray(src));
 }
+TEST(UMPTypes, Sysex7InOneIteratorSubtract) {
+  using testing::ElementsAreArray;
+
+  auto message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x1, 0x3, 0x5, 0x7});
+  auto first = std::begin(message);
+  auto last = std::end(message);
+  EXPECT_EQ(last - first, 4U);
+}
 TEST(UMPTypes, Sysex7InOneReadArray) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
