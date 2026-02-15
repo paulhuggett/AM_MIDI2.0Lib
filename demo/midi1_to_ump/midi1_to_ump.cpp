@@ -13,26 +13,32 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <print>
+#include <iomanip>
+#include <iostream>
 #include <utility>
 
-// Local includes
-#include <midi2/bytestream/bytestream_to_ump.hpp>
-#include <midi2/utils.hpp>
+// Midi2 library
+#include <midi2/midi2.hpp>
 
 using namespace midi2::literals;
+
+namespace {
+template <std::integral T, unsigned Width = sizeof(T) * 2> void print_hex(T v) {
+  std::cout << "0x" << std::setw(Width) << std::setfill('0') << std::hex << v << ' ';
+}
+}  // end anonymous namespace
 
 int main() {
   // A bytestream containing MIDI1 note-on events with running status.
   // The '_b' operator (from midi2::literals) turns an integer constant into a std::byte constant.
   constexpr std::array input = {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b};
-  std::print("Bytestream input: ");
+  std::cout << "Bytestream input: ";
   for (auto const in : input) {
-    std::print("0x{:02X} ", std::to_underlying(in));
+    print_hex<unsigned, 2>(std::to_underlying(in));
   }
-  std::println();
+  std::cout << '\n';
 
-  std::print("UMP Packets: ");
+  std::cout << "UMP Packets: ";
   // Convert the bytestream to UMP group 0 and write it to stdout.
   constexpr auto group = std::uint8_t{0};
   midi2::bytestream::bytestream_to_ump bs2ump{group};
@@ -41,8 +47,8 @@ int main() {
     bs2ump.push(b);
     // Pull as may 32-bit UMP values as are available and display them.
     while (!bs2ump.empty()) {
-      std::print("0x{:08X} ", bs2ump.pop());
+      print_hex(bs2ump.pop());
     }
   }
-  std::println();
+  std::cout << '\n';
 }

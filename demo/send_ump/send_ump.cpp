@@ -7,7 +7,8 @@
 //===------------------------------------------------------------------------------------===//
 
 #include <cstdint>
-#include <print>
+#include <iomanip>
+#include <iostream>
 #include <ranges>
 #include <system_error>
 
@@ -20,7 +21,7 @@ constexpr std::error_code transmit(std::uint32_t word) {
   // ... transmit the 32 bit word ...
   // Here we just print the value but this code could transmit it or record it in
   // a container (e.g. a FIFO) for later use.
-  std::print("0x{:02X} ", word);
+  std::cout << "0x" << std::setw(8) << std::setfill('0') << std::hex << word << ' ';
   // For this demo, always return success. When transmitting over a real interface,
   // return an appropriate error code on failure.
   return {};
@@ -49,7 +50,7 @@ constexpr std::error_code notes_off(R const& range, std::uint8_t group, std::uin
       return err;
     }
     // Print a dash to separate the individual UMP messages.
-    std::print("- ");
+    std::cout << "- ";
   }
   return {};
 }
@@ -61,7 +62,7 @@ int main() {
   constexpr auto channel = std::uint8_t{1};
 
   midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(42), transmit);
-  std::println("- ");
+  std::cout << "- \n";
 
   constexpr auto velocity = std::uint16_t{10000};
   constexpr std::array notes = {std::uint8_t{60}, std::uint8_t{64}, std::uint8_t{67}};
@@ -71,10 +72,10 @@ int main() {
       // success.
     }
     // Print a dash to separate the individual UMP messages.
-    std::print("- ");
+    std::cout << "- ";
   }
-  std::println();
+  std::cout << '\n';
 
   notes_off(notes, group, channel, velocity);
-  std::println();
+  std::cout << '\n';
 }
