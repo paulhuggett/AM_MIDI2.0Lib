@@ -35,6 +35,25 @@ using testing::StrictMock;
 
 using fake_message = midi2::ump::utility::noop::word0;
 
+TEST(UMPMessageSize, AllMessageTypes) {
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::utility), 1U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::system), 1U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::m1cvm), 1U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::data64), 2U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::m2cvm), 2U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::data128), 4U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved32_06), 1U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved32_07), 1U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved64_08), 2U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved64_09), 2U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved64_0a), 2U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved96_0b), 3U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved96_0c), 3U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::flex_data), 4U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::reserved128_0e), 4U);
+  EXPECT_EQ(ump_message_size(midi2::ump::message_type::stream), 4U);
+}
+
 TEST(UMPApply, AlwaysTrue) {
   std::vector<std::uint32_t> values;
   midi2::ump::apply(std::tuple{fake_message{1}, fake_message{2}}, [&values](std::uint32_t const v) {
