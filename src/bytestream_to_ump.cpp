@@ -17,16 +17,20 @@
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"
 
+namespace {
+
 /// \brief Tests whether the supplied byte is a one-byte MIDI 1.0 status byte.
 /// \param b The byte to be tested
 /// \returns True if the supplied byte represents a MIDI 1.0 status code which is followed by one data byte.
-[[nodiscard]] static constexpr bool is_one_byte_message(std::byte const b) noexcept {
+[[nodiscard]] constexpr bool is_one_byte_message(std::byte const b) noexcept {
   using enum midi2::bytestream::status;
   auto const value = std::to_underlying(b);
   auto const top_nibble = std::to_underlying(b & std::byte{0xF0});
   return top_nibble == std::to_underlying(program_change) || top_nibble == std::to_underlying(channel_pressure) ||
          value == std::to_underlying(timing_code) || value == std::to_underlying(song_select);
 }
+
+}  // end anonymous namespace
 
 namespace midi2::bytestream {
 

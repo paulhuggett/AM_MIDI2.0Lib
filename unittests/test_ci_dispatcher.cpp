@@ -294,7 +294,7 @@ TEST_F(CIDispatcher, DiscoveryReplyV2) {
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, Endpoint) {
   constexpr auto group = 0x01_u8;
-  constexpr midi2::ci::muid const receiver_muid{0x012345EFU};
+  constexpr midi2::ci::muid receiver_muid{0x012345EFU};
 
   constexpr header hdr{.device_id = 0x7F_b7, .version = 1_b7, .remote_muid = sender_muid_, .local_muid = receiver_muid};
   constexpr midi2::ci::endpoint endpoint{.status = 0b0101010_b7};

@@ -190,7 +190,7 @@ TEST_F(CICreateMessage, DiscoveryReplyV2) {
 TEST_F(CICreateMessage, Endpoint) {
   constexpr auto device_id = 0x7F_b;
   constexpr auto status = std::byte{0b0101010};
-  constexpr std::array const receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
+  constexpr std::array receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
 
   // clang-format off
   constexpr std::array expected{
@@ -253,8 +253,8 @@ TEST_F(CICreateMessage, EndpointReply) {
 
 TEST_F(CICreateMessage, InvalidateMuid) {
   constexpr auto device_id = 0x7F_b;
-  constexpr std::array const receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
-  constexpr std::array const target_muid{0x21_b, 0x43_b, 0x75_b, 0x71_b};
+  constexpr std::array receiver_muid{0x12_b, 0x34_b, 0x5E_b, 0x0F_b};
+  constexpr std::array target_muid{0x21_b, 0x43_b, 0x75_b, 0x71_b};
 
   // clang-format off
   constexpr std::array expected{

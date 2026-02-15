@@ -32,8 +32,8 @@ protected:
 // NOLINTNEXTLINE
 TEST_F(CIDispatcherBackendManagement, Discovery) {
   StrictMock<MockFunction<decltype(be_)::discovery_fn>> fn;
-  constexpr midi2::ci::header const hdr{};
-  constexpr midi2::ci::discovery const d{};
+  constexpr midi2::ci::header hdr{};
+  constexpr midi2::ci::discovery d{};
   // The first call should do nothing since no handler has been installed.
   be_.discovery(context_, hdr, d);
   // Install a handler for the discovery message.

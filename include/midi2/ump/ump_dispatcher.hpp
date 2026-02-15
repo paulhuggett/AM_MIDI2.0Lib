@@ -33,13 +33,25 @@ namespace midi2::ump {
 
 [[nodiscard]] constexpr unsigned ump_message_size(message_type const mt) {
   using enum message_type;
-#define MIDI2_X(a, b) \
-  case a: return message_size<a>();
   switch (mt) {
-    MIDI2_UMP_MESSAGE_TYPES
+  case utility: return message_size<utility>();
+  case system: return message_size<system>();
+  case m1cvm: return message_size<m1cvm>();
+  case data64: return message_size<data64>();
+  case m2cvm: return message_size<m2cvm>();
+  case data128: return message_size<data128>();
+  case reserved32_06: return message_size<reserved32_06>();
+  case reserved32_07: return message_size<reserved32_07>();
+  case reserved64_08: return message_size<reserved64_08>();
+  case reserved64_09: return message_size<reserved64_09>();
+  case reserved64_0a: return message_size<reserved64_0a>();
+  case reserved96_0b: return message_size<reserved96_0b>();
+  case reserved96_0c: return message_size<reserved96_0c>();
+  case flex_data: return message_size<flex_data>();
+  case reserved128_0e: return message_size<reserved128_0e>();
+  case stream: return message_size<stream>();
   default: return 0U;
   }
-#undef MIDI2_X
 }
 
 template <typename T>
