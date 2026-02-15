@@ -2345,7 +2345,6 @@ public:
     using word_base::word_base;
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using velocity = adt::bit_range<16, 16>;
     using attribute = adt::bit_range<0, 16>;
   };
@@ -2388,7 +2387,6 @@ public:
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
-
     /// Defines the bit position of the mt (message-type) field. Always 0x4.
     using mt = adt::bit_range<28, 4>;
     /// Defines the bit position of the group field.
@@ -2402,8 +2400,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using velocity = adt::bit_range<16, 16>;
     using attribute = adt::bit_range<0, 16>;
   };
@@ -4636,9 +4634,8 @@ public:
     using word_base::word_base;
     /// Checks that the fields of this message word are valid.
     /// \returns True if the message word is valid, false otherwise.
-    [[nodiscard]] constexpr bool check() const noexcept {
-      return true;
-    }  // NOLINT(readability-convert-member-functions-to-static)
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+    [[nodiscard]] constexpr bool check() const noexcept { return true; }
     /// Defines the bit position of the alter_3_type field.
     using alter_3_type = adt::bit_range<28, 4>;
     /// Defines the bit position of the alter_3_degree field.
@@ -5148,7 +5145,6 @@ public:
     static constexpr auto message = Status;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
-
     using mt = adt::bit_range<28, 4>;  ///< Always 0x05
     /// Defines the bit position of the group field
     using group = adt::bit_range<24, 4>;
@@ -5162,7 +5158,6 @@ public:
     using word_base::word_base;
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using data1 = adt::bit_range<24, 8>;
     using data2 = adt::bit_range<16, 8>;
     using data3 = adt::bit_range<8, 8>;
@@ -5173,7 +5168,6 @@ public:
     using word_base::word_base;
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using data5 = adt::bit_range<24, 8>;
     using data6 = adt::bit_range<16, 8>;
     using data7 = adt::bit_range<8, 8>;
@@ -5184,7 +5178,6 @@ public:
     using word_base::word_base;
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using data9 = adt::bit_range<24, 8>;
     using data10 = adt::bit_range<16, 8>;
     using data11 = adt::bit_range<8, 8>;
@@ -5222,38 +5215,38 @@ public:
       requires(!IsConst)
     {
       switch (index_) {
-      case 0: owner_.data0(v); break;
-      case 1: owner_.data1(v); break;
-      case 2: owner_.data2(v); break;
-      case 3: owner_.data3(v); break;
-      case 4: owner_.data4(v); break;
-      case 5: owner_.data5(v); break;
-      case 6: owner_.data6(v); break;
-      case 7: owner_.data7(v); break;
-      case 8: owner_.data8(v); break;
-      case 9: owner_.data9(v); break;
-      case 10: owner_.data10(v); break;
-      case 11: owner_.data11(v); break;
-      case 12: owner_.data12(v); break;
+      case 0: owner_->data0(v); break;
+      case 1: owner_->data1(v); break;
+      case 2: owner_->data2(v); break;
+      case 3: owner_->data3(v); break;
+      case 4: owner_->data4(v); break;
+      case 5: owner_->data5(v); break;
+      case 6: owner_->data6(v); break;
+      case 7: owner_->data7(v); break;
+      case 8: owner_->data8(v); break;
+      case 9: owner_->data9(v); break;
+      case 10: owner_->data10(v); break;
+      case 11: owner_->data11(v); break;
+      case 12: owner_->data12(v); break;
       default: assert(false && "Index out of range"); break;
       }
       return *this;
     }
     constexpr operator adt::uinteger_t<8>() const noexcept {
       switch (index_) {
-      case 0: return owner_.data0();
-      case 1: return owner_.data1();
-      case 2: return owner_.data2();
-      case 3: return owner_.data3();
-      case 4: return owner_.data4();
-      case 5: return owner_.data5();
-      case 6: return owner_.data6();
-      case 7: return owner_.data7();
-      case 8: return owner_.data8();
-      case 9: return owner_.data9();
-      case 10: return owner_.data10();
-      case 11: return owner_.data11();
-      case 12: return owner_.data12();
+      case 0: return owner_->data0();
+      case 1: return owner_->data1();
+      case 2: return owner_->data2();
+      case 3: return owner_->data3();
+      case 4: return owner_->data4();
+      case 5: return owner_->data5();
+      case 6: return owner_->data6();
+      case 7: return owner_->data7();
+      case 8: return owner_->data8();
+      case 9: return owner_->data9();
+      case 10: return owner_->data10();
+      case 11: return owner_->data11();
+      case 12: return owner_->data12();
       default: assert(false && "Index out of range"); return 0;
       }
     }
@@ -5261,22 +5254,22 @@ public:
   private:
     friend class sysex8;
     using owner_type = std::conditional_t<IsConst, sysex8 const, sysex8>;
-    constexpr array_subscript_proxy(owner_type &owner, std::size_t const index) noexcept
+    constexpr array_subscript_proxy(owner_type *const owner, std::size_t const index) noexcept
         : owner_{owner}, index_{index} {}
-    owner_type &owner_;
+    owner_type *owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
   }
 #endif
 
