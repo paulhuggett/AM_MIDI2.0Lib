@@ -17,6 +17,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <ranges>
 #include <span>
@@ -1974,24 +1975,24 @@ public:
       requires(!IsConst)
     {
       switch (index_) {
-      case 0: owner_.data0(v); break;
-      case 1: owner_.data1(v); break;
-      case 2: owner_.data2(v); break;
-      case 3: owner_.data3(v); break;
-      case 4: owner_.data4(v); break;
-      case 5: owner_.data5(v); break;
+      case 0: owner_->data0(v); break;
+      case 1: owner_->data1(v); break;
+      case 2: owner_->data2(v); break;
+      case 3: owner_->data3(v); break;
+      case 4: owner_->data4(v); break;
+      case 5: owner_->data5(v); break;
       default: assert(false && "Index out of range"); break;
       }
       return *this;
     }
     constexpr operator adt::uinteger_t<7>() const noexcept {
       switch (index_) {
-      case 0: return owner_.data0();
-      case 1: return owner_.data1();
-      case 2: return owner_.data2();
-      case 3: return owner_.data3();
-      case 4: return owner_.data4();
-      case 5: return owner_.data5();
+      case 0: return owner_->data0();
+      case 1: return owner_->data1();
+      case 2: return owner_->data2();
+      case 3: return owner_->data3();
+      case 4: return owner_->data4();
+      case 5: return owner_->data5();
       default: assert(false && "Index out of range"); return 0;
       }
     }
@@ -2029,27 +2030,27 @@ public:
     }
 
     using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
-    owner_type const *owner() const noexcept { return &owner_; }
-    owner_type *owner() noexcept { return &owner_; }
+    owner_type const *owner() const noexcept { return owner_; }
+    owner_type *owner() noexcept { return owner_; }
     std::size_t index() const noexcept { return index_; }
 
   private:
     friend class sysex7;
-    constexpr array_subscript_proxy(owner_type &owner, std::size_t const index) noexcept
-        : owner_{owner}, index_{index} {}
-    owner_type &owner_;
+    constexpr array_subscript_proxy(owner_type *owner, std::size_t const index) noexcept
+        : owner_{owner}, index_{index} {
+      assert(owner != nullptr);
+    }
+    owner_type *owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<false>{*this, idx}; }
-  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<true>{*this, idx};
-  }
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<false>{this, idx}; }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept { return array_subscript_proxy<true>{this, idx}; }
 #endif
 
   template <std::integral T> constexpr sysex7 &data(std::initializer_list<T> vs) {
@@ -2209,15 +2210,15 @@ public:
   using iterator = iterator_base<false>;
   using const_iterator = iterator_base<true>;
 
-  constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{*this, 0}}; }
-  constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{*this, 0}}; }
-  constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{*this, 0}}; }
+  constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{this, 0}}; }
+  constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
+  constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
 
-  constexpr auto end() noexcept { return iterator{array_subscript_proxy<false>{*this, this->number_of_bytes()}}; }
+  constexpr auto end() noexcept { return iterator{array_subscript_proxy<false>{this, this->number_of_bytes()}}; }
   constexpr auto end() const noexcept {
-    return const_iterator{array_subscript_proxy<true>{*this, this->number_of_bytes()}};
+    return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}};
   }
-  constexpr auto cend() noexcept { return const_iterator{array_subscript_proxy<true>{*this, this->number_of_bytes()}}; }
+  constexpr auto cend() noexcept { return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}}; }
 
   constexpr size_type max_size() const noexcept { return 6; }
   constexpr size_type size() const noexcept { return this->number_of_bytes(); }
@@ -4985,36 +4986,36 @@ public:
       requires(!IsConst)
     {
       switch (index_) {
-      case 0: owner_.data0(v); break;
-      case 1: owner_.data1(v); break;
-      case 2: owner_.data2(v); break;
-      case 3: owner_.data3(v); break;
-      case 4: owner_.data4(v); break;
-      case 5: owner_.data5(v); break;
-      case 6: owner_.data6(v); break;
-      case 7: owner_.data7(v); break;
-      case 8: owner_.data8(v); break;
-      case 9: owner_.data9(v); break;
-      case 10: owner_.data10(v); break;
-      case 11: owner_.data11(v); break;
+      case 0: owner_->data0(v); break;
+      case 1: owner_->data1(v); break;
+      case 2: owner_->data2(v); break;
+      case 3: owner_->data3(v); break;
+      case 4: owner_->data4(v); break;
+      case 5: owner_->data5(v); break;
+      case 6: owner_->data6(v); break;
+      case 7: owner_->data7(v); break;
+      case 8: owner_->data8(v); break;
+      case 9: owner_->data9(v); break;
+      case 10: owner_->data10(v); break;
+      case 11: owner_->data11(v); break;
       default: assert(false && "Index out of range"); break;
       }
       return *this;
     }
     constexpr operator char8_t() const noexcept {
       switch (index_) {
-      case 0: return owner_.data0();
-      case 1: return owner_.data1();
-      case 2: return owner_.data2();
-      case 3: return owner_.data3();
-      case 4: return owner_.data4();
-      case 5: return owner_.data5();
-      case 6: return owner_.data6();
-      case 7: return owner_.data7();
-      case 8: return owner_.data8();
-      case 9: return owner_.data9();
-      case 10: return owner_.data10();
-      case 11: return owner_.data11();
+      case 0: return owner_->data0();
+      case 1: return owner_->data1();
+      case 2: return owner_->data2();
+      case 3: return owner_->data3();
+      case 4: return owner_->data4();
+      case 5: return owner_->data5();
+      case 6: return owner_->data6();
+      case 7: return owner_->data7();
+      case 8: return owner_->data8();
+      case 9: return owner_->data9();
+      case 10: return owner_->data10();
+      case 11: return owner_->data11();
       default: assert(false && "Index out of range"); return 0;
       }
     }
@@ -5022,22 +5023,24 @@ public:
   private:
     friend class text_common;
     using owner_type = std::conditional_t<IsConst, text_common const, text_common>;
-    constexpr array_subscript_proxy(owner_type &owner, std::size_t const index) noexcept
-        : owner_{owner}, index_{index} {}
-    owner_type &owner_;
+    constexpr array_subscript_proxy(owner_type *const owner, std::size_t const index) noexcept
+        : owner_{owner}, index_{index} {
+      assert(owner != nullptr);
+    }
+    owner_type *owner_;
     std::size_t index_;
   };
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto &self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
   }
 #endif
 
