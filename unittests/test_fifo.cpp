@@ -31,19 +31,6 @@ TEST(IsPowerOfTwo, IsPowerOfTwo) {
   EXPECT_TRUE(is_power_of_two(65536U));
   EXPECT_FALSE(is_power_of_two(65537U));
 }
-TEST(BitsRequired, BitsRequired) {
-  using midi2::adt::details::bits_required;
-  EXPECT_EQ(bits_required(0U), 0U);
-  EXPECT_EQ(bits_required(1U), 1U);
-  EXPECT_EQ(bits_required(2U), 2U);
-  EXPECT_EQ(bits_required(3U), 2U);
-  EXPECT_EQ(bits_required(4U), 3U);
-  EXPECT_EQ(bits_required(7U), 3U);
-  EXPECT_EQ(bits_required(8U), 4U);
-  EXPECT_EQ(bits_required(65534U), 16U);
-  EXPECT_EQ(bits_required(65535U), 16U);
-  EXPECT_EQ(bits_required(65536U), 17U);
-}
 
 std::vector<unsigned> toVector(std::queue<unsigned> q) {
   std::vector<unsigned> result;
@@ -54,7 +41,7 @@ std::vector<unsigned> toVector(std::queue<unsigned> q) {
   }
   return result;
 }
-template <std::uint32_t Elements> std::vector<unsigned> toVector(midi2::adt::fifo<unsigned, Elements> q) {
+template <std::size_t Elements> std::vector<unsigned> toVector(midi2::adt::fifo<unsigned, Elements> q) {
   std::vector<unsigned> result;
   result.reserve(q.size());
   while (!q.empty()) {

@@ -13,53 +13,42 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <format>
+#include <iomanip>
 #include <iostream>
 #include <utility>
 
-// Local includes
-#include <midi2/bytestream/bytestream_to_ump.hpp>
+// Midi2 library
+#include <midi2/midi2.hpp>
+
+using namespace midi2::literals;
 
 namespace {
-
-[[nodiscard]] consteval std::byte operator""_b(unsigned long long arg) noexcept {
-  assert(arg < 256);
-  return static_cast<std::byte>(arg);
+template <std::integral T, unsigned Width = sizeof(T) * 2> void print_hex(T v) {
+  std::cout << "0x" << std::setw(Width) << std::setfill('0') << std::hex << v << ' ';
 }
-
 }  // end anonymous namespace
 
 int main() {
-  int exit_code = EXIT_SUCCESS;
-  try {
-    // A bytestream containing MIDI1 note-on events with running status.
-    constexpr std::array input = {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b};
-    std::cout << "Bytestream input: ";
-    for (auto const in : input) {
-      std::cout << std::format("0x{:02X} ", std::to_underlying(in));
-    }
-    std::cout << '\n';
-
-    std::cout << "UMP Packets: ";
-    // Convert the bytestream to UMP group 0 and write it to stdout.
-    constexpr auto group = std::uint8_t{0};
-    midi2::bytestream::bytestream_to_ump bs2ump{group};
-    for (auto const b : input) {
-      // Push each byte into the translator instance.
-      bs2ump.push(b);
-      // Pull as may 32-bit UMP values as are available and display them.
-      while (!bs2ump.empty()) {
-        std::cout << std::format("0x{:08X} ", bs2ump.pop());
-      }
-    }
-    std::cout << '\n';
-  } catch (std::exception const& ex) {
-    // The midi2 library doesn't throw but something else might...
-    std::cerr << "Error: " << ex.what() << '\n';
-    exit_code = EXIT_FAILURE;
-  } catch (...) {
-    std::cerr << "An unknown error\n";
-    exit_code = EXIT_FAILURE;
+  // A bytestream containing MIDI1 note-on events with running status.
+  // The '_b' operator (from midi2::literals) turns an integer constant into a std::byte constant.
+  constexpr std::array input = {0x81_b, 0x60_b, 0x50_b, 0x70_b, 0x70_b};
+  std::cout << "Bytestream input: ";
+  for (auto const in : input) {
+    print_hex<unsigned, 2>(std::to_underlying(in));
   }
-  return exit_code;
+  std::cout << '\n';
+
+  std::cout << "UMP Packets: ";
+  // Convert the bytestream to UMP group 0 and write it to stdout.
+  constexpr auto group = std::uint8_t{0};
+  midi2::bytestream::bytestream_to_ump bs2ump{group};
+  for (auto const b : input) {
+    // Push each byte into the translator instance.
+    bs2ump.push(b);
+    // Pull as may 32-bit UMP values as are available and display them.
+    while (!bs2ump.empty()) {
+      print_hex(bs2ump.pop());
+    }
+  }
+  std::cout << '\n';
 }

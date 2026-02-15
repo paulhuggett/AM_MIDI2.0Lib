@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cassert>
+#include <climits>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -24,16 +25,6 @@
 #include "midi2/utils.hpp"
 
 namespace midi2::adt {
-
-namespace details {
-
-/// \returns  The number of bits required for value.
-// NOLINTNEXTLINE(misc-no-recursion)
-template <std::unsigned_integral T> consteval unsigned bits_required(T const value) noexcept {
-  return value == 0U ? 0U : 1U + bits_required(static_cast<T>(value >> 1U));
-}
-
-}  // end namespace details
 
 /// \brief A FIFO/circular buffer containing a maximum of \p Elements instances
 ///        of type \p ElementType.
@@ -46,8 +37,8 @@ template <std::unsigned_integral T> consteval unsigned bits_required(T const val
 ///
 /// \tparam ElementType The type of the elements held by this container.
 /// \tparam Elements The number of elements in the FIFO. Must be less than 2^32.
-template <typename ElementType, std::uint32_t Elements>
-  requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31)
+template <typename ElementType, std::size_t Elements>
+  requires(Elements > 1 && is_power_of_two(Elements))
 class fifo {
 public:
   /// The type of elements contained in the FIFO
@@ -67,7 +58,7 @@ public:
   constexpr fifo(fifo const& other) noexcept(std::is_nothrow_copy_constructible_v<ElementType>);
   constexpr fifo(fifo&& other) noexcept(std::is_nothrow_move_constructible_v<ElementType>);
 
-  ~fifo() noexcept { this->clear(); }
+  constexpr ~fifo() noexcept { this->clear(); }
 
   constexpr bool operator==(fifo const&) const = delete;
 
@@ -109,7 +100,7 @@ public:
   }
 
   /// \brief Removes the first element of the container and returns it.
-  /// If there are no elements in the container, the behavior is undefined.
+  /// If the container is empty when this function is called, the behavior is undefined.
   /// \returns The first element in the container.
   constexpr value_type pop_front() noexcept(std::is_nothrow_move_constructible_v<value_type>) {
     assert(!this->empty());
@@ -120,6 +111,7 @@ public:
     return result;
   }
   /// \brief Checks whether the container is empty.
+  ///
   /// The FIFO is empty when both indices are equal.
   /// \returns True if the container is empty, false otherwise.
   [[nodiscard]] constexpr bool empty() const noexcept { return write_index_ == read_index_; }
@@ -130,7 +122,8 @@ public:
   [[nodiscard]] constexpr bool full() const noexcept {
     return (write_index_ & mask_) == (read_index_ & mask_) && wrapped();
   }
-  /// \brief Returns the number of elements.
+  /// \brief Returns the number of elements held by the container.
+  /// \returns The number of elements held by the container.
   [[nodiscard]] constexpr size_type size() const noexcept {
     auto const w = (write_index_ & mask_) + (wrapped() ? Elements : 0U);
     auto const r = read_index_ & mask_;
@@ -138,6 +131,7 @@ public:
     return w - r;
   }
   /// \brief Returns the maximum possible number of elements.
+  /// \returns The maximum possible number of elements that can be held by the container.
   [[nodiscard]] static constexpr size_type max_size() noexcept { return Elements; }
 
   /// \brief Erases all elements from the container. After this call, size() returns zero.
@@ -158,19 +152,27 @@ private:
 
   [[nodiscard]] constexpr bool wrapped() const noexcept { return (write_index_ & ~mask_) != (read_index_ & ~mask_); }
   [[nodiscard]] constexpr value_type* write_address() noexcept { return &arr_[write_index_ & mask_].value(); }
+
+  /// \returns  The number of bits required for value.
+  // NOLINTNEXTLINE(misc-no-recursion)
+  [[nodiscard]] static consteval unsigned bits_required(std::size_t const value) noexcept {
+    return value == 0U ? 0U : 1U + bits_required(value >> 1);
+  }
   /// The number of bits required to represent the maximum index in the arr_
   /// container.
-  static constexpr auto bits_ = details::bits_required(Elements - 1U);
+  static constexpr auto bits_ = bits_required(Elements - 1U);
   /// An unsigned integer type that can represent bits_ bits.
   using bitfield_type = uinteger_t<bits_>;
+  static_assert(bits_ < sizeof(bitfield_type) * CHAR_BIT);
   static constexpr auto mask_ = (bitfield_type{1} << bits_) - 1U;
+  static_assert(mask_ != 0);
 
   bitfield_type write_index_ : bits_ + 1 = 0;
   bitfield_type read_index_ : bits_ + 1 = 0;
 };
 
-template <typename ElementType, std::uint32_t Elements>
-  requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31)
+template <typename ElementType, std::size_t Elements>
+  requires(Elements > 1 && is_power_of_two(Elements))
 constexpr fifo<ElementType, Elements>::fifo(fifo const& other) noexcept(
     std::is_nothrow_copy_constructible_v<ElementType>)
     : write_index_{other.read_index_}, read_index_{other.read_index_} {
@@ -180,8 +182,8 @@ constexpr fifo<ElementType, Elements>::fifo(fifo const& other) noexcept(
   }
 }
 
-template <typename ElementType, std::uint32_t Elements>
-  requires(Elements > 1 && is_power_of_two(Elements) && Elements < std::uint32_t{1} << 31)
+template <typename ElementType, std::size_t Elements>
+  requires(Elements > 1 && is_power_of_two(Elements))
 constexpr fifo<ElementType, Elements>::fifo(fifo&& other) noexcept(std::is_nothrow_move_constructible_v<ElementType>)
     : write_index_{other.read_index_}, read_index_{other.read_index_} {
   for (write_index_ = other.read_index_; write_index_ != other.write_index_; ++write_index_) {

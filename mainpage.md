@@ -207,13 +207,13 @@ Hello
 
 \example send_ump.cpp
 
-This example demonstrates how to create UMP MIDI 2.0 note-on and note-off messages, to fill in their fields, and how the resulting sequence of 32-bit values can be transmitted. The code uses note-on and note-off, but the same principle applies to all UMP message types. In this example the resulting 32-bit values are simply written to the console, but a real implementation would likely transmit the values using a communications protocol such as USB.
+This example demonstrates how to create UMP MIDI 2.0 note-on and note-off messages, to fill in their fields, and how the resulting sequence of 32-bit values can be transmitted. The code uses note-on and note-off, but the same principle applies to all UMP message types. In this example the resulting 32-bit values are simply written to the console, but a real implementation would likely transmit the values using a communications protocol such as USB-MIDI.
 
 Expected output:
 
 ```
-0x40913C00 0x27100000 0x40914000 0x27100000 0x40914300 0x27100000
-0x40813C00 0x27100000 0x40814000 0x27100000 0x40814300 0x27100000
+0x40913C00 0x27100000 - 0x40914000 0x27100000 - 0x40914300 0x27100000 -
+0x40813C00 0x27100000 - 0x40814000 0x27100000 - 0x40814300 0x27100000 -
 ```
 
 \example ump_dispatcher_function.cpp
