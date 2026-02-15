@@ -235,7 +235,7 @@ public:
   }
   template <adt::bit_range_type Field, typename Enumeration>
     requires(std::is_enum_v<Enumeration>)
-  constexpr auto get_enum_field_raw() const noexcept {
+  [[nodiscard]] constexpr auto get_enum_field_raw() const noexcept {
     if constexpr (std::is_unsigned_v<std::underlying_type_t<Enumeration>>) {
       return this->template get<Field>();
     } else {
@@ -244,7 +244,7 @@ public:
   }
   template <adt::bit_range_type Field, typename Enumeration>
     requires(std::is_enum_v<Enumeration>)
-  constexpr Enumeration get_enum_field() const noexcept {
+  [[nodiscard]] constexpr Enumeration get_enum_field() const noexcept {
     return static_cast<Enumeration>(this->get_enum_field_raw<Field, Enumeration>());
   }
 
@@ -1918,6 +1918,7 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using reserved0 = adt::bit_range<31, 1>;
@@ -2214,15 +2215,19 @@ public:
   using iterator = iterator_base<false>;
   using const_iterator = iterator_base<true>;
 
-  constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{this, 0}}; }
-  constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
-  constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{this, 0}}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
 
-  constexpr auto end() noexcept { return iterator{array_subscript_proxy<false>{this, this->number_of_bytes()}}; }
-  constexpr auto end() const noexcept {
+  [[nodiscard]] constexpr auto end() noexcept {
+    return iterator{array_subscript_proxy<false>{this, this->number_of_bytes()}};
+  }
+  [[nodiscard]] constexpr auto end() const noexcept {
     return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}};
   }
-  constexpr auto cend() noexcept { return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}}; }
+  [[nodiscard]] constexpr auto cend() noexcept {
+    return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}};
+  }
 
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
@@ -2338,6 +2343,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using velocity = adt::bit_range<16, 16>;
@@ -2454,6 +2460,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using pressure = adt::bit_range<0, 32>;
   };
@@ -2508,6 +2515,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2565,6 +2573,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2628,6 +2637,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2684,6 +2694,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2740,6 +2751,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2797,6 +2809,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2858,6 +2871,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2916,6 +2930,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -2972,6 +2987,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using program = adt::bit_range<24, 8>;
@@ -3034,6 +3050,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -3086,6 +3103,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -3139,6 +3157,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value = adt::bit_range<0, 32>;
   };
@@ -3223,6 +3242,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using reserved = adt::bit_range<8, 24>;
     using filter = adt::bit_range<0, 8>;
@@ -3230,12 +3250,14 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value3 = adt::bit_range<0, 32>;
   };
@@ -3289,8 +3311,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using static_function_blocks = adt::bit_range<31, 1>;
     using number_function_blocks = adt::bit_range<24, 7>;
     using reserved0 = adt::bit_range<10, 14>;
@@ -3303,15 +3325,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3371,6 +3393,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using reserved0 = adt::bit_range<24, 8>;
@@ -3384,6 +3407,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using reserved0 = adt::bit_range<31, 1>;
@@ -3398,6 +3422,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using reserved0 = adt::bit_range<31, 1>;
@@ -3468,6 +3493,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name3 = adt::bit_range<24, 8>;
@@ -3478,6 +3504,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name7 = adt::bit_range<24, 8>;
@@ -3488,6 +3515,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name11 = adt::bit_range<24, 8>;
@@ -3557,6 +3585,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using pid3 = adt::bit_range<24, 8>;
@@ -3567,6 +3596,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using pid7 = adt::bit_range<24, 8>;
@@ -3577,6 +3607,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using pid11 = adt::bit_range<24, 8>;
@@ -3645,22 +3676,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3714,22 +3745,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3781,22 +3812,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3851,8 +3882,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using first_group = adt::bit_range<24, 8>;
     using num_spanned = adt::bit_range<16, 8>;
     using ci_message_version = adt::bit_range<8, 8>;
@@ -3861,15 +3892,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -3926,6 +3957,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name1 = adt::bit_range<24, 8>;
@@ -3936,6 +3968,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name5 = adt::bit_range<24, 8>;
@@ -3946,6 +3979,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using name9 = adt::bit_range<24, 8>;
@@ -4009,22 +4043,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4069,22 +4103,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4162,22 +4196,22 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4230,8 +4264,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using numerator = adt::bit_range<24, 8>;
     using denominator = adt::bit_range<16, 8>;
     using number_of_32_notes = adt::bit_range<8, 8>;
@@ -4240,15 +4274,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4303,8 +4337,8 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using num_clocks_per_primary_click = adt::bit_range<24, 8>;
     using bar_accent_part_1 = adt::bit_range<16, 8>;
     using bar_accent_part_2 = adt::bit_range<8, 8>;
@@ -4313,8 +4347,8 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using num_subdivision_clicks_1 = adt::bit_range<24, 8>;
     using num_subdivision_clicks_2 = adt::bit_range<16, 8>;
     using reserved0 = adt::bit_range<0, 16>;
@@ -4322,8 +4356,8 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4499,15 +4533,15 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value2 = adt::bit_range<0, 32>;
   };
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
-
     using value3 = adt::bit_range<0, 32>;
   };
 
@@ -4602,7 +4636,9 @@ public:
     using word_base::word_base;
     /// Checks that the fields of this message word are valid.
     /// \returns True if the message word is valid, false otherwise.
-    [[nodiscard]] constexpr bool check() const noexcept { return true; }
+    [[nodiscard]] constexpr bool check() const noexcept {
+      return true;
+    }  // NOLINT(readability-convert-member-functions-to-static)
     /// Defines the bit position of the alter_3_type field.
     using alter_3_type = adt::bit_range<28, 4>;
     /// Defines the bit position of the alter_3_degree field.
@@ -4923,6 +4959,7 @@ public:
   class word1 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data0 = adt::bit_range<24, 8>;
@@ -4935,6 +4972,7 @@ public:
   class word2 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data4 = adt::bit_range<24, 8>;
@@ -4948,6 +4986,7 @@ public:
   class word3 : public details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data8 = adt::bit_range<24, 8>;
@@ -5121,6 +5160,7 @@ public:
   class word1 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data1 = adt::bit_range<24, 8>;
@@ -5131,6 +5171,7 @@ public:
   class word2 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data5 = adt::bit_range<24, 8>;
@@ -5141,6 +5182,7 @@ public:
   class word3 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using data9 = adt::bit_range<24, 8>;
@@ -5297,6 +5339,7 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using chunks_in_mds = adt::bit_range<16, 16>;
@@ -5305,6 +5348,7 @@ public:
   class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using manufacturer_id = adt::bit_range<16, 16>;
@@ -5313,6 +5357,7 @@ public:
   class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using sub_id_1 = adt::bit_range<16, 16>;
@@ -5371,6 +5416,7 @@ public:
   class word1 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using value1 = adt::bit_range<0, 32>;
@@ -5379,6 +5425,7 @@ public:
   class word2 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
 
     using value2 = adt::bit_range<0, 32>;
@@ -5387,6 +5434,7 @@ public:
   class word3 : public ump::details::word_base {
   public:
     using word_base::word_base;
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] constexpr bool check() const noexcept { return true; }
     using value3 = adt::bit_range<0, 32>;
   };
