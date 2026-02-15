@@ -12,11 +12,13 @@
 #ifndef MIDI2_UMP_TYPES_HPP
 #define MIDI2_UMP_TYPES_HPP
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <ranges>
 #include <span>
 #include <tuple>
 #include <type_traits>
@@ -42,34 +44,30 @@ template <typename T, std::size_t N> constexpr auto span_to_tuple(std::span<T, N
   return impl(s, std::make_index_sequence<N>{});
 }
 
-#define MIDI2_UMP_MESSAGE_TYPES \
-  MIDI2_X(utility, 0x00)        \
-  MIDI2_X(system, 0x01)         \
-  MIDI2_X(m1cvm, 0x02)          \
-  MIDI2_X(data64, 0x03)         \
-  MIDI2_X(m2cvm, 0x04)          \
-  MIDI2_X(data128, 0x05)        \
-  MIDI2_X(reserved32_06, 0x06)  \
-  MIDI2_X(reserved32_07, 0x07)  \
-  MIDI2_X(reserved64_08, 0x08)  \
-  MIDI2_X(reserved64_09, 0x09)  \
-  MIDI2_X(reserved64_0a, 0x0A)  \
-  MIDI2_X(reserved96_0b, 0x0B)  \
-  MIDI2_X(reserved96_0c, 0x0C)  \
-  MIDI2_X(flex_data, 0x0D)      \
-  MIDI2_X(reserved128_0e, 0x0E) \
-  MIDI2_X(stream, 0x0F)
-
-/// \brief  An X macro for defining the UMP message_type enumeration.
-#define MIDI2_X(a, b) a = (b),
-enum class message_type : std::uint8_t { MIDI2_UMP_MESSAGE_TYPES };
-#undef MIDI2_X
+enum class message_type : std::uint8_t {
+  utility = 0x00,         ///< Utility messages
+  system = 0x01,          ///< System real time and system common messages (except system exclusive)
+  m1cvm = 0x02,           ///< MIDI 1.0 channel voice messages
+  data64 = 0x03,          ///< 64-bit data messages (including system exclusive)
+  m2cvm = 0x04,           ///< MIDI 2.0 channel voice messages
+  data128 = 0x05,         ///< 128-bit data messages
+  reserved32_06 = 0x06,   ///< Reserved for future definition
+  reserved32_07 = 0x07,   ///< Reserved for future definition
+  reserved64_08 = 0x08,   ///< Reserved for future definition
+  reserved64_09 = 0x09,   ///< Reserved for future definition
+  reserved64_0a = 0x0A,   ///< Reserved for future definition
+  reserved96_0b = 0x0B,   ///< Reserved for future definition
+  reserved96_0c = 0x0C,   ///< Reserved for future definition
+  flex_data = 0x0D,       ///< Flex data messages
+  reserved128_0e = 0x0E,  ///< Reserved for future definition
+  stream = 0x0F,          ///< UMP stream messages
+};
 
 /// Collects the enumerations that define the values for the UMP "mt" (message type) field
 namespace mt {
 
-// Here, CRT is short for "common and real-time".
 /// The message types for the System Common and System Real-time messages
+/// \note Here, CRT stands for for "Common and Real-Time".
 enum class system_crt : std::uint8_t {
   // System Common messages
   timing_code = 0xF1,   ///< MIDI Time Code
@@ -444,6 +442,15 @@ public:
   constexpr noop() noexcept = default;
   friend constexpr bool operator==(noop const &, noop const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::utility.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::utility.
+  MIDI2_UMP_GETTER(word0, mt)
+  /// \brief Returns the value of the word0::status field. Always mt::utility::noop.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::utility::noop.
+  MIDI2_UMP_GETTER(word0, status)
+
 private:
   friend struct ::std::tuple_size<noop>;
   template <std::size_t I, typename T> friend struct ::std::tuple_element;
@@ -458,6 +465,8 @@ private:
 /// \class std::tuple_element<I, ::midi2::ump::utility::noop>
 /// \brief Specialization of `std::tuple_element<>` for midi2::ump::utility::noop
 MIDI2_UMP_TUPLE(utility, noop)  // Define tuple_size and tuple_element for noop
+
+template <> struct std::tuple_size<::midi2::ump::utility::jr_clock>;
 
 // 7.2.2.1 JR Clock Message
 /// \brief The JR Clock message (section 7.2.2.1)
@@ -479,7 +488,7 @@ public:
     using status = adt::bit_range<20, 4>;
     /// Defines a group of reserved bits.
     using reserved1 = adt::bit_range<16, 4>;
-    /// \brief Sender Clock Time
+    /// \brief Sender Clock Time.
     /// A 16-bit time value in clock ticks of 1/31250 of one second (32 µsec, clock frequency of 1 MHz / 32).
     using sender_clock_time = adt::bit_range<0, 16>;
   };
@@ -490,8 +499,22 @@ public:
   constexpr explicit jr_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_clock const &, jr_clock const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::utility.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::utility.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \brief Returns the value of the word0::status field. Always mt::utility::jr_clock.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::utility::jr_clock.
   MIDI2_UMP_GETTER(word0, status)
+  /// \fn constexpr auto midi2::ump::utility::jr_clock::sender_clock_time() const noexcept
+  /// \brief Gets the value of the word0::sender_clock_time field.
+  //
+  /// \fn constexpr ump::utility::jr_clock & midi2::ump::utility::jr_clock::sender_clock_time(adt::uinteger_t<word0::sender_clock_time::bits::value> const v) noexcept
+  /// \brief Sets the word0::sender_clock_time field.
+  ///
+  /// The word0::sender_clock_time field contains a 16-bit time in ticks of 1/31250 of a second (32 µsec, clock
+  /// frequency of 1 MHz / 32).
   MIDI2_UMP_GETTER_SETTER(word0, sender_clock_time, ump::utility::jr_clock)
 
 private:
@@ -541,8 +564,23 @@ public:
   constexpr explicit jr_timestamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(jr_timestamp const &, jr_timestamp const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::utility.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::utility.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \brief Returns the value of the word0::status field. Always mt::utility::jr_timestamp.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::utility::jr_timestamp.
   MIDI2_UMP_GETTER(word0, status)
+
+  /// \fn constexpr auto midi2::ump::utility::jr_timestamp::timestamp() const noexcept
+  /// \brief Gets the value of the word0::timestamp field.
+  //
+  /// \fn constexpr ump::utility::jr_timestamp & midi2::ump::utility::jr_timestamp::timestamp(adt::uinteger_t<word0::timestamp::bits::value> const v) noexcept
+  /// \brief Sets the word0::timestamp field.
+  ///
+  /// The word0::timestamp field contains a 16-bit time in ticks of 1/31250 of a second (32 µsec, clock frequency of 1
+  /// MHz / 32).
   MIDI2_UMP_GETTER_SETTER(word0, timestamp, ump::utility::jr_timestamp)
 
 private:
@@ -581,7 +619,7 @@ public:
     using status = adt::bit_range<20, 4>;
     /// Defines a group of reserved bits.
     using reserved1 = adt::bit_range<16, 4>;
-    ///
+    /// Declares the unit of measure used by Delta Clockstamp messages in a MIDI Clip File.
     using ticks_pqn = adt::bit_range<0, 16>;
   };
 
@@ -591,8 +629,22 @@ public:
   constexpr explicit delta_clockstamp_tpqn(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp_tpqn const &, delta_clockstamp_tpqn const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::utility.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::utility.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \brief Returns the value of the word0::status field. Always mt::utility::delta_clockstamp_tpqn.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::utility::delta_clockstamp_tpqn.
   MIDI2_UMP_GETTER(word0, status)
+  /// \fn constexpr auto midi2::ump::utility::delta_clockstamp_tpqn::ticks_pqn() const noexcept
+  /// \brief Gets the value of the word0::ticks_pqn field.
+  //
+  /// \fn constexpr ump::utility::delta_clockstamp_tpqn & midi2::ump::utility::delta_clockstamp_tpqn::ticks_pqn(adt::uinteger_t<word0::ticks_pqn::bits::value> const v) noexcept
+  /// \brief Sets the word0::ticks_pqn field.
+  ///
+  /// The word0::ticks_pqn field declares the unit of measure used by Delta Clockstamp messages in a MIDI
+  /// Clip File. It may have a value of 1 – 65,535 (0 = Reserved).
   MIDI2_UMP_GETTER_SETTER(word0, ticks_pqn, ump::utility::delta_clockstamp_tpqn)
 
 private:
@@ -612,6 +664,9 @@ MIDI2_UMP_TUPLE(utility, delta_clockstamp_tpqn)  // Define tuple_size and tuple_
 MIDI2_SPAN_CTOR(utility, delta_clockstamp_tpqn)  // Define the span constructor for delta_clockstamp_tpqn
 
 /// \brief The Delta Clockstamp (DC): Ticks Since Last Event message
+///
+/// The Delta Clockstamp message declares the time of all following messages which occur before the next Delta
+/// Clockstamp message.
 class midi2::ump::utility::delta_clockstamp {
 public:
   /// \brief The first word of a Delta Clockstamp Since Last Event message
@@ -628,7 +683,8 @@ public:
     using reserved0 = adt::bit_range<24, 4>;
     /// Defines the bit position of the status field. Always 0b0100.
     using status = adt::bit_range<20, 4>;
-    using ticks_per_quarter_note = adt::bit_range<0, 20>;
+    /// The number of ticks since the last event.
+    using num_ticks = adt::bit_range<0, 20>;
   };
 
   constexpr delta_clockstamp() noexcept = default;
@@ -637,9 +693,20 @@ public:
   constexpr explicit delta_clockstamp(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(delta_clockstamp const &, delta_clockstamp const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::utility.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::utility.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \brief Returns the value of the word0::status field. Always mt::utility::delta_clockstamp.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::utility::delta_clockstamp.
   MIDI2_UMP_GETTER(word0, status)
-  MIDI2_UMP_GETTER_SETTER(word0, ticks_per_quarter_note, ump::utility::delta_clockstamp)
+  /// \fn constexpr auto midi2::ump::utility::delta_clockstamp::num_ticks() const noexcept
+  /// \brief Gets the value of the word0::num_ticks field.
+  //
+  /// \fn constexpr ump::utility::delta_clockstamp & midi2::ump::utility::delta_clockstamp::num_ticks(adt::uinteger_t<word0::num_ticks::bits::value> const v) noexcept
+  /// \brief Sets the word0::num_ticks field.
+  MIDI2_UMP_GETTER_SETTER(word0, num_ticks, ump::utility::delta_clockstamp)
 
 private:
   friend struct ::std::tuple_size<delta_clockstamp>;
@@ -697,7 +764,7 @@ public:
   class word0 : public midi2::ump::details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = ump::mt::system_crt::timing_code;
+    static constexpr auto message = mt::system_crt::timing_code;
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::timing_code); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
@@ -723,8 +790,22 @@ public:
   constexpr explicit midi_time_code(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(midi_time_code const &, midi_time_code const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+
+  /// \fn constexpr auto midi2::ump::system::midi_time_code::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::midi_time_code & midi2::ump::system::midi_time_code::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::midi_time_code)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::timing_code.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::timing_code.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, time_code, ump::system::midi_time_code)
 
@@ -750,7 +831,7 @@ public:
   class word0 : public details::word_base {
   public:
     using word_base::word_base;
-    static constexpr auto message = ump::mt::system_crt::spp;
+    static constexpr auto message = mt::system_crt::spp;
     constexpr word0() noexcept { this->init<mt, status>(ump::mt::system_crt::spp); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
 
@@ -773,8 +854,21 @@ public:
   constexpr explicit song_position_pointer(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_position_pointer const &, song_position_pointer const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::song_position_pointer::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::song_position_pointer & midi2::ump::system::song_position_pointer::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::song_position_pointer)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::spp.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::spp.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, position_lsb, ump::system::song_position_pointer)
   MIDI2_UMP_GETTER_SETTER(word0, position_msb, ump::system::song_position_pointer)
@@ -801,7 +895,7 @@ public:
   /// \brief The first and only word of the MIDI song select message
   class word0 : public details::word_base {
   public:
-    static constexpr auto message = ump::mt::system_crt::song_select;
+    static constexpr auto message = mt::system_crt::song_select;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
@@ -827,8 +921,21 @@ public:
   constexpr explicit song_select(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(song_select const &, song_select const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::song_select::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::song_select & midi2::ump::system::song_select::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::song_select)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::song_select.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::song_select.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, song, ump::system::song_select)
 
@@ -874,8 +981,21 @@ public:
   constexpr explicit tune_request(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(tune_request const &, tune_request const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::tune_request::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::tune_request & midi2::ump::system::tune_request::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::tune_request)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::tune_request.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::tune_request.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -920,8 +1040,21 @@ public:
   constexpr explicit timing_clock(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(timing_clock const &, timing_clock const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::timing_clock::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::timing_clock & midi2::ump::system::timing_clock::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::timing_clock)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::timing_clock.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::timing_clock.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -966,8 +1099,21 @@ public:
   constexpr explicit sequence_start(std::span<std::uint32_t, 1> w0) noexcept;
   friend constexpr bool operator==(sequence_start const &, sequence_start const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::sequence_start::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::sequence_start & midi2::ump::system::sequence_start::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::sequence_start)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::sequence_start.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::sequence_start.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -1012,8 +1158,21 @@ public:
   constexpr explicit sequence_continue(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_continue const &, sequence_continue const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::sequence_continue::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::sequence_continue & midi2::ump::system::sequence_continue::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::sequence_continue)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::sequence_continue.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::sequence_continue.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -1057,8 +1216,21 @@ public:
   constexpr explicit sequence_stop(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_stop const &, sequence_stop const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::sequence_stop::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::sequence_stop & midi2::ump::system::sequence_stop::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::sequence_stop)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::sequence_stop.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::sequence_stop.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -1082,7 +1254,7 @@ class midi2::ump::system::active_sensing {
 public:
   class word0 : public details::word_base {
   public:
-    static constexpr auto message = ump::mt::system_crt::active_sensing;
+    static constexpr auto message = mt::system_crt::active_sensing;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
@@ -1102,8 +1274,21 @@ public:
   constexpr explicit active_sensing(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(active_sensing const &, active_sensing const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::active_sensing::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::active_sensing & midi2::ump::system::active_sensing::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::active_sensing)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::active_sensing.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::active_sensing.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -1127,7 +1312,7 @@ class midi2::ump::system::reset {
 public:
   class word0 : public details::word_base {
   public:
-    static constexpr auto message = ump::mt::system_crt::system_reset;
+    static constexpr auto message = mt::system_crt::system_reset;
     using word_base::word_base;
     constexpr word0() noexcept { this->init<mt, status>(message); }
     [[nodiscard]] constexpr bool check() const noexcept { return this->word_base::check<mt, status>(message); }
@@ -1147,8 +1332,21 @@ public:
   constexpr explicit reset(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(reset const &, reset const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::mt field. Always message_type::system.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::mt field. Always message_type::system.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::system::reset::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::system::reset & midi2::ump::system::reset::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::system::reset)
+  /// \brief Returns the value of the word0::status field. Always mt::system_crt::system_reset.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::system_crt::system_reset.
   MIDI2_UMP_GETTER(word0, status)
 
 private:
@@ -1199,16 +1397,6 @@ class pitch_bend;
 
 }  // end namespace midi2::ump::m1cvm
 
-/// \fn constexpr auto midi2::ump::m1cvm::note_on::status() const noexcept
-/// \brief Returns the value of the word0::status field. Always mt::m1cvm::note_on..
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always mt::m1cvm::note_on.
-
-/// \fn constexpr auto midi2::ump::m1cvm::note_on::mt() const noexcept
-/// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
-/// \note This is a read-only field.
-/// \returns The value of the word0::status field. Always message_type::m1cvm.
-
 /// Defines the MIDI 1.0 Note On message.
 class midi2::ump::m1cvm::note_on {
 public:
@@ -1244,8 +1432,21 @@ public:
   constexpr explicit note_on(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_on const &, note_on const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::note_on::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::note_on & midi2::ump::m1cvm::note_on::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::note_on)
+  /// \brief Returns the value of the word0::status field. Always mt::m1cvm::note_on.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always mt::m1cvm::note_on.
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::note_on)
   MIDI2_UMP_GETTER_SETTER(word0, note, ump::m1cvm::note_on)
@@ -1297,13 +1498,18 @@ public:
   constexpr explicit note_off(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(note_off const &, note_off const &) noexcept = default;
 
-  /// \fn constexpr auto midi2::ump::m1cvm::note_off::mt() const noexcept
   /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::note_off::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::note_off & midi2::ump::m1cvm::note_off::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::note_off)
-  /// \fn constexpr auto midi2::ump::m1cvm::note_off::status() const noexcept
   /// \brief Returns the value of the word0::status field. Always mt::m1cvm::note_off.
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always mt::m1cvm::note_off.
@@ -1367,6 +1573,13 @@ public:
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always mt::m1cvm::poly_pressure.
   MIDI2_UMP_GETTER(word0, status)
+  /// \fn constexpr auto midi2::ump::m1cvm::poly_pressure::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::poly_pressure & midi2::ump::m1cvm::poly_pressure::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::poly_pressure)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::poly_pressure)
   MIDI2_UMP_GETTER_SETTER(word0, note, ump::m1cvm::poly_pressure)
@@ -1422,6 +1635,13 @@ public:
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::control_change::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::control_change & midi2::ump::m1cvm::control_change::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::control_change)
   /// \fn constexpr auto midi2::ump::m1cvm::control_change::status() const noexcept
   /// \brief Returns the value of the word0::status field. Always mt::m1cvm::cc.
@@ -1483,6 +1703,13 @@ public:
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::program_change::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::program_change & midi2::ump::m1cvm::program_change::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::program_change)
   /// \fn constexpr auto midi2::ump::m1cvm::program_change::status() const noexcept
   /// \brief Returns the value of the word0::status field. Always mt::m1cvm::program_change.
@@ -1546,7 +1773,17 @@ public:
   constexpr explicit channel_pressure(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
+  /// \brief Returns the value of the word0::status field. Always message_type::m1cvm.
+  /// \note This is a read-only field.
+  /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::channel_pressure::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::channel_pressure & midi2::ump::m1cvm::channel_pressure::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::channel_pressure)
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, channel, ump::m1cvm::channel_pressure)
@@ -1601,6 +1838,13 @@ public:
   /// \note This is a read-only field.
   /// \returns The value of the word0::status field. Always message_type::m1cvm.
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::m1cvm::pitch_bend & midi2::ump::m1cvm::pitch_bend::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::m1cvm::pitch_bend)
   /// \fn constexpr auto midi2::ump::m1cvm::pitch_bend::status() const noexcept
   /// \brief Returns the value of the word0::status field. Always mt::m1cvm::pitch_bend.
@@ -1692,6 +1936,13 @@ public:
   friend constexpr bool operator==(sysex7 const &, sysex7 const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
+  /// \fn constexpr auto midi2::ump::data64::details::sysex7<Status>::group() const noexcept
+  /// \brief Gets the value of the word0::group field.
+  //
+  /// \fn constexpr ump::data64::details::sysex7<Status> & midi2::ump::data64::details::sysex7<Status>::group(adt::uinteger_t<word0::group::bits::value> const v) noexcept
+  /// \brief Sets the word0::group field.
+  ///
+  /// The group field is a 4-bit value to address a UMP MIDI Message to one of 16 Groups.
   MIDI2_UMP_GETTER_SETTER(word0, group, ump::data64::details::sysex7<Status>)
   MIDI2_UMP_GETTER(word0, status)
   MIDI2_UMP_GETTER_SETTER(word0, number_of_bytes, ump::data64::details::sysex7<Status>)
@@ -1704,6 +1955,21 @@ public:
 
   template <bool IsConst> class array_subscript_proxy {
   public:
+    template <bool OtherIsConst>
+    friend bool operator==(array_subscript_proxy const &lhs, array_subscript_proxy<OtherIsConst> const &rhs) {
+      return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
+    }
+    template <bool OtherIsConst>
+    friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const &lhs,
+                                                       array_subscript_proxy<OtherIsConst> const &rhs) noexcept {
+      if (lhs.index_ < rhs.index_) {
+        return std::partial_ordering::less;
+      } else if (lhs.index_ == rhs.index_) {
+        return std::partial_ordering::equivalent;
+      } else {
+        return std::partial_ordering::greater;
+      }
+    }
     constexpr array_subscript_proxy &operator=(adt::uinteger_t<7> const v) noexcept
       requires(!IsConst)
     {
@@ -1730,6 +1996,38 @@ public:
       }
     }
 
+    constexpr array_subscript_proxy &operator++() noexcept {
+      ++index_;
+      assert(index_ < 6 && "Index out of range");
+      return *this;
+    }
+    constexpr array_subscript_proxy operator++(int) noexcept {
+      constexpr auto result = *this;
+      ++*this;
+      return result;
+    }
+    constexpr array_subscript_proxy &operator--() noexcept {
+      assert(index_ > 0 && "Index out of range");
+      --index_;
+      return *this;
+    }
+    constexpr array_subscript_proxy operator--(int) noexcept {
+      constexpr auto result = *this;
+      --*this;
+      return result;
+    }
+
+    template <std::integral U> constexpr auto &operator+=(U const n) noexcept {
+      index_ += n;
+      assert(index_ < 6 && "Index out of range");
+      return *this;
+    }
+    template <std::integral U> constexpr auto &operator-=(U const n) noexcept {
+      assert(n <= index_ && "Index out of range");
+      index_ -= n;
+      return *this;
+    }
+
   private:
     friend class sysex7;
     using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
@@ -1744,13 +2042,182 @@ public:
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{self, idx};
   }
 #else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
-  }
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<false>{*this, idx}; }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{*this, idx};
+    return array_subscript_proxy<true>{*this, idx};
   }
 #endif
+
+  template <std::integral T> constexpr sysex7 &data(std::initializer_list<T> vs) {
+    assert(vs.size() <= this->max_size() && "initializer list has too many members");
+    auto index = std::size_t{0};
+    for (auto v : vs) {
+      assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
+      (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+    }
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+  template <std::ranges::input_range Range, typename Proj = std::identity>
+    requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
+  constexpr sysex7 &data(Range &&range, Proj proj = {}) {
+    auto index = std::size_t{0};
+    std::ranges::for_each(
+        std::forward<Range>(range),
+        [this, &index](auto v) constexpr {
+          assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
+          (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+        },
+        proj);
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+  template <std::input_iterator I, std::sentinel_for<I> S>
+    requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
+  constexpr sysex7 &data(I first, S last) {
+    auto index = std::size_t{0};
+    std::for_each(first, last, [this, &index](auto v) constexpr {
+      assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
+      (*this)[index++] = static_cast<adt::uinteger_t<7>>(v);
+    });
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+
+  template <bool IsConst> class iterator_base {
+  public:
+    /// Defines this class as fulfilling the requirements of a random-access iterator.
+    using iterator_category = std::random_access_iterator_tag;
+    /// The type accessible through this iterator.
+    using value_type = array_subscript_proxy<IsConst>;
+    /// A type that can be used to identify distance between iterators.
+    using difference_type = std::ptrdiff_t;
+    /// Defines a pointer to the type iterated over.
+    using pointer = value_type *;
+    /// Defines a reference to the type iterated over.
+    using reference = value_type &;
+
+    constexpr explicit iterator_base(array_subscript_proxy<IsConst> arr) noexcept : arr_{std::move(arr)} {}
+    constexpr iterator_base(iterator_base const &other) noexcept : arr_{other.arr_} {}
+    constexpr iterator_base(iterator_base &&other) noexcept : arr_{std::move(other.arr_)} {}
+
+    template <bool OtherIsConst>
+      requires(IsConst == OtherIsConst || !OtherIsConst)
+    iterator_base &operator=(iterator_base<OtherIsConst> const &other) noexcept {
+      arr_ = other.arr_;
+      return *this;
+    }
+    template <bool OtherIsConst>
+      requires(IsConst == OtherIsConst || !OtherIsConst)
+    iterator_base &operator=(iterator_base<OtherIsConst> &&other) noexcept {
+      arr_ = std::move(other.arr_);
+      return *this;
+    }
+
+    template <bool RhsIsConst>
+    friend constexpr bool operator==(iterator_base lhs, iterator_base<RhsIsConst> rhs) noexcept {
+      return lhs.arr_ == rhs.arr_;
+    }
+    template <bool RhsIsConst>
+    friend constexpr auto operator<=>(iterator_base lhs, iterator_base<RhsIsConst> rhs) noexcept {
+      return lhs.arr_ <=> rhs.arr_;
+    }
+
+    constexpr pointer operator->() noexcept { return &arr_; }
+    constexpr reference operator*() noexcept { return arr_; }
+
+    constexpr iterator_base &operator++() noexcept {
+      ++arr_;
+      return *this;
+    }
+    constexpr iterator_base operator++(int) noexcept {
+      auto const prev = *this;
+      ++*this;
+      return prev;
+    }
+    constexpr iterator_base &operator--() noexcept {
+      --arr_;
+      return *this;
+    }
+    constexpr iterator_base operator--(int) noexcept {
+      auto const prev = *this;
+      --*this;
+      return prev;
+    }
+
+    template <std::integral U> constexpr iterator_base &operator+=(U const n) noexcept {
+      arr_ += n;
+      return *this;
+    }
+    template <std::integral U> constexpr iterator_base &operator-=(U const n) noexcept {
+      arr_ -= n;
+      return *this;
+    }
+
+    /// Returns the distance between two iterators \p b - \p a.
+    ///
+    /// \param b  The first iterator.
+    /// \param a  The second iterator.
+    /// \returns  distance between two iterators \p b - \p a.
+    friend constexpr difference_type operator-(iterator_base b, iterator_base a) noexcept {
+      assert(a.arr_.owner_ == b.arr_.owner_ && "Cannot get the distance between iterators with different owners");
+      return static_cast<difference_type>(b.arr_.index_) - static_cast<difference_type>(a.arr_.index_);
+    }
+
+    /// @{
+    /// Move an iterator \p it forwards by distance \p n. \p n can be both positive
+    /// or negative.
+
+    /// \param it  The iterator to be moved.
+    /// \param n  The distance by which iterator \p it should be moved.
+    /// \returns  The new iterator.
+    template <std::integral U> friend constexpr iterator_base operator+(iterator_base const it, U const n) noexcept {
+      auto t = it;
+      return t += n;
+    }
+    template <std::integral U> friend constexpr iterator_base operator+(U const n, iterator_base const it) noexcept {
+      return it + n;
+    }
+    /// @}
+
+    /// @{
+    /// Move an iterator \p it backwards by distance \p n. \p n can be both positive
+    /// or negative.
+    /// \param it  The iterator to be moved.
+    /// \param n  The distance by which iterator \p it should be moved.
+    /// \returns  The new iterator.
+    template <std::integral U> friend constexpr iterator_base operator-(iterator_base const it, U const n) noexcept {
+      auto t = it;
+      return t -= n;
+    }
+    template <std::integral U> friend constexpr iterator_base operator-(U const n, iterator_base const it) noexcept {
+      return it - n;
+    }
+    /// @}
+
+  private:
+    array_subscript_proxy<IsConst> arr_;
+  };
+
+  using value_type = adt::uinteger_t<7>;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using iterator = iterator_base<false>;
+  using const_iterator = iterator_base<true>;
+
+  constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{*this, 0}}; }
+  constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{*this, 0}}; }
+  constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{*this, 0}}; }
+
+  constexpr auto end() noexcept { return iterator{array_subscript_proxy<false>{*this, this->number_of_bytes()}}; }
+  constexpr auto end() const noexcept {
+    return const_iterator{array_subscript_proxy<true>{*this, this->number_of_bytes()}};
+  }
+  constexpr auto cend() noexcept { return const_iterator{array_subscript_proxy<true>{*this, this->number_of_bytes()}}; }
+
+  constexpr size_type max_size() const noexcept { return 6; }
+  constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  constexpr bool empty() const noexcept { return this->size() == 0; }
 
 private:
   friend struct ::std::tuple_size<sysex7>;
@@ -1983,7 +2450,7 @@ public:
   };
 
   constexpr poly_pressure() noexcept = default;
-  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit poly_pressure(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(poly_pressure const &a, poly_pressure const &b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2037,7 +2504,7 @@ public:
   };
 
   constexpr rpn_per_note_controller() noexcept = default;
-  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit rpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(rpn_per_note_controller const &, rpn_per_note_controller const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2094,7 +2561,7 @@ public:
   };
 
   constexpr nrpn_per_note_controller() noexcept = default;
-  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit nrpn_per_note_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(nrpn_per_note_controller const &,
                                    nrpn_per_note_controller const &) noexcept = default;
 
@@ -2157,7 +2624,7 @@ public:
   };
 
   constexpr rpn_controller() noexcept = default;
-  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit rpn_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(rpn_controller const &, rpn_controller const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2326,7 +2793,7 @@ public:
   };
 
   constexpr nrpn_relative_controller() noexcept = default;
-  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit nrpn_relative_controller(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(nrpn_relative_controller const &,
                                    nrpn_relative_controller const &) noexcept = default;
 
@@ -2387,7 +2854,7 @@ public:
   };
 
   constexpr per_note_management() noexcept = default;
-  constexpr explicit per_note_management(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit per_note_management(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(per_note_management const &, per_note_management const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2445,7 +2912,7 @@ public:
   };
 
   constexpr control_change() noexcept = default;
-  constexpr explicit control_change(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit control_change(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(control_change const &, control_change const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2507,7 +2974,7 @@ public:
   };
 
   constexpr program_change() noexcept = default;
-  constexpr explicit program_change(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit program_change(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(program_change const &, program_change const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2563,7 +3030,7 @@ public:
   };
 
   constexpr channel_pressure() noexcept = default;
-  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit channel_pressure(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(channel_pressure const &, channel_pressure const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2615,7 +3082,7 @@ public:
   };
 
   constexpr pitch_bend() noexcept = default;
-  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit pitch_bend(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(pitch_bend const &a, pitch_bend const &b) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)
@@ -2668,7 +3135,7 @@ public:
   };
 
   constexpr per_note_pitch_bend() noexcept = default;
-  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> const m) noexcept;
+  constexpr explicit per_note_pitch_bend(std::span<std::uint32_t, 2> m) noexcept;
   friend constexpr bool operator==(per_note_pitch_bend const &, per_note_pitch_bend const &) noexcept = default;
 
   MIDI2_UMP_GETTER(word0, mt)

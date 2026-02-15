@@ -244,7 +244,7 @@ TEST_F(UMPDispatcherUtility, DeltaClockstampTqpn) {
 // NOLINTNEXTLINE
 TEST_F(UMPDispatcherUtility, DeltaClockstamp) {
   midi2::ump::utility::delta_clockstamp message{};
-  message.ticks_per_quarter_note((1U << decltype(message)::word0::ticks_per_quarter_note::bits()) - 1U);
+  message.num_ticks((1U << decltype(message)::word0::num_ticks::bits()) - 1U);
   EXPECT_CALL(config_.utility, delta_clockstamp(config_.context, message)).Times(1);
   this->apply(message);
 }

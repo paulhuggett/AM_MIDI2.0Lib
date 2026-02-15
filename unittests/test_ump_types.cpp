@@ -9,6 +9,7 @@
 #include "midi2/ump/ump_types.hpp"
 
 // Google test
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 namespace {
@@ -64,6 +65,84 @@ TEST(UMPTypes, Sysex7InOne) {
   message2[3] = 0x0D;
   EXPECT_EQ(message, message2);
 }
+TEST(UMPTypes, Sysex7InOneInitializerList) {
+  constexpr auto message =
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  constexpr auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
+  EXPECT_EQ(message, message2);
+}
+TEST(UMPTypes, Sysex7InOneRange) {
+  constexpr auto message =
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
+  auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values);
+  EXPECT_EQ(message, message2);
+}
+TEST(UMPTypes, Sysex7InOneIteratorAssignData) {
+  constexpr auto message =
+      midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
+  auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values.begin(), values.end());
+  EXPECT_EQ(message, message2);
+}
+TEST(UMPTypes, Sysex7InOneIteratorRead) {
+  auto message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
+  auto first = message.begin();
+  auto last = message.end();
+  EXPECT_EQ(std::distance(first, last), 4U);
+  EXPECT_EQ(*first, 0x7E);
+  ++first;
+  EXPECT_EQ(*first, 0x7F);
+  ++first;
+  EXPECT_EQ(*first, 0x07);
+  ++first;
+  EXPECT_EQ(*first, 0x0D);
+  ++first;
+  EXPECT_EQ(first, last);
+}
+TEST(UMPTypes, Sysex7InOneConstIteratorRead) {
+  auto const message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
+  auto first = message.begin();
+  auto last = message.end();
+  EXPECT_EQ(std::distance(first, last), 4U);
+  EXPECT_EQ(*first, 0x7E);
+  ++first;
+  EXPECT_EQ(*first, 0x7F);
+  ++first;
+  EXPECT_EQ(*first, 0x07);
+  ++first;
+  EXPECT_EQ(*first, 0x0D);
+  ++first;
+  EXPECT_EQ(first, last);
+}
+TEST(UMPTypes, Sysex7InOneIteratorWrite) {
+  auto message = midi2::ump::data64::sysex7_in_1{}.group(0);
+  EXPECT_TRUE(message.empty());
+  EXPECT_EQ(message.size(), 0U);
+  message.data({1, 2, 3});
+  EXPECT_FALSE(message.empty());
+  EXPECT_EQ(message.size(), 3U);
+  auto first = message.begin();
+  auto last = message.end();
+  *first = 4;
+  EXPECT_EQ(*first, 4);
+  ++first;
+  EXPECT_EQ(*first, 2);
+  ++first;
+  EXPECT_EQ(*first, 3);
+  ++first;
+  EXPECT_EQ(first, last);
+}
+TEST(UMPTypes, Sysex7InOneIteratorWriteUsingAlgorithm) {
+  using testing::ElementsAreArray;
+
+  auto message = midi2::ump::data64::sysex7_in_1{}.group(0);
+  constexpr std::array src{0x1, 0x3, 0x5, 0x7};
+  std::ranges::copy(src, message.begin());
+  message.number_of_bytes(src.size());
+
+  EXPECT_THAT(message, ElementsAreArray(src));
+}
 TEST(UMPTypes, Sysex7InOneReadArray) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
@@ -74,6 +153,7 @@ TEST(UMPTypes, Sysex7InOneReadArray) {
   EXPECT_EQ(message[4], 0x00);
   EXPECT_EQ(message[5], 0x00);
 }
+
 TEST(UMPTypes, Sysex8InOne) {
   constexpr auto message =
       midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);

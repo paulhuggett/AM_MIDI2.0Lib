@@ -279,32 +279,20 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   constexpr auto start = static_cast<b8>(std::to_underlying(sysex_start));
   constexpr auto note_off = static_cast<b8>(std::to_underlying(midi2::bytestream::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
+
   std::array const input{start,           b8{1}, b8{2}, b8{3}, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel},
                          b8{note_number}, b8{0}};
 
   std::vector<std::uint32_t> expected;
-  {
-    constexpr auto sx_start = midi2::ump::data64::sysex7_start{}
-                                  .group(group)
-                                  .number_of_bytes(6)
-                                  .data0(1U)
-                                  .data1(2U)
-                                  .data2(3U)
-                                  .data3(4U)
-                                  .data4(5U)
-                                  .data5(6U);
-    expected.push_back(std::uint32_t{get<0>(sx_start)});
-    expected.push_back(std::uint32_t{get<1>(sx_start)});
-  }
-  {
-    constexpr auto sx_end = midi2::ump::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U);
-    expected.push_back(std::uint32_t{get<0>(sx_end)});
-    expected.push_back(std::uint32_t{get<1>(sx_end)});
-  }
-  {
-    auto const noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0);
-    expected.push_back(std::uint32_t{get<0>(noff)});
-  }
+  auto const expect = [&expected](auto const& message) {
+    midi2::ump::apply(message, [&](std::uint32_t const v) {
+      expected.push_back(v);
+      return false;
+    });
+  };
+  expect(midi2::ump::data64::sysex7_start{}.group(group).data({1U, 2U, 3U, 4U, 5U, 6U}));
+  expect(midi2::ump::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U));
+  expect(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0));
 
   auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
@@ -319,24 +307,20 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   constexpr auto start = static_cast<b8>(std::to_underlying(sysex_start));
   constexpr auto note_off = static_cast<b8>(std::to_underlying(midi2::bytestream::status::note_off));
   constexpr auto note_number = std::uint8_t{62};
+
   std::array const input{
       start, b8{1}, b8{2}, b8{3}, start, b8{4}, b8{5}, b8{6}, b8{7}, note_off | b8{channel}, b8{note_number}, b8{0}};
 
   std::vector<std::uint32_t> expected;
-  {
-    constexpr auto block1 = sysex7_in_1{}.group(group).number_of_bytes(3).data0(1).data1(2).data2(3);
-    expected.push_back(std::uint32_t{get<0>(block1)});
-    expected.push_back(std::uint32_t{get<1>(block1)});
-  }
-  {
-    constexpr auto block2 = sysex7_in_1{}.group(group).number_of_bytes(4).data0(4).data1(5).data2(6).data3(7);
-    expected.push_back(std::uint32_t{get<0>(block2)});
-    expected.push_back(std::uint32_t{get<1>(block2)});
-  }
-  {
-    constexpr auto noff = midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number);
-    expected.push_back(std::uint32_t{get<0>(noff)});
-  }
+  auto const expect = [&expected](auto const& message) {
+    midi2::ump::apply(message, [&](std::uint32_t const v) {
+      expected.push_back(v);
+      return false;
+    });
+  };
+  expect(sysex7_in_1{}.group(group).data({1U, 2U, 3U}));
+  expect(sysex7_in_1{}.group(group).data({4U, 5U, 6U, 7U}));
+  expect(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number));
 
   auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
