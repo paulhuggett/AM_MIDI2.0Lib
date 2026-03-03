@@ -142,7 +142,7 @@ int main() {
 
 ### Example: Create MIDI-CI Messages
 
-~~~cpp
+```cpp
 #include <cstddef>
 #include <format>
 #include <iostream>
@@ -177,13 +177,13 @@ int main() {
   }
   std::cout << '\n';
 }
-~~~
+```
 
 ### Example: Process MIDI-CI Messages
 
 MIDI-CI requires a lot of SysEx messages. This library abstracts the complexity of building and parsing MIDI-CI Messages.
 
-~~~cpp
+```cpp
 #include <array>
 #include <cstdlib>
 #include <format>
@@ -207,18 +207,18 @@ void print_discovery(std::ostream &os, midi2::ci::discovery const &d) {
      << std::format("max-sysex-size=0x{:X}\noutput-path-id=0x{:X}\n", d.max_sysex_size, d.output_path_id);
 }
 
-// We must pass a “context” to the dispatcher, which will be forwarded to 
+// We must pass a “context” to the dispatcher, which will be forwarded to
 // each of the dispatcher's callbacks. The context lets message handlers share
 // state but we don’t need that here, so a struct with no members will suffice.
 struct context {};
 
 dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
-  // Create a CI dispatcher instance using std::function<> for 
+  // Create a CI dispatcher instance using std::function<> for
   // all of its handler functions.
   auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>();
   auto &config = dispatcher.config();
 
-  // Register a handler for checking whether a message is addressed 
+  // Register a handler for checking whether a message is addressed
   // to this receiver.
   config.system.on_check_muid(
       [my_muid](context, std::uint8_t /*group*/, midi2::ci::muid const m) { return m == my_muid; });
@@ -250,5 +250,11 @@ int main() {
   }
   dispatcher.finish();
 }
-~~~
+```
+
 ---
+
+```
+SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
+SPDX-License-Identifier: MIT
+```

@@ -1,4 +1,7 @@
 
+# SPDX-FileCopyrightText: Copyright © 2022 Paul Bowen-Huggett
+# SPDX-License-Identifier: MIT
+#
 # MIT License
 #
 # Copyright (c) 2022-2024 Paul Bowen-Huggett

@@ -1,3 +1,7 @@
+//
+// SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
+// SPDX-License-Identifier: MIT
+//
 /// \file midi2.hpp
 /// \brief An umbrella include file for the MIDI 2.0 library.
 

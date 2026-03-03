@@ -1,3 +1,13 @@
+#===-- CMakeLists ------------------------------------------------------------*- C++ -*-===//
+#
+# midi2 library under the MIT license.
+# See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+#
+# SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
+# SPDX-License-Identifier: MIT
+#
+#===------------------------------------------------------------------------------------===//
+
 include(FetchContent)
 FetchContent_Declare(
   benchmark
@@ -6,13 +16,6 @@ FetchContent_Declare(
   FIND_PACKAGE_ARGS NAMES benchmark
 )
 FetchContent_MakeAvailable(benchmark)
-
-
-
-
-
-
-
 
 add_executable(m2benchmark m2benchmark.cpp)
 setup_target(m2benchmark)

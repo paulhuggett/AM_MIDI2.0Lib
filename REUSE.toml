@@ -1,0 +1,10 @@
+version = 1
+
+[[annotations]]
+path = [
+  "include/midi2/icubaby.hpp",
+  ".github/**/*"
+]
+SPDX-FileCopyrightText = "2025 Paul Bowen-Huggett"
+SPDX-License-Identifier = "MIT"
+
