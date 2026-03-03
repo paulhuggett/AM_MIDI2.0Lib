@@ -2,6 +2,8 @@
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+//
+// SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
@@ -163,18 +165,37 @@ TEST(UMPTypes, Sysex7InOneReadArray) {
 }
 
 TEST(UMPTypes, Sysex8InOne) {
-  constexpr auto message =
-      midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
-  auto message2 = midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4);
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  constexpr auto message = sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  auto message2 = sysex8_in_1{}.group(0).number_of_bytes(4);
   message2[0] = 0x7E;
   message2[1] = 0x7F;
   message2[2] = 0x07;
   message2[3] = 0x0D;
   EXPECT_EQ(message, message2);
 }
+TEST(UMPTypes, Sysex8InOneInitializerList) {
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  constexpr auto message = sysex8_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
+  ASSERT_EQ(message.number_of_bytes(), 4U);
+  EXPECT_EQ(message[0], 0x7E);
+  EXPECT_EQ(message[1], 0x7F);
+  EXPECT_EQ(message[2], 0x07);
+  EXPECT_EQ(message[3], 0x0D);
+}
+TEST(UMPTypes, Sysex8InOneIteratorWriteUsingAlgorithm) {
+  using testing::ElementsAreArray;
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  auto message = sysex8_in_1{}.group(0);
+  constexpr std::array src{0x1, 0x3, 0x5, 0x7};
+  std::ranges::copy(src, message.begin());
+  using count_type = sysex8_in_1::word0::number_of_bytes::uinteger;
+  message.number_of_bytes(static_cast<count_type>(src.size()));
+  EXPECT_THAT(message, ElementsAreArray(src));
+}
 TEST(UMPTypes, Sysex8InOneReadArray) {
-  constexpr auto message =
-      midi2::ump::data128::sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  constexpr auto message = sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   EXPECT_EQ(message[0], 0x7E);
   EXPECT_EQ(message[1], 0x7F);
   EXPECT_EQ(message[2], 0x07);

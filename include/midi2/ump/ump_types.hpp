@@ -2,6 +2,8 @@
 //
 // midi2 library under the MIT license.
 // See https://github.com/paulhuggett/AM_MIDI2.0Lib/blob/main/LICENSE for license information.
+//
+// SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
 // SPDX-License-Identifier: MIT
 //
 //===------------------------------------------------------------------------------------===//
@@ -28,6 +30,209 @@
 #include "midi2/adt/bitfield.hpp"
 #include "midi2/adt/uinteger.hpp"
 #include "midi2/ump/ump_utils.hpp"
+
+template <typename T>
+concept accessible_as_array = requires(T&& t) {
+  typename T::value_type;
+  requires requires { t.assign(std::size_t{}, typename T::value_type{}); } || std::is_const_v<T>;
+  { t.get(std::size_t{}) } -> std::convertible_to<typename T::value_type>;
+};
+
+template <accessible_as_array T> class array_subscript_proxy {
+public:
+  using value_type = typename T::value_type;
+
+  constexpr array_subscript_proxy(T* const owner, std::size_t const index) noexcept : owner_{owner}, index_{index} {
+    assert(owner != nullptr);
+  }
+  template <typename U>
+    requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
+  friend bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<U> const& rhs) {
+    return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
+  }
+  template <typename U>
+    requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
+  friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const& lhs,
+                                                     array_subscript_proxy<U> const& rhs) noexcept {
+    if (lhs.index_ < rhs.index_) {
+      return std::partial_ordering::less;
+    } else if (lhs.index_ == rhs.index_) {
+      return std::partial_ordering::equivalent;
+    } else {
+      return std::partial_ordering::greater;
+    }
+  }
+  constexpr array_subscript_proxy& operator=(value_type const v) noexcept
+    requires(!std::is_const_v<T>)
+  {
+    owner_->assign(index_, v);
+    return *this;
+  }
+  constexpr operator value_type() const noexcept { return owner_->get(index_); }
+
+  constexpr array_subscript_proxy& operator++() noexcept {
+    ++index_;
+    return *this;
+  }
+  constexpr array_subscript_proxy operator++(int) noexcept {
+    constexpr auto result = *this;
+    ++*this;
+    return result;
+  }
+  constexpr array_subscript_proxy& operator--() noexcept {
+    assert(index_ > 0 && "Index out of range");
+    --index_;
+    return *this;
+  }
+  constexpr array_subscript_proxy operator--(int) noexcept {
+    constexpr auto result = *this;
+    --*this;
+    return result;
+  }
+
+  template <std::integral U> constexpr auto& operator+=(U const n) noexcept {
+    index_ += n;
+    return *this;
+  }
+  template <std::integral U> constexpr auto& operator-=(U const n) noexcept {
+    assert(n <= index_ && "Index out of range");
+    index_ -= n;
+    return *this;
+  }
+
+  [[nodiscard]] constexpr T const* owner() const noexcept { return owner_; }
+  [[nodiscard]] constexpr T* owner() noexcept
+    requires(!std::is_const_v<T>)
+  {
+    return owner_;
+  }
+  [[nodiscard]] constexpr std::size_t index() const noexcept { return index_; }
+
+private:
+  T* owner_;
+  std::size_t index_;
+};
+
+template <typename T> class iterator_base {
+public:
+  /// Defines this class as fulfilling the requirements of a random-access iterator.
+  using iterator_category = std::random_access_iterator_tag;
+  /// The type accessible through this iterator.
+  using value_type = array_subscript_proxy<T>;
+  /// A type that can be used to identify distance between iterators.
+  using difference_type = std::ptrdiff_t;
+  /// Defines a pointer to the type iterated over.
+  using pointer = value_type*;
+  /// Defines a reference to the type iterated over.
+  using reference = value_type&;
+
+  constexpr iterator_base(T* owner, std::size_t const index) noexcept : arr_{array_subscript_proxy<T>{owner, index}} {}
+  constexpr iterator_base(iterator_base const& other) noexcept : arr_{other.arr_} {}
+  constexpr iterator_base(iterator_base&& other) noexcept : arr_{std::move(other.arr_)} {}
+  ~iterator_base() noexcept = default;
+
+  template <typename U>
+    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>> &&
+             (std::is_const_v<T> == std::is_const_v<U> || !std::is_const_v<U>))
+  iterator_base& operator=(iterator_base<U> const& other) noexcept {
+    arr_ = other.arr_;
+    return *this;
+  }
+  template <typename U>
+    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>> &&
+             (std::is_const_v<T> == std::is_const_v<U> || !std::is_const_v<U>))
+  iterator_base& operator=(iterator_base<U>&& other) noexcept {
+    arr_ = std::move(other.arr_);
+    return *this;
+  }
+
+  template <typename U>
+    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>>)
+  friend constexpr bool operator==(iterator_base lhs, iterator_base<U> rhs) noexcept {
+    return lhs.arr_ == rhs.arr_;
+  }
+
+  template <typename U>
+    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>>)
+  friend constexpr auto operator<=>(iterator_base lhs, iterator_base<U> rhs) noexcept {
+    return lhs.arr_ <=> rhs.arr_;
+  }
+
+  constexpr pointer operator->() noexcept { return &arr_; }
+  constexpr reference operator*() noexcept { return arr_; }
+
+  constexpr iterator_base& operator++() noexcept {
+    ++arr_;
+    return *this;
+  }
+  constexpr iterator_base operator++(int) noexcept {
+    auto const prev = *this;
+    ++*this;
+    return prev;
+  }
+  constexpr iterator_base& operator--() noexcept {
+    --arr_;
+    return *this;
+  }
+  constexpr iterator_base operator--(int) noexcept {
+    auto const prev = *this;
+    --*this;
+    return prev;
+  }
+
+  template <std::integral U> constexpr iterator_base& operator+=(U const n) noexcept {
+    arr_ += n;
+    return *this;
+  }
+  template <std::integral U> constexpr iterator_base& operator-=(U const n) noexcept {
+    arr_ -= n;
+    return *this;
+  }
+
+  /// Returns the distance between two iterators \p b - \p a.
+  ///
+  /// \param b  The first iterator.
+  /// \param a  The second iterator.
+  /// \returns  distance between two iterators \p b - \p a.
+  friend constexpr difference_type operator-(iterator_base b, iterator_base a) noexcept {
+    assert(a.arr_.owner() == b.arr_.owner() && "Cannot get the distance between iterators with different owners");
+    return static_cast<difference_type>(b.arr_.index()) - static_cast<difference_type>(a.arr_.index());
+  }
+
+  /// @{
+  /// Move an iterator \p it forwards by distance \p n. \p n can be both positive
+  /// or negative.
+
+  /// \param it  The iterator to be moved.
+  /// \param n  The distance by which iterator \p it should be moved.
+  /// \returns  The new iterator.
+  template <std::integral U> friend constexpr iterator_base operator+(iterator_base const it, U const n) noexcept {
+    auto t = it;
+    return t += n;
+  }
+  template <std::integral U> friend constexpr iterator_base operator+(U const n, iterator_base const it) noexcept {
+    return it + n;
+  }
+  /// @}
+
+  /// @{
+  /// Move an iterator \p it backwards by distance \p n. \p n can be both positive
+  /// or negative.
+  /// \param it  The iterator to be moved.
+  /// \param n  The distance by which iterator \p it should be moved.
+  /// \returns  The new iterator.
+  template <std::integral U> friend constexpr iterator_base operator-(iterator_base const it, U const n) noexcept {
+    auto t = it;
+    return t -= n;
+  }
+  template <std::integral U> friend constexpr iterator_base operator-(U const n, iterator_base const it) noexcept {
+    return it - n;
+  }
+  /// @}
+
+private:
+  value_type arr_;
+};
 
 namespace midi2::ump {
 
@@ -1955,103 +2160,38 @@ public:
   MIDI2_UMP_GETTER_SETTER(word1, data4, ump::data64::details::sysex7<Status>)
   MIDI2_UMP_GETTER_SETTER(word1, data5, ump::data64::details::sysex7<Status>)
 
-  template <bool IsConst> class array_subscript_proxy {
-  public:
-    template <bool OtherIsConst>
-    friend bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<OtherIsConst> const& rhs) {
-      return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
+  constexpr void assign(std::size_t index, adt::uinteger_t<7> const v) noexcept {
+    switch (index) {
+    case 0: this->data0(v); break;
+    case 1: this->data1(v); break;
+    case 2: this->data2(v); break;
+    case 3: this->data3(v); break;
+    case 4: this->data4(v); break;
+    case 5: this->data5(v); break;
+    default: assert(false && "Index out of range"); break;
     }
-    template <bool OtherIsConst>
-    friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const& lhs,
-                                                       array_subscript_proxy<OtherIsConst> const& rhs) noexcept {
-      if (lhs.index_ < rhs.index_) {
-        return std::partial_ordering::less;
-      } else if (lhs.index_ == rhs.index_) {
-        return std::partial_ordering::equivalent;
-      } else {
-        return std::partial_ordering::greater;
-      }
+  }
+  constexpr adt::uinteger_t<7> get(std::size_t index) const noexcept {
+    switch (index) {
+    case 0: return this->data0();
+    case 1: return this->data1();
+    case 2: return this->data2();
+    case 3: return this->data3();
+    case 4: return this->data4();
+    case 5: return this->data5();
+    default: assert(false && "Index out of range"); return 0;
     }
-    constexpr array_subscript_proxy& operator=(adt::uinteger_t<7> const v) noexcept
-      requires(!IsConst)
-    {
-      switch (index_) {
-      case 0: owner_->data0(v); break;
-      case 1: owner_->data1(v); break;
-      case 2: owner_->data2(v); break;
-      case 3: owner_->data3(v); break;
-      case 4: owner_->data4(v); break;
-      case 5: owner_->data5(v); break;
-      default: assert(false && "Index out of range"); break;
-      }
-      return *this;
-    }
-    constexpr operator adt::uinteger_t<7>() const noexcept {
-      switch (index_) {
-      case 0: return owner_->data0();
-      case 1: return owner_->data1();
-      case 2: return owner_->data2();
-      case 3: return owner_->data3();
-      case 4: return owner_->data4();
-      case 5: return owner_->data5();
-      default: assert(false && "Index out of range"); return 0;
-      }
-    }
-
-    constexpr array_subscript_proxy& operator++() noexcept {
-      ++index_;
-      assert(index_ < 6 && "Index out of range");
-      return *this;
-    }
-    constexpr array_subscript_proxy operator++(int) noexcept {
-      constexpr auto result = *this;
-      ++*this;
-      return result;
-    }
-    constexpr array_subscript_proxy& operator--() noexcept {
-      assert(index_ > 0 && "Index out of range");
-      --index_;
-      return *this;
-    }
-    constexpr array_subscript_proxy operator--(int) noexcept {
-      constexpr auto result = *this;
-      --*this;
-      return result;
-    }
-
-    template <std::integral U> constexpr auto& operator+=(U const n) noexcept {
-      index_ += n;
-      assert(index_ < 6 && "Index out of range");
-      return *this;
-    }
-    template <std::integral U> constexpr auto& operator-=(U const n) noexcept {
-      assert(n <= index_ && "Index out of range");
-      index_ -= n;
-      return *this;
-    }
-
-    using owner_type = std::conditional_t<IsConst, sysex7 const, sysex7>;
-    [[nodiscard]] constexpr owner_type const* owner() const noexcept { return owner_; }
-    [[nodiscard]] constexpr owner_type* owner() noexcept { return owner_; }
-    [[nodiscard]] constexpr std::size_t index() const noexcept { return index_; }
-
-  private:
-    friend class sysex7;
-    constexpr array_subscript_proxy(owner_type* owner, std::size_t const index) noexcept
-        : owner_{owner}, index_{index} {
-      assert(owner != nullptr);
-    }
-    owner_type* owner_;
-    std::size_t index_;
-  };
+  }
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
+    return array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
   }
 #else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<false>{this, idx}; }
-  constexpr decltype(auto) operator[](std::size_t idx) const noexcept { return array_subscript_proxy<true>{this, idx}; }
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<sysex7>{this, idx}; }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
+    return array_subscript_proxy<sysex7 const>{this, idx};
+  }
 #endif
 
   template <std::integral T> constexpr sysex7& data(std::initializer_list<T> vs) {
@@ -2093,141 +2233,19 @@ public:
     return this->number_of_bytes(static_cast<count_type>(index));
   }
 
-  template <bool IsConst> class iterator_base {
-  public:
-    /// Defines this class as fulfilling the requirements of a random-access iterator.
-    using iterator_category = std::random_access_iterator_tag;
-    /// The type accessible through this iterator.
-    using value_type = array_subscript_proxy<IsConst>;
-    /// A type that can be used to identify distance between iterators.
-    using difference_type = std::ptrdiff_t;
-    /// Defines a pointer to the type iterated over.
-    using pointer = value_type*;
-    /// Defines a reference to the type iterated over.
-    using reference = value_type&;
-
-    constexpr explicit iterator_base(array_subscript_proxy<IsConst> arr) noexcept : arr_{std::move(arr)} {}
-    constexpr iterator_base(iterator_base const& other) noexcept : arr_{other.arr_} {}
-    constexpr iterator_base(iterator_base&& other) noexcept : arr_{std::move(other.arr_)} {}
-    ~iterator_base() noexcept = default;
-
-    template <bool OtherIsConst>
-      requires(IsConst == OtherIsConst || !OtherIsConst)
-    iterator_base& operator=(iterator_base<OtherIsConst> const& other) noexcept {
-      arr_ = other.arr_;
-      return *this;
-    }
-    template <bool OtherIsConst>
-      requires(IsConst == OtherIsConst || !OtherIsConst)
-    iterator_base& operator=(iterator_base<OtherIsConst>&& other) noexcept {
-      arr_ = std::move(other.arr_);
-      return *this;
-    }
-
-    template <bool RhsIsConst>
-    friend constexpr bool operator==(iterator_base lhs, iterator_base<RhsIsConst> rhs) noexcept {
-      return lhs.arr_ == rhs.arr_;
-    }
-    template <bool RhsIsConst>
-    friend constexpr auto operator<=>(iterator_base lhs, iterator_base<RhsIsConst> rhs) noexcept {
-      return lhs.arr_ <=> rhs.arr_;
-    }
-
-    constexpr pointer operator->() noexcept { return &arr_; }
-    constexpr reference operator*() noexcept { return arr_; }
-
-    constexpr iterator_base& operator++() noexcept {
-      ++arr_;
-      return *this;
-    }
-    constexpr iterator_base operator++(int) noexcept {
-      auto const prev = *this;
-      ++*this;
-      return prev;
-    }
-    constexpr iterator_base& operator--() noexcept {
-      --arr_;
-      return *this;
-    }
-    constexpr iterator_base operator--(int) noexcept {
-      auto const prev = *this;
-      --*this;
-      return prev;
-    }
-
-    template <std::integral U> constexpr iterator_base& operator+=(U const n) noexcept {
-      arr_ += n;
-      return *this;
-    }
-    template <std::integral U> constexpr iterator_base& operator-=(U const n) noexcept {
-      arr_ -= n;
-      return *this;
-    }
-
-    /// Returns the distance between two iterators \p b - \p a.
-    ///
-    /// \param b  The first iterator.
-    /// \param a  The second iterator.
-    /// \returns  distance between two iterators \p b - \p a.
-    friend constexpr difference_type operator-(iterator_base b, iterator_base a) noexcept {
-      assert(a.arr_.owner() == b.arr_.owner() && "Cannot get the distance between iterators with different owners");
-      return static_cast<difference_type>(b.arr_.index()) - static_cast<difference_type>(a.arr_.index());
-    }
-
-    /// @{
-    /// Move an iterator \p it forwards by distance \p n. \p n can be both positive
-    /// or negative.
-
-    /// \param it  The iterator to be moved.
-    /// \param n  The distance by which iterator \p it should be moved.
-    /// \returns  The new iterator.
-    template <std::integral U> friend constexpr iterator_base operator+(iterator_base const it, U const n) noexcept {
-      auto t = it;
-      return t += n;
-    }
-    template <std::integral U> friend constexpr iterator_base operator+(U const n, iterator_base const it) noexcept {
-      return it + n;
-    }
-    /// @}
-
-    /// @{
-    /// Move an iterator \p it backwards by distance \p n. \p n can be both positive
-    /// or negative.
-    /// \param it  The iterator to be moved.
-    /// \param n  The distance by which iterator \p it should be moved.
-    /// \returns  The new iterator.
-    template <std::integral U> friend constexpr iterator_base operator-(iterator_base const it, U const n) noexcept {
-      auto t = it;
-      return t -= n;
-    }
-    template <std::integral U> friend constexpr iterator_base operator-(U const n, iterator_base const it) noexcept {
-      return it - n;
-    }
-    /// @}
-
-  private:
-    array_subscript_proxy<IsConst> arr_;
-  };
-
   using value_type = adt::uinteger_t<7>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator = iterator_base<false>;
-  using const_iterator = iterator_base<true>;
+  using iterator = iterator_base<sysex7>;
+  using const_iterator = iterator_base<sysex7 const>;
 
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{array_subscript_proxy<false>{this, 0}}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{array_subscript_proxy<true>{this, 0}}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
 
-  [[nodiscard]] constexpr auto end() noexcept {
-    return iterator{array_subscript_proxy<false>{this, this->number_of_bytes()}};
-  }
-  [[nodiscard]] constexpr auto end() const noexcept {
-    return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}};
-  }
-  [[nodiscard]] constexpr auto cend() noexcept {
-    return const_iterator{array_subscript_proxy<true>{this, this->number_of_bytes()}};
-  }
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
 
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
@@ -4986,9 +5004,6 @@ public:
     using data9 = adt::bit_range<16, 8>;
     using data10 = adt::bit_range<8, 8>;
     using data11 = adt::bit_range<0, 8>;
-
-    /// Defines the bit position of the value3 field.
-    //    using value3 = adt::bit_range<0, 32>;
   };
 
   constexpr text_common() noexcept = default;
@@ -5016,69 +5031,83 @@ public:
   MIDI2_UMP_GETTER_SETTER(word3, data10, ump::flex_data::text_common)
   MIDI2_UMP_GETTER_SETTER(word3, data11, ump::flex_data::text_common)
 
-  template <bool IsConst> class array_subscript_proxy {
-  public:
-    constexpr array_subscript_proxy& operator=(adt::uinteger_t<8> const v) noexcept
-      requires(!IsConst)
-    {
-      switch (index_) {
-      case 0: owner_->data0(v); break;
-      case 1: owner_->data1(v); break;
-      case 2: owner_->data2(v); break;
-      case 3: owner_->data3(v); break;
-      case 4: owner_->data4(v); break;
-      case 5: owner_->data5(v); break;
-      case 6: owner_->data6(v); break;
-      case 7: owner_->data7(v); break;
-      case 8: owner_->data8(v); break;
-      case 9: owner_->data9(v); break;
-      case 10: owner_->data10(v); break;
-      case 11: owner_->data11(v); break;
-      default: assert(false && "Index out of range"); break;
-      }
-      return *this;
-    }
-    constexpr operator char8_t() const noexcept {
-      switch (index_) {
-      case 0: return owner_->data0();
-      case 1: return owner_->data1();
-      case 2: return owner_->data2();
-      case 3: return owner_->data3();
-      case 4: return owner_->data4();
-      case 5: return owner_->data5();
-      case 6: return owner_->data6();
-      case 7: return owner_->data7();
-      case 8: return owner_->data8();
-      case 9: return owner_->data9();
-      case 10: return owner_->data10();
-      case 11: return owner_->data11();
-      default: assert(false && "Index out of range"); return 0;
-      }
-    }
-
-  private:
-    friend class text_common;
-    using owner_type = std::conditional_t<IsConst, text_common const, text_common>;
-    constexpr array_subscript_proxy(owner_type* const owner, std::size_t const index) noexcept
-        : owner_{owner}, index_{index} {
-      assert(owner != nullptr);
-    }
-    owner_type* owner_;
-    std::size_t index_;
-  };
-
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
+    return array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
+    return array_subscript_proxy<text_common>{this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
+    return array_subscript_proxy<text_common const>{this, idx};
   }
 #endif
+
+  using value_type = adt::uinteger_t<8>;
+
+  constexpr void assign(std::size_t index, value_type const v) noexcept {
+    switch (index) {
+    case 0: this->data0(v); break;
+    case 1: this->data1(v); break;
+    case 2: this->data2(v); break;
+    case 3: this->data3(v); break;
+    case 4: this->data4(v); break;
+    case 5: this->data5(v); break;
+    case 6: this->data6(v); break;
+    case 7: this->data7(v); break;
+    case 8: this->data8(v); break;
+    case 9: this->data9(v); break;
+    case 10: this->data10(v); break;
+    case 11: this->data11(v); break;
+    default: assert(false && "Index out of range"); break;
+    }
+  }
+  constexpr value_type get(std::size_t index) const noexcept {
+    switch (index) {
+    case 0: return this->data0();
+    case 1: return this->data1();
+    case 2: return this->data2();
+    case 3: return this->data3();
+    case 4: return this->data4();
+    case 5: return this->data5();
+    case 6: return this->data6();
+    case 7: return this->data7();
+    case 8: return this->data8();
+    case 9: return this->data9();
+    case 10: return this->data10();
+    case 11: return this->data11();
+    default: assert(false && "Index out of range"); return 0;
+    }
+  }
+
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using iterator = iterator_base<text_common>;
+  using const_iterator = iterator_base<text_common const>;
+
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
+  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
+
+  std::size_t number_of_bytes() const {
+    std::size_t index = 0;
+    // TODO: check whole words for 0 first. Search backwards.
+    for (; index < 12; ++index) {
+      if (this->get(index) == '\0') {
+        break;
+      }
+    }
+    return index;
+  }
 
 private:
   friend struct ::std::tuple_size<text_common>;
@@ -5205,69 +5234,110 @@ public:
   MIDI2_UMP_GETTER_SETTER(word3, data11, ump::data128::details::sysex8<Status>)
   MIDI2_UMP_GETTER_SETTER(word3, data12, ump::data128::details::sysex8<Status>)
 
-  template <bool IsConst> class array_subscript_proxy {
-  public:
-    constexpr array_subscript_proxy& operator=(adt::uinteger_t<8> const v) noexcept
-      requires(!IsConst)
-    {
-      switch (index_) {
-      case 0: owner_->data0(v); break;
-      case 1: owner_->data1(v); break;
-      case 2: owner_->data2(v); break;
-      case 3: owner_->data3(v); break;
-      case 4: owner_->data4(v); break;
-      case 5: owner_->data5(v); break;
-      case 6: owner_->data6(v); break;
-      case 7: owner_->data7(v); break;
-      case 8: owner_->data8(v); break;
-      case 9: owner_->data9(v); break;
-      case 10: owner_->data10(v); break;
-      case 11: owner_->data11(v); break;
-      case 12: owner_->data12(v); break;
-      default: assert(false && "Index out of range"); break;
-      }
-      return *this;
+  constexpr void assign(std::size_t index, adt::uinteger_t<8> const v) noexcept {
+    switch (index) {
+    case 0: this->data0(v); break;
+    case 1: this->data1(v); break;
+    case 2: this->data2(v); break;
+    case 3: this->data3(v); break;
+    case 4: this->data4(v); break;
+    case 5: this->data5(v); break;
+    case 6: this->data6(v); break;
+    case 7: this->data7(v); break;
+    case 8: this->data8(v); break;
+    case 9: this->data9(v); break;
+    case 10: this->data10(v); break;
+    case 11: this->data11(v); break;
+    case 12: this->data12(v); break;
+    default: assert(false && "Index out of range"); break;
     }
-    constexpr operator adt::uinteger_t<8>() const noexcept {
-      switch (index_) {
-      case 0: return owner_->data0();
-      case 1: return owner_->data1();
-      case 2: return owner_->data2();
-      case 3: return owner_->data3();
-      case 4: return owner_->data4();
-      case 5: return owner_->data5();
-      case 6: return owner_->data6();
-      case 7: return owner_->data7();
-      case 8: return owner_->data8();
-      case 9: return owner_->data9();
-      case 10: return owner_->data10();
-      case 11: return owner_->data11();
-      case 12: return owner_->data12();
-      default: assert(false && "Index out of range"); return 0;
-      }
+  }
+  constexpr adt::uinteger_t<8> get(std::size_t index) const noexcept {
+    switch (index) {
+    case 0: return this->data0();
+    case 1: return this->data1();
+    case 2: return this->data2();
+    case 3: return this->data3();
+    case 4: return this->data4();
+    case 5: return this->data5();
+    case 6: return this->data6();
+    case 7: return this->data7();
+    case 8: return this->data8();
+    case 9: return this->data9();
+    case 10: return this->data10();
+    case 11: return this->data11();
+    case 12: return this->data12();
+    default: assert(false && "Index out of range"); return 0;
     }
-
-  private:
-    friend class sysex8;
-    using owner_type = std::conditional_t<IsConst, sysex8 const, sysex8>;
-    constexpr array_subscript_proxy(owner_type* const owner, std::size_t const index) noexcept
-        : owner_{owner}, index_{index} {}
-    owner_type* owner_;
-    std::size_t index_;
-  };
+  }
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
     return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
   }
 #else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
-  }
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<sysex8>{this, idx}; }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(*this)>>>{this, idx};
+    return array_subscript_proxy<sysex8 const>{this, idx};
   }
 #endif
+
+  template <std::integral T> constexpr sysex8& data(std::initializer_list<T> vs) {
+    assert(vs.size() <= this->max_size() && "initializer list has too many members");
+    auto index = std::size_t{0};
+    for (auto v : vs) {
+      assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
+      (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
+      ++index;
+    }
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+  template <std::ranges::input_range Range, typename Proj = std::identity>
+    requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
+  constexpr sysex8& data(Range&& range, Proj proj = {}) {
+    auto index = std::size_t{0};
+    std::ranges::for_each(
+        std::forward<Range>(range),
+        [this, &index](auto v) constexpr {
+          assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
+          (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
+          ++index;
+        },
+        proj);
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+  template <std::input_iterator I, std::sentinel_for<I> S>
+    requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
+  constexpr sysex8& data(I first, S last) {
+    auto index = std::size_t{0};
+    std::for_each(first, last, [this, &index](auto v) constexpr {
+      assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
+      (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
+      ++index;
+    });
+    using count_type = word0::number_of_bytes::uinteger;
+    return this->number_of_bytes(static_cast<count_type>(index));
+  }
+
+  using value_type = adt::uinteger_t<8>;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using iterator = iterator_base<sysex8>;
+  using const_iterator = iterator_base<sysex8 const>;
+
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
+  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
 
 private:
   friend struct ::std::tuple_size<sysex8>;
