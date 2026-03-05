@@ -25,7 +25,7 @@ jobs:
           - name: macOS-14/Xcode/Debug
             build_type: Debug
             generator: Xcode
-            options: -DMIDI2_TEXT_COMMON_STRING:BOOL:Yes
+            options: -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
             os: macos-15
             package: TGZ
 
@@ -42,7 +42,7 @@ jobs:
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
-            options: -DMIDI2_TEXT_COMMON_STRING:BOOL:Yes
+            options: -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
             generator: Unix Makefiles
             os: ubuntu-24.04
             package: TGZ
@@ -52,7 +52,7 @@ jobs:
             build_type: RelWithDebug
             cxx_compiler: -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_C_COMPILER=gcc-13
             gcc_install: 13
-            options: -D MIDI2_SANITIZE:BOOL=Yes -DMIDI2_TEXT_COMMON_STRING:BOOL:Yes
+            options: -D MIDI2_SANITIZE:BOOL=Yes -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
             generator: Unix Makefiles
             os: ubuntu-24.04
             package: TGZ
@@ -73,7 +73,7 @@ jobs:
             build_type: Debug
             cxx_compiler: -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_C_COMPILER=clang-18
             generator: Ninja
-            options: -D MIDI2_SANITIZE:BOOL=Yes -DMIDI2_TEXT_COMMON_STRING:BOOL:Yes
+            options: -D MIDI2_SANITIZE:BOOL=Yes -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
             os: ubuntu-24.04
             package: TGZ
 
@@ -92,7 +92,7 @@ jobs:
           - name: Windows-latest/VS2022/Debug
             build_type: Debug
             generator: Visual Studio 17 2022
-            options: -DMIDI2_TEXT_COMMON_STRING:BOOL:Yes
+            options: -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
             os: windows-latest
             package: ZIP
 
