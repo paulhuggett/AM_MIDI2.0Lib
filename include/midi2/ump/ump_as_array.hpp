@@ -27,7 +27,7 @@
 namespace midi2::ump::details {
 
 template <typename T>
-concept accessible_as_array = requires(T&& t) {
+concept accessible_as_array = requires(T t) {
   typename T::value_type;
   requires requires { t.data(std::size_t{}, typename T::value_type{}); } || std::is_const_v<T>;
   { t.data(std::size_t{}) } -> std::convertible_to<typename T::value_type>;
