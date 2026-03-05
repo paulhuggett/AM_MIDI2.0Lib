@@ -2026,7 +2026,7 @@ public:
   template <std::ranges::input_range Range, typename Proj = std::identity>
     requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
   constexpr sysex7& data(Range&& range, Proj proj = {}) {
-    auto const index = ::midi2::ump::details::data_helper<sysex7, 7U>::data(*this, std::forward<Range>(range));
+    auto const index = ::midi2::ump::details::data_helper<sysex7, 7U>::data(*this, std::forward<Range>(range), proj);
     return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
   }
 
@@ -4916,7 +4916,7 @@ public:
   template <std::ranges::input_range Range, typename Proj = std::identity>
     requires std::is_convertible_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>, char8_t>
   constexpr text_common& data(Range&& range, Proj proj = {}) {
-    auto const index = details::data_helper<text_common, 8U>::data(*this, std::forward<Range>(range));
+    auto const index = details::data_helper<text_common, 8U>::data(*this, std::forward<Range>(range), proj);
     auto const begin = this->begin();
     std::fill(begin + index, begin + this->max_size(), '\0');
     return *this;
@@ -5161,7 +5161,7 @@ public:
   template <std::ranges::input_range Range, typename Proj = std::identity>
     requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
   constexpr sysex8& data(Range&& range, Proj proj = {}) {
-    auto const index = ::midi2::ump::details::data_helper<sysex8, 8U>::data(*this, std::forward<Range>(range));
+    auto const index = ::midi2::ump::details::data_helper<sysex8, 8U>::data(*this, std::forward<Range>(range), proj);
     return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
   }
 
