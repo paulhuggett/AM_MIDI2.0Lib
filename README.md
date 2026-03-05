@@ -253,8 +253,3 @@ int main() {
 ```
 
 ---
-
-```
-SPDX-FileCopyrightText: Copyright © 2025 Paul Bowen-Huggett
-SPDX-License-Identifier: MIT
-```
