@@ -8,6 +8,9 @@
 //
 //===------------------------------------------------------------------------------------===//
 
+// Force the UMP text-common message to include the str() method.
+#define MIDI2_TEXT_COMMON_STRING (1)
+
 #include "midi2/ump/ump_types.hpp"
 
 // Google test
@@ -202,6 +205,140 @@ TEST(UMPTypes, Sysex8InOneReadArray) {
   EXPECT_EQ(message[3], 0x0D);
   EXPECT_EQ(message[4], 0x00);
   EXPECT_EQ(message[5], 0x00);
+}
+
+TEST(UMPTypes, TextCommonInitializerList) {
+  using text_common = midi2::ump::flex_data::text_common;
+  constexpr auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd'});
+  ASSERT_EQ(message.number_of_bytes(), 4U);
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  EXPECT_EQ(message.str(), u8"abcd");
+#endif
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], '\0');
+  EXPECT_EQ(message[5], '\0');
+  EXPECT_EQ(message[6], '\0');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
+}
+TEST(UMPTypes, TextCommonDataSetByIteratorSentinel) {
+  using namespace std::literals::string_view_literals;
+  using text_common = midi2::ump::flex_data::text_common;
+  constexpr auto str = u8"hello"sv;
+  constexpr auto message = text_common{}.group(0).data(std::begin(str), std::end(str));
+  ASSERT_EQ(message.number_of_bytes(), 5U);
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  EXPECT_EQ(message.str(), str);
+#endif
+  EXPECT_EQ(message[0], 'h');
+  EXPECT_EQ(message[1], 'e');
+  EXPECT_EQ(message[2], 'l');
+  EXPECT_EQ(message[3], 'l');
+  EXPECT_EQ(message[4], 'o');
+  EXPECT_EQ(message[5], '\0');
+  EXPECT_EQ(message[6], '\0');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
+}
+TEST(UMPTypes, TextCommonIteratorWriteUsingAlgorithm) {
+  using testing::ElementsAreArray;
+  using text_common = midi2::ump::flex_data::text_common;
+  auto message = text_common{}.group(0);
+  constexpr std::array src{'a', 'b', 'c', 'd'};
+  std::ranges::copy(src, message.begin());
+  EXPECT_THAT(message, ElementsAreArray(src));
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  EXPECT_EQ(message.str(), u8"abcd");
+#endif
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], '\0');
+  EXPECT_EQ(message[5], '\0');
+  EXPECT_EQ(message[6], '\0');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
+}
+TEST(UMPTypes, TextCommonMaxSize) {
+  EXPECT_EQ(midi2::ump::flex_data::text_common{}.max_size(), 12U);
+}
+TEST(UMPTypes, TextCommonReadArray) {
+  using text_common = midi2::ump::flex_data::text_common;
+  auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'});
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], 'e');
+  EXPECT_EQ(message[5], 'f');
+  EXPECT_EQ(message[6], 'g');
+  EXPECT_EQ(message[7], 'h');
+  EXPECT_EQ(message[8], 'i');
+  EXPECT_EQ(message[9], 'j');
+  EXPECT_EQ(message[10], 'k');
+  EXPECT_EQ(message[11], 'l');
+  message.data({'a', 'b'});
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], '\0');
+  EXPECT_EQ(message[3], '\0');
+  EXPECT_EQ(message[4], '\0');
+  EXPECT_EQ(message[5], '\0');
+  EXPECT_EQ(message[6], '\0');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
+}
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+TEST(UMPTypes, TextCommonString) {
+  using text_common = midi2::ump::flex_data::text_common;
+  constexpr auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd', 'e', 'f', 'g'});
+  EXPECT_EQ(message.str(), u8"abcdefg");
+}
+#endif  // MIDI2_TEXT_COMMON_STRING
+TEST(UMPTypes, TextCommonDataFromString) {
+  using text_common = midi2::ump::flex_data::text_common;
+  auto message = text_common{}.group(0).data("abcdefg");
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], 'e');
+  EXPECT_EQ(message[5], 'f');
+  EXPECT_EQ(message[6], 'g');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
+  message.data("ab");
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], '\0');
+  EXPECT_EQ(message[3], '\0');
+  EXPECT_EQ(message[4], '\0');
+  EXPECT_EQ(message[5], '\0');
+  EXPECT_EQ(message[6], '\0');
+  EXPECT_EQ(message[7], '\0');
+  EXPECT_EQ(message[8], '\0');
+  EXPECT_EQ(message[9], '\0');
+  EXPECT_EQ(message[10], '\0');
+  EXPECT_EQ(message[11], '\0');
 }
 
 }  // end anonymous namespace

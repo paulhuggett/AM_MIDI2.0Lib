@@ -24,6 +24,7 @@ option(MIDI2_FUZZTEST  "Enable Fuzz Testing"       No )
 option(MIDI2_UNITTEST  "Enable Unit Testing"       Yes)
 option(MIDI2_DEMO      "Enable the demo programs"  No )
 option(MIDI2_BENCHMARK "Enable the benchmark"      No )
+option(MIDI2_TEXT_COMMON_STRING "Enable std::string in the UMP text_common message class" No)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -51,6 +52,7 @@ set(ci_headers
   "${INCLUDE_DIR}/midi2/ci/ci_types.hpp"
 )
 set(ump_headers
+  "${INCLUDE_DIR}/midi2/ump/ump_as_array.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_dispatcher.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_dispatcher_backend.hpp"
   "${INCLUDE_DIR}/midi2/ump/ump_to_midi1.hpp"

@@ -23,216 +23,19 @@
 #include <limits>
 #include <ranges>
 #include <span>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+#include <string>
+#endif
+
 #include "midi2/adt/bitfield.hpp"
 #include "midi2/adt/uinteger.hpp"
+#include "midi2/ump/ump_as_array.hpp"
 #include "midi2/ump/ump_utils.hpp"
-
-template <typename T>
-concept accessible_as_array = requires(T&& t) {
-  typename T::value_type;
-  requires requires { t.assign(std::size_t{}, typename T::value_type{}); } || std::is_const_v<T>;
-  { t.get(std::size_t{}) } -> std::convertible_to<typename T::value_type>;
-};
-
-template <accessible_as_array T> class array_subscript_proxy {
-public:
-  using value_type = typename T::value_type;
-
-  constexpr array_subscript_proxy(T* const owner, std::size_t const index) noexcept : owner_{owner}, index_{index} {
-    assert(owner != nullptr);
-  }
-  template <typename U>
-    requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
-  friend bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<U> const& rhs) {
-    return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
-  }
-  template <typename U>
-    requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
-  friend constexpr std::partial_ordering operator<=>(array_subscript_proxy const& lhs,
-                                                     array_subscript_proxy<U> const& rhs) noexcept {
-    if (lhs.index_ < rhs.index_) {
-      return std::partial_ordering::less;
-    } else if (lhs.index_ == rhs.index_) {
-      return std::partial_ordering::equivalent;
-    } else {
-      return std::partial_ordering::greater;
-    }
-  }
-  constexpr array_subscript_proxy& operator=(value_type const v) noexcept
-    requires(!std::is_const_v<T>)
-  {
-    owner_->assign(index_, v);
-    return *this;
-  }
-  constexpr operator value_type() const noexcept { return owner_->get(index_); }
-
-  constexpr array_subscript_proxy& operator++() noexcept {
-    ++index_;
-    return *this;
-  }
-  constexpr array_subscript_proxy operator++(int) noexcept {
-    constexpr auto result = *this;
-    ++*this;
-    return result;
-  }
-  constexpr array_subscript_proxy& operator--() noexcept {
-    assert(index_ > 0 && "Index out of range");
-    --index_;
-    return *this;
-  }
-  constexpr array_subscript_proxy operator--(int) noexcept {
-    constexpr auto result = *this;
-    --*this;
-    return result;
-  }
-
-  template <std::integral U> constexpr auto& operator+=(U const n) noexcept {
-    index_ += n;
-    return *this;
-  }
-  template <std::integral U> constexpr auto& operator-=(U const n) noexcept {
-    assert(n <= index_ && "Index out of range");
-    index_ -= n;
-    return *this;
-  }
-
-  [[nodiscard]] constexpr T const* owner() const noexcept { return owner_; }
-  [[nodiscard]] constexpr T* owner() noexcept
-    requires(!std::is_const_v<T>)
-  {
-    return owner_;
-  }
-  [[nodiscard]] constexpr std::size_t index() const noexcept { return index_; }
-
-private:
-  T* owner_;
-  std::size_t index_;
-};
-
-template <typename T> class iterator_base {
-public:
-  /// Defines this class as fulfilling the requirements of a random-access iterator.
-  using iterator_category = std::random_access_iterator_tag;
-  /// The type accessible through this iterator.
-  using value_type = array_subscript_proxy<T>;
-  /// A type that can be used to identify distance between iterators.
-  using difference_type = std::ptrdiff_t;
-  /// Defines a pointer to the type iterated over.
-  using pointer = value_type*;
-  /// Defines a reference to the type iterated over.
-  using reference = value_type&;
-
-  constexpr iterator_base(T* owner, std::size_t const index) noexcept : arr_{array_subscript_proxy<T>{owner, index}} {}
-  constexpr iterator_base(iterator_base const& other) noexcept : arr_{other.arr_} {}
-  constexpr iterator_base(iterator_base&& other) noexcept : arr_{std::move(other.arr_)} {}
-  ~iterator_base() noexcept = default;
-
-  template <typename U>
-    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>> &&
-             (std::is_const_v<T> == std::is_const_v<U> || !std::is_const_v<U>))
-  iterator_base& operator=(iterator_base<U> const& other) noexcept {
-    arr_ = other.arr_;
-    return *this;
-  }
-  template <typename U>
-    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>> &&
-             (std::is_const_v<T> == std::is_const_v<U> || !std::is_const_v<U>))
-  iterator_base& operator=(iterator_base<U>&& other) noexcept {
-    arr_ = std::move(other.arr_);
-    return *this;
-  }
-
-  template <typename U>
-    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>>)
-  friend constexpr bool operator==(iterator_base lhs, iterator_base<U> rhs) noexcept {
-    return lhs.arr_ == rhs.arr_;
-  }
-
-  template <typename U>
-    requires(std::is_same_v<std::remove_const<T>, std::remove_const<U>>)
-  friend constexpr auto operator<=>(iterator_base lhs, iterator_base<U> rhs) noexcept {
-    return lhs.arr_ <=> rhs.arr_;
-  }
-
-  constexpr pointer operator->() noexcept { return &arr_; }
-  constexpr reference operator*() noexcept { return arr_; }
-
-  constexpr iterator_base& operator++() noexcept {
-    ++arr_;
-    return *this;
-  }
-  constexpr iterator_base operator++(int) noexcept {
-    auto const prev = *this;
-    ++*this;
-    return prev;
-  }
-  constexpr iterator_base& operator--() noexcept {
-    --arr_;
-    return *this;
-  }
-  constexpr iterator_base operator--(int) noexcept {
-    auto const prev = *this;
-    --*this;
-    return prev;
-  }
-
-  template <std::integral U> constexpr iterator_base& operator+=(U const n) noexcept {
-    arr_ += n;
-    return *this;
-  }
-  template <std::integral U> constexpr iterator_base& operator-=(U const n) noexcept {
-    arr_ -= n;
-    return *this;
-  }
-
-  /// Returns the distance between two iterators \p b - \p a.
-  ///
-  /// \param b  The first iterator.
-  /// \param a  The second iterator.
-  /// \returns  distance between two iterators \p b - \p a.
-  friend constexpr difference_type operator-(iterator_base b, iterator_base a) noexcept {
-    assert(a.arr_.owner() == b.arr_.owner() && "Cannot get the distance between iterators with different owners");
-    return static_cast<difference_type>(b.arr_.index()) - static_cast<difference_type>(a.arr_.index());
-  }
-
-  /// @{
-  /// Move an iterator \p it forwards by distance \p n. \p n can be both positive
-  /// or negative.
-
-  /// \param it  The iterator to be moved.
-  /// \param n  The distance by which iterator \p it should be moved.
-  /// \returns  The new iterator.
-  template <std::integral U> friend constexpr iterator_base operator+(iterator_base const it, U const n) noexcept {
-    auto t = it;
-    return t += n;
-  }
-  template <std::integral U> friend constexpr iterator_base operator+(U const n, iterator_base const it) noexcept {
-    return it + n;
-  }
-  /// @}
-
-  /// @{
-  /// Move an iterator \p it backwards by distance \p n. \p n can be both positive
-  /// or negative.
-  /// \param it  The iterator to be moved.
-  /// \param n  The distance by which iterator \p it should be moved.
-  /// \returns  The new iterator.
-  template <std::integral U> friend constexpr iterator_base operator-(iterator_base const it, U const n) noexcept {
-    auto t = it;
-    return t -= n;
-  }
-  template <std::integral U> friend constexpr iterator_base operator-(U const n, iterator_base const it) noexcept {
-    return it - n;
-  }
-  /// @}
-
-private:
-  value_type arr_;
-};
 
 namespace midi2::ump {
 
@@ -2160,84 +1963,11 @@ public:
   MIDI2_UMP_GETTER_SETTER(word1, data4, ump::data64::details::sysex7<Status>)
   MIDI2_UMP_GETTER_SETTER(word1, data5, ump::data64::details::sysex7<Status>)
 
-  constexpr void assign(std::size_t index, adt::uinteger_t<7> const v) noexcept {
-    switch (index) {
-    case 0: this->data0(v); break;
-    case 1: this->data1(v); break;
-    case 2: this->data2(v); break;
-    case 3: this->data3(v); break;
-    case 4: this->data4(v); break;
-    case 5: this->data5(v); break;
-    default: assert(false && "Index out of range"); break;
-    }
-  }
-  constexpr adt::uinteger_t<7> get(std::size_t index) const noexcept {
-    switch (index) {
-    case 0: return this->data0();
-    case 1: return this->data1();
-    case 2: return this->data2();
-    case 3: return this->data3();
-    case 4: return this->data4();
-    case 5: return this->data5();
-    default: assert(false && "Index out of range"); return 0;
-    }
-  }
-
-#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
-  }
-#else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<sysex7>{this, idx}; }
-  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<sysex7 const>{this, idx};
-  }
-#endif
-
-  template <std::integral T> constexpr sysex7& data(std::initializer_list<T> vs) {
-    assert(vs.size() <= this->max_size() && "initializer list has too many members");
-    auto index = std::size_t{0};
-    for (auto v : vs) {
-      assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-      (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
-      ++index;
-    }
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
-  }
-  template <std::ranges::input_range Range, typename Proj = std::identity>
-    requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
-  constexpr sysex7& data(Range&& range, Proj proj = {}) {
-    auto index = std::size_t{0};
-    std::ranges::for_each(
-        std::forward<Range>(range),
-        [this, &index](auto v) constexpr {
-          assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-          (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
-          ++index;
-        },
-        proj);
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
-  }
-  template <std::input_iterator I, std::sentinel_for<I> S>
-    requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
-  constexpr sysex7& data(I first, S last) {
-    auto index = std::size_t{0};
-    std::for_each(first, last, [this, &index](auto v) constexpr {
-      assert(v >= 0 && v < (1 << 7) && "initializer value is out of range");
-      (*this)[index] = static_cast<adt::uinteger_t<7>>(v);
-      ++index;
-    });
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
-  }
-
   using value_type = adt::uinteger_t<7>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator = iterator_base<sysex7>;
-  using const_iterator = iterator_base<sysex7 const>;
+  using iterator = ::midi2::ump::details::iterator_base<sysex7>;
+  using const_iterator = ::midi2::ump::details::iterator_base<sysex7 const>;
 
   [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
   [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
@@ -2250,6 +1980,62 @@ public:
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
   [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
+
+#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
+  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+  }
+#else
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
+    return midi2::ump::details::array_subscript_proxy<sysex7>{this, idx};
+  }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
+    return midi2::ump::details::array_subscript_proxy<sysex7 const>{this, idx};
+  }
+#endif
+
+  constexpr sysex7& data(std::size_t const index, adt::uinteger_t<7> const v) noexcept {
+    switch (index) {
+    case 0: this->data0(v); break;
+    case 1: this->data1(v); break;
+    case 2: this->data2(v); break;
+    case 3: this->data3(v); break;
+    case 4: this->data4(v); break;
+    case 5: this->data5(v); break;
+    default: assert(false && "Index out of range"); break;
+    }
+    return *this;
+  }
+  [[nodiscard]] constexpr adt::uinteger_t<7> data(std::size_t const index) const noexcept {
+    switch (index) {
+    case 0: return this->data0();
+    case 1: return this->data1();
+    case 2: return this->data2();
+    case 3: return this->data3();
+    case 4: return this->data4();
+    case 5: return this->data5();
+    default: assert(false && "Index out of range"); return 0;
+    }
+  }
+
+  template <std::integral T> constexpr sysex7& data(std::initializer_list<T> vs) {
+    auto const index = ::midi2::ump::details::data_helper<sysex7, 7U>::data(*this, vs);
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
+  }
+
+  template <std::ranges::input_range Range, typename Proj = std::identity>
+    requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
+  constexpr sysex7& data(Range&& range, Proj proj = {}) {
+    auto const index = ::midi2::ump::details::data_helper<sysex7, 7U>::data(*this, std::forward<Range>(range));
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
+  }
+
+  template <std::input_iterator I, std::sentinel_for<I> S>
+    requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
+  constexpr sysex7& data(I first, S last) {
+    auto const index = ::midi2::ump::details::data_helper<sysex7, 7U>::data(*this, first, last);
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
+  }
 
 private:
   friend struct ::std::tuple_size<sysex7>;
@@ -2295,6 +2081,26 @@ static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_continue> ==
               midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
               midi2::ump::message_size<midi2::ump::message_type::data64>::value);
+
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_in_1::iterator>,
+              "sysex7_in_1::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_in_1::const_iterator>,
+              "sysex7_in_1::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_start::iterator>,
+              "sysex7_start::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_start::const_iterator>,
+              "sysex7_start::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_continue::iterator>,
+              "sysex7_continue::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_continue::const_iterator>,
+              "sysex7_continue::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_end::iterator>,
+              "sysex7_end::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_end::const_iterator>,
+              "sysex7_end::const_iterator should meet the requiremenets of std::random_access_iterator");
 
 //*        ___               *
 //*  _ __ |_  )____ ___ __   *
@@ -5031,22 +4837,38 @@ public:
   MIDI2_UMP_GETTER_SETTER(word3, data10, ump::flex_data::text_common)
   MIDI2_UMP_GETTER_SETTER(word3, data11, ump::flex_data::text_common)
 
+  using value_type = char8_t;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using iterator = details::iterator_base<text_common>;
+  using const_iterator = details::iterator_base<text_common const>;
+
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 12U; }
+  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
+
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return array_subscript_proxy<text_common>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<text_common>{this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<text_common const>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<text_common const>{this, idx};
   }
 #endif
 
-  using value_type = adt::uinteger_t<8>;
-
-  constexpr void assign(std::size_t index, value_type const v) noexcept {
+  constexpr text_common& data(std::size_t const index, value_type const v) noexcept {
     switch (index) {
     case 0: this->data0(v); break;
     case 1: this->data1(v); break;
@@ -5062,8 +4884,9 @@ public:
     case 11: this->data11(v); break;
     default: assert(false && "Index out of range"); break;
     }
+    return *this;
   }
-  constexpr value_type get(std::size_t index) const noexcept {
+  [[nodiscard]] constexpr value_type data(std::size_t const index) const noexcept {
     switch (index) {
     case 0: return this->data0();
     case 1: return this->data1();
@@ -5081,28 +4904,48 @@ public:
     }
   }
 
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-  using iterator = iterator_base<text_common>;
-  using const_iterator = iterator_base<text_common const>;
+  template <std::integral T>
+    requires std::is_convertible_v<T, char8_t>
+  constexpr text_common& data(std::initializer_list<T> vs) {
+    auto const index = details::data_helper<text_common, 8U>::data(*this, vs);
+    auto const begin = this->begin();
+    std::fill(begin + index, begin + this->max_size(), '\0');
+    return *this;
+  }
 
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+  template <std::ranges::input_range Range, typename Proj = std::identity>
+    requires std::is_convertible_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>, char8_t>
+  constexpr text_common& data(Range&& range, Proj proj = {}) {
+    auto const index = details::data_helper<text_common, 8U>::data(*this, std::forward<Range>(range));
+    auto const begin = this->begin();
+    std::fill(begin + index, begin + this->max_size(), '\0');
+    return *this;
+  }
 
-  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  template <std::input_iterator I, std::sentinel_for<I> S>
+    requires std::is_convertible_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>, char8_t>
+  constexpr text_common& data(I first, S last) {
+    auto const index = details::data_helper<text_common, 8U>::data(*this, first, last);
+    auto const begin = this->begin();
+    std::fill(begin + index, begin + this->max_size(), '\0');
+    return *this;
+  }
 
-  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
-  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
-  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
+  constexpr text_common& data(std::u8string_view const& str) {
+    assert(str.size() < this->max_size());
+    auto const first = std::begin(str);
+    return this->data(first, first + std::min(this->max_size(), str.size()) + 1);
+  }
 
-  std::size_t number_of_bytes() const {
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  [[nodiscard]] constexpr std::u8string str() const { return {begin(), end()}; }
+#endif
+  [[nodiscard]] constexpr std::size_t number_of_bytes() const {
     std::size_t index = 0;
     // TODO: check whole words for 0 first. Search backwards.
-    for (; index < 12; ++index) {
-      if (this->get(index) == '\0') {
+    auto const limit = this->max_size();
+    for (; index < limit; ++index) {
+      if (this->data(index) == '\0') {
         break;
       }
     }
@@ -5119,6 +4962,11 @@ private:
 };
 MIDI2_UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element for flex_data/text_common
 MIDI2_SPAN_CTOR(flex_data, text_common)  // Define the span constructor for flex_data/text_common
+
+static_assert(std::random_access_iterator<midi2::ump::flex_data::text_common::iterator>,
+              "text_common::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::flex_data::text_common::const_iterator>,
+              "text_common::const_iterator should meet the requiremenets of std::random_access_iterator");
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
@@ -5234,7 +5082,38 @@ public:
   MIDI2_UMP_GETTER_SETTER(word3, data11, ump::data128::details::sysex8<Status>)
   MIDI2_UMP_GETTER_SETTER(word3, data12, ump::data128::details::sysex8<Status>)
 
-  constexpr void assign(std::size_t index, adt::uinteger_t<8> const v) noexcept {
+  using value_type = adt::uinteger_t<8>;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using iterator = ::midi2::ump::details::iterator_base<sysex8>;
+  using const_iterator = ::midi2::ump::details::iterator_base<sysex8 const>;
+
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
+  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
+  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
+
+#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
+  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+  }
+#else
+  constexpr decltype(auto) operator[](std::size_t idx) noexcept {
+    return midi2::ump::details::array_subscript_proxy<sysex8>{this, idx};
+  }
+  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
+    return midi2::ump::details::array_subscript_proxy<sysex8 const>{this, idx};
+  }
+#endif
+
+  constexpr sysex8& data(std::size_t const index, adt::uinteger_t<8> const v) noexcept {
     switch (index) {
     case 0: this->data0(v); break;
     case 1: this->data1(v); break;
@@ -5251,8 +5130,9 @@ public:
     case 12: this->data12(v); break;
     default: assert(false && "Index out of range"); break;
     }
+    return *this;
   }
-  constexpr adt::uinteger_t<8> get(std::size_t index) const noexcept {
+  [[nodiscard]] constexpr adt::uinteger_t<8> data(std::size_t const index) const noexcept {
     switch (index) {
     case 0: return this->data0();
     case 1: return this->data1();
@@ -5271,73 +5151,26 @@ public:
     }
   }
 
-#if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
-  constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return array_subscript_proxy<std::is_const_v<std::remove_reference_t<decltype(self)>>>{&self, idx};
+  template <std::integral T>
+    requires std::is_convertible_v<T, char8_t>
+  constexpr sysex8& data(std::initializer_list<T> vs) {
+    auto const index = ::midi2::ump::details::data_helper<sysex8, 8U>::data(*this, vs);
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
   }
-#else
-  constexpr decltype(auto) operator[](std::size_t idx) noexcept { return array_subscript_proxy<sysex8>{this, idx}; }
-  constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return array_subscript_proxy<sysex8 const>{this, idx};
-  }
-#endif
 
-  template <std::integral T> constexpr sysex8& data(std::initializer_list<T> vs) {
-    assert(vs.size() <= this->max_size() && "initializer list has too many members");
-    auto index = std::size_t{0};
-    for (auto v : vs) {
-      assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
-      (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
-      ++index;
-    }
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
-  }
   template <std::ranges::input_range Range, typename Proj = std::identity>
     requires std::is_integral_v<std::remove_cvref_t<std::ranges::range_value_t<Range>>>
   constexpr sysex8& data(Range&& range, Proj proj = {}) {
-    auto index = std::size_t{0};
-    std::ranges::for_each(
-        std::forward<Range>(range),
-        [this, &index](auto v) constexpr {
-          assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
-          (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
-          ++index;
-        },
-        proj);
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
+    auto const index = ::midi2::ump::details::data_helper<sysex8, 8U>::data(*this, std::forward<Range>(range));
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
   }
+
   template <std::input_iterator I, std::sentinel_for<I> S>
     requires std::is_integral_v<std::remove_cvref_t<typename std::iterator_traits<I>::value_type>>
   constexpr sysex8& data(I first, S last) {
-    auto index = std::size_t{0};
-    std::for_each(first, last, [this, &index](auto v) constexpr {
-      assert(v >= 0 && v < (1 << 8) && "initializer value is out of range");
-      (*this)[index] = static_cast<adt::uinteger_t<8>>(v);
-      ++index;
-    });
-    using count_type = word0::number_of_bytes::uinteger;
-    return this->number_of_bytes(static_cast<count_type>(index));
+    auto const index = ::midi2::ump::details::data_helper<sysex8, 8U>::data(*this, first, last);
+    return this->number_of_bytes(static_cast<word0::number_of_bytes::uinteger>(index));
   }
-
-  using value_type = adt::uinteger_t<8>;
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-  using iterator = iterator_base<sysex8>;
-  using const_iterator = iterator_base<sysex8 const>;
-
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
-
-  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
-
-  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
-  [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
-  [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
 
 private:
   friend struct ::std::tuple_size<sysex8>;
@@ -5373,6 +5206,26 @@ using sysex8_continue = details::sysex8<midi2::ump::mt::data128::sysex8_continue
 using sysex8_end = details::sysex8<midi2::ump::mt::data128::sysex8_end>;
 
 }  // end namespace midi2::ump::data128
+
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_in_1::iterator>,
+              "sysex8_in_1::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_in_1::const_iterator>,
+              "sysex8_in_1::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_start::iterator>,
+              "sysex8_start::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_start::const_iterator>,
+              "sysex8_start::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_continue::iterator>,
+              "sysex8_continue::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_continue::const_iterator>,
+              "sysex8_continue::const_iterator should meet the requiremenets of std::random_access_iterator");
+
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_end::iterator>,
+              "sysex8_end::iterator should meet the requiremenets of std::random_access_iterator");
+static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_end::const_iterator>,
+              "sysex8_end::const_iterator should meet the requiremenets of std::random_access_iterator");
 
 /// \brief The header message for a Mixed Data Set sequence.
 ///
