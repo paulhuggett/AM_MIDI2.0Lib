@@ -128,8 +128,11 @@ if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
       )
       target_compile_features(${target} PUBLIC cxx_std_23)
       target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
+      set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
   endforeach()
+
+
 
   if(MIDI2_FUZZTEST)
     set(FUZZTEST_FUZZING_MODE On)

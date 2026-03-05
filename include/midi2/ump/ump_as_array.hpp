@@ -27,11 +27,12 @@
 namespace midi2::ump::details {
 
 template <typename T>
-concept accessible_as_array = requires(T t) {
+concept accessible_as_array = requires(T const ct, std::size_t i) {
   typename T::value_type;
-  requires requires { t.data(std::size_t{}, typename T::value_type{}); } || std::is_const_v<T>;
-  { t.data(std::size_t{}) } -> std::convertible_to<typename T::value_type>;
-};
+  { ct.data(i) } -> std::convertible_to<typename T::value_type>;
+} && (std::is_const_v<T> || requires(T t, std::size_t i, typename T::value_type v) {
+                                { t.data(i, v) };
+                              });
 
 template <accessible_as_array T> class array_subscript_proxy {
 public:
@@ -43,7 +44,7 @@ public:
   }
   template <typename U>
     requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
-  friend bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<U> const& rhs) {
+  friend constexpr bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<U> const& rhs) {
     return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
   }
   template <typename U>
