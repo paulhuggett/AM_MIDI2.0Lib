@@ -3,9 +3,7 @@
 ## Overview
 
 - Translators
-
   - To/From Bytestream
-
     - midi2::bytestream::bytestream_to_ump
     - midi2::bytestream::ump_to_bytestream
     - midi2::bytestream::usbm1_to_bytestream
@@ -15,12 +13,10 @@
     - midi2::ump::ump_to_midi1
 
 - Dispatchers
-
   - midi2::ci::ci_dispatcher
   - midi2::ump::ump_dispatcher
 
 - Message Construction
-
   - midi2::ci::create_message()
   - Types in the midi2::ump namespace (e.g. midi2::ump::m2cvm::note_on)
     in conjunction with midi2::ump::apply()
@@ -37,8 +33,7 @@ different types of translation.
 
 The library provides five different translators. They are:
 
-- To and from MIDI 1.0 bytestreams
-
+- To and from MIDI 1.0 byte-streams
   - MIDI 1.0 bytestream to UMP (\ref midi2::bytestream::bytestream_to_ump)
   - UMP MIDI 1.0 to MIDI 1.0 bytestream (\ref midi2::bytestream::ump_to_bytestream)
   - USB-MIDI Event Packets to MIDI 1.0 bytestream (\ref midi2::bytestream::usbm1_to_bytestream)
@@ -136,7 +131,7 @@ If not needed by the handlers, it can be an empty struct declared with
    Each message handler class derives from the matching pure-virtual class. It
    provides concrete implementations that each do nothing. You can derive from
    one of these classes and override one or more of the handlers with very
-   little code. The disadvantage is obviously that each mesage incurs the
+   little code. The disadvantage is obviously that each message incurs the
    overhead of a virtual method call.
 
 4. std::function<>
