@@ -785,8 +785,8 @@ namespace packed {
 
 /// \brief Part 1 of version 1 of the CI Inquiry Reply message
 struct inquiry_reply_v1_pt1 {
-  byte_array<2> num_enabled;  ///< Number of currently enabled profiles
-  profile ids[1];             ///< Profile ID of currently enabled profiles (array length given by num_enabled)
+  byte_array<2> num_enabled{};  ///< Number of currently enabled profiles
+  profile ids[1];               ///< Profile ID of currently enabled profiles (array length given by num_enabled)
 };
 
 static_assert(offsetof(inquiry_reply_v1_pt1, num_enabled) == 0);
@@ -797,8 +797,8 @@ static_assert(std::is_trivially_copyable_v<inquiry_reply_v1_pt1>);
 
 /// \brief Part 2 of version 1 of the CI Inquiry Reply message
 struct inquiry_reply_v1_pt2 {
-  byte_array<2> num_disabled;  ///< Number of currently disabled profiles
-  profile ids[1];              ///< Profile ID of currently enabled profiles (array length given by num_disabled)
+  byte_array<2> num_disabled{};  ///< Number of currently disabled profiles
+  profile ids[1];                ///< Profile ID of currently enabled profiles (array length given by num_disabled)
 };
 
 static_assert(offsetof(inquiry_reply_v1_pt2, num_disabled) == 0);
@@ -989,7 +989,7 @@ static_assert(std::is_trivially_copyable_v<on_v1>);
 struct on_v2 {
   on_v1 v1;
   /// Number of channels requested (LSB First) to assign to this profile when it is enabled
-  byte_array<2> num_channels;
+  byte_array<2> num_channels{};
 };
 static_assert(offsetof(on_v2, v1) == 0);
 static_assert(offsetof(on_v2, num_channels) == 5);
@@ -1157,7 +1157,7 @@ static_assert(std::is_trivially_copyable_v<disabled_v1>);
 /// \brief Version 2 of the CI Profile Disabled message
 struct disabled_v2 {
   disabled_v1 v1;
-  byte_array<2> num_channels;
+  byte_array<2> num_channels{};
 };
 static_assert(offsetof(disabled_v2, v1) == 0);
 static_assert(offsetof(disabled_v2, num_channels) == 5);
