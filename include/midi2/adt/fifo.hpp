@@ -75,7 +75,7 @@ public:
       return false;
     }
     std::construct_at(this->write_address(), value);
-    write_index_++;
+    ++write_index_;
     return true;
   }
   /// \brief Inserts an element at the end.
@@ -86,7 +86,7 @@ public:
       return false;
     }
     std::construct_at(this->write_address(), std::move(value));
-    write_index_++;
+    ++write_index_;
     return true;
   }
   /// \brief Inserts an element at the end.
@@ -97,7 +97,7 @@ public:
       return false;
     }
     std::construct_at(this->write_address(), std::forward<Args>(args)...);
-    write_index_++;
+    ++write_index_;
     return true;
   }
 
