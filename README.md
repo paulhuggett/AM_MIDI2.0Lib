@@ -18,6 +18,7 @@ This code is based on Andrew Mee’s library at <https://github.com/midi2-dev/AM
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=paulhuggett_AM_MIDI2.0Lib&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=paulhuggett_AM_MIDI2.0Lib)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/425f68679a124a1cbb0efa50342d8e8a)](https://app.codacy.com/gh/paulhuggett/AM_MIDI2.0Lib/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Fuzz Test](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml/badge.svg)](https://github.com/paulhuggett/AM_MIDI2.0Lib/actions/workflows/fuzztest.yaml)
+[![REUSE status](https://api.reuse.software/badge/github.com/paulhuggett/AM_MIDI2.0Lib)](https://api.reuse.software/info/github.com/paulhuggett/AM_MIDI2.0Lib)
 
 ## What does this do?
 
