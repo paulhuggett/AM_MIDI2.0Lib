@@ -124,7 +124,7 @@ TYPED_TEST(CI7TextEncode, Only5BytesLeft) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextEncode, Backslash) {
-  constexpr std::u32string str32{
+  std::u32string const str32{
       'a',
       '\\',
       'b',
@@ -134,7 +134,7 @@ TYPED_TEST(CI7TextEncode, Backslash) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextEncode, ThresholdBetweenASCIIAndEscapes) {
-  constexpr std::u32string str32{
+  std::u32string const str32{
       static_cast<char32_t>(0x7F),
       static_cast<char32_t>(0x80),
   };
@@ -146,7 +146,7 @@ TYPED_TEST(CI7TextEncode, Utf16SurrogatePairs) {
   constexpr auto linear_bs_syllable_b015_mo = char32_t{0x10017};
   constexpr auto linear_bs_syllable_b030_mi = char32_t{0x1001B};
   // A pair of characters from the Linear B script which must be encoded as UTF-16 surrogate pairs.
-  constexpr std::u32string str32{
+  std::u32string const str32{
       linear_bs_syllable_b015_mo,
       linear_bs_syllable_b030_mi,
   };
