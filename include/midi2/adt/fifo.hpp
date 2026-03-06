@@ -141,7 +141,7 @@ public:
     for (; read_index_ != write_index_; ++write_index_) {
       std::destroy_at(&arr_[read_index_ & mask_].value());
     }
-    assert(size() == 0 && empty());
+    assert(empty());
   }
 
 private:
