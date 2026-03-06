@@ -40,7 +40,7 @@ TEST(PlruCache, Empty) {
 
 TEST(PlruCache, InitialAccess) {
   plru_cache<unsigned, std::string, 4, 2> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(unsigned, std::size_t)> mock_function;
 
   EXPECT_CALL(mock_function, Call(3U, _)).WillOnce(Return(value)).RetiresOnSaturation();
@@ -117,7 +117,7 @@ class PlruCacheParam : public testing::TestWithParam<unsigned> {};
 TEST_P(PlruCacheParam, Key4x4Uint16) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 4, 4> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key = static_cast<std::uint16_t>(GetParam());
@@ -134,7 +134,7 @@ TEST_P(PlruCacheParam, Key4x4Uint16) {
 TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 4, 4> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key1 = static_cast<std::uint16_t>(GetParam());
@@ -155,7 +155,7 @@ TEST_P(PlruCacheParam, Key4x4Uint16TwoValues) {
 TEST_P(PlruCacheParam, Key2x8Uint16TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 2, 8> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   auto const key1 = static_cast<std::uint16_t>(GetParam());
@@ -176,7 +176,7 @@ TEST_P(PlruCacheParam, Key2x8Uint16TwoValues) {
 TEST_P(PlruCacheParam, Key4x4Uint32TwoValues) {
   // Check for the NEON SIMD with 4 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint32_t, std::string, 4, 4> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(std::uint32_t, std::size_t)> mock_function;
 
   auto const key1 = static_cast<std::uint32_t>(GetParam());
@@ -201,7 +201,7 @@ INSTANTIATE_TEST_SUITE_P(PlruCacheParam, PlruCacheParam, testing::Range(/*begin=
 TEST(PlruCache, Key2x8Uint16) {
   // Check for the NEON SIMD with 8 ways and a tagged key-type of uint16_t.
   plru_cache<std::uint16_t, std::string, 2, 8> cache;
-  auto const value = "str"s;
+  constexpr auto value = "str"s;
   MockFunction<std::string(std::uint16_t, std::size_t)> mock_function;
 
   EXPECT_CALL(mock_function, Call(3U, _)).WillOnce(Return(value)).RetiresOnSaturation();

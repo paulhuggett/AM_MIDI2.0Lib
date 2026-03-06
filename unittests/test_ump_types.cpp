@@ -80,14 +80,14 @@ TEST(UMPTypesSysex7, Range) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
-  auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values);
+  constexpr auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values);
   EXPECT_EQ(message, message2);
 }
 TEST(UMPTypesSysex7, IteratorAssignData) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
-  auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values.begin(), values.end());
+  constexpr auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values.begin(), values.end());
   EXPECT_EQ(message, message2);
 }
 TEST(UMPTypesSysex7, IteratorRead) {
@@ -106,7 +106,7 @@ TEST(UMPTypesSysex7, IteratorRead) {
   EXPECT_EQ(first, last);
 }
 TEST(UMPTypesSysex7, ConstIteratorRead) {
-  auto const message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
+  constexpr auto message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
   auto first = message.begin();
   auto last = message.end();
   EXPECT_EQ(std::distance(first, last), 4U);
