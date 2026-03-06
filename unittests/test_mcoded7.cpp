@@ -59,13 +59,13 @@ public:
 
 // NOLINTNEXTLINE
 TEST_P(Mcoded7, Encode) {
-  auto const& param = GetParam();
-  EXPECT_THAT(encode(param.raw), testing::ContainerEq(param.encoded));
+  auto const& [raw, encoded] = GetParam();
+  EXPECT_THAT(encode(raw), testing::ContainerEq(encoded));
 }
 // NOLINTNEXTLINE
 TEST_P(Mcoded7, Decode) {
-  auto const& param = GetParam();
-  EXPECT_THAT(decode(param.encoded), testing::ContainerEq(param.raw));
+  auto const& [raw, encoded] = GetParam();
+  EXPECT_THAT(decode(encoded), testing::ContainerEq(raw));
 }
 
 namespace {
