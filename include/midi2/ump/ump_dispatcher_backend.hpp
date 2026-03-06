@@ -347,11 +347,11 @@ static_assert(m1cvm<m1cvm_pure<int>, int>, "m1cvm_pure must implement the m1cvm 
 
 template <typename Context> struct data64_pure {
   constexpr data64_pure() noexcept = default;
-  constexpr data64_pure(data64_pure const &) = default;
+  constexpr data64_pure(data64_pure const &) noexcept = default;
   constexpr data64_pure(data64_pure &&) noexcept = default;
   virtual ~data64_pure() noexcept = default;
 
-  constexpr data64_pure &operator=(data64_pure const &) = default;
+  constexpr data64_pure &operator=(data64_pure const &) noexcept = default;
   constexpr data64_pure &operator=(data64_pure &&) noexcept = default;
 
   virtual void sysex7_in_1(Context, data64::sysex7_in_1 const &) = 0;
@@ -364,11 +364,11 @@ static_assert(data64<data64_pure<int>, int>, "data64_pure must implement the dat
 
 template <typename Context> struct m2cvm_pure {
   constexpr m2cvm_pure() noexcept = default;
-  constexpr m2cvm_pure(m2cvm_pure const &) = default;
+  constexpr m2cvm_pure(m2cvm_pure const &) noexcept = default;
   constexpr m2cvm_pure(m2cvm_pure &&) noexcept = default;
   virtual ~m2cvm_pure() noexcept = default;
 
-  constexpr m2cvm_pure &operator=(m2cvm_pure const &) = default;
+  constexpr m2cvm_pure &operator=(m2cvm_pure const &) noexcept = default;
   constexpr m2cvm_pure &operator=(m2cvm_pure &&) noexcept = default;
 
   virtual void note_off(Context, m2cvm::note_off const &) = 0;
@@ -400,11 +400,11 @@ static_assert(m2cvm<m2cvm_pure<int>, int>, "m2cvm_pure must implement the m2cvm 
 
 template <typename Context> struct data128_pure {
   constexpr data128_pure() noexcept = default;
-  constexpr data128_pure(data128_pure const &) = default;
+  constexpr data128_pure(data128_pure const &) noexcept = default;
   constexpr data128_pure(data128_pure &&) noexcept = default;
   virtual ~data128_pure() noexcept = default;
 
-  constexpr data128_pure &operator=(data128_pure const &) = default;
+  constexpr data128_pure &operator=(data128_pure const &) noexcept = default;
   constexpr data128_pure &operator=(data128_pure &&) noexcept = default;
 
   virtual void sysex8_in_1(Context, data128::sysex8_in_1 const &) = 0;
