@@ -60,7 +60,7 @@ TYPED_TEST(UMPCheckFixture, Check) {
   ASSERT_TRUE(midi2::ump::check(this->value_));
 }
 
-TEST(UMPTypes, Sysex7InOne) {
+TEST(UMPTypesSysex7, AssignIndividually) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4);
@@ -70,27 +70,27 @@ TEST(UMPTypes, Sysex7InOne) {
   message2[3] = 0x0D;
   EXPECT_EQ(message, message2);
 }
-TEST(UMPTypes, Sysex7InOneInitializerList) {
+TEST(UMPTypesSysex7, InitializerList) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   constexpr auto message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
   EXPECT_EQ(message, message2);
 }
-TEST(UMPTypes, Sysex7InOneRange) {
+TEST(UMPTypesSysex7, Range) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
   auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values);
   EXPECT_EQ(message, message2);
 }
-TEST(UMPTypes, Sysex7InOneIteratorAssignData) {
+TEST(UMPTypesSysex7, IteratorAssignData) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   constexpr std::array values{0x7E, 0x7F, 0x07, 0x0D};
   auto const message2 = midi2::ump::data64::sysex7_in_1{}.group(0).data(values.begin(), values.end());
   EXPECT_EQ(message, message2);
 }
-TEST(UMPTypes, Sysex7InOneIteratorRead) {
+TEST(UMPTypesSysex7, IteratorRead) {
   auto message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
   auto first = message.begin();
   auto last = message.end();
@@ -105,7 +105,7 @@ TEST(UMPTypes, Sysex7InOneIteratorRead) {
   ++first;
   EXPECT_EQ(first, last);
 }
-TEST(UMPTypes, Sysex7InOneConstIteratorRead) {
+TEST(UMPTypesSysex7, ConstIteratorRead) {
   auto const message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
   auto first = message.begin();
   auto last = message.end();
@@ -120,7 +120,7 @@ TEST(UMPTypes, Sysex7InOneConstIteratorRead) {
   ++first;
   EXPECT_EQ(first, last);
 }
-TEST(UMPTypes, Sysex7InOneIteratorWrite) {
+TEST(UMPTypesSysex7, IteratorWrite) {
   auto message = midi2::ump::data64::sysex7_in_1{}.group(0);
   EXPECT_TRUE(message.empty());
   EXPECT_EQ(message.size(), 0U);
@@ -138,7 +138,7 @@ TEST(UMPTypes, Sysex7InOneIteratorWrite) {
   ++first;
   EXPECT_EQ(first, last);
 }
-TEST(UMPTypes, Sysex7InOneIteratorWriteUsingAlgorithm) {
+TEST(UMPTypesSysex7, IteratorWriteUsingAlgorithm) {
   using testing::ElementsAreArray;
 
   auto message = midi2::ump::data64::sysex7_in_1{}.group(0);
@@ -148,7 +148,7 @@ TEST(UMPTypes, Sysex7InOneIteratorWriteUsingAlgorithm) {
   message.number_of_bytes(static_cast<count_type>(src.size()));
   EXPECT_THAT(message, ElementsAreArray(src));
 }
-TEST(UMPTypes, Sysex7InOneIteratorSubtract) {
+TEST(UMPTypesSysex7, IteratorSubtract) {
   using testing::ElementsAreArray;
 
   auto message = midi2::ump::data64::sysex7_in_1{}.group(0).data({0x1, 0x3, 0x5, 0x7});
@@ -156,7 +156,7 @@ TEST(UMPTypes, Sysex7InOneIteratorSubtract) {
   auto last = std::end(message);
   EXPECT_EQ(last - first, 4U);
 }
-TEST(UMPTypes, Sysex7InOneReadArray) {
+TEST(UMPTypesSysex7, ReadArray) {
   constexpr auto message =
       midi2::ump::data64::sysex7_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   EXPECT_EQ(message[0], 0x7E);
@@ -167,7 +167,7 @@ TEST(UMPTypes, Sysex7InOneReadArray) {
   EXPECT_EQ(message[5], 0x00);
 }
 
-TEST(UMPTypes, Sysex8InOne) {
+TEST(UMPTypesSysex8, AssignIndividually) {
   using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
   constexpr auto message = sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   auto message2 = sysex8_in_1{}.group(0).number_of_bytes(4);
@@ -177,7 +177,39 @@ TEST(UMPTypes, Sysex8InOne) {
   message2[3] = 0x0D;
   EXPECT_EQ(message, message2);
 }
-TEST(UMPTypes, Sysex8InOneInitializerList) {
+TEST(UMPTypesSysex8, AllElements) {
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  constexpr auto message = sysex8_in_1{}
+                               .group(0)
+                               .number_of_bytes(13)
+                               .data0(0x7E)
+                               .data1(0x7F)
+                               .data2(0x07)
+                               .data3(0x0D)
+                               .data4(0x01)
+                               .data5(0x02)
+                               .data6(0x03)
+                               .data7(0x04)
+                               .data8(0x05)
+                               .data9(0x06)
+                               .data10(0x07)
+                               .data11(0x08)
+                               .data12(0x09);
+  EXPECT_EQ(message[0], 0x7E);
+  EXPECT_EQ(message[1], 0x7F);
+  EXPECT_EQ(message[2], 0x07);
+  EXPECT_EQ(message[3], 0x0D);
+  EXPECT_EQ(message[4], 0x01);
+  EXPECT_EQ(message[5], 0x02);
+  EXPECT_EQ(message[6], 0x03);
+  EXPECT_EQ(message[7], 0x04);
+  EXPECT_EQ(message[8], 0x05);
+  EXPECT_EQ(message[9], 0x06);
+  EXPECT_EQ(message[10], 0x07);
+  EXPECT_EQ(message[11], 0x08);
+  EXPECT_EQ(message[12], 0x09);
+}
+TEST(UMPTypesSysex8, InitializerList) {
   using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
   constexpr auto message = sysex8_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D});
   ASSERT_EQ(message.number_of_bytes(), 4U);
@@ -186,7 +218,26 @@ TEST(UMPTypes, Sysex8InOneInitializerList) {
   EXPECT_EQ(message[2], 0x07);
   EXPECT_EQ(message[3], 0x0D);
 }
-TEST(UMPTypes, Sysex8InOneIteratorWriteUsingAlgorithm) {
+TEST(UMPTypesSysex8, InitializerListMaxLength) {
+  using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
+  constexpr auto message =
+      sysex8_in_1{}.group(0).data({0x7E, 0x7F, 0x07, 0x0D, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09});
+  ASSERT_EQ(message.number_of_bytes(), 13U);
+  EXPECT_EQ(message[0], 0x7E);
+  EXPECT_EQ(message[1], 0x7F);
+  EXPECT_EQ(message[2], 0x07);
+  EXPECT_EQ(message[3], 0x0D);
+  EXPECT_EQ(message[4], 0x01);
+  EXPECT_EQ(message[5], 0x02);
+  EXPECT_EQ(message[6], 0x03);
+  EXPECT_EQ(message[7], 0x04);
+  EXPECT_EQ(message[8], 0x05);
+  EXPECT_EQ(message[9], 0x06);
+  EXPECT_EQ(message[10], 0x07);
+  EXPECT_EQ(message[11], 0x08);
+  EXPECT_EQ(message[12], 0x09);
+}
+TEST(UMPTypesSysex8, IteratorWriteUsingAlgorithm) {
   using testing::ElementsAreArray;
   using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
   auto message = sysex8_in_1{}.group(0);
@@ -196,7 +247,7 @@ TEST(UMPTypes, Sysex8InOneIteratorWriteUsingAlgorithm) {
   message.number_of_bytes(static_cast<count_type>(src.size()));
   EXPECT_THAT(message, ElementsAreArray(src));
 }
-TEST(UMPTypes, Sysex8InOneReadArray) {
+TEST(UMPTypesSysex8, ReadArray) {
   using sysex8_in_1 = midi2::ump::data128::sysex8_in_1;
   constexpr auto message = sysex8_in_1{}.group(0).number_of_bytes(4).data0(0x7E).data1(0x7F).data2(0x07).data3(0x0D);
   EXPECT_EQ(message[0], 0x7E);
@@ -205,9 +256,16 @@ TEST(UMPTypes, Sysex8InOneReadArray) {
   EXPECT_EQ(message[3], 0x0D);
   EXPECT_EQ(message[4], 0x00);
   EXPECT_EQ(message[5], 0x00);
+  EXPECT_EQ(message[6], 0x00);
+  EXPECT_EQ(message[7], 0x00);
+  EXPECT_EQ(message[8], 0x00);
+  EXPECT_EQ(message[9], 0x00);
+  EXPECT_EQ(message[10], 0x00);
+  EXPECT_EQ(message[11], 0x00);
+  EXPECT_EQ(message[12], 0x00);
 }
 
-TEST(UMPTypes, TextCommonInitializerList) {
+TEST(UMPTypesTextCommon, InitializerList) {
   using text_common = midi2::ump::flex_data::text_common;
   constexpr auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd'});
   ASSERT_EQ(message.number_of_bytes(), 4U);
@@ -227,7 +285,27 @@ TEST(UMPTypes, TextCommonInitializerList) {
   EXPECT_EQ(message[10], '\0');
   EXPECT_EQ(message[11], '\0');
 }
-TEST(UMPTypes, TextCommonDataSetByIteratorSentinel) {
+TEST(UMPTypesTextCommon, InitializerListMaxLength) {
+  using text_common = midi2::ump::flex_data::text_common;
+  constexpr auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'});
+  EXPECT_EQ(message.number_of_bytes(), 12U);
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  EXPECT_EQ(message.str(), u8"abcdefghijkl");
+#endif
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], 'e');
+  EXPECT_EQ(message[5], 'f');
+  EXPECT_EQ(message[6], 'g');
+  EXPECT_EQ(message[7], 'h');
+  EXPECT_EQ(message[8], 'i');
+  EXPECT_EQ(message[9], 'j');
+  EXPECT_EQ(message[10], 'k');
+  EXPECT_EQ(message[11], 'l');
+}
+TEST(UMPTypesTextCommon, DataSetByIteratorSentinel) {
   using namespace std::literals::string_view_literals;
   using text_common = midi2::ump::flex_data::text_common;
   constexpr auto str = u8"hello"sv;
@@ -249,7 +327,7 @@ TEST(UMPTypes, TextCommonDataSetByIteratorSentinel) {
   EXPECT_EQ(message[10], '\0');
   EXPECT_EQ(message[11], '\0');
 }
-TEST(UMPTypes, TextCommonIteratorWriteUsingAlgorithm) {
+TEST(UMPTypesTextCommon, IteratorWriteUsingAlgorithm) {
   using testing::ElementsAreArray;
   using text_common = midi2::ump::flex_data::text_common;
   auto message = text_common{}.group(0);
@@ -272,10 +350,33 @@ TEST(UMPTypes, TextCommonIteratorWriteUsingAlgorithm) {
   EXPECT_EQ(message[10], '\0');
   EXPECT_EQ(message[11], '\0');
 }
-TEST(UMPTypes, TextCommonMaxSize) {
+TEST(UMPTypesTextCommon, IteratorWriteUsingAlgorithmMaxLength) {
+  using testing::ElementsAreArray;
+  using text_common = midi2::ump::flex_data::text_common;
+  auto message = text_common{}.group(0);
+  constexpr std::array src{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
+  std::ranges::copy(src, message.begin());
+  EXPECT_THAT(message, ElementsAreArray(src));
+#if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
+  EXPECT_EQ(message.str(), u8"abcdefghijkl");
+#endif
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], 'e');
+  EXPECT_EQ(message[5], 'f');
+  EXPECT_EQ(message[6], 'g');
+  EXPECT_EQ(message[7], 'h');
+  EXPECT_EQ(message[8], 'i');
+  EXPECT_EQ(message[9], 'j');
+  EXPECT_EQ(message[10], 'k');
+  EXPECT_EQ(message[11], 'l');
+}
+TEST(UMPTypesTextCommon, MaxSize) {
   EXPECT_EQ(midi2::ump::flex_data::text_common{}.max_size(), 12U);
 }
-TEST(UMPTypes, TextCommonReadArray) {
+TEST(UMPTypesTextCommon, ReadArray) {
   using text_common = midi2::ump::flex_data::text_common;
   auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'});
   EXPECT_EQ(message[0], 'a');
@@ -305,13 +406,13 @@ TEST(UMPTypes, TextCommonReadArray) {
   EXPECT_EQ(message[11], '\0');
 }
 #if defined(MIDI2_TEXT_COMMON_STRING) && MIDI2_TEXT_COMMON_STRING
-TEST(UMPTypes, TextCommonString) {
+TEST(UMPTypesTextCommon, String) {
   using text_common = midi2::ump::flex_data::text_common;
   constexpr auto message = text_common{}.group(0).data({'a', 'b', 'c', 'd', 'e', 'f', 'g'});
   EXPECT_EQ(message.str(), u8"abcdefg");
 }
 #endif  // MIDI2_TEXT_COMMON_STRING
-TEST(UMPTypes, TextCommonDataFromString) {
+TEST(UMPTypesTextCommon, FromStringView) {
   using text_common = midi2::ump::flex_data::text_common;
   auto message = text_common{}.group(0).data("abcdefg");
   EXPECT_EQ(message[0], 'a');
@@ -339,6 +440,22 @@ TEST(UMPTypes, TextCommonDataFromString) {
   EXPECT_EQ(message[9], '\0');
   EXPECT_EQ(message[10], '\0');
   EXPECT_EQ(message[11], '\0');
+}
+TEST(UMPTypesTextCommon, FromStringTooLong) {
+  using text_common = midi2::ump::flex_data::text_common;
+  auto message = text_common{}.group(0).data("abcdefghijklmnopqrstuvwxyz");
+  EXPECT_EQ(message[0], 'a');
+  EXPECT_EQ(message[1], 'b');
+  EXPECT_EQ(message[2], 'c');
+  EXPECT_EQ(message[3], 'd');
+  EXPECT_EQ(message[4], 'e');
+  EXPECT_EQ(message[5], 'f');
+  EXPECT_EQ(message[6], 'g');
+  EXPECT_EQ(message[7], 'h');
+  EXPECT_EQ(message[8], 'i');
+  EXPECT_EQ(message[9], 'j');
+  EXPECT_EQ(message[10], 'k');
+  EXPECT_EQ(message[11], 'l');
 }
 
 }  // end anonymous namespace

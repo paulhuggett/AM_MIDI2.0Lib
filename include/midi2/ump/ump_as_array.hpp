@@ -14,15 +14,18 @@
 /// data128::sysex8 messages, and the flex_data::text_common message. The file contains helper types which those
 /// message classes use to implement this behaviour.
 
-#ifndef UMP_AS_ARRAY_HPP
-#define UMP_AS_ARRAY_HPP
+#ifndef MIDI2_UMP_AS_ARRAY_HPP
+#define MIDI2_UMP_AS_ARRAY_HPP
 
+#include <algorithm>
 #include <compare>
 #include <concepts>
 #include <cstddef>
 #include <cstdlib>
 #include <iterator>
 #include <type_traits>
+
+#include "midi2/adt/uinteger.hpp"
 
 namespace midi2::ump::details {
 
@@ -39,9 +42,7 @@ public:
   using value_type = typename T::value_type;
 
   constexpr array_subscript_proxy() noexcept = default;
-  constexpr array_subscript_proxy(T* const owner, std::size_t const index) noexcept : owner_{owner}, index_{index} {
-    assert(owner != nullptr);
-  }
+  constexpr array_subscript_proxy(T& owner, std::size_t const index) noexcept : owner_{&owner}, index_{index} {}
   template <typename U>
     requires(std::is_same_v<U, std::remove_const_t<T>> || std::is_same_v<U, T const>)
   friend constexpr bool operator==(array_subscript_proxy const& lhs, array_subscript_proxy<U> const& rhs) {
@@ -119,8 +120,7 @@ public:
   using reference = value_type&;
 
   constexpr iterator_base() noexcept = default;
-  constexpr iterator_base(T* const owner, std::size_t const index) noexcept
-      : arr_{array_subscript_proxy<T>{owner, index}} {}
+  constexpr iterator_base(T& owner, std::size_t const index) noexcept : arr_{array_subscript_proxy<T>{owner, index}} {}
   constexpr iterator_base(iterator_base const& other) noexcept = default;
   constexpr iterator_base(iterator_base&& other) noexcept = default;
   ~iterator_base() noexcept = default;
@@ -281,4 +281,4 @@ template <typename Message, unsigned Bits> struct data_helper {
 
 }  // namespace midi2::ump::details
 
-#endif  // UMP_AS_ARRAY_HPP
+#endif  // MIDI2_UMP_AS_ARRAY_HPP

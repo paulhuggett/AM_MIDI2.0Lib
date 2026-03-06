@@ -1969,13 +1969,13 @@ public:
   using iterator = ::midi2::ump::details::iterator_base<sysex7>;
   using const_iterator = ::midi2::ump::details::iterator_base<sysex7 const>;
 
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{*this, 0}; }
 
-  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
@@ -1983,14 +1983,14 @@ public:
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<sysex7>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<sysex7>{*this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return midi2::ump::details::array_subscript_proxy<sysex7 const>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<sysex7 const>{*this, idx};
   }
 #endif
 
@@ -4843,13 +4843,13 @@ public:
   using iterator = details::iterator_base<text_common>;
   using const_iterator = details::iterator_base<text_common const>;
 
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{*this, 0}; }
 
-  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 12U; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
@@ -4857,14 +4857,14 @@ public:
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<text_common>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<text_common>{*this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return midi2::ump::details::array_subscript_proxy<text_common const>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<text_common const>{*this, idx};
   }
 #endif
 
@@ -4932,7 +4932,6 @@ public:
   }
 
   constexpr text_common& data(std::u8string_view const& str) {
-    assert(str.size() < this->max_size());
     auto const first = std::begin(str);
     return this->data(first, first + std::min(this->max_size(), str.size()) + 1);
   }
@@ -5088,28 +5087,28 @@ public:
   using iterator = ::midi2::ump::details::iterator_base<sysex8>;
   using const_iterator = ::midi2::ump::details::iterator_base<sysex8 const>;
 
-  [[nodiscard]] constexpr auto begin() noexcept { return iterator{this, 0}; }
-  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{this, 0}; }
+  [[nodiscard]] constexpr auto begin() noexcept { return iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{*this, 0}; }
 
-  [[nodiscard]] constexpr auto end() noexcept { return iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() noexcept { return iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
-  [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return 13U; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
   [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
 
 #if defined(__cpp_explicit_this_parameter) && __cpp_explicit_this_parameter >= 202110L
   constexpr decltype(auto) operator[](this auto& self, std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{&self, idx};
+    return midi2::ump::details::array_subscript_proxy<std::remove_reference_t<decltype(self)>>{self, idx};
   }
 #else
   constexpr decltype(auto) operator[](std::size_t idx) noexcept {
-    return midi2::ump::details::array_subscript_proxy<sysex8>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<sysex8>{*this, idx};
   }
   constexpr decltype(auto) operator[](std::size_t idx) const noexcept {
-    return midi2::ump::details::array_subscript_proxy<sysex8 const>{this, idx};
+    return midi2::ump::details::array_subscript_proxy<sysex8 const>{*this, idx};
   }
 #endif
 
