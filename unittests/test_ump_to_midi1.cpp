@@ -243,7 +243,7 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
   constexpr auto channel = std::uint8_t{3};
   constexpr auto bank = std::uint8_t{60};
   // The controller values we'll be sending.
-  constexpr std::array const values{std::uint32_t{0x12345678}, std::uint32_t{0x87654321}, std::uint32_t{0xCAFEBABE}};
+  constexpr std::array values{std::uint32_t{0x12345678}, std::uint32_t{0x87654321}, std::uint32_t{0xCAFEBABE}};
 
   std::vector<std::uint32_t> input;
   input.reserve(10);

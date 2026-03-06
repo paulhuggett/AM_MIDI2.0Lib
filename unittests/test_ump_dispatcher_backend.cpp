@@ -52,7 +52,7 @@ TEST_F(DispatcherBackendUtility, Noop) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, JrClock) {
   StrictMock<MockFunction<decltype(be_)::jr_clock_fn>> fn;
-  constexpr midi2::ump::utility::jr_clock const clock;
+  constexpr midi2::ump::utility::jr_clock clock;
   be_.jr_clock(context_, clock);
   be_.on_jr_clock(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, clock)).Times(1);
@@ -61,7 +61,7 @@ TEST_F(DispatcherBackendUtility, JrClock) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, JrTimestamp) {
   StrictMock<MockFunction<decltype(be_)::jr_timestamp_fn>> fn;
-  constexpr midi2::ump::utility::jr_timestamp const time_stamp;
+  constexpr midi2::ump::utility::jr_timestamp time_stamp;
   be_.jr_timestamp(context_, time_stamp);
   be_.on_jr_timestamp(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, time_stamp)).Times(1);
@@ -70,7 +70,7 @@ TEST_F(DispatcherBackendUtility, JrTimestamp) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, DeltaClockstampTPQN) {
   StrictMock<MockFunction<decltype(be_)::delta_clockstamp_tpqn_fn>> fn;
-  constexpr midi2::ump::utility::delta_clockstamp_tpqn const delta_clockstamp;
+  constexpr midi2::ump::utility::delta_clockstamp_tpqn delta_clockstamp;
   be_.delta_clockstamp_tpqn(context_, delta_clockstamp);
   be_.on_delta_clockstamp_tpqn(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, delta_clockstamp)).Times(1);
@@ -79,7 +79,7 @@ TEST_F(DispatcherBackendUtility, DeltaClockstampTPQN) {
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendUtility, DeltaClockstamp) {
   StrictMock<MockFunction<decltype(be_)::delta_clockstamp_fn>> fn;
-  constexpr midi2::ump::utility::delta_clockstamp const delta_clockstamp;
+  constexpr midi2::ump::utility::delta_clockstamp delta_clockstamp;
   be_.delta_clockstamp(context_, delta_clockstamp);
   be_.on_delta_clockstamp(fn.AsStdFunction());
   EXPECT_CALL(fn, Call(context_, delta_clockstamp)).Times(1);
@@ -100,7 +100,7 @@ TEST_F(DispatcherBackendUtility, Chained) {
   StrictMock<MockFunction<decltype(be_)::noop_fn>> noop;
   StrictMock<MockFunction<decltype(be_)::jr_clock_fn>> jrc;
   InSequence const _;
-  constexpr midi2::ump::utility::jr_clock const clock;
+  constexpr midi2::ump::utility::jr_clock clock;
   EXPECT_CALL(noop, Call(context_)).Times(1);
   EXPECT_CALL(jrc, Call(context_, clock)).Times(1);
   // Chained calls to the functions setting the message handlers.
@@ -117,7 +117,7 @@ protected:
 };
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, MidiTimeCode) {
-  constexpr midi2::ump::system::midi_time_code const mtc;
+  constexpr midi2::ump::system::midi_time_code mtc;
   // The first call should do nothing since no handler has been installed.
   be_.midi_time_code(context_, mtc);
 
@@ -130,7 +130,7 @@ TEST_F(DispatcherBackendSystem, MidiTimeCode) {
 }
 // NOLINTNEXTLINE
 TEST_F(DispatcherBackendSystem, SongPositionPointer) {
-  constexpr midi2::ump::system::song_position_pointer const spp;
+  constexpr midi2::ump::system::song_position_pointer spp;
   be_.song_position_pointer(context_, spp);
 
   StrictMock<MockFunction<decltype(be_)::song_position_pointer_fn>> fn;

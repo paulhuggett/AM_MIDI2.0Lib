@@ -292,8 +292,8 @@ public:
   using mapped_type = Mapped;
   using value_type = std::pair<Key const, Mapped>;
 
-  static constexpr std::size_t const sets = Sets;
-  static constexpr std::size_t const ways = Ways;
+  static constexpr std::size_t sets = Sets;
+  static constexpr std::size_t ways = Ways;
 
   /// A proxy type that pretends to be type pair<const Key, T>&
   template <typename T>
