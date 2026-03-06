@@ -11,6 +11,7 @@
 #include "midi2/ump/ump_to_midi1.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <utility>
 

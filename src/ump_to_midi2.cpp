@@ -13,6 +13,7 @@
 #include <cstdint>
 
 #include "midi2/ump/ump_types.hpp"
+#include "midi2/ump/ump_utils.hpp"
 
 namespace midi2::ump {
 
