@@ -14,6 +14,8 @@
 #ifndef MIDI2_UMP_UMP_UTILS_HPP
 #define MIDI2_UMP_UMP_UTILS_HPP
 
+#include <cstdint>
+
 #include "midi2/adt/uinteger.hpp"
 
 namespace midi2::ump {
