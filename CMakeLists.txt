@@ -92,13 +92,12 @@ target_include_directories(midi2 PUBLIC
 set(MIDI2_EXPORT_NAME midi2-config)
 install(TARGETS midi2 EXPORT ${MIDI2_EXPORT_NAME})
 install(EXPORT ${MIDI2_EXPORT_NAME} NAMESPACE midi2:: DESTINATION "share/${PROJECT_NAME}")
-install(FILES ${MIDI2_HEADERS} DESTINATION "include/${PROJECT_NAME}")
+install(DIRECTORY ${INCLUDE_DIR} DESTINATION include)
 
 
 if(MIDI2_UNITTEST OR MIDI2_FUZZTEST OR MIDI2_DEMO)
   enable_testing()
 endif()
-
 
 if(MIDI2_DEMO)
   add_subdirectory(demo)
@@ -106,44 +105,54 @@ endif(MIDI2_DEMO)
 
 
 if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
+  # ------------------------------------------------------------
+  # GoogleTest
+  # ------------------------------------------------------------
+  message(STATUS "Getting GoogleTest dependency")
   FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG HEAD
   )
+  # Unfortunately, disabling the install of gtest/gmock causes a fuzz test configure to fail.
+  # # We don't want to install either gtest or gmock.
+  # set(INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
+  # set(INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
+
   # Tell gtest to link against the "Multi-threaded Debug DLL runtime library"
   # on Windows.
   set(gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
-  # We don't want to install either gtest or gmock.
-  set(INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
-  set(INSTALL_GMOCK Off CACHE BOOL "Disable gmock install")
 
   FetchContent_MakeAvailable(googletest)
 
   # Adjust some compilation options for the googletest targets
-  foreach(target gtest gmock gmock_main gtest_main)
+  foreach(target gtest gmock gtest_main gmock_main)
     if(TARGET ${target})
       target_compile_options(${target} PRIVATE
-        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-deprecated-declarations -Wno-covered-switch-default>
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+        -Wno-deprecated-declarations
+        -Wno-covered-switch-default>
       )
       target_compile_features(${target} PUBLIC cxx_std_23)
       target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
-      set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+      set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE On)
     endif()
   endforeach()
 
-
-
+  # ------------------------------------------------------------
+  # FuzzTest
+  # ------------------------------------------------------------
   if(MIDI2_FUZZTEST)
     set(FUZZTEST_FUZZING_MODE On)
-    set(FUZZTEST_REPO_BRANCH "main" CACHE STRING "FuzzTest repository branch.")
-    message("Building fuzztest at tag " ${FUZZTEST_REPO_BRANCH})
+    set(FUZZTEST_REPO_BRANCH "2026-02-19")
+    message(STATUS "Getting fuzztest dependency at branch ${FUZZTEST_REPO_BRANCH}")
     FetchContent_Declare(
       fuzztest
       GIT_REPOSITORY https://github.com/google/fuzztest.git
       GIT_TAG ${FUZZTEST_REPO_BRANCH}
     )
     FetchContent_MakeAvailable(fuzztest)
+
     include(GoogleTest)
     fuzztest_setup_fuzzing_flags()
   endif(MIDI2_FUZZTEST)
