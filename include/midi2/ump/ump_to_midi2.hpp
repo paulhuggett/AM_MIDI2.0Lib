@@ -224,7 +224,6 @@ private:
     };
     // m2cvm messages go straight through.
     struct m2cvm {
-    public:
       static constexpr void note_off(context* const ctxt, ump::m2cvm::note_off const& in) { ctxt->push(in); }
       static constexpr void note_on(context* const ctxt, ump::m2cvm::note_on const& in) { ctxt->push(in); }
       static constexpr void poly_pressure(context* const ctxt, ump::m2cvm::poly_pressure const& in) { ctxt->push(in); }
