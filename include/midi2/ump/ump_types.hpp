@@ -4845,11 +4845,11 @@ public:
 
   [[nodiscard]] constexpr auto begin() noexcept { return iterator{*this, 0}; }
   [[nodiscard]] constexpr auto begin() const noexcept { return const_iterator{*this, 0}; }
-  [[nodiscard]] constexpr auto cbegin() noexcept { return const_iterator{*this, 0}; }
+  [[nodiscard]] constexpr auto cbegin() const noexcept { return const_iterator{*this, 0}; }
 
   [[nodiscard]] constexpr auto end() noexcept { return iterator{*this, this->number_of_bytes()}; }
   [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
-  [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
+  [[nodiscard]] constexpr auto cend() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 12U; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
