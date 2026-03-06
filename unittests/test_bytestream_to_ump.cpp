@@ -43,7 +43,7 @@ using enum midi2::bytestream::status;
 template <typename ArrayLike> struct HexContainer {
   constexpr explicit HexContainer(ArrayLike const& container_) : container{&container_} {}
 
-  friend std::ostream& operator<<(std::ostream& os, HexContainer<ArrayLike> const& hc) {
+  friend std::ostream& operator<<(std::ostream& os, HexContainer const& hc) {
     auto const* separator = "";
     for (auto v : *hc.container) {
       os << std::format("{}0x{:x}", separator, static_cast<unsigned>(v));
