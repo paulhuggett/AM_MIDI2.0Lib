@@ -4783,8 +4783,6 @@ public:
     using data1 = adt::bit_range<16, 8>;
     using data2 = adt::bit_range<8, 8>;
     using data3 = adt::bit_range<0, 8>;
-    /// Defines the bit position of the value1 field.
-    // using value1 = adt::bit_range<0, 32>;
   };
   class word2 : public details::word_base {
   public:
