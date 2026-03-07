@@ -299,7 +299,7 @@ struct trivial_sentinel {
   /// Trivial sentinels are never equal to an object of a different type.
   template <typename T> friend constexpr bool operator==(trivial_sentinel, T) noexcept { return false; }
   /// Trivial sentinels always compare equal.
-  friend constexpr bool operator==(trivial_sentinel, trivial_sentinel) noexcept { return true; }
+  friend constexpr bool operator==(trivial_sentinel, trivial_sentinel) noexcept = default;
 };
 
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>

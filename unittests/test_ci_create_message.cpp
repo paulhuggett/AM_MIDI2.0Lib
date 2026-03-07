@@ -44,6 +44,14 @@ using midi2::ci::details::from_le7;
 using midi2::ci::details::to_le7;
 using namespace midi2::literals;
 
+TEST(CITrivialSentinal, CompareAlwaysReturnsTrue) {
+  EXPECT_EQ(midi2::ci::trivial_sentinel{}, midi2::ci::trivial_sentinel{});
+}
+TEST(CITrivialSentinal, CompareToSomethingElseAlwaysReturnsFalse) {
+  EXPECT_NE(midi2::ci::trivial_sentinel{}, 2);
+  EXPECT_NE(2, midi2::ci::trivial_sentinel{});
+}
+
 class CICreateMessage : public testing::Test {
 protected:
   static constexpr auto broadcast_muid_ = std::array{0x7F_b, 0x7F_b, 0x7F_b, 0x7F_b};
