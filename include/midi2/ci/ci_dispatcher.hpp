@@ -72,7 +72,7 @@ public:
   template <typename OtherConfig>
     requires(std::convertible_to<OtherConfig, Config> &&
              !std::is_same_v<std::remove_cvref_t<OtherConfig>, ci_dispatcher>)
-  constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)}, group_{0U} {
+  constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
     header_.device_id = b7{0U};
     static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
   }
@@ -115,7 +115,7 @@ private:
   void discard();
   void overflow();
 
-  void header();
+  constexpr void header();
   // "Management" messages
   void discovery();
   void discovery_reply();
@@ -155,7 +155,7 @@ template <typename Context> ci_dispatcher(b7, std::uint8_t, Context) -> ci_dispa
 
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
-void ci_dispatcher<Config>::header() {
+constexpr void ci_dispatcher<Config>::header() {
   struct message_dispatch_info {
     message type;
     std::uint8_t v1size;
@@ -163,7 +163,7 @@ void ci_dispatcher<Config>::header() {
     consumer_fn consumer;
   };
 
-  static std::array const messages = {
+  static constexpr std::array messages = {
       message_dispatch_info{message::profile_inquiry, 0, 0, &ci_dispatcher::profile_inquiry},
       message_dispatch_info{message::profile_inquiry_reply,
                             offsetof(ci::profile_configuration::packed::inquiry_reply_v1_pt1, ids),

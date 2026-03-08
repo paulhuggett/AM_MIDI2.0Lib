@@ -90,7 +90,7 @@ dispatcher setup_ci_dispatcher(midi2::ci::b7 device_id, std::uint8_t const group
 int main() {
   try {
     constexpr auto my_muid = midi2::ci::muid{0x01234567U};  // Use a proper random number!
-    constexpr auto my_group = std::uint8_t{0};
+    constexpr auto my_group = std::uint8_t{0U};
     constexpr auto device_id = 0_b7;
     auto dispatcher = setup_ci_dispatcher(device_id, my_group, my_muid);
     // A system exclusive message containing a CI discovery request.

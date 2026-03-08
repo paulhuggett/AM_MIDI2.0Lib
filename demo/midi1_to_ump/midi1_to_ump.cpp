@@ -11,10 +11,10 @@
 // Standard library
 #include <array>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <utility>

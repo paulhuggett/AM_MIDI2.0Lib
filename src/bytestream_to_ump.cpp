@@ -27,7 +27,7 @@ namespace {
 [[nodiscard]] constexpr bool is_one_byte_message(std::byte const b) noexcept {
   using enum midi2::bytestream::status;
   auto const value = std::to_underlying(b);
-  auto const top_nibble = std::to_underlying(b & std::byte{0xF0});
+  auto const top_nibble = std::to_underlying(b & std::byte{0xF0U});
   return top_nibble == std::to_underlying(program_change) || top_nibble == std::to_underlying(channel_pressure) ||
          value == std::to_underlying(timing_code) || value == std::to_underlying(song_select);
 }
@@ -65,12 +65,12 @@ template <ump::mt::data64 T> void bytestream_to_ump::push_sysex7() noexcept {
   auto const t = ump::data64::details::sysex7<T>{}
                      .group(to_integer<std::uint8_t>(group_))
                      .number_of_bytes(sysex7_.pos)
-                     .data0(to_integer<std::uint8_t>(sysex7_.bytes[0]))
-                     .data1(to_integer<std::uint8_t>(sysex7_.bytes[1]))
-                     .data2(to_integer<std::uint8_t>(sysex7_.bytes[2]))
-                     .data3(to_integer<std::uint8_t>(sysex7_.bytes[3]))
-                     .data4(to_integer<std::uint8_t>(sysex7_.bytes[4]))
-                     .data5(to_integer<std::uint8_t>(sysex7_.bytes[5]));
+                     .data0(to_integer<std::uint8_t>(sysex7_.bytes[0U]))
+                     .data1(to_integer<std::uint8_t>(sysex7_.bytes[1U]))
+                     .data2(to_integer<std::uint8_t>(sysex7_.bytes[2U]))
+                     .data3(to_integer<std::uint8_t>(sysex7_.bytes[3U]))
+                     .data4(to_integer<std::uint8_t>(sysex7_.bytes[4U]))
+                     .data5(to_integer<std::uint8_t>(sysex7_.bytes[5U]));
   ump::apply(t, [this](auto const w) noexcept {
     output_.push_back(std::uint32_t{w});
     return false;
@@ -132,7 +132,7 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
       d1_ = unknown;
     } else if (d0_ != std::byte{0}) {  // status byte set
       if (is_one_byte_message(d0_)) {
-        this->to_ump(d0_, b, std::byte{0});
+        this->to_ump(d0_, b, std::byte{0U});
       } else if (d0_ < to_byte(status::sysex_start) || d0_ == to_byte(status::spp)) {
         // This is the first of a two data byte message.
         d1_ = b;

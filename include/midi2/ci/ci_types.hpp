@@ -1641,9 +1641,9 @@ struct midi_message_report_v2 {
     }
   };
 
-  std::byte message_data_control;
+  std::byte message_data_control{0U};
   system_message system_message;
-  std::byte reserved;
+  std::byte reserved{0U};
   channel_controller channel_controller;
   note_data_messages note_data_messages;
 };
@@ -1869,7 +1869,7 @@ struct midi_message_report_reply_v2 {
   };
 
   class system_message system_message;
-  std::byte reserved;
+  std::byte reserved{0U};
   class channel_controller channel_controller;
   class note_data_messages note_data_messages;
 };
