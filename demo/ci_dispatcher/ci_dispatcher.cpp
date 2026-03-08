@@ -67,9 +67,9 @@ using function_config = midi2::ci::function_config<context, buffer_size>;
 static_assert(std::is_same_v<std::remove_cvref_t<decltype(function_config::buffer_size)>, std::size_t>);
 using dispatcher = midi2::ci::ci_dispatcher<function_config>;
 
-dispatcher setup_ci_dispatcher(midi2::ci::muid const my_muid) {
+dispatcher setup_ci_dispatcher(midi2::ci::b7 device_id, std::uint8_t const group, midi2::ci::muid const my_muid) {
   // Create a CI dispatcher instance using std::function<> for all of its handler functions.
-  auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>();
+  auto dispatcher = midi2::ci::make_function_dispatcher<context, buffer_size>(device_id, group);
   auto& config = dispatcher.config();
 
   // Register a handler for checking whether a message is addressed to this receiver. The default
@@ -92,17 +92,14 @@ int main() {
     constexpr auto my_muid = midi2::ci::muid{0x01234567U};  // Use a proper random number!
     constexpr auto my_group = std::uint8_t{0};
     constexpr auto device_id = 0_b7;
-    auto dispatcher = setup_ci_dispatcher(my_muid);
-
+    auto dispatcher = setup_ci_dispatcher(device_id, my_group, my_muid);
     // A system exclusive message containing a CI discovery request.
     constexpr std::array message{0x7E_b, 0x7F_b, 0x0D_b, 0x70_b, 0x02_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x7F_b,
                                  0x7F_b, 0x7F_b, 0x7F_b, 0x12_b, 0x23_b, 0x34_b, 0x79_b, 0x2E_b, 0x5D_b, 0x56_b,
                                  0x01_b, 0x00_b, 0x00_b, 0x00_b, 0x7F_b, 0x00_b, 0x02_b, 0x00_b, 0x00_b, 0x00_b};
-    dispatcher.start(my_group, device_id);
     for (auto const b : message) {
       dispatcher.dispatch(b);
     }
-    dispatcher.finish();
   } catch (std::exception const& e) {
     // The midi2 library doesn't throw but something else might...
     std::cerr << "Error: " << e.what() << '\n';

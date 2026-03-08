@@ -67,23 +67,31 @@ public:
   using input_type = std::byte;
   using config_type = std::remove_reference_t<std::unwrap_reference_t<Config>>;
 
+  constexpr ci_dispatcher() noexcept : ci_dispatcher{b7{0U}, 0U, Config{}} {}
+
   template <typename OtherConfig>
     requires(std::convertible_to<OtherConfig, Config> &&
              !std::is_same_v<std::remove_cvref_t<OtherConfig>, ci_dispatcher>)
-  constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)} {
+  constexpr explicit ci_dispatcher(OtherConfig&& config) : config_{std::forward<OtherConfig>(config)}, group_{0U} {
+    header_.device_id = b7{0U};
     static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
   }
 
-  constexpr void start(std::uint8_t group, b7 device_id) noexcept;
-  constexpr void finish() noexcept { /* here for symmetry with start */
+  template <typename OtherConfig>
+    requires(std::convertible_to<OtherConfig, Config>)
+  constexpr explicit ci_dispatcher(b7 const device_id, std::uint8_t const group, OtherConfig&& config)
+      : config_{std::forward<OtherConfig>(config)}, group_{group} {
+    header_.device_id = device_id;
+    static_assert(midi2::dispatcher<Config, std::byte, decltype(*this)>);
   }
+
+  constexpr void set_group(std::uint8_t const group) noexcept { group_ = group; }
+  constexpr void set_device_id(b7 const device_id) noexcept { header_.device_id = device_id; }
 
   void dispatch(std::byte s7);
 
   [[nodiscard]] constexpr config_type const& config() const noexcept { return config_; }
   [[nodiscard]] constexpr config_type& config() noexcept { return config_; }
-
-  constexpr void reset() noexcept;
 
 private:
   static constexpr auto header_size = sizeof(ci::packed::header);
@@ -94,7 +102,7 @@ private:
 
   std::size_t count_ = header_size;
   message type_ = static_cast<message>(0x00);
-  std::uint8_t group_ = 0;  // set by start()
+  std::uint8_t group_ = 0;
   consumer_fn consumer_ = &ci_dispatcher::header;
 
   // Note that the struct keyword is necessary to avoid an error from gcc about a conflict with header().
@@ -143,28 +151,7 @@ private:
   void process_inquiry_midi_message_report_end();
 };
 
-template <typename Config>
-  requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
-constexpr void ci_dispatcher<Config>::reset() noexcept {
-  using header_type = struct header;
-  header_ = header_type{};
-
-  count_ = header_size;
-  group_ = 0;
-  type_ = static_cast<message>(0x00);
-  consumer_ = &ci_dispatcher::header;
-
-  std::ranges::fill(buffer_, std::byte{0});
-  pos_ = 0;
-}
-
-template <typename Config>
-  requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
-constexpr void ci_dispatcher<Config>::start(std::uint8_t group, b7 device_id) noexcept {
-  this->reset();
-  header_.device_id = device_id;
-  group_ = group;
-}
+template <typename Context> ci_dispatcher(b7, std::uint8_t, Context) -> ci_dispatcher<Context>;
 
 template <typename Config>
   requires ci_dispatcher_config<std::unwrap_reference_t<Config>>
@@ -809,9 +796,17 @@ void ci_dispatcher<Config>::dispatch(std::byte const s7) {
 }
 
 template <typename Context, std::size_t BufferSize>
-ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher(Context&& context = Context{}) {
+ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher(b7 const device_id,
+                                                                             std::uint8_t const group,
+                                                                             Context&& context = Context{}) {
   using config = function_config<Context, BufferSize>;
-  return ci_dispatcher<config>{config{std::forward<Context>(context)}};
+  return ci_dispatcher{device_id, group, config{std::forward<Context>(context)}};
+}
+
+template <typename Context, std::size_t BufferSize>
+ci_dispatcher<function_config<Context, BufferSize>> make_function_dispatcher() {
+  using config = function_config<Context, BufferSize>;
+  return ci_dispatcher<config>{};
 }
 
 }  // end namespace midi2::ci

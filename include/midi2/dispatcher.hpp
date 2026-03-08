@@ -35,7 +35,6 @@ concept dispatcher = requires(T v) {
   { v.dispatch(InputType{}) };
   { v.config() } -> std::convertible_to<std::unwrap_reference_t<Config>&>;
   { std::as_const(v).config() } -> std::convertible_to<std::remove_reference_t<std::unwrap_reference_t<Config>> const&>;
-  { v.reset() };
 };
 
 }  // end namespace midi2

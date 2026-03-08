@@ -307,7 +307,7 @@ struct header {
   /// - 10–7D: Reserved
   /// - 7E: To/from Group
   /// - 7F: To/from Function Block
-  b7 device_id;
+  b7 device_id = b7{0U};
   /// MIDI-CI Message Version/Format
   b7 version = b7{1U};
   muid remote_muid;
