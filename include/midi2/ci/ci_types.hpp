@@ -98,7 +98,7 @@ namespace literals {
 }  // end namespace midi2
 
 template <unsigned Bits, std::unsigned_integral Underlying, typename CharT>
-struct std::formatter<midi2::ci::details::bn<Bits, Underlying>, CharT> : public std::formatter<Underlying, CharT> {
+struct std::formatter<midi2::ci::details::bn<Bits, Underlying>, CharT> : std::formatter<Underlying, CharT> {
   auto format(midi2::ci::details::bn<Bits, Underlying> value, auto& format_ctx) const {
     return std::formatter<Underlying, CharT>::format(Underlying{value}, format_ctx);
   }

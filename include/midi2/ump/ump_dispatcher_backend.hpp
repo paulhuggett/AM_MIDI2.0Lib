@@ -464,7 +464,7 @@ template <typename Context> struct flex_data_pure {
 static_assert(flex_data<flex_data_pure<int>, int>, "flex_data_pure must implement the flex_data concept");
 
 // clang-format off
-template <typename Context> struct utility_base : public utility_pure<Context> {
+template <typename Context> struct utility_base : utility_pure<Context> {
   // 7.2.1 NOOP
   void noop(Context) override { /* do nothing */ }
   // 7.2.2.1 JR Clock Message
@@ -478,7 +478,7 @@ template <typename Context> struct utility_base : public utility_pure<Context> {
 
   void unknown(Context, std::span<std::uint32_t>) override { /* do nothing */ }
 };
-template <typename Context> struct system_base : public system_pure<Context> {
+template <typename Context> struct system_base : system_pure<Context> {
   // 7.6 System Common and System Real Time Messages
   void midi_time_code(Context, system::midi_time_code const &) override { /* do nothing */ }
   void song_position_pointer(Context, system::song_position_pointer const &) override { /* do nothing */ }
@@ -491,7 +491,7 @@ template <typename Context> struct system_base : public system_pure<Context> {
   void active_sensing(Context, system::active_sensing const &) override { /* do nothing */ }
   void reset(Context, system::reset const &) override { /* do nothing */ }
 };
-template <typename Context> struct m1cvm_base : public m1cvm_pure<Context> {
+template <typename Context> struct m1cvm_base : m1cvm_pure<Context> {
   void note_off(Context, m1cvm::note_off const &) override { /* do nothing */ }
   void note_on(Context, m1cvm::note_on const &) override { /* do nothing */ }
   void poly_pressure(Context, m1cvm::poly_pressure const &) override { /* do nothing */ }
@@ -500,13 +500,13 @@ template <typename Context> struct m1cvm_base : public m1cvm_pure<Context> {
   void channel_pressure(Context, m1cvm::channel_pressure const &) override { /* do nothing */ }
   void pitch_bend(Context, m1cvm::pitch_bend const &) override { /* do nothing */ }
 };
-template <typename Context> struct data64_base : public data64_pure<Context> {
+template <typename Context> struct data64_base : data64_pure<Context> {
   void sysex7_in_1(Context, data64::sysex7_in_1 const &) override { /* do nothing */ }
   void sysex7_start(Context, data64::sysex7_start const &) override { /* do nothing */ }
   void sysex7_continue(Context, data64::sysex7_continue const &) override { /* do nothing */ }
   void sysex7_end(Context, data64::sysex7_end const &) override { /* do nothing */ }
 };
-template <typename Context> struct m2cvm_base : public m2cvm_pure<Context> {
+template <typename Context> struct m2cvm_base : m2cvm_pure<Context> {
   void note_off(Context, m2cvm::note_off const &) override { /* do nothing */ }
   void note_on(Context, m2cvm::note_on const &) override { /* do nothing */ }
   void poly_pressure(Context, m2cvm::poly_pressure const &) override { /* do nothing */ }
@@ -531,7 +531,7 @@ template <typename Context> struct m2cvm_base : public m2cvm_pure<Context> {
   void pitch_bend(Context, m2cvm::pitch_bend const &) override { /* do nothing */ }
   void per_note_pitch_bend(Context, m2cvm::per_note_pitch_bend const &) override { /* do nothing */ }
 };
-template <typename Context> struct data128_base : public data128_pure<Context> {
+template <typename Context> struct data128_base : data128_pure<Context> {
   void sysex8_in_1(Context, data128::sysex8_in_1 const &) override { /* do nothing */ }
   void sysex8_start(Context, data128::sysex8_start const &) override { /* do nothing */ }
   void sysex8_continue(Context, data128::sysex8_continue const &) override { /* do nothing */ }
@@ -539,7 +539,7 @@ template <typename Context> struct data128_base : public data128_pure<Context> {
   void mds_header(Context, data128::mds_header const &) override { /* do nothing */ }
   void mds_payload(Context, data128::mds_payload const &) override { /* do nothing */ }
 };
-template <typename Context> struct stream_base : public stream_pure<Context> {
+template <typename Context> struct stream_base : stream_pure<Context> {
   void endpoint_discovery(Context, stream::endpoint_discovery const &) override { /* do nothing */ }
   void endpoint_info_notification(Context, stream::endpoint_info_notification const &) override { /* do nothing */ }
   void device_identity_notification(Context, stream::device_identity_notification const &) override { /* do nothing */ }
@@ -555,7 +555,7 @@ template <typename Context> struct stream_base : public stream_pure<Context> {
   void start_of_clip(Context, stream::start_of_clip const &) override { /* do nothing */ }
   void end_of_clip(Context, stream::end_of_clip const &) override { /* do nothing */ }
 };
-template <typename Context> struct flex_data_base : public flex_data_pure<Context> {
+template <typename Context> struct flex_data_base : flex_data_pure<Context> {
   void set_tempo(Context, flex_data::set_tempo const &) override { /* do nothing */ }
   void set_time_signature(Context, flex_data::set_time_signature const &) override { /* do nothing */ }
   void set_metronome(Context, flex_data::set_metronome const &) override { /* do nothing */ }
