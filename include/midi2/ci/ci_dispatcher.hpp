@@ -652,7 +652,8 @@ void ci_dispatcher<Config>::property_exchange() {
 
   using chunk_info = ci::property_exchange::chunk_info;
 
-  auto const chunk = chunk_info{details::from_le7(pt2->number_of_chunks), details::from_le7(pt2->chunk_number)};
+  auto const chunk = chunk_info{.number_of_chunks = details::from_le7(pt2->number_of_chunks),
+                                .chunk_number = details::from_le7(pt2->chunk_number)};
   auto const request = b7{to_underlying(pt1->request_id)};
   auto const header = std::span{&pt1->header[0], header_length};
   auto const data = std::span{&pt2->data[0], data_length};
