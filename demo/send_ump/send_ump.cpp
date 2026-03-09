@@ -64,7 +64,7 @@ int main() {
   constexpr auto group = std::uint8_t{0U};
   constexpr auto channel = std::uint8_t{1U};
 
-  midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(42), transmit);
+  midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(42U), transmit);
   std::cout << "- \n";
 
   constexpr auto velocity = std::uint16_t{10000U};

@@ -334,7 +334,7 @@ public:
     constexpr explicit iterator_type(owner_type* const owner) noexcept : owner_{owner} {}
     constexpr iterator_type(owner_type* const owner, std::pair<std::size_t, std::size_t> const& indexes) noexcept
         : owner_{owner}, set_index_{indexes.first}, way_index_{indexes.second} {}
-    constexpr bool operator==(iterator_type const& other) const noexcept = default;
+    constexpr friend bool operator==(iterator_type const&, iterator_type const&) noexcept = default;
 
     constexpr reference operator*() const
       requires(std::is_const_v<T>)
@@ -387,7 +387,7 @@ public:
   plru_cache& operator=(plru_cache const&) noexcept = delete;
   plru_cache& operator=(plru_cache&&) noexcept = delete;
 
-  bool operator==(plru_cache const&) const = delete;
+  constexpr friend bool operator==(plru_cache const&, plru_cache const&) = delete;
 
   /// \tparam MissFn  The type of the function called to instantiate a value in the cache.
   /// \tparam ValidFn  The type of the function called to check the validity of a value in the cache.

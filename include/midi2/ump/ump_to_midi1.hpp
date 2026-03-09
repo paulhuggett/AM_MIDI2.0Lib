@@ -82,7 +82,7 @@ private:
           : v_{static_cast<std::uint16_t>(group | (channel << 4) | (is_rpn << 8))} {
         assert(group < 0x10 && channel < 0x10);
       }
-      constexpr bool operator==(pn_cache_key const&) const noexcept = default;
+      constexpr friend bool operator==(pn_cache_key const&, pn_cache_key const&) noexcept = default;
       [[nodiscard]] explicit operator std::uint16_t() const noexcept { return v_; }
 
       [[nodiscard]] constexpr std::uint8_t group() const noexcept { return v_ & 0x000F; }
