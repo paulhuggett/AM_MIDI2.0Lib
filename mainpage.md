@@ -115,7 +115,7 @@ If not needed by the handlers, it can be an empty struct declared with
 1. Null
 
    A group of message handlers in which every function is a static constexpr
-   function that does nothing. The can be very useful to simply drop an entire
+   function that does nothing. They can be very useful to simply drop an entire
    class of input messages. Since they are constexpr, the compiler can often
    remove swathes of code leading up to the call of these functions so they can
    be very efficient.
