@@ -23,15 +23,16 @@
 #include <bitset>
 #include <cassert>
 #include <climits>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
+#include <iterator>
 #include <memory>
-#include <new>
 #include <numeric>
-#include <ranges>
+#include <type_traits>
+#include <utility>
 
-#if __ARM_NEON
+#if defined(__ARM_NEON) && __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 
@@ -124,7 +125,7 @@ template <std::unsigned_integral Key, unsigned SetBits, unsigned Ways> struct ma
   }
 };
 
-#if __ARM_NEON
+#if defined(__ARM_NEON) && __ARM_NEON
 template <std::unsigned_integral Key, unsigned SetBits>
   requires(std::is_same_v<typename tagged_key<Key, SetBits>::value_type, std::uint16_t>)
 struct match_finder<Key, SetBits, 4> {
@@ -234,7 +235,8 @@ public:
     plru_.reset();
   }
   [[nodiscard]] constexpr std::size_t size() const noexcept {
-    return static_cast<std::size_t>(std::ranges::count_if(keys_, [](tagged_key_type const& v) { return v.valid(); }));
+    return static_cast<std::size_t>(
+        std::ranges::count_if(keys_, [](tagged_key_type const& v) constexpr { return v.valid(); }));
   }
 
   [[nodiscard]] constexpr bool valid(std::size_t index) const noexcept {
@@ -299,12 +301,20 @@ public:
   template <typename T>
     requires(std::is_same_v<T, mapped_type> || std::is_same_v<T, mapped_type const>)
   struct proxy {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     Key const first;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     T& second;
+    // NOLINTNEXTLINE(hicpp-explicit-conversions,google-explicit-constructor)
     constexpr operator std::pair<Key const, std::remove_const_t<T>>() const noexcept { return {first, second}; }
-    constexpr bool operator==(proxy const&) const noexcept = default;
-    constexpr bool operator==(std::pair<Key const, std::remove_const_t<T>> const& other) const noexcept {
-      return first == other.first && second == other.second;
+    constexpr friend bool operator==(proxy const&, proxy const&) noexcept = default;
+    constexpr friend bool operator==(proxy const& lhs,
+                                     std::pair<Key const, std::remove_const_t<T>> const& rhs) noexcept {
+      return lhs.first == rhs.first && lhs.second == rhs.second;
+    }
+    constexpr friend bool operator==(std::pair<Key const, std::remove_const_t<T>> const& lhs,
+                                     proxy const& rhs) noexcept {
+      return lhs.first == rhs.first && lhs.second == rhs.second;
     }
   };
 
