@@ -61,14 +61,14 @@ std::error_code notes_off(R const& range, std::uint8_t group, std::uint8_t chann
 }  // end anonymous namespace
 
 int main() {
-  constexpr auto group = std::uint8_t{0};
-  constexpr auto channel = std::uint8_t{1};
+  constexpr auto group = std::uint8_t{0U};
+  constexpr auto channel = std::uint8_t{1U};
 
   midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(42), transmit);
   std::cout << "- \n";
 
-  constexpr auto velocity = std::uint16_t{10000};
-  constexpr std::array notes = {std::uint8_t{60}, std::uint8_t{64}, std::uint8_t{67}};
+  constexpr auto velocity = std::uint16_t{10000U};
+  constexpr std::array notes = {std::uint8_t{60U}, std::uint8_t{64U}, std::uint8_t{67U}};
   for (auto const note : notes) {
     if (auto const err = send_note_on(group, channel, note, velocity)) {
       // In this example, send_note_on() will never fail because transmit() always returns
