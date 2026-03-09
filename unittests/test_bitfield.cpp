@@ -34,20 +34,21 @@ template <typename Type, unsigned Index, unsigned Bits> struct param {
   using br = bit_range<Index, Bits>;
 };
 
-using assign_test_types = Types<param<std::uint8_t, 0, 1>,  // testing bits [0,1)
-                                param<std::uint8_t, 1, 1>,  // testing bits [1,2)
-                                param<std::uint8_t, 7, 1>,  // ... and so on.
-                                param<std::uint16_t, 8, 1>, param<std::uint16_t, 15, 1>, param<std::uint32_t, 16, 1>,
-                                param<std::uint32_t, 31, 1>, param<std::uint64_t, 32, 1>, param<std::uint64_t, 63, 1>,
+using assign_test_types =
+    Types<param<std::uint8_t, 0U, 1U>,  // testing bits [0,1)
+          param<std::uint8_t, 1U, 1U>,  // testing bits [1,2)
+          param<std::uint8_t, 7U, 1U>,  // ... and so on.
+          param<std::uint16_t, 8U, 1U>, param<std::uint16_t, 15U, 1U>, param<std::uint32_t, 16U, 1U>,
+          param<std::uint32_t, 31U, 1U>, param<std::uint64_t, 32U, 1U>, param<std::uint64_t, 63U, 1U>,
 
-                                param<std::uint8_t, 0, 2>, param<std::uint8_t, 1, 2>, param<std::uint8_t, 6, 2>,
-                                param<std::uint16_t, 7, 2>, param<std::uint16_t, 8, 2>, param<std::uint16_t, 14, 2>,
-                                param<std::uint32_t, 15, 2>, param<std::uint32_t, 16, 2>, param<std::uint64_t, 31, 2>,
-                                param<std::uint64_t, 32, 2>, param<std::uint64_t, 62, 2>,
+          param<std::uint8_t, 0U, 2U>, param<std::uint8_t, 1U, 2U>, param<std::uint8_t, 6U, 2U>,
+          param<std::uint16_t, 7U, 2U>, param<std::uint16_t, 8U, 2U>, param<std::uint16_t, 14U, 2U>,
+          param<std::uint32_t, 15U, 2U>, param<std::uint32_t, 16U, 2U>, param<std::uint64_t, 31U, 2U>,
+          param<std::uint64_t, 32U, 2U>, param<std::uint64_t, 62U, 2U>,
 
-                                param<std::uint8_t, 0, 7>, param<std::uint8_t, 0, 8>, param<std::uint16_t, 0, 9>,
-                                param<std::uint16_t, 0, 15>, param<std::uint16_t, 0, 16>, param<std::uint32_t, 0, 17>,
-                                param<std::uint32_t, 0, 31>, param<std::uint32_t, 0, 32>, param<std::uint64_t, 0, 63>>;
+          param<std::uint8_t, 0U, 7U>, param<std::uint8_t, 0U, 8U>, param<std::uint16_t, 0U, 9U>,
+          param<std::uint16_t, 0U, 15U>, param<std::uint16_t, 0U, 16U>, param<std::uint32_t, 0U, 17U>,
+          param<std::uint32_t, 0U, 31U>, param<std::uint32_t, 0U, 32U>, param<std::uint64_t, 0U, 63U>>;
 
 TYPED_TEST_SUITE(BitFieldAssignment, assign_test_types, );
 
