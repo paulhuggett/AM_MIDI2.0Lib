@@ -7,9 +7,9 @@ version: 2
 
 # Set the OS, Python version and other tools you might need
 build:
-  os: "ubuntu-lts-latest"
+  os: ubuntu-lts-latest
   tools:
-    python: "miniforge3-latest"
+    python: miniforge3-latest
     # You can also specify other tool versions:
     # nodejs: "19"
     # rust: "1.64"
