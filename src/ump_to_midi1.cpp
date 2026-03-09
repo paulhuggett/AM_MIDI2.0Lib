@@ -65,7 +65,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::program_change(context_type* const ct
                                                           ump::m2cvm::program_change const& in) {
   auto const group = in.group();
   auto const channel = in.channel();
-  if (in.bank_valid()) {
+  if (in.bank_valid() != 0U) {
     // Control Change numbers 00H and 20H are defined as the Bank Select message. 00H is the MSB and
     // 20H is the LSB for a total of 14 bits. This allows 16,384 banks to be specified.
     ctxt->push(ump::m1cvm::control_change{}
