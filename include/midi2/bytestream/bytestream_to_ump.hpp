@@ -68,9 +68,9 @@ public:
 
 private:
   static constexpr auto unknown = std::byte{0xFF};
-  std::byte group_ = std::byte{0};
+  std::byte group_ = std::byte{0U};
 
-  std::byte d0_ = std::byte{0};
+  std::byte d0_ = std::byte{0U};
   std::byte d1_ = unknown;
 
   struct sysex7 {
@@ -88,11 +88,11 @@ private:
     void reset() noexcept {
       state = sysex7::status::none;
       pos = 0;
-      std::ranges::fill(bytes, std::byte{0});
+      std::ranges::fill(bytes, std::byte{0U});
     }
   };
   sysex7 sysex7_;
-  adt::fifo<std::uint32_t, 4> output_{};
+  adt::fifo<std::uint32_t, 4> output_;
 
   void to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept;
 

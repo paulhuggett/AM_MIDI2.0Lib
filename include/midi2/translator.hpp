@@ -15,6 +15,7 @@
 #define MIDI2_TRANSLATOR_HPP
 
 #include <concepts>
+#include <type_traits>
 
 namespace midi2 {
 

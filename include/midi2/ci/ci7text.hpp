@@ -124,7 +124,7 @@ public:
   /// \returns  Iterator one past the last element assigned.
   template <std::output_iterator<output_type> OutputIterator>
   OutputIterator operator()(input_type code_unit, OutputIterator dest) noexcept {
-    if ((static_cast<std::byte>(code_unit) & std::byte{1U << 7}) != std::byte{0}) {
+    if ((static_cast<std::byte>(code_unit) & std::byte{1U << 7}) != std::byte{0U}) {
       well_formed_ = false;
       return dest;
     }

@@ -946,15 +946,15 @@ TEST_F(UMPDispatcherFlexData, Text) {
 
 struct default_config {
   struct empty {};
-  [[no_unique_address]] empty context{};
-  [[no_unique_address]] midi2::ump::dispatcher_backend::utility_null<decltype(context)> utility;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::system_null<decltype(context)> system;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::m1cvm_null<decltype(context)> m1cvm;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::data64_null<decltype(context)> data64;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::m2cvm_null<decltype(context)> m2cvm;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::data128_null<decltype(context)> data128;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::stream_null<decltype(context)> stream;
-  [[no_unique_address]] midi2::ump::dispatcher_backend::flex_data_null<decltype(context)> flex;
+  [[no_unique_address, maybe_unused]] empty context{};
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::utility_null<decltype(context)> utility;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::system_null<decltype(context)> system;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::m1cvm_null<decltype(context)> m1cvm;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::data64_null<decltype(context)> data64;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::m2cvm_null<decltype(context)> m2cvm;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::data128_null<decltype(context)> data128;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::stream_null<decltype(context)> stream;
+  [[no_unique_address, maybe_unused]] midi2::ump::dispatcher_backend::flex_data_null<decltype(context)> flex;
 };
 
 void UMPDispatcherNeverCrashes(std::vector<std::uint32_t> const& in) {

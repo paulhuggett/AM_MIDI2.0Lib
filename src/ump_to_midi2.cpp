@@ -86,7 +86,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context*
   case rpn_lsb:
     // Setting RPN to 7FH,7FH will disable the data entry, data increment, and data decrement controllers
     // until a new RPN or NRPN is selected. (MIDI 1.0 Approved Protocol JMSC-0011)
-    if (c.pn_is_rpn && c.pn_msb_valid && c.pn_msb == 0x7F && value == 0x7F) {
+    if (c.pn_is_rpn != 0U && c.pn_msb_valid != 0U && c.pn_msb == 0x7FU && value == 0x7FU) {
       c.reset();
     } else {
       c.pn_is_rpn = true;
@@ -97,7 +97,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::control_change(ump_to_midi2::context*
   case data_entry_msb: c.set_value_msb(value); break;
 
   case data_entry_lsb:
-    if (c.pn_msb_valid && c.pn_lsb_valid && c.value_msb_valid) {
+    if (c.pn_msb_valid != 0U && c.pn_lsb_valid != 0U && c.value_msb_valid != 0U) {
       if (c.pn_is_rpn) {
         pn_control_message<ump::m2cvm::rpn_controller>(ctxt, c, group, channel, value);
       } else {
@@ -153,7 +153,7 @@ void ump_to_midi2::to_midi2_config::m1cvm::pitch_bend(ump_to_midi2::context* con
   constexpr auto msb_bits = ump::m1cvm::pitch_bend::word0::msb_data::bits();
   constexpr auto m2v = ump::m2cvm::pitch_bend::word1::value::bits();
 
-  static_assert(lsb_bits + msb_bits <= 16);
+  static_assert(lsb_bits + msb_bits <= 16U);
   auto const m1value =
       static_cast<std::uint16_t>(static_cast<std::uint16_t>(in.msb_data() << lsb_bits) | in.lsb_data());
   ctxt->push(ump::m2cvm::pitch_bend{}

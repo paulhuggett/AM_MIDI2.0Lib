@@ -20,7 +20,7 @@ using midi2::ci::b7;
 using midi2::ci::byte_array;
 using midi2::ci::details::from_le7;
 
-constexpr auto zero = std::byte{0};
+constexpr auto zero = std::byte{0U};
 constexpr auto one = std::byte{1};
 constexpr auto max = std::byte{0x7F};
 

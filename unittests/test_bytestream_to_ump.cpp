@@ -101,7 +101,7 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
   // these should be treated as a note-off. Running status is used for the two
   // input messages.
   constexpr std::array input{std::byte{static_cast<std::byte>(midi2::bytestream::status::note_on) | channel},
-                             note_number, velocity, note_number, std::byte{0}};
+                             note_number, velocity, note_number, std::byte{0U}};
 
   constexpr auto m0 =
       std::uint32_t{(2U << 28) | (group << 24) | (ump_note_on << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
@@ -167,7 +167,7 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
   constexpr auto velocity = std::byte{127};
 
   // A real-time message can appear anywhere, even in the middle of another
-  // multi-byte message.
+  // multibyte message.
   constexpr std::array input{static_cast<std::byte>(midi2::bytestream::status::note_on) | channel,
                              static_cast<std::byte>(midi2::bytestream::status::sequence_start), note_number, velocity};
 

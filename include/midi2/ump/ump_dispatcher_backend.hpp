@@ -14,7 +14,10 @@
 #ifndef MIDI2_UMP_DISPATCHER_BACKEND_HPP
 #define MIDI2_UMP_DISPATCHER_BACKEND_HPP
 
+#include <concepts>
+#include <cstdint>
 #include <functional>
+#include <span>
 
 #include "midi2/ump/ump_types.hpp"
 #include "midi2/utils.hpp"

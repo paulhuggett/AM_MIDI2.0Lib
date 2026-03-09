@@ -24,6 +24,7 @@
 #include "midi2/adt/plru_cache.hpp"
 #include "midi2/translator.hpp"
 #include "midi2/ump/ump_dispatcher.hpp"
+#include "midi2/ump/ump_dispatcher_backend.hpp"
 #include "midi2/ump/ump_types.hpp"
 
 namespace midi2::ump {

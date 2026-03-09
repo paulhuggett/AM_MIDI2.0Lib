@@ -19,7 +19,6 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
-#include <functional>
 #include <span>
 #include <type_traits>
 

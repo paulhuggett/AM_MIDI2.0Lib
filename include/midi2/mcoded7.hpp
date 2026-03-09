@@ -47,8 +47,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-
-#include "midi2/utils.hpp"
+#include <utility>
 
 /// \brief  MIDI Mcoded7 Encoding and Decoding
 namespace midi2::mcoded7 {
@@ -86,7 +85,7 @@ public:
   /// fresh data stream without having to rescan the input.
   void reset() {
     pos_ = 0U;
-    buffer_[0] = std::byte{0};  // reset the MSB for the next block of 7.
+    buffer_[0] = std::byte{0U};  // reset the MSB for the next block of 7.
   }
 
 private:

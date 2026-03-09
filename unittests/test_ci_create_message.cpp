@@ -382,7 +382,7 @@ TEST_F(CICreateMessage, NakV2) {
     2_b, // 1 byte MIDI-CI Message Version/Format
     sender_muid_[0], sender_muid_[1], sender_muid_[2], sender_muid_[3], // 4 bytes Source MUID (LSB first)
     receiver_muid[0], receiver_muid[1], receiver_muid[2], receiver_muid[3], // Destination MUID (LSB first)
-    original_id, // Originl transaciton sub-ID#2 classification
+    original_id, // Original transaction sub-ID#2 classification
     nak_status_code, // NAK Status Code
     nak_status_data, // NAK Status Data
     nak_details[0], nak_details[1], nak_details[2], nak_details[3], nak_details[4],

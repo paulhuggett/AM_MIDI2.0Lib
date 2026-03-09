@@ -20,7 +20,7 @@ namespace {
 
 struct context_type {
   constexpr bool operator==(context_type const&) const noexcept = default;
-  int value = 23;
+  [[maybe_unused]] int value = 23;
 };
 
 using testing::ElementsAreArray;

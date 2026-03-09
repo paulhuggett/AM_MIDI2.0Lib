@@ -1470,7 +1470,7 @@ private:
 
   /// \brief Bitwise-or this value to create a state representing the FSM identifying the BOM.
   /// \anchor transcoder-bom_mode
-  static constexpr auto bom_mode = std::byte{0};
+  static constexpr auto bom_mode = std::byte{0U};
   /// \brief Bitwise-or this value to create a state representing the FSM consuming runs of bytes and emitting
   ///        code-units.
   /// \anchor transcoder-run_mode
@@ -1478,7 +1478,7 @@ private:
 
   /// \brief Bitwise-or this value to create a state consuming big-endian values.
   /// \anchor transcoder-big_endian
-  static constexpr auto big_endian = std::byte{0};
+  static constexpr auto big_endian = std::byte{0U};
   /// \brief Bitwise-or this value to create a state consuming little-endian values.
   /// \anchor transcoder-little_endian
   static constexpr auto little_endian = endian_mask;

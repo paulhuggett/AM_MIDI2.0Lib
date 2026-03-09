@@ -37,7 +37,7 @@ template <> inline std::string GetTypeName<char8_t>() {
 }  // end namespace testing::internal
 #endif  // defined(__cpp_char8_t) && defined(__cpp_lib_char8_t)
 
-/// A type that is always false. Used to improve the failure mesages from
+/// A type that is always false. Used to improve the failure messages from
 /// static_assert().
 template <typename... T> [[maybe_unused]] constexpr bool always_false = false;
 

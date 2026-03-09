@@ -15,21 +15,19 @@
 #define MIDI2_CI_DISPATCHER_HPP
 
 #include <array>
-#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <functional>
 #include <span>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "midi2/ci/ci_dispatcher_backend.hpp"
 #include "midi2/ci/ci_types.hpp"
 #include "midi2/dispatcher.hpp"
-#include "midi2/utils.hpp"
 
 namespace midi2::ci {
 

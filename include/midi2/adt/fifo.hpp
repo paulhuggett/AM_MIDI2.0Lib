@@ -60,7 +60,7 @@ public:
 
   constexpr ~fifo() noexcept { this->clear(); }
 
-  constexpr bool operator==(fifo const&) const = delete;
+  constexpr friend bool operator==(fifo const&, fifo const&) = delete;
 
   fifo& operator=(fifo const&) = delete;
   fifo& operator=(fifo&&) noexcept = delete;

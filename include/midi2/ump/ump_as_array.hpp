@@ -22,7 +22,11 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdlib>
+#include <functional>
+#include <initializer_list>
 #include <iterator>
+#include <ranges>
+#include <tuple>
 #include <type_traits>
 
 #include "midi2/adt/uinteger.hpp"

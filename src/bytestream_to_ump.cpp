@@ -43,8 +43,8 @@ void bytestream_to_ump::set_group(std::uint8_t const group) noexcept {
 }
 
 void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept {
-  assert((b0 & std::byte{0x80}) != std::byte{0} && "Top bit of b0 must be set");
-  assert((b1 & std::byte{0x80}) == std::byte{0} && (b2 & std::byte{0x80}) == std::byte{0} &&
+  assert((b0 & std::byte{0x80}) != std::byte{0U} && "Top bit of b0 must be set");
+  assert((b1 & std::byte{0x80}) == std::byte{0U} && (b2 & std::byte{0x80}) == std::byte{0U} &&
          "The top bit of b1 and b2 must be zero");
   assert(std::to_underlying(b0) != std::to_underlying(status::sysex_start));
   assert(to_integer<unsigned>(group_) < (1U << 5));
@@ -80,7 +80,7 @@ template <ump::mt::data64 T> void bytestream_to_ump::push_sysex7() noexcept {
 }
 
 void bytestream_to_ump::sysex_data_byte(std::byte const b) noexcept {
-  if (sysex7_.pos % 6 == 0 && sysex7_.pos != 0) {
+  if (sysex7_.pos % 6 == 0U && sysex7_.pos != 0U) {
     using enum sysex7::status;
     switch (sysex7_.state) {
     case start: push_sysex7<ump::mt::data64::sysex7_start>(); break;
@@ -89,7 +89,7 @@ void bytestream_to_ump::sysex_data_byte(std::byte const b) noexcept {
     }
     sysex7_.reset();
     sysex7_.state = sysex7::status::cont;
-    sysex7_.pos = 0;
+    sysex7_.pos = 0U;
   }
   sysex7_.bytes[sysex7_.pos] = b;
   ++sysex7_.pos;
@@ -100,7 +100,7 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
 
   if (is_status_byte(b)) {
     if (is_system_real_time_message(b)) {
-      this->to_ump(b, std::byte{0}, std::byte{0});
+      this->to_ump(b, std::byte{0U}, std::byte{0U});
       return;
     }
 
@@ -116,10 +116,10 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
     }
 
     switch (midi1int) {
-    case status::tune_request: this->to_ump(b, std::byte{0}, std::byte{0}); break;
+    case status::tune_request: this->to_ump(b, std::byte{0U}, std::byte{0U}); break;
     case status::sysex_start:
       sysex7_.state = sysex7::status::start;
-      sysex7_.pos = 0;
+      sysex7_.pos = 0U;
       break;
     default: break;
     }
@@ -130,7 +130,7 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
     } else if (d1_ != unknown) {  // Second byte
       this->to_ump(d0_, d1_, b);
       d1_ = unknown;
-    } else if (d0_ != std::byte{0}) {  // status byte set
+    } else if (d0_ != std::byte{0U}) {  // status byte set
       if (is_one_byte_message(d0_)) {
         this->to_ump(d0_, b, std::byte{0U});
       } else if (d0_ < to_byte(status::sysex_start) || d0_ == to_byte(status::spp)) {
