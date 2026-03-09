@@ -351,7 +351,7 @@ std::vector<OutputEncoding> convert(std::vector<InputEncoding> const& input) {
 void RoundTrip(std::vector<char32_t> const& input) {
   std::vector<char32_t> sanitized_input;
   sanitized_input.reserve(input.size());
-  std::ranges::copy_if(input, std::back_inserter(sanitized_input), [](char32_t cp) {
+  std::ranges::copy_if(input, std::back_inserter(sanitized_input), [](char32_t cp) constexpr {
     return cp <= midi2::icubaby::max_code_point && !midi2::icubaby::is_surrogate(cp);
   });
 

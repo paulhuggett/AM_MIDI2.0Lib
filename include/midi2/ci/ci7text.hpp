@@ -93,7 +93,7 @@ private:
     auto const first = out16.begin();
     // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const last = icubaby::t32_16{}(code_unit, first);
-    auto const to_hex = [](unsigned const v) { return static_cast<char>(v + ((v < 10) ? '0' : 'A' - 10)); };
+    auto const to_hex = [](unsigned const v) constexpr { return static_cast<char>(v + ((v < 10) ? '0' : 'A' - 10)); };
     std::for_each(first, last, [&dest, &to_hex](char16_t const c) {
       *(dest++) = '\\';
       *(dest++) = 'u';

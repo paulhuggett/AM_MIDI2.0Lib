@@ -223,7 +223,7 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
 }
 [[nodiscard]] constexpr b7_array<5> from_le7(byte_array<5> const& v) noexcept {
   b7_array<5> result;
-  std::ranges::transform(v, std::begin(result), [](std::byte const b) { return from_le7(b); });
+  std::ranges::transform(v, std::begin(result), [](std::byte const b) constexpr { return from_le7(b); });
   return result;
 }
 
@@ -244,21 +244,21 @@ constexpr auto mask7b = std::byte{(1 << 7) - 1};
 }
 [[nodiscard]] constexpr byte_array<5> to_le7(b7_array<5> const& v) noexcept {
   byte_array<5> result;
-  std::ranges::transform(v, std::begin(result), [](b7 const b) { return to_le7(b); });
+  std::ranges::transform(v, std::begin(result), [](b7 const b) constexpr { return to_le7(b); });
   return result;
 }
 
 template <std::size_t Size>
 [[nodiscard]] constexpr b7_array<Size> from_byte_array(byte_array<Size> const& other) noexcept {
   b7_array<Size> result{};
-  std::ranges::transform(other, std::begin(result), [](std::byte const v) { return from_le7(v); });
+  std::ranges::transform(other, std::begin(result), [](std::byte const v) constexpr { return from_le7(v); });
   return result;
 }
 
 template <std::size_t Size>
 [[nodiscard]] constexpr byte_array<Size> to_byte_array(b7_array<Size> const& other) noexcept {
   byte_array<Size> result{};
-  std::ranges::transform(other, std::begin(result), [](b7 const v) { return std::byte{v.get()}; });
+  std::ranges::transform(other, std::begin(result), [](b7 const v) constexpr { return std::byte{v.get()}; });
   return result;
 }
 

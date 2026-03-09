@@ -251,7 +251,9 @@ constexpr void ci_dispatcher<Config>::header() {
   auto& c = this->config();
   auto const first = std::begin(messages);
   auto const last = std::end(messages);
-  auto const pred = [](message_dispatch_info const& a, message_dispatch_info const& b) { return a.type < b.type; };
+  auto const pred = [](message_dispatch_info const& a, message_dispatch_info const& b) constexpr {
+    return a.type < b.type;
+  };
   assert(std::is_sorted(first, last, pred));
   if (auto const pos = std::lower_bound(first, last, message_dispatch_info{type_, 0, 0, nullptr}, pred);
       pos == last || pos->type != type_) {

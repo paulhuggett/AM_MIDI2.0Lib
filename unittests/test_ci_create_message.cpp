@@ -38,6 +38,10 @@ consteval std::byte operator""_b(unsigned long long arg) noexcept {
   return static_cast<std::byte>(arg);
 }
 
+constexpr std::byte as_byte(char const c) noexcept {
+  return static_cast<std::byte>(c);
+}
+
 using midi2::ci::byte_array;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
@@ -256,7 +260,7 @@ TEST_F(CICreateMessage, EndpointReply) {
                                   .local_muid = from_le7(receiver_muid)};
   std::vector<midi2::ci::b7> reply_information;
   std::ranges::transform(information, std::back_inserter(reply_information),
-                         [](std::byte const v) { return from_le7(v); });
+                         [](std::byte const v) constexpr { return from_le7(v); });
   midi2::ci::endpoint_reply const reply{.status = from_le7(status), .information = reply_information};
   EXPECT_THAT(make_message(hdr, reply), testing::ElementsAreArray(expected));
 }
@@ -712,7 +716,6 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
   };
   // clang-format on
 
-  auto const as_byte = [](char const c) { return static_cast<std::byte>(c); };
   // Header Size
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -773,7 +776,6 @@ TEST_F(CICreateMessage, PropertyExchangeGetPropertyDataReply) {
   };
   // clang-format on
 
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header Size
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -835,7 +837,6 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyData) {
   };
   // clang-format on
 
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header Size/Body
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -895,8 +896,6 @@ TEST_F(CICreateMessage, PropertyExchangeSetPropertyDataReply) {
   };
   // clang-format on
 
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
-
   // Header Size
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -955,7 +954,6 @@ TEST_F(CICreateMessage, PropertyExchangeSubscription) {
   };
   // clang-format on
 
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
   // Header length/body
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -1013,8 +1011,6 @@ TEST_F(CICreateMessage, PropertyExchangeSubscriptionReply) {
   };
   // clang-format on
 
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
-
   // Header size/body
   ASSERT_EQ(from_le7(header_size).get(), header.length());
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;
@@ -1071,8 +1067,6 @@ TEST_F(CICreateMessage, PropertyExchangeNotify) {
     request,
   };
   // clang-format on
-
-  auto const as_byte = [](char c) { return static_cast<std::byte>(c); };
 
   // Header size/body
   auto out = std::ranges::copy(header_size, std::back_inserter(expected)).out;

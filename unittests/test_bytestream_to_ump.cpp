@@ -395,7 +395,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
   };
 
   constexpr auto group = std::uint8_t{0xF};
-  auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+  auto const in_one_message = [](u8 number_of_bytes, u8 data0, u8 data1) constexpr {
     midi2::ump::data64::sysex7_in_1::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
     w0.template set<decltype(w0)::number_of_bytes>(number_of_bytes);
@@ -403,7 +403,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.template set<decltype(w0)::data1>(data1);
     return std::uint32_t{w0};
   };
-  auto const start_message = [](u8 data0, u8 data1) {
+  auto const start_message = [](u8 data0, u8 data1) constexpr {
     midi2::ump::data64::sysex7_start::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
     w0.template set<decltype(w0)::number_of_bytes>(6U);
@@ -411,7 +411,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
     w0.template set<decltype(w0)::data1>(data1);
     return std::uint32_t{w0};
   };
-  auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) {
+  auto const end_message = [](u8 number_of_bytes, u8 data0, u8 data1) constexpr {
     assert(number_of_bytes <= 6);
     midi2::ump::data64::sysex7_end::word0 w0{};
     w0.template set<decltype(w0)::group>(group);
