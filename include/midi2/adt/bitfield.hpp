@@ -17,6 +17,7 @@
 #include <cassert>
 #include <climits>
 #include <concepts>
+#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -122,7 +123,7 @@ public:
     return (value_ >> index) & mask;
   }
 
-  [[nodiscard]] constexpr value_type get(unsigned index, unsigned bits) const noexcept {
+  [[nodiscard]] constexpr value_type get(unsigned const index, unsigned const bits) const noexcept {
     return (value_ >> index) & ((1U << bits) - 1U);
   }
 
