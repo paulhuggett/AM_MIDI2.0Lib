@@ -22,6 +22,8 @@ namespace midi2 {
 
 /// The dispatcher types provided by the library implement the protocol defined by this concept.
 ///
+/// - `dispatch(InputType{})`: Deliver a single value to the dispatcher.
+/// - `Config& config()`: access the configuration object.
 /// - `void reset()`: restore the dispatcher to its initial state. Any partially processed messages are dropped.
 
 template <typename Config, typename InputType, typename T>
