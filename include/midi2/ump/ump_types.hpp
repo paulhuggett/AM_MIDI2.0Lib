@@ -76,7 +76,7 @@ enum class message_type : std::uint8_t {
 namespace mt {
 
 /// The message types for the System Common and System Real-time messages
-/// \note Here, CRT stands for for "Common and Real-Time".
+/// \note Here, CRT stands for "Common and Real-Time".
 enum class system_crt : std::uint8_t {
   // System Common messages
   timing_code = 0xF1,   ///< MIDI Time Code
@@ -2065,8 +2065,8 @@ using sysex7_in_1 = details::sysex7<mt::data64::sysex7_in_1>;
 /// \brief The start of a block of 7-bit system exclusive data that is split over zero or more of
 ///   sysex7_continue messages and completed by a sysex87end message.
 using sysex7_start = details::sysex7<mt::data64::sysex7_start>;
-/// \brief A block of 7-bit system exclusive data. The can be sent as many times as necessary
-///   but must be preceeded by a sysex7_start message.
+/// \brief A block of 7-bit system exclusive data. They can be sent as many times as necessary
+///   but must be preceded by a sysex7_start message.
 using sysex7_continue = details::sysex7<mt::data64::sysex7_continue>;
 /// A message which signals the end of a series of sysex7_start and sysex7_continue messages.
 using sysex7_end = details::sysex7<mt::data64::sysex7_end>;
@@ -2083,24 +2083,24 @@ static_assert(std::tuple_size_v<midi2::ump::data64::sysex7_end> ==
               midi2::ump::message_size<midi2::ump::message_type::data64>::value);
 
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_in_1::iterator>,
-              "sysex7_in_1::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_in_1::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_in_1::const_iterator>,
-              "sysex7_in_1::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_in_1::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_start::iterator>,
-              "sysex7_start::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_start::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_start::const_iterator>,
-              "sysex7_start::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_start::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_continue::iterator>,
-              "sysex7_continue::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_continue::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_continue::const_iterator>,
-              "sysex7_continue::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_continue::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_end::iterator>,
-              "sysex7_end::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_end::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data64::sysex7_end::const_iterator>,
-              "sysex7_end::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex7_end::const_iterator should meet the requirements of std::random_access_iterator");
 
 //*        ___               *
 //*  _ __ |_  )____ ___ __   *
@@ -4958,9 +4958,9 @@ MIDI2_UMP_TUPLE(flex_data, text_common)  // Define tuple_size and tuple_element 
 MIDI2_SPAN_CTOR(flex_data, text_common)  // Define the span constructor for flex_data/text_common
 
 static_assert(std::random_access_iterator<midi2::ump::flex_data::text_common::iterator>,
-              "text_common::iterator should meet the requiremenets of std::random_access_iterator");
+              "text_common::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::flex_data::text_common::const_iterator>,
-              "text_common::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "text_common::const_iterator should meet the requirements of std::random_access_iterator");
 
 //*     _      _          _ ___ ___  *
 //*  __| |__ _| |_ __ _  / |_  | _ ) *
@@ -5193,8 +5193,8 @@ using sysex8_in_1 = details::sysex8<midi2::ump::mt::data128::sysex8_in_1>;
 /// \brief The start of a block of 8-bit system exclusive data that is split over zero or more of
 ///   sysex8_continue messages and completed by a sysex8_end message.
 using sysex8_start = details::sysex8<midi2::ump::mt::data128::sysex8_start>;
-/// \brief A block of 128 bits of system exclusive data. The can be sent as many times as necessary
-///   but must be preceeded by a sysex8_start message.
+/// \brief A block of 128 bits of system exclusive data. They can be sent as many times as necessary
+///   but must be preceded by a sysex8_start message.
 using sysex8_continue = details::sysex8<midi2::ump::mt::data128::sysex8_continue>;
 /// A message which signals the end of a series of sysex8_start and sysex8_continue messages.
 using sysex8_end = details::sysex8<midi2::ump::mt::data128::sysex8_end>;
@@ -5202,24 +5202,24 @@ using sysex8_end = details::sysex8<midi2::ump::mt::data128::sysex8_end>;
 }  // end namespace midi2::ump::data128
 
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_in_1::iterator>,
-              "sysex8_in_1::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_in_1::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_in_1::const_iterator>,
-              "sysex8_in_1::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_in_1::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_start::iterator>,
-              "sysex8_start::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_start::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_start::const_iterator>,
-              "sysex8_start::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_start::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_continue::iterator>,
-              "sysex8_continue::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_continue::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_continue::const_iterator>,
-              "sysex8_continue::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_continue::const_iterator should meet the requirements of std::random_access_iterator");
 
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_end::iterator>,
-              "sysex8_end::iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_end::iterator should meet the requirements of std::random_access_iterator");
 static_assert(std::random_access_iterator<midi2::ump::data128::sysex8_end::const_iterator>,
-              "sysex8_end::const_iterator should meet the requiremenets of std::random_access_iterator");
+              "sysex8_end::const_iterator should meet the requirements of std::random_access_iterator");
 
 /// \brief The header message for a Mixed Data Set sequence.
 ///
