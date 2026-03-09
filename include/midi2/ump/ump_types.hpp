@@ -1105,7 +1105,7 @@ public:
   constexpr sequence_start() noexcept = default;
   /// Constructs from a raw 32-bit message.
   /// In a debug build, checks that the class invariants hold.
-  constexpr explicit sequence_start(std::span<std::uint32_t, 1> w0) noexcept;
+  constexpr explicit sequence_start(std::span<std::uint32_t, 1> m) noexcept;
   friend constexpr bool operator==(sequence_start const&, sequence_start const&) noexcept = default;
 
   /// \brief Returns the value of the word0::mt field. Always message_type::system.
