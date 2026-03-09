@@ -138,7 +138,7 @@ void ump_to_midi1::to_midi1_config::m2cvm::pn_message(context_type* const ctxt, 
     // We've got the key in the cache. Does the cached value match the desired?
     return in_cache == controller_number;
   };
-  ctxt->pn_cache.access(static_cast<std::uint16_t const>(key), miss_fn, stale_fn);
+  ctxt->pn_cache.access(static_cast<std::uint16_t>(key), miss_fn, stale_fn);
 
   // Data Entry MSB/LSB
   auto const scaled_value = mcm_scale<32, 14>(value);
