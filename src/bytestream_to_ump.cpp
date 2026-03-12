@@ -44,7 +44,7 @@ void bytestream_to_ump::set_group(std::uint8_t const group) noexcept {
 
 void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept {
   assert((b0 & std::byte{0x80}) != std::byte{0U} && "Top bit of b0 must be set");
-  assert((b1 & std::byte{0x80}) == std::byte{0U} && (b2 & std::byte{0x80}) == std::byte{0U} &&
+  assert((b1 & std::byte{0x80}) == std::byte{0U} && (b2 & std::byte{0x80U}) == std::byte{0U} &&
          "The top bit of b1 and b2 must be zero");
   assert(std::to_underlying(b0) != std::to_underlying(status::sysex_start));
   assert(to_integer<unsigned>(group_) < (1U << 5));
