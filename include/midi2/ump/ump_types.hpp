@@ -101,7 +101,7 @@ enum class m1cvm : std::uint8_t {
   note_on = 0x9,           ///< Note On
   poly_pressure = 0xA,     ///< Polyphonic Key Pressure (Aftertouch).
   cc = 0xB,                ///< Continuous Controller
-  program_change = 0xC,    /// Program Change
+  program_change = 0xC,    ///< Program Change
   channel_pressure = 0xD,  ///< Channel Pressure (Aftertouch).
   pitch_bend = 0xE,        ///< Pitch Bend
 };
