@@ -78,8 +78,8 @@ private:
       /// \param channel  The channel number
       /// \param is_rpn  True if the controller is RPN (Registered Parameter Number), false if it represents an NRPN
       ///   (Non-Registered Parameter Number).
-      constexpr pn_cache_key(std::uint8_t group, std::uint8_t channel, bool is_rpn) noexcept
-          : v_{static_cast<std::uint16_t>(group | (channel << 4) | (is_rpn << 8))} {
+      constexpr pn_cache_key(std::uint8_t const group, std::uint8_t const channel, bool const is_rpn) noexcept
+          : v_{static_cast<std::uint16_t>(group | (channel << 4) | (static_cast<std::uint16_t>(is_rpn) << 8))} {
         assert(group < 0x10 && channel < 0x10);
       }
       constexpr friend bool operator==(pn_cache_key const&, pn_cache_key const&) noexcept = default;
