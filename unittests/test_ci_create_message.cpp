@@ -38,7 +38,7 @@ consteval std::byte operator""_b(unsigned long long arg) noexcept {
   return static_cast<std::byte>(arg);
 }
 
-constexpr std::byte as_byte(char const c) noexcept {
+[[nodiscard]] constexpr std::byte as_byte(char const c) noexcept {
   return static_cast<std::byte>(c);
 }
 
