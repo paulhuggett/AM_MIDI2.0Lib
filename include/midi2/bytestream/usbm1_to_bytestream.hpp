@@ -17,14 +17,38 @@
 #ifndef MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
 #define MIDI2_BYTESTREAM_USBM1_TO_BYTESTREAM_HPP
 
+// Standard library
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
+// Local includes
 #include "midi2/adt/fifo.hpp"
 #include "midi2/translator.hpp"
 
 namespace midi2::bytestream {
+
+namespace details {
+
+/// packs a sequence of up to 16 2-bit values into an unsigned 32-bit integer.
+template <typename... Args>
+[[nodiscard]] consteval std::uint32_t pack_to_32_bits(std::uint32_t const first, Args&&... rest) noexcept {
+  assert(first <= 0b11);
+  if constexpr (sizeof...(Args) == 0U) {
+    return first;
+  } else {
+    static_assert(sizeof...(Args) < 16U, "A maximum of 16 2-bit values");
+    return first | (pack_to_32_bits(std::forward<Args>(rest)...) << 2U);
+  }
+}
+/// extracts a 2-bit value from a 32-bit unsigned value produced by pack().
+[[nodiscard]] constexpr unsigned extract_from_32_bits(std::uint32_t const packed, unsigned const index) noexcept {
+  assert(index < 16);
+  return ((packed >> (index << 1)) & 0b11);
+}
+
+}  // end namespace details
 
 class usbm1_to_bytestream {
 public:
@@ -106,35 +130,28 @@ private:
   /// fields.
   [[nodiscard]] static constexpr unsigned midi_x_size(std::uint8_t const cin) noexcept {
     assert(cin < 0x10U && "code index number should be four bits");
-    // The contents of this switch are based on Table 4-1: "Code Index Number Classifications" in the "Universal
+
+    // These values come from Table 4-1: "Code Index Number Classifications" in the "Universal
     // Serial Bus Device Class Definition for MIDI Devices" (Release 1.0 Nov 1, 1999)
-    switch (cin) {
-    case 0x00:  // Reserved for future extension
-    case 0x01:  // Reserved for future expansion
-      return 0;
-    case 0x02:  // Two-byte System Common messages
-      return 2;
-    case 0x03:  // Three-byte System Common messages
-    case 0x04:  // SysEx starts or continues
-      return 3;
-    case 0x05:  // Single-byte System Common/SysEx end Message
-      return 1;
-    case 0x06:  // SysEx ends with following two bytes
-      return 2;
-    case 0x07:  // SysEx ends with following three bytes
-    case 0x08:  // Note-off
-    case 0x09:  // Note-on
-    case 0x0A:  // Poly Key Press
-    case 0x0B:  // Control Change
-      return 3;
-    case 0x0C:  // Program Change
-    case 0x0D:  // Channel Pressure
-      return 2;
-    case 0x0E: return 3;  // Pitch-bend Change
-    case 0x0F: return 1;  // Single byte
-    default: break;
-    }
-    return 0;
+    static constexpr std::uint32_t packed =
+        details::pack_to_32_bits(0U,  // [0] Reserved for future extension
+                                 0U,  // [1] Reserved for future extension
+                                 2U,  // [2] Two-byte System Common messages
+                                 3U,  // [3] Three-byte System Common messages
+                                 3U,  // [4] SysEx starts or continues
+                                 1U,  // [5] Single-byte System Common/SysEx end Message
+                                 2U,  // [6] SysEx ends with following two bytes
+                                 3U,  // [7] SysEx ends with following three bytes
+                                 3U,  // [8] Note-off
+                                 3U,  // [9] Note-on
+                                 3U,  // [A] Poly Key Press
+                                 3U,  // [B] Control Change
+                                 2U,  // [C] Program Change
+                                 2U,  // [D] Channel Pressure
+                                 3U,  // [E] Pitch-bend Change
+                                 1U   // [F] Single byte
+        );
+    return details::extract_from_32_bits(packed, cin);
   }
 };
 
