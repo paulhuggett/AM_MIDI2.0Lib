@@ -74,9 +74,14 @@ private:
 }  // end namespace ci::details
 
 namespace ci {
+
+/// A seven bit unsigned integer type.
 using b7 = ci::details::bn<7>;
+/// A fourteen bit unsigned integer type.
 using b14 = ci::details::bn<14>;
+/// A twenty eight bit unsigned integer type.
 using b28 = ci::details::bn<28>;
+
 }  // namespace ci
 
 namespace literals {
