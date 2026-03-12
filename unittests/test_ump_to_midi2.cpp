@@ -223,7 +223,7 @@ TEST(UMPToMidi2, ProgramChangeWithBank) {
 
   std::vector<std::uint32_t> input;
 
-  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const cc = [] constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
   auto const append = [&input](std::uint32_t v) {
     input.push_back(v);
     return false;
@@ -253,7 +253,7 @@ TEST(UMPToMidi2, ControlChangeRPN) {
 
   std::vector<std::uint32_t> input;
 
-  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const cc = [] constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
   auto const append = [&input](std::uint32_t v) {
     input.push_back(v);
     return false;
@@ -287,7 +287,7 @@ TEST(UMPToMidi2, ControlChangeNRPN) {
   std::vector<std::uint32_t> input;
 
   using enum midi2::ump::control;
-  auto const cc = []() { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
+  auto const cc = [] constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
   auto const append = [&input](std::uint32_t v) {
     input.push_back(v);
     return false;
