@@ -21,8 +21,8 @@ int main() {
   int exit_code = EXIT_SUCCESS;
   try {
     // We must pass a "context" to the dispatcher which will be forwarded to the callbacks as they are invoked.
-    // The context enables message handlers to efficiently share state but we don't need that in this simple example so
-    // a struct with no members will suffice.
+    // The context enables message handlers to efficiently share state, but we don't need that in this simple example.
+    // A struct with no members will suffice.
     struct context {};
 
     // Create the dispatcher with default-initialized context. Here we're using the pre-made "std::function<>" backend
