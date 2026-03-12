@@ -25,7 +25,7 @@
 using namespace midi2::literals;
 
 namespace {
-template <std::integral T, unsigned Width = sizeof(T) * 2> void print_hex(T v) {
+template <std::integral T, int Width = sizeof(T) * 2> void print_hex(T v) {
   std::cout << "0x" << std::setw(Width) << std::setfill('0') << std::hex << v << ' ';
 }
 }  // end anonymous namespace
