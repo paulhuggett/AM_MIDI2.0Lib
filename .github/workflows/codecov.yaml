@@ -81,9 +81,8 @@ jobs:
           path: coverage.info
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        uses: codecov/codecov-action@5
         with:
           fail_ci_if_error: true
-          report_type: coverage
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
