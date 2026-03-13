@@ -32,7 +32,7 @@ namespace {
 using byte_vector = std::vector<std::byte>;
 using ump_vector = std::vector<std::uint32_t>;
 
-ump_vector bytesToUMP(byte_vector const& in) {
+ump_vector bytes_to_ump(byte_vector const& in) {
   midi2::bytestream::bytestream_to_ump bs2ump;
   ump_vector out;
   for (auto const v : in) {
@@ -44,7 +44,7 @@ ump_vector bytesToUMP(byte_vector const& in) {
   return out;
 }
 
-byte_vector umpToBytes(ump_vector const& in) {
+byte_vector ump_to_bytes(ump_vector const& in) {
   midi2::bytestream::ump_to_bytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
@@ -59,7 +59,7 @@ byte_vector umpToBytes(ump_vector const& in) {
 template <typename T> struct hex_values {
   std::vector<T> const& bytes;
 };
-template <typename Vt> hex_values(Vt a) -> hex_values<typename Vt::value_type>;
+template <typename T> hex_values(T) -> hex_values<typename T::value_type>;
 
 template <typename T> std::ostream& operator<<(std::ostream& os, hex_values<T> const& v) {
   auto const* separator = "";
@@ -88,10 +88,10 @@ void UMPByteStreamRoundTrip(byte_vector const& b1) {
   // We finally compare b_2 and b_3. The initial step of converting the
   // original stream to UMP and back ensures that we remove any partial or
   // unrecognized messages.
-  auto const ump1 = bytesToUMP(b1);
-  auto const b2 = umpToBytes(ump1);
-  auto const ump2 = bytesToUMP(b2);
-  auto const b3 = umpToBytes(ump2);
+  auto const ump1 = bytes_to_ump(b1);
+  auto const b2 = ump_to_bytes(ump1);
+  auto const ump2 = bytes_to_ump(b2);
+  auto const b3 = ump_to_bytes(ump2);
   EXPECT_THAT(b3, testing::ContainerEq(b2)) << "Converting from " << hex_values{b1};
 }
 
@@ -102,6 +102,10 @@ FUZZ_TEST(UMPByteStreamRoundTrip, UMPByteStreamRoundTrip);
 // NOLINTNEXTLINE
 TEST(UMPByteStreamRoundTrip, Empty) {
   UMPByteStreamRoundTrip({});
+}
+// NOLINTNEXTLINE
+TEST(UMPByteStreamRoundTrip, SoleSystemCommonMessage) {
+  UMPByteStreamRoundTrip({static_cast<std::byte>(midi2::bytestream::status::tune_request)});
 }
 
 }  // end anonymous namespace
