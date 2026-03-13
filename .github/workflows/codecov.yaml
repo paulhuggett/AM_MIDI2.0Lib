@@ -72,7 +72,6 @@ jobs:
             '/usr/*'                \
             "*/$BUILD_DIR/*"        \
             '*/unittests/*'         \
-            '*/benchmark/*'         \
             --output-file coverage.filtered.info
            mv coverage.filtered.info coverage.info
 
