@@ -33,28 +33,27 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir "$BUILD_DIR"
           cmake                                      \
             -G Ninja                                 \
             -S .                                     \
             -B "$BUILD_DIR"                          \
-            -D MIDI2_COVERAGE=Yes                    \
-            -D MIDI2_DEMO=Yes                        \
             -D CMAKE_C_COMPILER="gcc-$GCC_VERSION"   \
-            -D CMAKE_CXX_COMPILER="g++-$GCC_VERSION"
+            -D CMAKE_CXX_COMPILER="g++-$GCC_VERSION" \
+            -D CMAKE_BUILD_TYPE=Debug                \
+            -D MIDI2_COVERAGE=Yes                    \
+            -D MIDI2_DEMO=Yes
 
       - name: Build
         run: cmake --build "$BUILD_DIR"
 
-      - name: Run the Test Binaries
+      - name: Run the Test and Demo Binaries
         run: |
           ctest                      \
             --test-dir "$BUILD_DIR"  \
             --output-junit junit.xml \
+            --parallel $(nproc)      \
+            --output-on-failure      \
             --verbose
-
-      - name: Run the executables
-        run: find "${BUILD_DIR}" -type f -name demo_\* -executable -print -exec {} \;
 
       - name: Collect the Coverage
         run: |
@@ -66,13 +65,26 @@ jobs:
             --gcov-tool "gcov-$GCC_VERSION" \
             --ignore-errors mismatch
 
+      - name: Filter Coverage
+        run: |
+          lcov                      \
+             --remove coverage.info \
+            '/usr/*'                \
+            "*/$BUILD_DIR/*"        \
+            '*/unittests/*'         \
+            '*/benchmark/*'         \
+            --output-file coverage.filtered.info
+           mv coverage.filtered.info coverage.info
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: coverage.info
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 #v1.2.1
         with:
+          fail_ci_if_error: true
+          report_type: coverage
           token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
