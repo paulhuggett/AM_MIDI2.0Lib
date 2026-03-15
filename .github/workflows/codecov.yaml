@@ -65,15 +65,15 @@ jobs:
             --gcov-tool "gcov-$GCC_VERSION" \
             --ignore-errors mismatch
 
-      - name: Filter Coverage
-        run: |
-          lcov                      \
-             --remove coverage.info \
-            '/usr/*'                \
-            "*/$BUILD_DIR/*"        \
-            '*/unittests/*'         \
-            --output-file coverage.filtered.info
-           mv coverage.filtered.info coverage.info
+      # - name: Filter Coverage
+      #   run: |
+      #     lcov                      \
+      #        --remove coverage.info \
+      #       '/usr/*'                \
+      #       "*/$BUILD_DIR/*"        \
+      #       '*/unittests/*'         \
+      #       --output-file coverage.filtered.info
+      #      mv coverage.filtered.info coverage.info
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
