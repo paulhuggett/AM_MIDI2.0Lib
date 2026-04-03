@@ -220,15 +220,21 @@ template <> struct type_to_packed<process_inquiry::midi_message_report_end> {
   using v2 = empty;
 };
 
+/// Copy the bytes of \p t to a byte-container ranges specified by \p first and \p last.
+/// \param first Along with \p last, the iterator-sentinel pair defining the range of elements to copy
+/// \param last  Along with \p first, the iterator-sentinel pair defining the range of elements to copy
+/// \returns An output iterator past the last element copied if there was sufficient space, or \p first otherwise
 template <typename T, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
   requires(std::is_trivially_copyable_v<T> && alignof(T) == 1)
 constexpr O safe_copy(O first, S last, T const& t) {
   auto first2 = first;
+  // Is there sufficient room?
   std::ranges::advance(first2, sizeof(T), last);
-  if (first2 == last) {
-    return first2;
+  if (first2 != last) {
+    // Yes: do the copy.
+    first2 = std::ranges::copy(std::bit_cast<std::byte const*>(&t), std::bit_cast<std::byte const*>(&t + 1), first).out;
   }
-  return std::ranges::copy(std::bit_cast<std::byte const*>(&t), std::bit_cast<std::byte const*>(&t + 1), first).out;
+  return first2;
 }
 
 template <typename ElementType, std::output_iterator<std::byte> O, std::sentinel_for<O> S>
@@ -237,14 +243,13 @@ constexpr O write_packed_with_tail(O first, S const last, std::byte const* ptr, 
                                    std::span<ElementType const> const span) {
   auto first2 = first;
   std::ranges::advance(first2, static_cast<std::iter_difference_t<decltype(first)>>(size + span.size_bytes()), last);
-  if (first2 == last) {
-    return first2;
+  if (first2 != last) {
+    first = std::ranges::copy(ptr, ptr + size, first).out;
+    first2 = std::ranges::copy(
+                 std::span<std::byte const>{std::bit_cast<std::byte const*>(span.data()), span.size_bytes()}, first)
+                 .out;
   }
-
-  first = std::ranges::copy(ptr, ptr + size, first).out;
-  return std::ranges::copy(std::span<std::byte const>{std::bit_cast<std::byte const*>(span.data()), span.size_bytes()},
-                           first)
-      .out;
+  return first2;
 }
 
 template <std::output_iterator<std::byte> O, std::sentinel_for<O> S>
