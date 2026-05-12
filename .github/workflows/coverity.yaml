@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
         with:
           egress-policy: audit
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Cache the Coverity Build Tool
         id: cache-build-tool
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
         with:
           key: coverity-${{ runner.os }}-${{ steps.get-cov-md5.outputs.md5 }}
           path: "${{ env.BUILD_TOOL_DIR }}/coverity_tool.tgz"
