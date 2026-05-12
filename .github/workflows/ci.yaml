@@ -93,13 +93,13 @@ jobs:
             build_type: Debug
             generator: Visual Studio 17 2022
             options: -DMIDI2_TEXT_COMMON_STRING:BOOL=Yes
-            os: windows-latest
+            os: windows-2022
             package: ZIP
 
           - name: Windows-latest/VS2022/Release
             build_type: Release
             generator: Visual Studio 17 2022
-            os: windows-latest
+            os: windows-2022
             package: ZIP
 
     name: ${{ matrix.name }}
