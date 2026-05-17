@@ -31,7 +31,7 @@ using testing::IsEmpty;
 
 namespace {
 
-template <std::ranges::input_range Range> auto convert(Range const& input) {
+template <std::ranges::input_range Range> std::vector<std::uint32_t> convert(Range const& input) {
   std::vector<std::uint32_t> output;
   midi2::ump::ump_to_midi2 ump2m2{0};
   for (auto const message : input) {

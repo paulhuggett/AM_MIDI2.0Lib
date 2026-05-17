@@ -55,7 +55,7 @@ template <typename ArrayLike> struct HexContainer {
 template <typename ArrayLike> HexContainer(ArrayLike const&) -> HexContainer<ArrayLike>;
 
 template <std::size_t Size>
-auto convert(midi2::bytestream::bytestream_to_ump bs2ump, std::array<std::byte, Size> const& input) {
+std::vector<std::uint32_t> convert(midi2::bytestream::to_ump bs2ump, std::array<std::byte, Size> const& input) {
   std::vector<std::uint32_t> output;
   for (std::byte const b : input) {
     bs2ump.push(b);
@@ -82,7 +82,7 @@ constexpr auto ump_program_change = ump_cvm(midi2::bytestream::status::program_c
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, NoteOnWithRunningStatus) {
   constexpr std::array input{std::byte{0x81}, std::byte{0x60}, std::byte{0x50}, std::byte{0x70}, std::byte{0x70}};
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   constexpr std::array expected{std::uint32_t{0x20816050}, std::uint32_t{0x20817070}};
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
@@ -110,10 +110,29 @@ TEST(BytestreamToUMP, NoteOnImplicitNoteOffWithRunningStatus) {
       std::uint32_t{(2U << 28) | (group << 24) | (ump_note_on << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::uint32_t{0x00}};
   constexpr std::array expected{m0, m1};
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
+}
+
+TEST(BytestreamToUMP, Reset) {
+  midi2::bytestream::to_ump bs2ump;
+  bs2ump.set_group(7U);
+  bs2ump.push(static_cast<std::byte>(midi2::bytestream::status::sysex_start));
+  bs2ump.reset();
+
+  ASSERT_TRUE(bs2ump.empty());
+
+  bs2ump.push(static_cast<std::byte>(midi2::bytestream::status::note_on));
+  ASSERT_TRUE(bs2ump.empty());
+  bs2ump.push(std::byte{0x60U});
+  ASSERT_TRUE(bs2ump.empty());
+  bs2ump.push(std::byte{0x50U});
+
+  ASSERT_FALSE(bs2ump.empty());
+  EXPECT_EQ(bs2ump.pop(), std::uint32_t{0x20906050});
+  EXPECT_TRUE(bs2ump.empty());
 }
 
 // NOLINTNEXTLINE
@@ -133,7 +152,7 @@ TEST(BytestreamToUMP, Midi1ChannelPressure) {
         return false;
       });
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -154,7 +173,7 @@ TEST(BytestreamToUMP, PitchBend) {
       (message_type << 28) | (group << 24) | (ump_pitch_bend << 20) | (std::to_integer<std::uint32_t>(channel) << 16) |
       (std::to_integer<std::uint32_t>(bend_lsb) << 8) | std::to_integer<std::uint32_t>(bend_msb)}};
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -178,7 +197,7 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
       std::uint32_t{(2U << 28) | (group << 24) | (std::to_integer<std::uint32_t>(channel) << 16) | (ump_note_on << 20) |
                     (std::to_integer<std::uint32_t>(note_number) << 8) | std::to_integer<std::uint32_t>(velocity)}};
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -187,7 +206,7 @@ TEST(BytestreamToUMP, SeqStartMidNoteOn) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, SystemMessageOneByte) {
   constexpr std::array input{std::byte{0xF8}};
-  EXPECT_THAT(convert(midi2::bytestream::bytestream_to_ump{}, input), ElementsAre(UINT32_C(0x10f80000)));
+  EXPECT_THAT(convert(midi2::bytestream::to_ump{}, input), ElementsAre(UINT32_C(0x10f80000)));
 }
 
 // NOLINTNEXTLINE
@@ -228,7 +247,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
       std::uint32_t{(message_type << 28) | (group << 24) | (ump_program_change << 20) |
                     (std::to_integer<std::uint32_t>(channel) << 16) | (std::to_integer<std::uint32_t>(program) << 8)}};
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -237,7 +256,7 @@ TEST(BytestreamToUMP, BankAndProgramChange) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, ProgramChangeTwoBytes) {
   constexpr std::array input{std::byte{0xC6}, std::byte{0x40}};
-  EXPECT_THAT(convert(midi2::bytestream::bytestream_to_ump{}, input), ElementsAre(UINT32_C(0x20C64000)));
+  EXPECT_THAT(convert(midi2::bytestream::to_ump{}, input), ElementsAre(UINT32_C(0x20C64000)));
 }
 
 // NOLINTNEXTLINE
@@ -253,7 +272,7 @@ TEST(BytestreamToUMP, SysEx) {
                                 std::uint32_t{0x737F7F7F}, std::uint32_t{0x30267F7D}, std::uint32_t{0x00000000},
                                 std::uint32_t{0x30260100}, std::uint32_t{0x00000300}, std::uint32_t{0x30360000},
                                 std::uint32_t{0x10000000}};
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual:   " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -264,7 +283,7 @@ TEST(BytestreamToUMP, LonelySysExEnd) {
   using b8 = std::byte;
   constexpr auto stop = static_cast<b8>(std::to_underlying(midi2::bytestream::status::sysex_stop));
   constexpr std::array input{stop};
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
 }
 
@@ -273,7 +292,7 @@ TEST(BytestreamToUMP, SysExEndFollowedByDataBytes) {
   using b8 = std::byte;
   constexpr auto stop = static_cast<b8>(std::to_underlying(midi2::bytestream::status::sysex_stop));
   constexpr std::array input{stop, b8{1}, b8{2}, stop};
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, IsEmpty()) << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual);
 }
 // NOLINTNEXTLINE
@@ -299,7 +318,7 @@ TEST(BytestreamToUMP, MissingSysExEnd) {
   expect(midi2::ump::data64::sysex7_end{}.group(group).number_of_bytes(1).data0(7U));
   expect(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number).velocity(0));
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
@@ -327,7 +346,7 @@ TEST(BytestreamToUMP, MissingSysExEndBeforeStart) {
   expect(sysex7_in_1{}.group(group).data({4U, 5U, 6U, 7U}));
   expect(midi2::ump::m1cvm::note_off{}.group(group).channel(channel).note(note_number));
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Actual: " << HexContainer(actual) << "\n Expected: " << HexContainer(expected);
 }
@@ -432,7 +451,7 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
       in_one_message(2, 0x7A, 0x7B), pack(0, 0, 0, 0),
   };
 
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{group}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{group}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -441,13 +460,13 @@ TEST(BytestreamToUMP, MultipleSysExMessages) {
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi1BadDataTwoNoteOffs) {
   constexpr std::array input{std::byte{0x80}, std::byte{0x80}};
-  EXPECT_THAT(convert(midi2::bytestream::bytestream_to_ump{}, input), IsEmpty());
+  EXPECT_THAT(convert(midi2::bytestream::to_ump{}, input), IsEmpty());
 }
 
 // NOLINTNEXTLINE
 TEST(BytestreamToUMP, Midi2BadDataTwoNoteOffs) {
   constexpr std::array input{std::byte{0x80}, std::byte{0x80}};
-  EXPECT_THAT(convert(midi2::bytestream::bytestream_to_ump{0}, input), IsEmpty());
+  EXPECT_THAT(convert(midi2::bytestream::to_ump{0}, input), IsEmpty());
 }
 
 // This group of tests uses a bytestream which starts with one of the
@@ -487,7 +506,7 @@ TEST_P(BytestreamToUMPReserved, Midi1ReservedStatusCodeThenNoteOn) {
                     (std::to_integer<std::uint32_t>(velocity_))}};
 
   auto const input = BytestreamToUMPReserved::input();
-  auto const actual = convert(midi2::bytestream::bytestream_to_ump{}, input);
+  auto const actual = convert(midi2::bytestream::to_ump{}, input);
   EXPECT_THAT(actual, ElementsAreArray(expected))
       << "Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
       << "\n Expected: " << HexContainer(expected);
@@ -497,9 +516,31 @@ INSTANTIATE_TEST_SUITE_P(ReservedStatusCodes, BytestreamToUMPReserved,
                          testing::Values(midi2::bytestream::status::reserved1, midi2::bytestream::status::reserved2,
                                          midi2::bytestream::status::reserved3, midi2::bytestream::status::reserved4));
 
+class BytestreamToUMPGroups : public TestWithParam<std::uint8_t> {};
+
+TEST_P(BytestreamToUMPGroups, NoteOnWithRunningStatus) {
+  constexpr std::array input{std::byte{0x81U}, std::byte{0x60U}, std::byte{0x50U}, std::byte{0x70U}, std::byte{0x70U}};
+
+  midi2::bytestream::to_ump converter;
+  auto const group = GetParam();
+  converter.set_group(group);
+
+  auto const actual = convert(converter, input);
+  ASSERT_LT(group, 8U);
+  auto const group32 = static_cast<std::uint32_t>(group);
+  std::array const expected{std::uint32_t{0x20816050U} | std::uint32_t{group32 << 24},
+                            std::uint32_t{0x20817070U} | std::uint32_t{group32 << 24}};
+  EXPECT_THAT(actual, ElementsAreArray(expected))
+      << " Input: " << HexContainer(input) << "\n Actual: " << HexContainer(actual)
+      << "\n Expected: " << HexContainer(expected);
+}
+
+INSTANTIATE_TEST_SUITE_P(BytestreamToUMPGroups, BytestreamToUMPGroups,
+                         testing::Range(std::uint8_t{0U}, std::uint8_t{8U}));
+
 void NeverCrashes(std::vector<std::byte> const& bytes) {
   // This test simply gets bytestream_to_ump to consume a random buffer.
-  midi2::bytestream::bytestream_to_ump bs2ump;
+  midi2::bytestream::to_ump bs2ump;
   for (auto const b : bytes) {
     bs2ump.push(b);
     while (!bs2ump.empty()) {
@@ -514,6 +555,9 @@ FUZZ_TEST(BytestreamToUMPFuzz, NeverCrashes);
 #endif
 TEST(BytestreamToUMPFuzz, Empty) {
   NeverCrashes({});
+}
+TEST(BytestreamToUMPFuzz, OneByte) {
+  NeverCrashes({static_cast<std::byte>(std::to_underlying(midi2::bytestream::status::tune_request))});
 }
 
 }  // end anonymous namespace

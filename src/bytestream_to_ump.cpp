@@ -36,13 +36,13 @@ namespace {
 
 namespace midi2::bytestream {
 
-void bytestream_to_ump::set_group(std::uint8_t const group) noexcept {
+void to_ump::set_group(std::uint8_t const group) noexcept {
   assert(group <= 0b1111 && "group number is out of range");
   this->reset();
   group_ = static_cast<std::byte>(group);
 }
 
-void bytestream_to_ump::to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept {
+void to_ump::convert(std::byte b0, std::byte b1, std::byte b2) noexcept {
   assert((b0 & std::byte{0x80}) != std::byte{0U} && "Top bit of b0 must be set");
   assert((b1 & std::byte{0x80}) == std::byte{0U} && (b2 & std::byte{0x80U}) == std::byte{0U} &&
          "The top bit of b1 and b2 must be zero");
@@ -61,7 +61,7 @@ using sysex7_start = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64:
 using sysex7_continue = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_continue>;
 using sysex7_end = midi2::ump::data64::details::sysex7<midi2::ump::mt::data64::sysex7_end>;
 
-template <ump::mt::data64 T> void bytestream_to_ump::push_sysex7() noexcept {
+template <ump::mt::data64 T> void to_ump::push_sysex7() noexcept {
   auto const t = ump::data64::details::sysex7<T>{}
                      .group(to_integer<std::uint8_t>(group_))
                      .number_of_bytes(sysex7_.pos)
@@ -72,14 +72,14 @@ template <ump::mt::data64 T> void bytestream_to_ump::push_sysex7() noexcept {
                      .data4(to_integer<std::uint8_t>(sysex7_.bytes[4U]))
                      .data5(to_integer<std::uint8_t>(sysex7_.bytes[5U]));
   ump::apply(t, [this](auto const w) noexcept {
-    output_.push_back(std::uint32_t{w});
+    output_.push_back(static_cast<std::uint32_t>(w));
     return false;
   });
 
   sysex7_.reset();
 }
 
-void bytestream_to_ump::sysex_data_byte(std::byte const b) noexcept {
+void to_ump::sysex_data_byte(std::byte const b) noexcept {
   if (sysex7_.pos % 6 == 0U && sysex7_.pos != 0U) {
     using enum sysex7::status;
     switch (sysex7_.state) {
@@ -95,12 +95,12 @@ void bytestream_to_ump::sysex_data_byte(std::byte const b) noexcept {
   ++sysex7_.pos;
 }
 
-void bytestream_to_ump::push(std::byte const b) noexcept {
+void to_ump::push(std::byte const b) noexcept {
   auto const midi1int = static_cast<status>(b);
 
   if (is_status_byte(b)) {
     if (is_system_real_time_message(b)) {
-      this->to_ump(b, std::byte{0U}, std::byte{0U});
+      this->convert(b, std::byte{0U}, std::byte{0U});
       return;
     }
 
@@ -116,7 +116,7 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
     }
 
     switch (midi1int) {
-    case status::tune_request: this->to_ump(b, std::byte{0U}, std::byte{0U}); break;
+    case status::tune_request: this->convert(b, std::byte{0U}, std::byte{0U}); break;
     case status::sysex_start:
       sysex7_.state = sysex7::status::start;
       sysex7_.pos = 0U;
@@ -128,11 +128,11 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
     if (sysex7_.state == sysex7::status::start || sysex7_.state == sysex7::status::cont) {
       this->sysex_data_byte(b);
     } else if (d1_ != unknown) {  // Second byte
-      this->to_ump(d0_, d1_, b);
+      this->convert(d0_, d1_, b);
       d1_ = unknown;
     } else if (d0_ != std::byte{0U}) {  // status byte set
       if (is_one_byte_message(d0_)) {
-        this->to_ump(d0_, b, std::byte{0U});
+        this->convert(d0_, b, std::byte{0U});
       } else if (d0_ < to_byte(status::sysex_start) || d0_ == to_byte(status::spp)) {
         // This is the first of a two data byte message.
         d1_ = b;
@@ -141,9 +141,12 @@ void bytestream_to_ump::push(std::byte const b) noexcept {
   }
 }
 
-void bytestream_to_ump::reset() noexcept {
-  output_.clear();
+void to_ump::reset() noexcept {
+  group_ = std::byte{0U};
+  d0_ = std::byte{0U};
+  d1_ = unknown;
   sysex7_.reset();
+  output_.clear();
 }
 
 }  // end namespace midi2::bytestream

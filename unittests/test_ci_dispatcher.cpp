@@ -232,7 +232,8 @@ protected:
   template <typename Content> void dispatch_ci(std::uint8_t group, header const& hdr, Content const& content) {
     processor_.set_group(group);
     processor_.set_device_id(hdr.device_id);
-    std::ranges::for_each(make_message(hdr, content), [this](std::byte const b) { processor_.dispatch(b); });
+    auto const message = make_message(hdr, content);
+    std::ranges::for_each(message, [this](std::byte const b) { processor_.dispatch(b); });
   }
 };
 // NOLINTNEXTLINE

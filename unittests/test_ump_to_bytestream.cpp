@@ -24,7 +24,7 @@ namespace {
 
 template <std::ranges::input_range Range>
 std::vector<std::byte> convert(Range const& range, std::uint16_t group_filter = 0) {
-  midi2::bytestream::ump_to_bytestream ump2bs;
+  midi2::bytestream::to_bytestream ump2bs;
   ump2bs.group_filter(group_filter);
 
   std::vector<std::byte> output;

@@ -43,7 +43,7 @@ int main() {
   std::cout << "UMP Packets: ";
   // Convert the bytestream to UMP group 0 and write it to stdout.
   constexpr auto group = std::uint8_t{0};
-  midi2::bytestream::bytestream_to_ump bs2ump{group};
+  midi2::bytestream::to_ump bs2ump{group};
   for (auto const b : input) {
     // Push each byte into the translator instance.
     bs2ump.push(b);

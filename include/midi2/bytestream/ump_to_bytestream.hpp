@@ -74,14 +74,14 @@ template <> struct message_size<status::active_sensing> : std::integral_constant
 template <> struct message_size<status::system_reset> : std::integral_constant<unsigned, 1> {};
 
 /// \brief Converts UMP messages to a MIDI 1.0 Bytestream
-class ump_to_bytestream {
+class to_bytestream {
 public:
   /// \brief The type of input from a 32-bit UMP stream
   using input_type = std::uint32_t;
   /// \brief The type of output to a bytestream
   using output_type = std::byte;
 
-  constexpr ump_to_bytestream() = default;
+  constexpr to_bytestream() = default;
 
   /// Checks if the output has no elements
   [[nodiscard]] constexpr bool empty() const noexcept { return context_.output.empty(); }
@@ -351,7 +351,7 @@ private:
   ump::ump_dispatcher<to_bytestream_config> dispatcher_{to_bytestream_config{.context = &context_}};
 };
 
-static_assert(translator<std::uint32_t, std::byte, ump_to_bytestream>);
+static_assert(translator<std::uint32_t, std::byte, to_bytestream>);
 
 }  // end namespace midi2::bytestream
 

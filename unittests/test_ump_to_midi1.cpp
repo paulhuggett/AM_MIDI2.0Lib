@@ -24,9 +24,9 @@
 
 namespace {
 
-template <std::ranges::input_range Range> auto convert(Range const& range) {
+template <std::ranges::input_range Range> std::vector<std::uint32_t> convert(Range const& range) {
   std::vector<std::uint32_t> output;
-  midi2::ump::ump_to_midi1 ump2m1;
+  midi2::ump::to_midi1 ump2m1;
   for (auto const ump : range) {
     ump2m1.push(ump);
     while (!ump2m1.empty()) {
@@ -411,7 +411,7 @@ TEST(UMPToMIDI1, M1PitchBend) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, SystemMessagePassThrough) {
-  midi2::ump::ump_to_midi1 ump2m1;
+  midi2::ump::to_midi1 ump2m1;
   std::vector<std::uint32_t> output;
   std::vector<std::uint32_t> input;
 

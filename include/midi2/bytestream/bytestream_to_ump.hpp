@@ -27,17 +27,17 @@
 namespace midi2::bytestream {
 
 /// \brief Translates a MIDI 1.0 bytestream to UMP messages
-class bytestream_to_ump {
+class to_ump {
 public:
   /// \brief The type of input from a bytestream
   using input_type = std::byte;
   /// \brief The type of a UMP message
   using output_type = std::uint32_t;
 
-  constexpr bytestream_to_ump() noexcept = default;
+  constexpr to_ump() noexcept = default;
   /// \brief Creates a bytestream to UMP translator
   /// \param group  The group number that will be assigned to UMP messages created by this translator
-  explicit constexpr bytestream_to_ump(std::uint8_t const group) noexcept : group_{group} {
+  explicit constexpr to_ump(std::uint8_t const group) noexcept : group_{group} {
     assert(group <= 0b1111 && "group number is out of range");
   }
 
@@ -94,13 +94,13 @@ private:
   sysex7 sysex7_;
   adt::fifo<std::uint32_t, 4> output_;
 
-  void to_ump(std::byte b0, std::byte b1, std::byte b2) noexcept;
+  void convert(std::byte b0, std::byte b1, std::byte b2) noexcept;
 
   template <ump::mt::data64 T> void push_sysex7() noexcept;
   void sysex_data_byte(std::byte b) noexcept;
 };
 
-static_assert(translator<std::byte, std::uint32_t, bytestream_to_ump>);
+static_assert(translator<std::byte, std::uint32_t, to_ump>);
 
 }  // end namespace midi2::bytestream
 

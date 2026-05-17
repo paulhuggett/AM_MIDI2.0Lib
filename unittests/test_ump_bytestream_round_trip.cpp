@@ -33,7 +33,7 @@ using byte_vector = std::vector<std::byte>;
 using ump_vector = std::vector<std::uint32_t>;
 
 ump_vector bytes_to_ump(byte_vector const& in) {
-  midi2::bytestream::bytestream_to_ump bs2ump;
+  midi2::bytestream::to_ump bs2ump;
   ump_vector out;
   for (auto const v : in) {
     bs2ump.push(v);
@@ -45,7 +45,7 @@ ump_vector bytes_to_ump(byte_vector const& in) {
 }
 
 byte_vector ump_to_bytes(ump_vector const& in) {
-  midi2::bytestream::ump_to_bytestream ump2bs;
+  midi2::bytestream::to_bytestream ump2bs;
   byte_vector out;
   for (auto const v : in) {
     ump2bs.push(v);

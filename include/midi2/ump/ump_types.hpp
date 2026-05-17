@@ -300,16 +300,14 @@ template <typename T, typename Function, std::size_t Index = 0>
   requires(Index < std::tuple_size_v<T> &&
            std::derived_from<std::remove_cvref_t<decltype(get<Index>(T{}))>, details::word_base> &&
            std::is_constructible_v<bool, std::invoke_result_t<Function, std::uint32_t>>)
-constexpr auto apply(T const& message, Function function) {
-  auto const result = function(static_cast<std::uint32_t>(get<Index>(message)));
-  if (bool{result}) {
-    return result;
+constexpr std::invoke_result_t<Function, std::uint32_t> apply(T const& message, Function function) {
+  auto result = function(static_cast<std::uint32_t>(get<Index>(message)));
+  if (!bool{result}) {
+    if constexpr (Index + 1 < std::tuple_size_v<T>) {
+      result = apply<T, Function, Index + 1>(message, std::move(function));
+    }
   }
-  if constexpr (Index + 1 >= std::tuple_size_v<T>) {
-    return result;
-  } else {
-    return apply<T, Function, Index + 1>(message, std::move(function));
-  }
+  return result;
 }
 
 /// Calls the check() method of each word of a UMP message of type \p T.

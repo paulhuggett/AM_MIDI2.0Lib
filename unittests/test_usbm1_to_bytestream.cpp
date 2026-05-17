@@ -27,7 +27,8 @@ using testing::IsEmpty;
 
 namespace {
 
-template <std::ranges::input_range Range> constexpr auto convert(std::uint8_t const cable, Range const& range) {
+template <std::ranges::input_range Range>
+constexpr std::vector<std::byte> convert(std::uint8_t const cable, Range const& range) {
   std::vector<std::byte> output;
   midi2::bytestream::usbm1_to_bytestream m1_to_bs{cable};
   for (std::uint32_t const m1 : range) {

@@ -34,7 +34,7 @@ namespace midi2::ump {
 /// This class provides functionality to convert UMP messages to MIDI 1.0 messages.
 /// It maintains a context that includes a cache for per-note controllers and a FIFO
 /// for output messages.
-class ump_to_midi1 {
+class to_midi1 {
 public:
   /// \brief The type of an input UMP message.
   using input_type = std::uint32_t;
@@ -103,7 +103,7 @@ private:
     pn_cache_type pn_cache;
     adt::fifo<std::uint32_t, 4> output;
   };
-  friend struct std::hash<midi2::ump::ump_to_midi1::context_type::pn_cache_key>;
+  friend struct std::hash<midi2::ump::to_midi1::context_type::pn_cache_key>;
 
   struct to_midi1_config {
     /// \brief Handles System messages by passing them straight through without change.
@@ -307,7 +307,7 @@ private:
   ump::ump_dispatcher<to_midi1_config> dispatcher_{to_midi1_config{.context = &context_}};
 };
 
-static_assert(translator<std::uint32_t, std::uint32_t, ump_to_midi1>);
+static_assert(translator<std::uint32_t, std::uint32_t, to_midi1>);
 
 }  // end namespace midi2::ump
 
