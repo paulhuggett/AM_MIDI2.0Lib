@@ -31,6 +31,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
 include(setup_target)
 
+FetchContent_Declare(
+  icubaby
+  GIT_REPOSITORY https://github.com/paulhuggett/icubaby.git
+  GIT_TAG HEAD
+)
+FetchContent_MakeAvailable(icubaby)
+
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(adt_headers
   "${INCLUDE_DIR}/midi2/adt/bitfield.hpp"
@@ -66,7 +73,6 @@ set(MIDI2_HEADERS
   ${ci_headers}
   ${ump_headers}
   "${INCLUDE_DIR}/midi2/dispatcher.hpp"
-  "${INCLUDE_DIR}/midi2/icubaby.hpp"
   "${INCLUDE_DIR}/midi2/mcoded7.hpp"
   "${INCLUDE_DIR}/midi2/midi2.hpp"
   "${INCLUDE_DIR}/midi2/translator.hpp"
@@ -83,6 +89,7 @@ add_library(midi2 ${MIDI2_HEADERS}
   src/ump_to_midi1.cpp
   src/ump_to_midi2.cpp
 )
+target_link_libraries(midi2 PUBLIC icubaby)
 setup_target(midi2)
 target_include_directories(midi2 PUBLIC
   $<BUILD_INTERFACE:${INCLUDE_DIR}>
