@@ -60,11 +60,11 @@ public:
   }
 };
 
-template <midi2::icubaby::unicode_char_type T> class CI7TextEncode : public testing::Test {
+template <icubaby::unicode_char_type T> class CI7TextEncode : public testing::Test {
 public:
   std::string convert(std::u32string const& in32) {
     std::basic_string<T> out;
-    std::ranges::copy(in32 | midi2::icubaby::views::transcode<char32_t, T>, std::back_inserter(out));
+    std::ranges::copy(in32 | icubaby::views::transcode<char32_t, T>, std::back_inserter(out));
 
     std::string output;
     auto dest = std::back_inserter(output);
@@ -167,7 +167,7 @@ protected:
 
   std::basic_string<T> expected(std::u32string_view in32) {
     std::basic_string<T> out;
-    std::ranges::copy(in32 | midi2::icubaby::views::transcode<char32_t, T>, std::back_inserter(out));
+    std::ranges::copy(in32 | icubaby::views::transcode<char32_t, T>, std::back_inserter(out));
     return out;
   }
 };
@@ -307,7 +307,7 @@ TYPED_TEST(CI7TextDecode, Utf16SurrogatePairs) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
-  auto const expected = this->expected(std::u32string{'A', midi2::icubaby::replacement_char});
+  auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char});
   midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800)"sv);
   EXPECT_EQ(output, expected);
@@ -317,7 +317,7 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateAtEnd) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
-  auto const expected = this->expected(std::u32string{'A', midi2::icubaby::replacement_char, '\n'});
+  auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, '\n'});
   midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800\n)"sv);
   EXPECT_EQ(output, expected);
@@ -327,7 +327,7 @@ TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByEscape) {
 
 // NOLINTNEXTLINE
 TYPED_TEST(CI7TextDecode, MissingLowSurrogateFollowedByNormal) {
-  auto const expected = this->expected(std::u32string{'A', midi2::icubaby::replacement_char, 'B'});
+  auto const expected = this->expected(std::u32string{'A', icubaby::replacement_char, 'B'});
   midi2::transcoder<char, TypeParam> t2;
   auto const output = this->convert(t2, R"(A\uD800B)"sv);
   EXPECT_EQ(output, expected);
@@ -352,7 +352,7 @@ void RoundTrip(std::vector<char32_t> const& input) {
   std::vector<char32_t> sanitized_input;
   sanitized_input.reserve(input.size());
   std::ranges::copy_if(input, std::back_inserter(sanitized_input), [](char32_t cp) constexpr {
-    return cp <= midi2::icubaby::max_code_point && !midi2::icubaby::is_surrogate(cp);
+    return cp <= icubaby::max_code_point && !icubaby::is_surrogate(cp);
   });
 
   auto const intermediate = convert<char>(sanitized_input);

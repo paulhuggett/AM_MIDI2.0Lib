@@ -11,6 +11,7 @@
 #ifndef MIDI2_CI_CI7TEXT_HPP
 #define MIDI2_CI_CI7TEXT_HPP
 
+// Standard library
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -18,10 +19,15 @@
 #include <iterator>
 #include <type_traits>
 
-#include "midi2/icubaby.hpp"
+// icubaby library
+#include "icubaby/icubaby.hpp"
+
+// local includes
 #include "midi2/utils.hpp"
 
-template <midi2::icubaby::unicode_char_type InputEncoding> class midi2::icubaby::transcoder<InputEncoding, char> {
+namespace icubaby {
+
+template <unicode_char_type InputEncoding> class transcoder<InputEncoding, char> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = InputEncoding;
@@ -76,7 +82,7 @@ public:
   [[nodiscard]] constexpr bool partial() const noexcept { return src_to_32_.partial(); }
 
 private:
-  midi2::icubaby::transcoder<input_type, char32_t> src_to_32_;
+  transcoder<input_type, char32_t> src_to_32_;
 
   template <std::output_iterator<char> OutputIterator>
   OutputIterator convert_from_32(char32_t code_unit, OutputIterator dest) {
@@ -106,7 +112,7 @@ private:
   }
 };
 
-template <midi2::icubaby::unicode_char_type OutputEncoding> class midi2::icubaby::transcoder<char, OutputEncoding> {
+template <unicode_char_type OutputEncoding> class transcoder<char, OutputEncoding> {
 public:
   /// The type of the code units consumed by this transcoder.
   using input_type = char;
@@ -242,6 +248,8 @@ private:
     return true;
   }
 };
+
+}  // end namespace icubaby
 
 namespace midi2 {
 using icubaby::transcoder;
