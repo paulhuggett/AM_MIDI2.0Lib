@@ -32,10 +32,20 @@ include(FetchContent)
 include(setup_target)
 
 FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG HEAD
+)
+FetchContent_Declare(
   icubaby
   GIT_REPOSITORY https://github.com/paulhuggett/icubaby.git
   GIT_TAG HEAD
 )
+if(MIDI2_FUZZTEST)
+  # If we're fuzz testing, stop icubaby from dragging in Google Test.
+  # This interferes with fuzztest's attempt to set up the library.
+  set(ICUBABY_UNIT_TESTS No CACHE BOOL "Disable icubaby unit tests")
+endif()
 FetchContent_MakeAvailable(icubaby)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -83,7 +93,6 @@ source_group(bytestream FILES ${bytestream_headers})
 source_group(ci FILES ${ci_headers})
 source_group(ump FILES ${ump_headers})
 
-
 add_library(midi2 ${MIDI2_HEADERS}
   src/bytestream_to_ump.cpp
   src/ump_to_midi1.cpp
@@ -111,11 +120,8 @@ if(MIDI2_DEMO)
 endif(MIDI2_DEMO)
 
 if(MIDI2_FUZZTEST)
-  # ------------------------------------------------------------
-  # FuzzTest
-  # ------------------------------------------------------------
   set(FUZZTEST_FUZZING_MODE On)
-  set(FUZZTEST_REPO_BRANCH "2026-02-19")
+  set(FUZZTEST_REPO_BRANCH "HEAD" CACHE STRING "FuzzTest repository branch.")
   message(STATUS "Getting fuzztest dependency at branch ${FUZZTEST_REPO_BRANCH}")
   FetchContent_Declare(
     fuzztest
@@ -124,8 +130,10 @@ if(MIDI2_FUZZTEST)
   )
   FetchContent_MakeAvailable(fuzztest)
 
-  include(GoogleTest)
   fuzztest_setup_fuzzing_flags()
+  foreach(target gtest gmock gtest_main gmock_main)
+    target_compile_features(${target} PUBLIC cxx_std_23)
+  endforeach()
 elseif(MIDI2_UNITTEST)
   # ------------------------------------------------------------
   # GoogleTest
@@ -139,11 +147,6 @@ elseif(MIDI2_UNITTEST)
   # on Windows.
   set(gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
 
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG HEAD
-  )
   FetchContent_MakeAvailable(googletest)
 
   # Adjust some compilation options for the googletest targets
@@ -159,9 +162,11 @@ elseif(MIDI2_UNITTEST)
       set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE On)
     endif()
   endforeach()
-endif(MIDI2_FUZZTEST)
+endif()
 
 if (MIDI2_FUZZTEST OR MIDI2_UNITTEST)
+  include(GoogleTest)
+
   add_subdirectory(unittests)
 endif()
 
