@@ -169,7 +169,8 @@ TEST(UMPToMIDI1, M2PerNotePitchBend) {
 
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2RPNController) {
-  using midi2::hi7, midi2::lo7;
+  using midi2::hi7;
+  using midi2::lo7;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
   constexpr auto bank = std::uint8_t{60};
@@ -192,7 +193,8 @@ TEST(UMPToMIDI1, M2RPNController) {
 }
 // NOLINTNEXTLINE
 TEST(UMPToMIDI1, M2RPNControllerTwoChanges) {
-  using midi2::hi7, midi2::lo7;
+  using midi2::hi7;
+  using midi2::lo7;
   constexpr auto group = std::uint8_t{1};
   constexpr auto channel = std::uint8_t{3};
   constexpr auto bank = std::uint8_t{60};
@@ -275,7 +277,8 @@ TEST(UMPToMIDI1, M2RPNTwoDifferentControllers) {
                            [](std::uint32_t v) { return midi2::ump::mcm_scale<32, 14>(v); });
 
     using enum midi2::ump::control;
-    using midi2::hi7, midi2::lo7;
+    using midi2::hi7;
+    using midi2::lo7;
     constexpr auto cc = [] constexpr { return midi2::ump::m1cvm::control_change{}.group(group).channel(channel); };
     midi2::ump::apply(cc().controller(rpn_msb).value(bank), expected_append);
     midi2::ump::apply(cc().controller(rpn_lsb).value(17), expected_append);
@@ -316,7 +319,8 @@ TEST(UMPToMIDI1, M2NRPNController) {
       });
 
   constexpr auto val14 = midi2::ump::mcm_scale<32, 14>(value);
-  using midi2::hi7, midi2::lo7;
+  using midi2::hi7;
+  using midi2::lo7;
   using midi2::ump::m1cvm::control_change;
 
   std::vector<std::uint32_t> expected;
