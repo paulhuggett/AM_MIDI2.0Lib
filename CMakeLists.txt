@@ -116,11 +116,6 @@ if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
   # GoogleTest
   # ------------------------------------------------------------
   message(STATUS "Getting GoogleTest dependency")
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG HEAD
-  )
   # Unfortunately, disabling the install of gtest/gmock causes a fuzz test configure to fail.
   # # We don't want to install either gtest or gmock.
   # set(INSTALL_GTEST Off CACHE BOOL "Disable gtest install")
@@ -130,21 +125,6 @@ if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
   # on Windows.
   set(gtest_force_shared_crt On CACHE BOOL "Always use msvcrt.dll")
 
-  FetchContent_MakeAvailable(googletest)
-
-  # Adjust some compilation options for the googletest targets
-  foreach(target gtest gmock gtest_main gmock_main)
-    if(TARGET ${target})
-      target_compile_options(${target} PRIVATE
-        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-        -Wno-deprecated-declarations
-        -Wno-covered-switch-default>
-      )
-      target_compile_features(${target} PUBLIC cxx_std_23)
-      target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
-      set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE On)
-    endif()
-  endforeach()
 
   # ------------------------------------------------------------
   # FuzzTest
@@ -162,6 +142,27 @@ if(MIDI2_UNITTEST OR MIDI2_FUZZTEST)
 
     include(GoogleTest)
     fuzztest_setup_fuzzing_flags()
+  else()
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG HEAD
+    )
+    FetchContent_MakeAvailable(googletest)
+
+    # Adjust some compilation options for the googletest targets
+    foreach(target gtest gmock gtest_main gmock_main)
+      if(TARGET ${target})
+        target_compile_options(${target} PRIVATE
+          $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+          -Wno-deprecated-declarations
+          -Wno-covered-switch-default>
+        )
+        target_compile_features(${target} PUBLIC cxx_std_23)
+        target_compile_definitions(${target} PUBLIC GTEST_REMOVE_LEGACY_TEST_CASEAPI_=1)
+        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE On)
+      endif()
+    endforeach()
   endif(MIDI2_FUZZTEST)
 
   add_subdirectory(unittests)
