@@ -1,0 +1,6 @@
+---
+engines:
+  duplication:
+    minTokenMatch: 100
+    exclude_paths:
+      - unittests/**/*
