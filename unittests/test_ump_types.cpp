@@ -306,6 +306,7 @@ TEST(UMPTypesTextCommon, InitializerListMaxLength) {
   EXPECT_EQ(message[11], 'l');
 }
 TEST(UMPTypesTextCommon, DataSetByIteratorSentinel) {
+  // NOLINTNEXTLINE(google-build-using-namespace)
   using namespace std::literals::string_view_literals;
   using text_common = midi2::ump::flex_data::text_common;
   constexpr auto str = u8"hello"sv;

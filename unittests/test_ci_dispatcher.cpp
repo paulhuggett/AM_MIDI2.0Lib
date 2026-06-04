@@ -117,6 +117,7 @@ using midi2::ci::byte_array;
 using midi2::ci::header;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace midi2::literals;
 
 consteval std::uint8_t operator""_u8(unsigned long long arg) noexcept {
@@ -656,6 +657,7 @@ TEST_F(CIDispatcher, PropertyExchangeCapabilitiesReply) {
   this->dispatch_ci(group, hdr, caps);
 }
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace std::string_view_literals;
 // NOLINTNEXTLINE
 TEST_F(CIDispatcher, PropertyExchangeGetPropertyData) {

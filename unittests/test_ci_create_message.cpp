@@ -46,6 +46,7 @@ using midi2::ci::byte_array;
 using midi2::ci::details::from_byte_array;
 using midi2::ci::details::from_le7;
 using midi2::ci::details::to_le7;
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace midi2::literals;
 
 TEST(CITrivialSentinal, CompareAlwaysReturnsTrue) {
@@ -688,6 +689,7 @@ TEST_F(CICreateMessage, ProfileEnabled) {
   EXPECT_THAT(make_message(hdr, enabled), testing::ElementsAreArray(expected));
 }
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace std::string_view_literals;
 
 TEST_F(CICreateMessage, PropertyExchangeGetPropertyData) {
