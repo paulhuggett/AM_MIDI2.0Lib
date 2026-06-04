@@ -19,10 +19,10 @@ release = version
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-     'breathe',
-     'sphinx.ext.autosectionlabel',
-     'sphinx.ext.graphviz',
-     'sphinx_design'
+    'breathe',
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.graphviz',
+    'sphinx_design'
 ]
 
 # Breathe configuration
@@ -39,4 +39,4 @@ html_theme = 'furo'
 html_static_path = ['_static']
 
 if os.environ.get('READTHEDOCS', None) == 'True':
-     subprocess.call('cd ..; doxygen', shell=True)
+    subprocess.call('doxygen', cwd=os.path.join(os.getcwd(), os.pardir), shell=False)
