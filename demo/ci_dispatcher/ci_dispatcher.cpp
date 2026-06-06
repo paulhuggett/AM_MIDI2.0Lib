@@ -24,7 +24,9 @@
 #include <string_view>
 #include <type_traits>
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace midi2::literals;
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace std::string_view_literals;
 
 // A formatter for arrays of 7-bit integer values (b7). These will be represented to

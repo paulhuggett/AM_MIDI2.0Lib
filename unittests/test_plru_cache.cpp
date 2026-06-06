@@ -22,6 +22,7 @@
 #endif
 
 using midi2::adt::plru_cache;
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace std::string_literals;
 
 using testing::_;

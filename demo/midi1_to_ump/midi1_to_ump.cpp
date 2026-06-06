@@ -22,6 +22,7 @@
 // Midi2 library
 #include <midi2/midi2.hpp>
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace midi2::literals;
 
 namespace {
