@@ -22,6 +22,7 @@
 #include "midi2/ci/ci_create_message.hpp"
 #include "midi2/ci/ci_types.hpp"
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace midi2::literals;
 
 int main() {

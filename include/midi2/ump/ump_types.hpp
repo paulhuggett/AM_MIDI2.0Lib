@@ -1978,6 +1978,7 @@ public:
   [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
   [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 6; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
   [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
@@ -4847,6 +4848,7 @@ public:
   [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
   [[nodiscard]] constexpr auto cend() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 12U; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
   [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }
@@ -4928,6 +4930,7 @@ public:
   }
 
   constexpr text_common& data(std::u8string_view const& str) {
+    // NOLINTNEXTLINE(llvm-qualified-auto,readability-qualified-auto)
     auto const first = std::begin(str);
     return this->data(first, first + std::min(this->max_size(), str.size()) + 1);
   }
@@ -5091,6 +5094,7 @@ public:
   [[nodiscard]] constexpr auto end() const noexcept { return const_iterator{*this, this->number_of_bytes()}; }
   [[nodiscard]] constexpr auto cend() noexcept { return const_iterator{*this, this->number_of_bytes()}; }
 
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
   [[nodiscard]] constexpr size_type max_size() const noexcept { return 13U; }
   [[nodiscard]] constexpr size_type size() const noexcept { return this->number_of_bytes(); }
   [[nodiscard]] constexpr bool empty() const noexcept { return this->size() == 0; }

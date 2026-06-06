@@ -22,6 +22,7 @@
 #include <fuzztest/fuzztest.h>
 #endif
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace std::string_view_literals;
 
 // A specialization of the gtest GetTypeName<char8_t>() function. This is required for compiling with (at least)
