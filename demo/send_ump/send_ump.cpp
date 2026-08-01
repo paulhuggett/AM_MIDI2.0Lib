@@ -42,18 +42,19 @@ std::error_code send_note_on(std::uint8_t group, std::uint8_t channel, std::uint
 }
 
 template <std::ranges::input_range R>
-  requires(std::same_as<std::ranges::range_value_t<R>, std::uint8_t>)
+  requires(std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::uint8_t>)
 std::error_code notes_off(R const& range, std::uint8_t group, std::uint8_t channel, std::uint16_t velocity) {
   auto noff = midi2::ump::m2cvm::note_off{}.group(group).channel(channel).velocity(velocity);
   for (auto const note : range) {
     // Adjust the value of the note field.
     noff.note(note);
+    std::cout << "Note off: ";
     // Call transmit() for each word of the note-off message.
     if (auto const err = midi2::ump::apply(noff, transmit)) {
       return err;
     }
     // Print a dash to separate the individual UMP messages.
-    std::cout << "- ";
+    std::cout << '\n';
   }
   return {};
 }
@@ -64,20 +65,20 @@ int main() {
   constexpr auto group = std::uint8_t{0U};
   constexpr auto channel = std::uint8_t{1U};
 
+  std::cout << "Program change: ";
   midi2::ump::apply(midi2::ump::m1cvm::program_change{}.group(group).channel(channel).program(42U), transmit);
-  std::cout << "- \n";
+  std::cout << '\n';
 
   constexpr auto velocity = std::uint16_t{10000U};
   constexpr std::array notes = {std::uint8_t{60U}, std::uint8_t{64U}, std::uint8_t{67U}};
   for (auto const note : notes) {
+    std::cout << "Note on: ";
     if (auto const err = send_note_on(group, channel, note, velocity)) {
       // In this example, send_note_on() will never fail because transmit() always returns
       // success.
     }
-    // Print a dash to separate the individual UMP messages.
-    std::cout << "- ";
+    std::cout << '\n';
   }
-  std::cout << '\n';
 
   notes_off(notes, group, channel, velocity);
   std::cout << '\n';
